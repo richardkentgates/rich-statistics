@@ -8,7 +8,7 @@
  * @package RichStatistics\Tests
  */
 
-class RSA_REST_API_Test extends WP_Test_REST_TestCase {
+class RestApiTest extends WP_Test_REST_TestCase {
 
 	/** @var WP_REST_Server */
 	protected static WP_REST_Server $server;

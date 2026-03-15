@@ -86,12 +86,23 @@ if ( is_dir( $wp_tests_dir ) ) {
 // -----------------------------------------------------------------------
 // Unit (no WordPress) — load Brain\Monkey stubs and plugin files directly
 // -----------------------------------------------------------------------
-require_once RSA_DIR . 'includes/class-bot-detection.php';
-require_once RSA_DIR . 'includes/class-db.php';
 
-// Provide minimal WP function stubs used by the classes under unit test
+// Provide minimal WP function stubs BEFORE loading plugin files, as some
+// classes call add_action() / add_filter() at file scope on load.
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( string $hook, $callback, int $priority = 10, int $args = 1 ): bool { return true; }
+}
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( string $hook, $callback, int $priority = 10, int $args = 1 ): bool { return true; }
+}
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( string $option, $default = false ): mixed { return $default; }
+}
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	function wp_strip_all_tags( string $s ): string { return strip_tags( $s ); }
+}
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	function wp_parse_url( string $url, int $component = -1 ): mixed { return parse_url( $url, $component ); }
 }
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( string $s ): string { return trim( strip_tags( $s ) ); }
@@ -99,3 +110,7 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 if ( ! function_exists( 'absint' ) ) {
 	function absint( mixed $n ): int { return abs( (int) $n ); }
 }
+
+require_once RSA_DIR . 'includes/class-bot-detection.php';
+require_once RSA_DIR . 'includes/class-db.php';
+require_once RSA_DIR . 'includes/class-tracker.php';

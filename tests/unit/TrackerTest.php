@@ -12,7 +12,7 @@ use Brain\Monkey;
 use Brain\Monkey\Functions;
 use PHPUnit\Framework\TestCase;
 
-class RSA_Tracker_Test extends TestCase {
+class TrackerTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();

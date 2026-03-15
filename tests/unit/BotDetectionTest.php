@@ -10,25 +10,25 @@
 
 use PHPUnit\Framework\TestCase;
 
-class RSA_Bot_Detection_Test extends TestCase {
+class BotDetectionTest extends TestCase {
 
 	// ----------------------------------------------------------------
 	// Client-side signal scoring
 	// ----------------------------------------------------------------
 
 	public function test_zero_signals_scores_zero(): void {
-		$score = RSA_Bot_Detection::score( 0, 'Mozilla/5.0 (Windows NT 10.0) Chrome/121', [] );
+		$score = RSA_Bot_Detection::score_client_bitmask( 0 );
 		$this->assertSame( 0, $score );
 	}
 
 	public function test_webdriver_flag_adds_four(): void {
 		// CS_WEBDRIVER = 1 → weight 4
-		$score = RSA_Bot_Detection::score( RSA_Bot_Detection::CS_WEBDRIVER, 'Mozilla/5.0', [] );
+		$score = RSA_Bot_Detection::score_client_bitmask( RSA_Bot_Detection::CS_WEBDRIVER );
 		$this->assertSame( 4, $score );
 	}
 
 	public function test_no_plugins_flag_adds_one(): void {
-		$score = RSA_Bot_Detection::score( RSA_Bot_Detection::CS_NO_PLUGINS, 'Mozilla/5.0', [] );
+		$score = RSA_Bot_Detection::score_client_bitmask( RSA_Bot_Detection::CS_NO_PLUGINS );
 		$this->assertSame( 1, $score );
 	}
 
@@ -37,7 +37,7 @@ class RSA_Bot_Detection_Test extends TestCase {
 		$flags = RSA_Bot_Detection::CS_WEBDRIVER
 		         | RSA_Bot_Detection::CS_NO_LANGUAGES
 		         | RSA_Bot_Detection::CS_ZERO_SCREEN;
-		$score = RSA_Bot_Detection::score( $flags, 'Mozilla/5.0', [] );
+		$score = RSA_Bot_Detection::score_client_bitmask( $flags );
 		$this->assertSame( 9, $score );
 	}
 
@@ -53,7 +53,7 @@ class RSA_Bot_Detection_Test extends TestCase {
 		       | RSA_Bot_Detection::CS_NO_HUMAN_EVENT
 		       | RSA_Bot_Detection::CS_CHROME_MISSING_OBJ;
 		// 4+1+2+3+1+2+2+2+3+3 = 23
-		$score = RSA_Bot_Detection::score( $all, 'Mozilla/5.0', [] );
+		$score = RSA_Bot_Detection::score_client_bitmask( $all );
 		$this->assertSame( 23, $score );
 	}
 
@@ -127,7 +127,7 @@ class RSA_Bot_Detection_Test extends TestCase {
 		return [
 			'Windows 10' => [
 				'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121',
-				'Windows',
+					'Windows 10/11',
 			],
 			'macOS' => [
 				'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',

@@ -5,7 +5,7 @@
  * @package RichStatistics\Tests
  */
 
-class RSA_DB_Test extends WP_UnitTestCase {
+class DbTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();

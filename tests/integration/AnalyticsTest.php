@@ -8,7 +8,7 @@
  * @package RichStatistics\Tests
  */
 
-class RSA_Analytics_Test extends WP_UnitTestCase {
+class AnalyticsTest extends WP_UnitTestCase {
 
 	// ----------------------------------------------------------------
 	// period_range()

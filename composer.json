@@ -25,7 +25,7 @@
     }
   },
   "scripts": {
-    "test": "phpunit --configuration phpunit.xml.dist",
+    "test": "phpunit --configuration phpunit.xml.dist --no-coverage",
     "test-coverage": "phpunit --configuration phpunit.xml.dist --coverage-html build/coverage",
     "phpcs": "phpcs --standard=WordPress --extensions=php --ignore=vendor,freemius,node_modules .",
     "phpcbf": "phpcbf --standard=WordPress --extensions=php --ignore=vendor,freemius,node_modules ."
