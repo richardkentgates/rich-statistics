@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rich Statistics — Privacy-First Analytics for WordPress</title>
+  <meta name="description" content="Understand your audience without compromising their privacy. No IP tracking. No cookies. No third-party data leaks. 100% self-hosted WordPress analytics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGATION
+============================================================ -->
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="#">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect width="28" height="28" rx="6" fill="#2563eb"/>
+        <rect x="5" y="14" width="4" height="9" rx="1" fill="white"/>
+        <rect x="12" y="9" width="4" height="14" rx="1" fill="white"/>
+        <rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/>
+      </svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="wiki/">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+    <a class="btn btn--primary nav__cta" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
+      Install Free
+    </a>
+  </nav>
+</header>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section class="hero">
+  <div class="container hero__inner">
+    <div class="hero__badge">Open Source &bull; Self-Hosted &bull; GDPR-Ready</div>
+    <h1 class="hero__headline">
+      Analytics that respect<br />
+      <span class="gradient-text">your visitors' privacy</span>
+    </h1>
+    <p class="hero__subhead">
+      Rich Statistics gives you deep insight into traffic, audience, and behavior — all without
+      IP tracking, without cookies, and without sending a single byte to a third-party server.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary btn--lg" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
+        Download Free Plugin
+      </a>
+      <a class="btn btn--ghost btn--lg" href="wiki/">
+        Read the Docs
+      </a>
+    </div>
+    <p class="hero__meta">WordPress 6.0+ &nbsp;&bull;&nbsp; PHP 8.0+ &nbsp;&bull;&nbsp; GPL-2.0</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     PRIVACY PROMISE STRIP
+============================================================ -->
+<section class="promise-strip">
+  <div class="container promise-strip__grid">
+    <div class="promise-item">
+      <span class="promise-item__icon" aria-hidden="true">🚫</span>
+      <strong>No IP addresses</strong>
+      <span>ever stored or logged</span>
+    </div>
+    <div class="promise-item">
+      <span class="promise-item__icon" aria-hidden="true">🍪</span>
+      <strong>No cookies</strong>
+      <span>zero tracking cookies set</span>
+    </div>
+    <div class="promise-item">
+      <span class="promise-item__icon" aria-hidden="true">🔒</span>
+      <strong>100% self-hosted</strong>
+      <span>data stays on your server</span>
+    </div>
+    <div class="promise-item">
+      <span class="promise-item__icon" aria-hidden="true">🌍</span>
+      <strong>GDPR &amp; CCPA ready</strong>
+      <span>no consent banner needed</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FEATURES
+============================================================ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section__header">
+      <h2>Everything you need to understand your audience</h2>
+      <p>A complete analytics suite built into your WordPress dashboard — no external services, no monthly SaaS fees.</p>
+    </div>
+
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">📈</div>
+        <h3>Real-time Dashboard</h3>
+        <p>Live visitor counts, page views, and session activity — refreshed every 30 seconds via the WordPress REST API.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🤖</div>
+        <h3>Multi-signal Bot Detection</h3>
+        <p>17 combined signals (10 JavaScript + 7 server-side) score each request without ever reading an IP address. Bots are filtered before their visit is ever written to the database.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🗺️</div>
+        <h3>Click Heatmaps</h3>
+        <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. No screenshot required.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🔥</div>
+        <h3>Scroll Heatmaps</h3>
+        <p>Understand how far visitors scroll on each page and which content gets the most attention.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">👥</div>
+        <h3>Audience Insights</h3>
+        <p>Browser, operating system, screen resolution, and language breakdowns — derived from request headers, never from fingerprinting.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🔗</div>
+        <h3>Referrer &amp; UTM Tracking</h3>
+        <p>See which sites and campaigns drive traffic. Referrers are stripped to domain-only before storage so no personal data leaks in via URL.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">📧</div>
+        <h3>Email Reports</h3>
+        <p>Scheduled weekly or monthly digests sent to any address. Includes top pages, traffic summary, and period-over-period comparison.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">⌨️</div>
+        <h3>WP-CLI Integration</h3>
+        <p>Run <code>wp rsa overview</code>, <code>wp rsa pages</code>, and <code>wp rsa prune</code> from the command line. Perfect for scripts and automated reports.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🔌</div>
+        <h3>REST API</h3>
+        <p>Every metric is available via a clean JSON REST API. Build custom dashboards or integrate analytics into your own tools.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🌐</div>
+        <h3>Multisite Ready</h3>
+        <p>Network-activate and manage tracking globally across an entire WordPress multisite network from one screen.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">📱</div>
+        <h3>PWA Dashboard</h3>
+        <p>Install the analytics dashboard as a Progressive Web App on any device for quick offline-capable access to your stats.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🔥</div>
+        <h3>Data Retention Control</h3>
+        <p>Set automatic data pruning (30, 90, 180, 365 days) so your database never grows unbounded. Or disable pruning and keep everything forever.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     HOW THE PRIVACY WORKS
+============================================================ -->
+<section class="section section--alt" id="privacy">
+  <div class="container">
+    <div class="section__header">
+      <h2>How the privacy works</h2>
+      <p>Privacy-first is not a marketing claim. Here's exactly what the code does — and doesn't — do.</p>
+    </div>
+
+    <div class="privacy-grid">
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Session IDs
+        </h3>
+        <p>A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It <strong>dies when the tab closes</strong>, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a user's journey across sessions.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Bot detection
+        </h3>
+        <p>The JavaScript layer measures browser capabilities (does <code>navigator.webdriver</code> exist? did the page load in under 50ms?) and sends a compact bitmask — not raw values, not a fingerprint. The PHP layer checks only two HTTP request headers (Accept-Language, Accept) and the User-Agent string. <strong>REMOTE_ADDR is never read or passed.</strong></p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          URL sanitization
+        </h3>
+        <p>Before a page URL is stored, it is scrubbed server-side. Any query parameter longer than 40 characters or resembling an email address is stripped. This prevents accidental storage of password-reset tokens, user IDs, or email addresses that sometimes appear in URLs.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Referrer handling
+        </h3>
+        <p>Referrer URLs are reduced to domain-only before storage. The path and query string — which can contain user-identifying tokens from the referring site — are discarded immediately and never written to the database.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Audience data
+        </h3>
+        <p>Operating system and browser are parsed from the User-Agent string. Screen resolution is reported directly by the browser. These are aggregated counters — <strong>no row in any table links a device spec back to a specific visit or session</strong>.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Heatmap coordinates
+        </h3>
+        <p>Click and scroll coordinates are stored as <code>(page, x_pct, y_pct, element)</code> tuples where x and y are percentage positions on the page. There is no timestamp, session ID, or any field that could link a click to a particular visitor.</p>
+      </div>
+
+    </div>
+
+    <div class="privacy-audit-note">
+      <strong>Want to verify it yourself?</strong> The plugin is fully open source.
+      Run <code>grep -rn "REMOTE_ADDR\|setcookie\|_COOKIE" includes/ assets/</code> on the source and you'll get zero matches.
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">View source on GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PRICING
+============================================================ -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section__header">
+      <h2>Simple, honest pricing</h2>
+      <p>The core plugin is free and open source forever. Premium adds power-user features for publishers who need more.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-card__tier">Free</div>
+        <div class="pricing-card__price">$0 <span>forever</span></div>
+        <ul class="pricing-card__features">
+          <li>✓ Real-time overview dashboard</li>
+          <li>✓ Top pages &amp; referrers</li>
+          <li>✓ Audience (browser, OS, screen)</li>
+          <li>✓ Behavior (bounce, time on page)</li>
+          <li>✓ Multi-signal bot detection</li>
+          <li>✓ UTM campaign tracking</li>
+          <li>✓ Data retention controls</li>
+          <li>✓ WP-CLI integration</li>
+          <li>✓ Full REST API</li>
+          <li>✓ Multisite support</li>
+          <li>✓ GPL-2.0 open source</li>
+        </ul>
+        <a class="btn btn--outline btn--full" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
+          Download from WordPress.org
+        </a>
+      </div>
+
+      <div class="pricing-card pricing-card--featured">
+        <div class="pricing-card__badge">Most Popular</div>
+        <div class="pricing-card__tier">Premium</div>
+        <div class="pricing-card__price">$<span id="price-val">49</span> <span>/ year</span></div>
+        <ul class="pricing-card__features">
+          <li>✓ Everything in Free</li>
+          <li>✓ Click heatmaps</li>
+          <li>✓ Scroll heatmaps</li>
+          <li>✓ Weekly &amp; monthly email reports</li>
+          <li>✓ PWA analytics dashboard</li>
+          <li>✓ Priority support</li>
+          <li>✓ Early access to new features</li>
+        </ul>
+        <a class="btn btn--primary btn--full" href="https://richardkentgates.com/plugins/rich-statistics/#premium" target="_blank" rel="noopener">
+          Get Premium
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     QUICK START
+============================================================ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="section__header">
+      <h2>Up and running in 60 seconds</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step__num">1</div>
+        <div class="step__body">
+          <h3>Install the plugin</h3>
+          <p>Search "Rich Statistics" in your WordPress plugin directory, or install via WP-CLI:</p>
+          <pre><code>wp plugin install rich-statistics --activate</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">2</div>
+        <div class="step__body">
+          <h3>Visit your dashboard</h3>
+          <p>Navigate to <strong>Analytics → Overview</strong> in your WordPress admin. The tracker begins collecting data immediately — no configuration required.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">3</div>
+        <div class="step__body">
+          <h3>Adjust data retention (optional)</h3>
+          <p>Go to <strong>Analytics → Data Settings</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <strong>Rich Statistics</strong>
+      <span>Privacy-first analytics for WordPress</span>
+    </div>
+    <nav class="site-footer__links" aria-label="Footer navigation">
+      <a href="wiki/">Documentation</a>
+      <a href="wiki/privacy-compliance.html">Privacy</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/richardkentgates/rich-statistics/issues" target="_blank" rel="noopener">Issues</a>
+      <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org</a>
+    </nav>
+    <p class="site-footer__legal">
+      Released under the <a href="https://www.gnu.org/licenses/gpl-2.0.html" target="_blank" rel="noopener">GPL-2.0 license</a>.
+      Chart.js bundled under the MIT license.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

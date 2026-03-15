@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy &amp; Compliance — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul><li><a href="installation.html">Installation</a></li><li><a href="configuration.html">Configuration</a></li></ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul>
+      <li><a href="privacy-compliance.html" aria-current="page">Privacy &amp; Compliance</a></li>
+      <li><a href="premium-features.html">Premium Features</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Privacy &amp; Compliance</h1>
+    <p>Rich Statistics is designed from the ground up to be compliant with GDPR, CCPA, and ePrivacy regulations without requiring a consent banner. This page explains exactly what data is collected, what is not, and how to verify our claims.</p>
+
+    <h2>Data collected</h2>
+    <table>
+      <thead><tr><th>Data point</th><th>Example stored value</th><th>How it is derived</th></tr></thead>
+      <tbody>
+        <tr><td>Page path</td><td><code>/blog/my-post/</code></td><td>URL path only — no domain, no fragment. Query params &gt;40 chars or resembling emails are stripped.</td></tr>
+        <tr><td>Session UUID</td><td><code>f47ac10b-58cc-…</code></td><td>Random UUID generated in <code>sessionStorage</code>. Dies when the tab is closed. Used only to deduplicate rapid repeat views within one session.</td></tr>
+        <tr><td>Referrer domain</td><td><code>google.com</code></td><td>Domain only — path and query stripped immediately on the server. <code>(direct)</code> if no referrer.</td></tr>
+        <tr><td>UTM parameters</td><td><code>utm_source=newsletter</code></td><td>Standard UTM values from the query string if present.</td></tr>
+        <tr><td>Browser name &amp; version</td><td><code>Chrome 120</code></td><td>Parsed from the User-Agent string server-side. The raw UA string is not stored.</td></tr>
+        <tr><td>Operating system</td><td><code>Windows</code></td><td>Parsed from UA string.</td></tr>
+        <tr><td>Screen resolution</td><td><code>1920×1080</code></td><td>Reported by <code>screen.width</code>/<code>screen.height</code> in JavaScript.</td></tr>
+        <tr><td>Scroll depth (Premium)</td><td><code>72.4%</code></td><td>Maximum scroll percentage during the session.</td></tr>
+        <tr><td>Click coordinate (Premium)</td><td><code>x: 48.2%, y: 31.9%</code></td><td>Percentage of page width/height at click point. No absolute pixels, no element ID stored unless it is a stable semantic ID.</td></tr>
+        <tr><td>Timestamp</td><td><code>2025-01-15 14:32:00</code></td><td>Server time at ingest.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Data NOT collected</h2>
+    <table>
+      <thead><tr><th>Data point</th><th>Why it is not collected</th></tr></thead>
+      <tbody>
+        <tr><td>IP address</td><td><code>REMOTE_ADDR</code> is never read or passed to any function. Verified by grep audit.</td></tr>
+        <tr><td>Cookies of any kind</td><td>Zero calls to <code>setcookie()</code>, <code>wp_set_auth_cookie()</code>, or any cookie API. Verified by grep audit.</td></tr>
+        <tr><td>Canvas or font fingerprint</td><td>The JavaScript layer measures browser capabilities via documented APIs only (webdriver flag, screen size, navigator.plugins). It does not render canvas elements or measure font metrics.</td></tr>
+        <tr><td>Email addresses</td><td>URL sanitization strips any query parameter whose value looks like an email address before storage.</td></tr>
+        <tr><td>Long query parameters</td><td>Query parameters longer than 40 characters (e.g., session tokens, JWT fragments) are stripped before storage.</td></tr>
+        <tr><td>Cross-session identity</td><td>Session UUIDs are in <code>sessionStorage</code>, not <code>localStorage</code> or cookies, so they cannot be used to track a visitor across sessions or devices.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Third-party data sharing</h2>
+    <p>Rich Statistics shares <strong>zero data with third parties</strong>. All data is stored in your own WordPress database. The plugin makes no outbound HTTP requests except:</p>
+    <ul>
+      <li>Freemius license verification — if you have a Premium license. This sends only: your site URL, WordPress version, PHP version, and license key. No analytics data.</li>
+      <li>Scheduled email reports — sent to the address you configure, via your own site's server.</li>
+    </ul>
+
+    <h2>GDPR compliance notes</h2>
+    <ul>
+      <li><strong>Legal basis:</strong> Because no personal data is collected, processing falls under legitimate interest (website operation analytics) and does not require consent in most jurisdictions.</li>
+      <li><strong>Data subject rights:</strong> There is no user ID or persistent identifier, so there is no data tied to a specific person to retrieve, correct, or delete.</li>
+      <li><strong>Data Protection Officer:</strong> Because no personal data is processed, appointment of a DPO solely for analytics is not required under Article 37 GDPR.</li>
+      <li><strong>Data transfers:</strong> All data stays on your server. No international data transfers occur through this plugin.</li>
+    </ul>
+    <div class="callout callout--warn">
+      This page provides technical information, not legal advice. Consult your own legal counsel to confirm compliance obligations in your jurisdiction.
+    </div>
+
+    <h2>Self-audit commands</h2>
+    <p>Run these on your plugin installation to verify the privacy properties yourself:</p>
+    <pre><code># Verify: no IP address is ever read
+grep -rn "REMOTE_ADDR\|HTTP_X_FORWARDED" includes/ assets/
+
+# Verify: no cookies are ever set
+grep -rn "setcookie\|_COOKIE\|wp_set_auth_cookie" includes/ assets/
+
+# Verify: no external HTTP calls from the tracker
+grep -rn "wp_remote_get\|wp_remote_post\|file_get_contents" includes/class-tracker.php</code></pre>
+    <p>All three commands should return zero matches.</p>
+
+    <h2>Data deletion</h2>
+    <p>To delete all collected analytics data:</p>
+    <ul>
+      <li><strong>Selective pruning:</strong> Use <code>wp rsa prune --days=0</code> to delete all rows immediately while keeping the plugin active.</li>
+      <li><strong>Full removal:</strong> Enable <strong>Delete all data on uninstall</strong> in Data Settings and then deactivate and delete the plugin. All four database tables and all <code>rsa_*</code> options will be removed.</li>
+    </ul>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand"><strong>Rich Statistics</strong><span>Privacy-first analytics for WordPress</span></div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

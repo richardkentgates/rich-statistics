@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rich Stats">
+<meta name="description" content="Privacy-first analytics for your WordPress site.">
+
+<title>Rich Statistics</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="rsa-login" class="rsa-screen rsa-login-screen">
+	<div class="rsa-login-card">
+		<div class="rsa-login-logo">📊</div>
+		<h1>Rich Statistics</h1>
+		<p>Connect to your WordPress site</p>
+
+		<form id="rsa-login-form">
+			<div class="rsa-field">
+				<label for="rsa-site-url">Site URL</label>
+				<input type="url" id="rsa-site-url" name="site_url"
+				       placeholder="https://yoursite.com"
+				       autocomplete="url"
+				       required>
+			</div>
+			<div class="rsa-field">
+				<label for="rsa-username">WordPress Username</label>
+				<input type="text" id="rsa-username" name="username"
+				       placeholder="admin"
+				       autocomplete="username"
+				       required>
+			</div>
+			<div class="rsa-field">
+				<label for="rsa-app-pass">Application Password</label>
+				<input type="password" id="rsa-app-pass" name="app_password"
+				       placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+				       autocomplete="current-password"
+				       required>
+				<span class="rsa-field-hint">
+					Generate one in WordPress → Users → Profile → Application Passwords
+				</span>
+			</div>
+			<button type="submit" class="rsa-btn rsa-btn-primary" id="rsa-connect-btn">
+				Connect
+			</button>
+			<div id="rsa-login-error" class="rsa-alert rsa-alert-error" hidden></div>
+		</form>
+	</div>
+</div>
+
+<!-- Main app shell (hidden until logged in) -->
+<div id="rsa-app" class="rsa-screen" hidden>
+
+	<!-- Sidebar nav -->
+	<nav class="rsa-nav" id="rsa-nav">
+		<div class="rsa-nav-brand">
+			<span>📊</span> Rich Stats
+		</div>
+		<ul class="rsa-nav-list">
+			<li><a href="#" data-view="overview"  class="rsa-nav-link rsa-active">Overview</a></li>
+			<li><a href="#" data-view="pages"     class="rsa-nav-link">Pages</a></li>
+			<li><a href="#" data-view="audience"  class="rsa-nav-link">Audience</a></li>
+			<li><a href="#" data-view="referrers" class="rsa-nav-link">Referrers</a></li>
+			<li><a href="#" data-view="behavior"  class="rsa-nav-link">Behavior</a></li>
+			<li><a href="#" data-view="clicks"    class="rsa-nav-link">Clicks</a></li>
+		</ul>
+		<div class="rsa-nav-footer">
+			<button class="rsa-btn-ghost rsa-signout-btn" id="rsa-signout">Sign out</button>
+		</div>
+	</nav>
+
+	<!-- Content area -->
+	<main class="rsa-main" id="rsa-main">
+
+		<!-- Top bar -->
+		<header class="rsa-topbar">
+			<button class="rsa-menu-toggle" id="rsa-menu-toggle" aria-label="Menu">☰</button>
+			<span class="rsa-topbar-title" id="rsa-view-title">Overview</span>
+			<select id="rsa-period-select" class="rsa-period-select">
+				<option value="7d">Last 7 days</option>
+				<option value="30d" selected>Last 30 days</option>
+				<option value="90d">Last 90 days</option>
+				<option value="thismonth">This month</option>
+				<option value="lastmonth">Last month</option>
+			</select>
+		</header>
+
+		<!-- Loading / error states -->
+		<div id="rsa-loading" class="rsa-loading-overlay" hidden>
+			<div class="rsa-spinner"></div>
+		</div>
+
+		<!-- View containers -->
+		<div id="rsa-view-overview"  class="rsa-view rsa-active"></div>
+		<div id="rsa-view-pages"     class="rsa-view" hidden></div>
+		<div id="rsa-view-audience"  class="rsa-view" hidden></div>
+		<div id="rsa-view-referrers" class="rsa-view" hidden></div>
+		<div id="rsa-view-behavior"  class="rsa-view" hidden></div>
+		<div id="rsa-view-clicks"    class="rsa-view" hidden></div>
+	</main>
+</div>
+
+<!-- Chart.js — served from plugin directory (same file as admin) -->
+<script src="../vendor/chart.min.js"></script>
+<script src="app.js"></script>
+<script>
+	// Register service worker for offline shell
+	if ( 'serviceWorker' in navigator ) {
+		navigator.serviceWorker.register( 'sw.js' ).catch( function () {} );
+	}
+</script>
+</body>
+</html>

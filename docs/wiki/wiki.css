@@ -1,0 +1,117 @@
+/* wiki-specific layout additions */
+
+.wiki-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 3rem;
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+  align-items: start;
+}
+
+.wiki-sidebar {
+  position: sticky;
+  top: 5rem;
+}
+.wiki-sidebar__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-500);
+  margin: 1.25rem 0 0.5rem;
+}
+.wiki-sidebar__label:first-child { margin-top: 0; }
+.wiki-sidebar ul { list-style: none; }
+.wiki-sidebar li + li { margin-top: 0.1rem; }
+.wiki-sidebar a {
+  display: block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.3rem;
+  font-size: 0.9375rem;
+  color: var(--gray-700);
+}
+.wiki-sidebar a:hover,
+.wiki-sidebar a[aria-current="page"] {
+  background: var(--blue-50);
+  color: var(--blue-600);
+  text-decoration: none;
+}
+
+/* ---- doc content typography ---- */
+.wiki-content h1 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.75rem;
+}
+.wiki-content h2 {
+  font-size: 1.3125rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 2.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+.wiki-content h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 1.5rem 0 0.5rem;
+}
+.wiki-content p { margin-bottom: 1rem; line-height: 1.7; }
+.wiki-content ul, .wiki-content ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+.wiki-content li { margin-bottom: 0.35rem; line-height: 1.65; }
+.wiki-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9375rem;
+}
+.wiki-content th, .wiki-content td {
+  text-align: left;
+  padding: 0.6rem 0.875rem;
+  border: 1px solid var(--gray-200);
+}
+.wiki-content th { background: var(--gray-50); font-weight: 600; color: var(--gray-900); }
+.wiki-content tr:hover td { background: var(--gray-50); }
+
+.wiki-content .callout {
+  border-left: 4px solid var(--blue-600);
+  background: var(--blue-50);
+  padding: 0.875rem 1.125rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 1.25rem 0;
+  font-size: 0.9375rem;
+}
+.wiki-content .callout--warn { border-color: #f59e0b; background: #fffbeb; }
+.wiki-content .callout--good { border-color: #16a34a; background: #f0fdf4; }
+
+/* ---- doc-cards grid (wiki index) ---- */
+.doc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.doc-card:hover { border-color: var(--blue-600); box-shadow: var(--shadow-md); text-decoration: none; }
+.doc-card__icon { font-size: 1.5rem; }
+.doc-card strong { font-size: 1rem; color: var(--gray-900); }
+.doc-card span   { font-size: 0.875rem; color: var(--gray-500); line-height: 1.5; }
+
+@media (max-width: 720px) {
+  .wiki-layout { grid-template-columns: 1fr; }
+  .wiki-sidebar { position: static; margin-bottom: 1rem; }
+}

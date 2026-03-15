@@ -1,0 +1,382 @@
+/* ==========================================================================
+   Rich Statistics — Admin Styles
+   ========================================================================== */
+
+/* Variables */
+:root {
+	--rsa-bg         : #f8fafc;
+	--rsa-surface    : #ffffff;
+	--rsa-border     : #e2e8f0;
+	--rsa-text       : #1e293b;
+	--rsa-muted      : #64748b;
+	--rsa-accent     : #6366f1;
+	--rsa-accent-lt  : rgba(99, 102, 241, 0.08);
+	--rsa-success    : #10b981;
+	--rsa-danger     : #f43f5e;
+	--rsa-warning    : #f59e0b;
+	--rsa-radius     : 10px;
+	--rsa-shadow     : 0 1px 4px rgba(0, 0, 0, 0.07);
+	--rsa-shadow-md  : 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+/* Wrapper */
+.rsa-wrap {
+	margin-right: 20px;
+	font-size: 14px;
+	color: var(--rsa-text);
+}
+
+/* Header bar */
+.rsa-header {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 20px 0 24px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--rsa-border);
+}
+
+.rsa-title {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--rsa-text);
+}
+
+.rsa-logo {
+	margin-right: 6px;
+}
+
+/* Period selector */
+.rsa-period-selector {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-left: auto;
+}
+
+.rsa-period-btn {
+	display: inline-block;
+	padding: 5px 12px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	text-decoration: none;
+	color: var(--rsa-muted);
+	background: transparent;
+	border: 1px solid var(--rsa-border);
+	transition: all 0.15s ease;
+}
+
+.rsa-period-btn:hover,
+.rsa-period-btn:focus {
+	color: var(--rsa-accent);
+	border-color: var(--rsa-accent);
+	background: var(--rsa-accent-lt);
+}
+
+.rsa-period-active {
+	color: var(--rsa-accent) !important;
+	background: var(--rsa-accent-lt) !important;
+	border-color: var(--rsa-accent) !important;
+}
+
+/* KPI Grid */
+.rsa-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.rsa-kpi-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 20px 24px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-kpi-label {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--rsa-muted);
+	margin-bottom: 8px;
+}
+
+.rsa-kpi-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	line-height: 1;
+}
+
+/* Card */
+.rsa-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	box-shadow: var(--rsa-shadow);
+	margin-bottom: 24px;
+	overflow: hidden;
+}
+
+.rsa-card-full {
+	width: 100%;
+}
+
+.rsa-card-wide {
+	grid-column: 1 / -1;
+}
+
+.rsa-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--rsa-border);
+	background: var(--rsa-bg);
+}
+
+.rsa-card-header h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--rsa-text);
+}
+
+.rsa-card-footer {
+	padding: 16px 20px;
+	border-top: 1px solid var(--rsa-border);
+	background: var(--rsa-bg);
+}
+
+/* Two-column layout */
+.rsa-two-col {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+/* Audience grid */
+.rsa-audience-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 24px;
+	margin-bottom: 24px;
+}
+
+/* Chart wrappers */
+.rsa-chart-wrap {
+	padding: 20px;
+	position: relative;
+}
+
+.rsa-chart-wrap--doughnut {
+	display: flex;
+	justify-content: center;
+	max-height: 280px;
+}
+
+.rsa-chart-wrap--bar canvas {
+	max-height: 300px;
+}
+
+/* Tables */
+.rsa-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.rsa-table--full {
+	width: 100%;
+}
+
+.rsa-table thead th {
+	padding: 10px 16px;
+	text-align: left;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--rsa-muted);
+	background: var(--rsa-bg);
+	border-bottom: 1px solid var(--rsa-border);
+}
+
+.rsa-table tbody tr {
+	border-bottom: 1px solid var(--rsa-border);
+	transition: background 0.1s;
+}
+
+.rsa-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.rsa-table tbody tr:hover {
+	background: var(--rsa-bg);
+}
+
+.rsa-table tbody td {
+	padding: 10px 16px;
+	color: var(--rsa-text);
+}
+
+.rsa-td-rank {
+	color: var(--rsa-muted);
+	font-size: 12px;
+	width: 32px;
+}
+
+.rsa-td-page,
+.rsa-td-classes {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+	max-width: 360px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Bar cell (inline bar in table column) */
+.rsa-bar-cell {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.rsa-bar-fill {
+	height: 6px;
+	background: var(--rsa-accent);
+	border-radius: 3px;
+	min-width: 2px;
+}
+
+/* Empty state */
+.rsa-empty {
+	padding: 32px 20px;
+	color: var(--rsa-muted);
+	text-align: center;
+	font-style: italic;
+}
+
+/* "See all" link */
+.rsa-see-all {
+	font-size: 12px;
+	color: var(--rsa-accent);
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.rsa-see-all:hover {
+	text-decoration: underline;
+}
+
+/* Inline form (search/filter row inside card headers) */
+.rsa-inline-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* Settings form */
+.rsa-settings-form .form-table th {
+	padding-top: 14px;
+	width: 220px;
+}
+
+.rsa-warning {
+	color: var(--rsa-danger) !important;
+}
+
+/* Premium badge */
+.rsa-premium-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	background: linear-gradient(135deg, #6366f1, #ec4899);
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 20px;
+	letter-spacing: 0.04em;
+}
+
+/* Referrer domain pill */
+.rsa-referrer-domain {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+}
+
+/* Heatmap viewer */
+.rsa-heatmap-controls form {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding: 16px 20px;
+}
+
+.rsa-heatmap-info {
+	padding: 10px 20px;
+	color: var(--rsa-muted);
+	font-size: 13px;
+	border-bottom: 1px solid var(--rsa-border);
+}
+
+.rsa-heatmap-container {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+}
+
+.rsa-heatmap-iframe {
+	display: block;
+	width: 100%;
+	height: 80vh;
+	border: none;
+	background: #fff;
+	pointer-events: none;
+}
+
+.rsa-heatmap-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* Webapp profile button row */
+.rsa-webapp-row th,
+.rsa-webapp-row td {
+	padding-top: 10px;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+	.rsa-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.rsa-two-col,
+	.rsa-audience-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.rsa-period-selector {
+		margin-left: 0;
+		margin-top: 8px;
+		width: 100%;
+	}
+
+	.rsa-chart-wrap--doughnut {
+		max-height: none;
+	}
+}

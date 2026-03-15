@@ -1,0 +1,104 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.1) — leave blank to use tag'
+        required: false
+
+jobs:
+  build:
+    name: Build plugin ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Download Freemius SDK
+        run: |
+          FREEMIUS_VERSION="2.7.4"
+          curl -fsSL \
+            "https://github.com/Freemius/wordpress-sdk/archive/refs/tags/${FREEMIUS_VERSION}.zip" \
+            -o /tmp/freemius.zip
+          unzip -q /tmp/freemius.zip -d /tmp/
+          mv "/tmp/wordpress-sdk-${FREEMIUS_VERSION}" freemius
+          echo "Freemius SDK ${FREEMIUS_VERSION} downloaded."
+
+      - name: Verify PHP syntax
+        run: |
+          find . -name "*.php" \
+            -not -path "./vendor/*" \
+            -not -path "./freemius/languages/*" \
+            | xargs -I{} php -l "{}"
+
+      - name: Create plugin ZIP
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="rich-statistics-${VERSION}.zip"
+          mkdir -p build
+
+          zip -r "build/${ZIP_NAME}" . \
+            --exclude="*.git*" \
+            --exclude="*.github*" \
+            --exclude="*/tests/*" \
+            --exclude="*/bin/*" \
+            --exclude="*/build/*" \
+            --exclude="*/docs/*" \
+            --exclude="composer.json" \
+            --exclude="composer.lock" \
+            --exclude="phpunit.xml.dist" \
+            --exclude=".gitignore" \
+            --exclude=".gitattributes" \
+            --exclude="*.sh" \
+            --exclude="CONTRIBUTING.md" \
+            --exclude="SECURITY.md" \
+            --exclude="README.md"
+
+          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "ZIP created: build/${ZIP_NAME}"
+          unzip -l "build/${ZIP_NAME}" | tail -20
+        id: zip
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rich-statistics-${{ steps.version.outputs.version }}
+          path: build/rich-statistics-${{ steps.version.outputs.version }}.zip
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/rich-statistics-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true
+          body: |
+            ## Rich Statistics ${{ steps.version.outputs.version }}
+
+            See [CHANGELOG.md](https://github.com/richardkentgates/rich-statistics/blob/main/CHANGELOG.md) for details.
+
+            ### Upload to Freemius
+            Download the ZIP above and upload it at:
+            https://dashboard.freemius.com → Your Plugin → Versions → Add New Version

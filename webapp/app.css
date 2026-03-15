@@ -1,0 +1,514 @@
+/**
+ * Rich Statistics PWA — app.css
+ * Mobile-first, matches admin palette (--rsa-accent: #6366f1)
+ */
+
+/* =========================================================================
+   Custom properties
+   ========================================================================= */
+:root {
+	--rsa-accent      : #6366f1;
+	--rsa-accent-dark : #4f46e5;
+	--rsa-bg          : #f8fafc;
+	--rsa-surface     : #ffffff;
+	--rsa-border      : #e2e8f0;
+	--rsa-text        : #1e293b;
+	--rsa-muted       : #64748b;
+	--rsa-danger      : #ef4444;
+	--rsa-success     : #10b981;
+	--rsa-nav-width   : 220px;
+	--rsa-topbar-h    : 52px;
+	--rsa-radius      : 8px;
+	--rsa-shadow      : 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+}
+
+/* =========================================================================
+   Reset / base
+   ========================================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+	height: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-size: 14px;
+	color: var(--rsa-text);
+	background: var(--rsa-bg);
+}
+
+/* =========================================================================
+   Screen visibility (login vs app)
+   ========================================================================= */
+.rsa-screen { min-height: 100vh; }
+[hidden] { display: none !important; }
+
+/* =========================================================================
+   Login screen
+   ========================================================================= */
+.rsa-login-screen {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	background: linear-gradient(135deg, var(--rsa-accent) 0%, var(--rsa-accent-dark) 100%);
+}
+
+.rsa-login-card {
+	width: 100%;
+	max-width: 420px;
+	background: var(--rsa-surface);
+	border-radius: 12px;
+	padding: 36px 32px;
+	box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.rsa-login-logo {
+	font-size: 40px;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.rsa-login-card h1 {
+	text-align: center;
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin-bottom: 4px;
+}
+
+.rsa-login-card > p {
+	text-align: center;
+	color: var(--rsa-muted);
+	margin-bottom: 28px;
+	font-size: 13px;
+}
+
+/* =========================================================================
+   Form elements
+   ========================================================================= */
+.rsa-field {
+	margin-bottom: 18px;
+	display: flex;
+	flex-direction: column;
+}
+
+.rsa-field label {
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+}
+
+.rsa-field input {
+	padding: 10px 12px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 14px;
+	color: var(--rsa-text);
+	background: var(--rsa-surface);
+	transition: border-color .15s, box-shadow .15s;
+	outline: none;
+}
+
+.rsa-field input:focus {
+	border-color: var(--rsa-accent);
+	box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+}
+
+.rsa-field-hint {
+	font-size: 11px;
+	color: var(--rsa-muted);
+	margin-top: 5px;
+}
+
+/* =========================================================================
+   Buttons
+   ========================================================================= */
+.rsa-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 18px;
+	border-radius: var(--rsa-radius);
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	transition: background .15s, opacity .15s;
+}
+
+.rsa-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.rsa-btn-primary {
+	background: var(--rsa-accent);
+	color: #fff;
+	width: 100%;
+	margin-top: 6px;
+}
+
+.rsa-btn-primary:hover:not(:disabled) { background: var(--rsa-accent-dark); }
+
+.rsa-btn-ghost {
+	background: transparent;
+	color: inherit;
+	border: none;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 8px 10px;
+}
+
+/* =========================================================================
+   Alerts
+   ========================================================================= */
+.rsa-alert {
+	padding: 10px 14px;
+	border-radius: var(--rsa-radius);
+	font-size: 13px;
+	margin-top: 12px;
+}
+
+.rsa-alert-error {
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	color: var(--rsa-danger);
+}
+
+/* =========================================================================
+   App layout
+   ========================================================================= */
+#rsa-app {
+	display: flex;
+	min-height: 100vh;
+}
+
+/* Sidebar nav */
+.rsa-nav {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: var(--rsa-nav-width);
+	background: var(--rsa-text);
+	color: #f1f5f9;
+	display: flex;
+	flex-direction: column;
+	z-index: 100;
+	transform: translateX( -100% );
+	transition: transform .22s ease;
+}
+
+.rsa-nav-open { transform: translateX(0) !important; }
+
+.rsa-nav-brand {
+	padding: 20px 18px 14px;
+	font-size: 16px;
+	font-weight: 700;
+	color: #fff;
+	border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.rsa-nav-list {
+	list-style: none;
+	padding: 10px 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.rsa-nav-link {
+	display: block;
+	padding: 10px 20px;
+	color: #94a3b8;
+	text-decoration: none;
+	font-size: 14px;
+	transition: background .12s, color .12s;
+	border-radius: 0;
+}
+
+.rsa-nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
+.rsa-nav-link.rsa-active { color: #fff; background: var(--rsa-accent); }
+
+.rsa-nav-footer {
+	padding: 12px 14px;
+	border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.rsa-signout-btn { color: #94a3b8; }
+.rsa-signout-btn:hover { color: #fff; }
+
+/* Main content area */
+.rsa-main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	margin-left: 0;
+	transition: margin-left .22s ease;
+}
+
+/* Overlay to close nav on mobile */
+.rsa-nav-open ~ .rsa-main::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.4);
+	z-index: 99;
+}
+
+/* Top bar */
+.rsa-topbar {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	padding: 0 16px;
+	height: var(--rsa-topbar-h);
+	background: var(--rsa-surface);
+	border-bottom: 1px solid var(--rsa-border);
+	box-shadow: var(--rsa-shadow);
+	gap: 12px;
+}
+
+.rsa-menu-toggle {
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	padding: 4px;
+	line-height: 1;
+	color: var(--rsa-text);
+}
+
+.rsa-topbar-title {
+	flex: 1;
+	font-weight: 600;
+	font-size: 15px;
+}
+
+.rsa-period-select {
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 5px 10px;
+	font-size: 12px;
+	background: var(--rsa-surface);
+	color: var(--rsa-text);
+	cursor: pointer;
+	outline: none;
+}
+
+.rsa-period-select:focus { border-color: var(--rsa-accent); }
+
+/* =========================================================================
+   Loading overlay
+   ========================================================================= */
+.rsa-loading-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(248,250,252,.75);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 200;
+}
+
+.rsa-spinner {
+	width: 36px;
+	height: 36px;
+	border: 3px solid var(--rsa-border);
+	border-top-color: var(--rsa-accent);
+	border-radius: 50%;
+	animation: rsaSpin .7s linear infinite;
+}
+
+@keyframes rsaSpin { to { transform: rotate(360deg); } }
+
+/* =========================================================================
+   Views
+   ========================================================================= */
+.rsa-view { padding: 20px 16px; }
+
+/* =========================================================================
+   KPI grid
+   ========================================================================= */
+.rsa-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.rsa-kpi-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 16px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-kpi-value {
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--rsa-accent);
+	line-height: 1.1;
+}
+
+.rsa-kpi-label {
+	font-size: 11px;
+	color: var(--rsa-muted);
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	margin-top: 4px;
+}
+
+/* =========================================================================
+   Charts
+   ========================================================================= */
+.rsa-chart-wrap {
+	position: relative;
+	height: 240px;
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 12px;
+	margin-bottom: 20px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+.rsa-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.rsa-chart-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 14px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-chart-card h3 {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 10px;
+}
+
+.rsa-chart-card canvas { height: 160px !important; }
+
+.rsa-table-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 14px;
+	margin-bottom: 20px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-table-card h3 {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 10px;
+}
+
+/* =========================================================================
+   Tables
+   ========================================================================= */
+.rsa-table-wrap {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	overflow: hidden;
+	box-shadow: var(--rsa-shadow);
+	margin-bottom: 20px;
+	overflow-x: auto;
+}
+
+.rsa-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.rsa-table th {
+	background: #f1f5f9;
+	padding: 10px 12px;
+	text-align: left;
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--rsa-muted);
+	white-space: nowrap;
+}
+
+.rsa-table td {
+	padding: 10px 12px;
+	border-top: 1px solid var(--rsa-border);
+	vertical-align: middle;
+}
+
+.rsa-table tbody tr:hover { background: #f8fafc; }
+
+.rsa-td-path {
+	max-width: 180px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: monospace;
+	font-size: 12px;
+}
+
+/* =========================================================================
+   Premium notice
+   ========================================================================= */
+.rsa-premium-notice {
+	background: #fffbeb;
+	border: 1px solid #fcd34d;
+	border-radius: var(--rsa-radius);
+	padding: 20px;
+	text-align: center;
+	color: #92400e;
+}
+
+/* =========================================================================
+   Responsive — desktop (sidebar always visible)
+   ========================================================================= */
+@media ( min-width: 768px ) {
+	.rsa-nav {
+		transform: translateX(0);
+		position: sticky;
+		top: 0;
+		align-self: flex-start;
+		height: 100vh;
+	}
+
+	.rsa-main {
+		margin-left: 0; /* flex takes care of it */
+	}
+
+	.rsa-menu-toggle { display: none; }
+
+	/* Restore pointer events — no overlay needed on desktop */
+	.rsa-nav-open ~ .rsa-main::before { display: none; }
+
+	.rsa-view { padding: 24px 28px; }
+
+	.rsa-chart-wrap { height: 280px; }
+
+	.rsa-grid-2 { grid-template-columns: 1fr 1fr; }
+
+	.rsa-chart-card canvas { height: 200px !important; }
+
+	.rsa-td-path { max-width: 320px; }
+}

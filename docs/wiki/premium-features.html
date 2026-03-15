@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Features — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul><li><a href="installation.html">Installation</a></li><li><a href="configuration.html">Configuration</a></li></ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul>
+      <li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li>
+      <li><a href="premium-features.html" aria-current="page">Premium Features</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Premium Features</h1>
+    <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
+
+    <h2>Click Heatmaps</h2>
+    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The heatmap overlay is rendered on top of a live screenshot of your page using the CSS <code>pointer-events: none</code> overlay technique — no external screenshot service required.</p>
+    <h3>What is stored</h3>
+    <ul>
+      <li>Page path</li>
+      <li>Click x position as a percentage of page width</li>
+      <li>Click y position as a percentage of page height</li>
+      <li>Element tag and any stable semantic ID (e.g. <code>button#add-to-cart</code>)</li>
+      <li>Timestamp (date only — no time-of-day to avoid session reconstruction)</li>
+    </ul>
+    <h3>What is NOT stored</h3>
+    <ul>
+      <li>Session ID — clicks are not linkable to a specific visit</li>
+      <li>User ID — clicks are not linkable to a logged-in user</li>
+      <li>Absolute pixel coordinates — only percentage positions</li>
+    </ul>
+
+    <h2>Scroll Heatmaps</h2>
+    <p>The maximum scroll depth for each page session is recorded as a percentage. The scroll heatmap visualises the distribution of how far visitors scroll on each page.</p>
+    <ul>
+      <li>Value stored: <code>(page, scroll_pct, date)</code></li>
+      <li>No session ID stored — cannot reconstruct an individual visitor's scroll behavior</li>
+    </ul>
+
+    <h2>Email Reports</h2>
+    <p>Config lives in <strong>Analytics → Data Settings → Email Reports</strong>.</p>
+    <table>
+      <thead><tr><th>Setting</th><th>Options</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td>Enabled</td><td>On / Off</td><td>Off</td></tr>
+        <tr><td>Frequency</td><td>Weekly (Mondays) / Monthly (1st)</td><td>Weekly</td></tr>
+        <tr><td>Recipient</td><td>Any email address</td><td>Admin email</td></tr>
+      </tbody>
+    </table>
+    <p>Reports include: period-over-period comparison, top 10 pages, top 5 referrers, and summary stats (pageviews, sessions, bounce rate, avg time on page). Reports are sent via <code>wp_mail()</code> — no third-party email service.</p>
+
+    <h2>PWA Dashboard</h2>
+    <p>The analytics dashboard can be installed as a Progressive Web App on any device. This makes it available in your device's app launcher for quick access to live stats without opening a browser and navigating to WordPress admin.</p>
+    <ul>
+      <li>Works on Chrome (desktop + Android) and Safari (iOS 16.4+)</li>
+      <li>Updates in real time via the REST API</li>
+      <li>Works offline: shows the most recently loaded data</li>
+      <li>Install prompt appears at the bottom of the Analytics dashboard when the browser supports it</li>
+    </ul>
+
+    <h2>Activating your license</h2>
+    <ol>
+      <li>Purchase at <a href="../#pricing">statistics.richardkentgates.com</a>.</li>
+      <li>You will receive a license key by email from Freemius.</li>
+      <li>In WordPress admin, go to <strong>Analytics → Account</strong> and enter your license key.</li>
+      <li>Premium features activate immediately — no plugin reinstall required.</li>
+    </ol>
+
+    <h2>Moving your license</h2>
+    <p>Each license covers one production site. You can deactivate a license from <strong>Analytics → Account → Deactivate License</strong> and then activate it on a different site. Deactivation is instant.</p>
+
+    <div class="callout">
+      All premium features maintain the same privacy guarantees as the free plugin. No IP addresses, no cookies, no additional data shared with third parties.
+    </div>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand"><strong>Rich Statistics</strong><span>Privacy-first analytics for WordPress</span></div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

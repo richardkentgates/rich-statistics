@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul>
+      <li><a href="installation.html" aria-current="page">Installation</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul>
+      <li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li>
+      <li><a href="premium-features.html">Premium Features</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Installation</h1>
+    <p>Rich Statistics requires WordPress 6.0 or higher and PHP 8.0 or higher. It works on single-site and multisite installations.</p>
+
+    <h2>Option 1 — WordPress Plugin Directory</h2>
+    <ol>
+      <li>In your WordPress admin, go to <strong>Plugins → Add New</strong>.</li>
+      <li>Search for <strong>Rich Statistics</strong>.</li>
+      <li>Click <strong>Install Now</strong>, then <strong>Activate</strong>.</li>
+    </ol>
+
+    <h2>Option 2 — WP-CLI</h2>
+    <pre><code>wp plugin install rich-statistics --activate</code></pre>
+    <p>For multisite, network-activate:</p>
+    <pre><code>wp plugin install rich-statistics --activate-network</code></pre>
+
+    <h2>Option 3 — Manual upload</h2>
+    <ol>
+      <li>Download the latest <code>.zip</code> from the <a href="https://github.com/richardkentgates/rich-statistics/releases" target="_blank" rel="noopener">GitHub Releases</a> page.</li>
+      <li>In WordPress admin, go to <strong>Plugins → Add New → Upload Plugin</strong>.</li>
+      <li>Upload the ZIP and activate.</li>
+    </ol>
+
+    <h2>System Requirements</h2>
+    <table>
+      <thead><tr><th>Requirement</th><th>Minimum</th><th>Recommended</th></tr></thead>
+      <tbody>
+        <tr><td>WordPress</td><td>6.0</td><td>Latest</td></tr>
+        <tr><td>PHP</td><td>8.0</td><td>8.2+</td></tr>
+        <tr><td>MySQL / MariaDB</td><td>MySQL 5.7 / MariaDB 10.3</td><td>MySQL 8.0+</td></tr>
+        <tr><td>Browser (admin)</td><td>Any modern browser</td><td>Chrome/Firefox/Edge latest</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Database tables</h2>
+    <p>On activation, the plugin creates four tables in your WordPress database (using <code>$wpdb->prefix</code>, e.g. <code>wp_</code>):</p>
+    <table>
+      <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>rsa_pageviews</code></td><td>One row per accepted pageview event</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for heatmaps (Premium)</td></tr>
+        <tr><td><code>rsa_scrolls</code></td><td>Scroll depth data for heatmaps (Premium)</td></tr>
+        <tr><td><code>rsa_audience</code></td><td>Aggregated browser / OS / screen counters</td></tr>
+      </tbody>
+    </table>
+    <p>All tables are dropped cleanly on plugin uninstall if the <strong>Delete all data on uninstall</strong> option is checked in Data Settings.</p>
+
+    <h2>Multisite notes</h2>
+    <p>When network-activated, a network admin menu item appears under <strong>Network Admin → Analytics</strong>. A network administrator can disable tracking on any sub-site from that screen. Each sub-site's data is stored with its blog ID so network-wide and per-site reports are both available.</p>
+
+    <div class="callout callout--good">
+      <strong>No external requests on activation.</strong> The plugin makes no outbound HTTP calls during install. All data stays on your server.
+    </div>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand"><strong>Rich Statistics</strong><span>Privacy-first analytics for WordPress</span></div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
