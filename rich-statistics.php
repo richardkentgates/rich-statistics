@@ -34,23 +34,19 @@ define( 'RSA_MIN_PHP',     '8.0' );
 // Production: freemius/start.php is downloaded by build.sh and included
 //             in the distributable ZIP uploaded to Freemius.
 //
-// Development / CI: when freemius/ is absent a lightweight stub is used
-//             so that the free tier loads correctly without the SDK.
-//
 // To configure for your Freemius account, replace the two placeholder
 // values below with your product ID and public key from:
 // https://dashboard.freemius.com → My Plugins → Your Plugin → Integration
 // --------------------------------------------------------------------
-if ( ! function_exists( 'rsa_fs' ) ) {
-	function rsa_fs(): object {
-		global $rsa_fs;
-		if ( ! isset( $rsa_fs ) ) {
+if ( function_exists( 'rsa_fs' ) ) {
+	rsa_fs()->set_basename( false, __FILE__ );
+} else {
+	require_once RSA_DIR . 'vendor/freemius/start.php';
 
-			$sdk = RSA_DIR . 'freemius/start.php';
-
-			if ( file_exists( $sdk ) ) {
-				// Production path — real Freemius SDK
-				require_once $sdk;
+	if ( ! function_exists( 'rsa_fs' ) ) {
+		function rsa_fs(): object {
+			global $rsa_fs;
+			if ( ! isset( $rsa_fs ) ) {
 				$rsa_fs = fs_dynamic_init( [
 					// -------------------------------------------------------
 					// ⚠️  FILL IN BEFORE UPLOADING TO FREEMIUS
@@ -75,13 +71,9 @@ if ( ! function_exists( 'rsa_fs' ) ) {
 					'is_org_compliant'            => true,
 					'navigation'                  => 'menu',
 				] );
-			} else {
-				// Development / CI stub — premium gates return false
-				require_once RSA_DIR . 'includes/class-freemius-stub.php';
-				$rsa_fs = RSA_Freemius_Stub::instance();
 			}
+			return $rsa_fs;
 		}
-		return $rsa_fs;
 	}
 	rsa_fs();
 	do_action( 'rsa_fs_loaded' );

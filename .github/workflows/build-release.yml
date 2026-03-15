@@ -36,21 +36,10 @@ jobs:
           php-version: '8.2'
           coverage: none
 
-      - name: Download Freemius SDK
-        run: |
-          FREEMIUS_VERSION="2.7.4"
-          curl -fsSL \
-            "https://github.com/Freemius/wordpress-sdk/archive/refs/tags/${FREEMIUS_VERSION}.zip" \
-            -o /tmp/freemius.zip
-          unzip -q /tmp/freemius.zip -d /tmp/
-          mv "/tmp/wordpress-sdk-${FREEMIUS_VERSION}" freemius
-          echo "Freemius SDK ${FREEMIUS_VERSION} downloaded."
-
       - name: Verify PHP syntax
         run: |
           find . -name "*.php" \
-            -not -path "./vendor/*" \
-            -not -path "./freemius/languages/*" \
+            -not -path "./vendor/freemius/languages/*" \
             | xargs -I{} php -l "{}"
 
       - name: Create plugin ZIP

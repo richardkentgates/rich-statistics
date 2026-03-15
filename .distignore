@@ -1,0 +1,21 @@
+# .distignore — files/dirs excluded when building the distributable ZIP
+# Used by: wp dist-zip  and  10up/action-wordpress-plugin-deploy
+
+/.git
+/.github
+/bin
+/build
+/docs
+/tests
+
+.distignore
+.gitattributes
+.gitignore
+composer.json
+composer.lock
+phpunit.xml
+phpunit.xml.dist
+CONTRIBUTING.md
+SECURITY.md
+README.md
+*.sh

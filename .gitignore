@@ -7,17 +7,11 @@
 *.zip
 
 # -------------------------------------------------------------------------
-# Freemius SDK — downloaded at build time by build.sh
-# NOT committed to version control
-# Run: bash build.sh   to download it before building the plugin ZIP
-# -------------------------------------------------------------------------
-/freemius/
-
-# -------------------------------------------------------------------------
 # PHP dev dependencies (Composer)
 # -------------------------------------------------------------------------
-/vendor/
+/vendor/*
 !/vendor/chart.min.js
+!/vendor/freemius/
 
 # -------------------------------------------------------------------------
 # PHP test artefacts

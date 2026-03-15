@@ -29,7 +29,7 @@ error()   { echo "${BOLD}${RED}[error]${RESET} $*" >&2; exit 1; }
 # -----------------------------------------------------------------------
 # Requirements check
 # -----------------------------------------------------------------------
-for cmd in php zip curl unzip; do
+for cmd in php zip; do
     command -v "$cmd" &>/dev/null || error "Required command not found: $cmd"
 done
 
@@ -55,24 +55,6 @@ BUILD_DIR="build"
 STAGE_DIR="${BUILD_DIR}/stage/rich-statistics"
 
 # -----------------------------------------------------------------------
-# Freemius SDK
-# -----------------------------------------------------------------------
-FREEMIUS_VERSION="2.7.4"
-
-if [ ! -f "freemius/start.php" ]; then
-    info "Downloading Freemius SDK ${FREEMIUS_VERSION}..."
-    curl -fsSL \
-        "https://github.com/Freemius/wordpress-sdk/archive/refs/tags/${FREEMIUS_VERSION}.zip" \
-        -o /tmp/freemius-sdk.zip
-    unzip -q /tmp/freemius-sdk.zip -d /tmp/
-    mv "/tmp/wordpress-sdk-${FREEMIUS_VERSION}" freemius
-    rm /tmp/freemius-sdk.zip
-    info "Freemius SDK ready."
-else
-    info "Freemius SDK already present, skipping download."
-fi
-
-# -----------------------------------------------------------------------
 # Chart.js vendor
 # -----------------------------------------------------------------------
 if [ ! -f "vendor/chart.min.js" ]; then
@@ -92,7 +74,7 @@ fi
 info "Checking PHP syntax..."
 find . -name "*.php" \
     -not -path "./build/*" \
-    -not -path "./freemius/languages/*" \
+    -not -path "./vendor/freemius/languages/*" \
     | while read -r file; do
         php -l "$file" > /dev/null || error "Syntax error in $file"
     done
@@ -109,7 +91,6 @@ mkdir -p "$STAGE_DIR"
 INCLUDE_DIRS=(
     assets
     cli
-    freemius
     includes
     templates
     vendor
@@ -158,7 +139,7 @@ find "$STAGE_DIR" \( \
 \) -delete
 
 # Remove Freemius dev tools from the bundled SDK
-rm -rf "$STAGE_DIR/freemius/languages"  || true
+rm -rf "$STAGE_DIR/vendor/freemius/languages" || true
 
 # Remove vendor README (not user-facing)
 rm -f "$STAGE_DIR/vendor/README.md"

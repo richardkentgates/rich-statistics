@@ -28,13 +28,21 @@ define( 'RSA_MIN_WP',    '6.0' );
 define( 'RSA_MIN_PHP',   '8.0' );
 
 // -----------------------------------------------------------------------
-// Load the Freemius stub so rsa_fs() is available in tests
+// Stub rsa_fs() for unit tests — tests never need the real Freemius SDK
 // -----------------------------------------------------------------------
-require_once RSA_DIR . 'includes/class-freemius-stub.php';
-
 if ( ! function_exists( 'rsa_fs' ) ) {
-	function rsa_fs(): RSA_Freemius_Stub {
-		return RSA_Freemius_Stub::instance();
+	function rsa_fs(): object {
+		static $stub = null;
+		if ( $stub === null ) {
+			$stub = new class {
+				public function can_use_premium_code(): bool { return false; }
+				public function is_premium(): bool           { return false; }
+				public function is_paying(): bool            { return false; }
+				public function is_trial(): bool             { return false; }
+				public function is_free_plan(): bool         { return true; }
+			};
+		}
+		return $stub;
 	}
 }
 
@@ -53,7 +61,6 @@ if ( is_dir( $wp_tests_dir ) ) {
 	tests_add_filter( 'muplugins_loaded', function () {
 		// Load only the core classes (not rich-statistics.php to avoid Freemius bootstrapping)
 		$classes = [
-			'class-freemius-stub',
 			'class-db',
 			'class-bot-detection',
 			'class-tracker',
