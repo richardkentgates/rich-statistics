@@ -57,11 +57,15 @@
     <pre><code>wp plugin install rich-statistics --activate-network</code></pre>
 
     <h2>Option 3 — Manual upload</h2>
+    <p>If your server cannot reach WordPress.org, you can install manually:</p>
     <ol>
-      <li>Download the latest <code>.zip</code> from the <a href="https://github.com/richardkentgates/rich-statistics/releases" target="_blank" rel="noopener">GitHub Releases</a> page.</li>
+      <li>Download the latest free release ZIP from <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org</a>.</li>
       <li>In WordPress admin, go to <strong>Plugins → Add New → Upload Plugin</strong>.</li>
       <li>Upload the ZIP and activate.</li>
     </ol>
+    <div class="callout callout--warn">
+      The ZIPs published on <a href="https://github.com/richardkentgates/rich-statistics/releases" target="_blank" rel="noopener">GitHub Releases</a> are build artifacts for developers and the files submitted to Freemius and WordPress.org. They are not intended as a separate user download channel.
+    </div>
 
     <h2>System Requirements</h2>
     <table>
@@ -75,14 +79,14 @@
     </table>
 
     <h2>Database tables</h2>
-    <p>On activation, the plugin creates four tables in your WordPress database (using <code>$wpdb->prefix</code>, e.g. <code>wp_</code>):</p>
+    <p>On activation, the plugin creates four tables in your WordPress database (using <code>$wpdb->prefix</code>, e.g. <code>wp_rsa_events</code> on a standard install, or <code>wp_2_rsa_events</code> for subsite 2 on multisite):</p>
     <table>
       <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
       <tbody>
-        <tr><td><code>rsa_pageviews</code></td><td>One row per accepted pageview event</td></tr>
-        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for heatmaps (Premium)</td></tr>
-        <tr><td><code>rsa_scrolls</code></td><td>Scroll depth data for heatmaps (Premium)</td></tr>
-        <tr><td><code>rsa_audience</code></td><td>Aggregated browser / OS / screen counters</td></tr>
+        <tr><td><code>rsa_events</code></td><td>One row per accepted pageview — page path, referrer domain, browser, OS, language, timezone, viewport, time on page</td></tr>
+        <tr><td><code>rsa_sessions</code></td><td>Session-level data — UTM parameters, entry page, session UUID (tab-scoped only)</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for click maps (Premium)</td></tr>
+        <tr><td><code>rsa_heatmap</code></td><td>Scroll depth and hover data for heatmaps (Premium)</td></tr>
       </tbody>
     </table>
     <p>All tables are dropped cleanly on plugin uninstall if the <strong>Delete all data on uninstall</strong> option is checked in Data Settings.</p>
@@ -90,8 +94,21 @@
     <h2>Multisite notes</h2>
     <p>When network-activated, a network admin menu item appears under <strong>Network Admin → Analytics</strong>. A network administrator can disable tracking on any sub-site from that screen. Each sub-site's data is stored with its blog ID so network-wide and per-site reports are both available.</p>
 
-    <div class="callout callout--good">
-      <strong>No external requests on activation.</strong> The plugin makes no outbound HTTP calls during install. All data stays on your server.
+    <h2>Upgrading to Premium</h2>
+    <p>There is no separate premium ZIP to install. The upgrade happens as a standard WordPress plugin update:</p>
+    <ol>
+      <li>In your WordPress admin, go to <strong>Analytics → Upgrade</strong> (added by the Freemius SDK).</li>
+      <li>Click <strong>Upgrade to Premium</strong>. You are taken to a Freemius-hosted checkout page.</li>
+      <li>Complete the purchase. Your license activates automatically on your site.</li>
+      <li>A standard WordPress update notification appears. Click <strong>Update Now</strong>.</li>
+      <li>Premium features are now active — no re-installation, no ZIP download.</li>
+    </ol>
+    <div class="callout">
+      <strong>License management:</strong> Go to <strong>Analytics → Account</strong> (the Freemius account menu) to view your license status, deactivate to move it to another site, or cancel. Each license covers one production site.
+    </div>
+
+    <div class="callout callout--warn">
+      <strong>Freemius opt-in on first activation.</strong> The Freemius SDK makes outbound requests to <code>api.freemius.com</code> on first activation to power its opt-in screen and license verification. This is standard behavior for all Freemius-powered plugins. You can skip the opt-in — it does not affect plugin functionality.
     </div>
   </main>
 </div>

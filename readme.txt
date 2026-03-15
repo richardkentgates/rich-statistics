@@ -22,9 +22,8 @@ Privacy-first analytics for WordPress publishers. No PII, no consent banners req
 * Referrer tracking at the domain level only
 * Behavior analysis: time-on-page histogram, session depth, entry pages
 * Aggressive bot detection: 10 client-side signals plus server-side UA/header scoring
-* Email digests (daily / weekly / monthly) via wp_mail
 * Configurable data retention (1–730 days, default 90)
-* WP-CLI support: overview, top-pages, audience, export, purge, status
+* WP-CLI support: overview, top-pages, audience, export, prune, version
 * Full Multisite support with per-site tables and network admin panel
 * All third-party dependencies bundled locally — no CDN calls at runtime
 
@@ -32,6 +31,7 @@ Privacy-first analytics for WordPress publishers. No PII, no consent banners req
 
 * Click tracking by protocol (http, tel, mailto, geo, sms) and by element ID/class
 * Heatmaps with viewport-relative thermal canvas overlay
+* Weekly and monthly email digest reports via wp_mail
 * Full REST API (9 endpoints) authenticated via WP Application Passwords
 * Progressive Web App: installable mobile analytics dashboard
 
@@ -41,10 +41,15 @@ Sessions are identified using a `sessionStorage` UUID — this identifier lives 
 
 == Installation ==
 
-1. Download the plugin ZIP from [Freemius](https://freemius.com) or from [statistics.richardkentgates.com](https://statistics.richardkentgates.com)
-2. Go to **WordPress → Plugins → Add New → Upload Plugin**
-3. Upload the ZIP and activate
-4. Navigate to **Rich Stats** in the admin sidebar to view your analytics
+1. In your WordPress admin go to **Plugins → Add New** and search for **Rich Statistics**
+2. Click **Install Now**, then **Activate**
+3. Navigate to **Analytics** in the admin sidebar to view your data
+
+Alternatively, install via WP-CLI:
+
+    wp plugin install rich-statistics --activate
+
+To upgrade to Premium, go to **Analytics → Upgrade** inside WordPress. The upgrade is delivered as a standard WordPress plugin update — no ZIP file required.
 
 == Frequently Asked Questions ==
 
@@ -70,15 +75,15 @@ PHP 8.0 or higher. WordPress 6.0 or higher.
 
 = Where is my data stored? =
 
-All data is stored in your WordPress database in four tables: `wp_rsa_events`, `wp_rsa_sessions`, `wp_rsa_clicks` (premium), and `wp_rsa_heatmap` (premium). No data is ever sent to external servers.
+All data is stored in your WordPress database in four tables: `wp_rsa_events`, `wp_rsa_sessions`, `wp_rsa_clicks` (Premium), and `wp_rsa_heatmap` (Premium). No data is ever sent to external servers.
 
 = Can I export my data? =
 
-Yes. Go to **Rich Stats → Data** and click **Export to CSV**, or use WP-CLI: `wp rich-stats export --period=90d > export.csv`
+Yes. Go to **Analytics → Data Settings** and click **Export to CSV**, or use WP-CLI: `wp rsa export --period=90d`
 
 = How do I delete all data? =
 
-Go to **Rich Stats → Data**, enable **Remove all data on uninstall**, then delete the plugin. Alternatively run `wp rich-stats purge --days=0` to purge all rows immediately.
+Go to **Analytics → Data Settings**, enable **Remove all data on uninstall**, then delete the plugin. Alternatively run `wp rsa prune --days=0` to remove all rows immediately.
 
 = What is the Premium plan? =
 
