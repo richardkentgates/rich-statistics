@@ -14,6 +14,8 @@ jobs:
   build:
     name: Build plugin ZIP
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
