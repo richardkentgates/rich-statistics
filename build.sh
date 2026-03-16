@@ -156,16 +156,3 @@ cd "$SCRIPT_DIR"
 
 ZIP_SIZE=$(du -sh "${BUILD_DIR}/${ZIP_NAME}" | cut -f1)
 info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
-
-# -----------------------------------------------------------------------
-# Reminder
-# -----------------------------------------------------------------------
-echo ""
-echo "${BOLD}Next steps:${RESET}"
-echo "  1. Upload ${BUILD_DIR}/${ZIP_NAME} to Freemius:"
-echo "     https://dashboard.freemius.com → Your Plugin → Versions → Add New Version"
-echo ""
-echo "  2. If this is your first upload, make sure you have filled in your"
-echo "     Freemius product ID and public key in rich-statistics.php:"
-echo "     Look for: 'id' => '0000'  and  'public_key' => 'pk_REPLACE...'"
-echo ""
