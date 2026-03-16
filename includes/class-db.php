@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 class RSA_DB {
 
 	// Schema version stored per-site
-	const SCHEMA_VERSION = 4;
+	const SCHEMA_VERSION = 6;
 	const OPTION_KEY     = 'rsa_db_version';
 
 	// ----------------------------------------------------------------
@@ -113,6 +113,7 @@ class RSA_DB {
 			element_class   VARCHAR(512)        DEFAULT NULL,
 			element_text    VARCHAR(255)        DEFAULT NULL,
 			href_protocol   VARCHAR(32)         DEFAULT NULL,
+			matched_rule    VARCHAR(255)        DEFAULT NULL,
 			x_pct           DECIMAL(5,2)        DEFAULT NULL,
 			y_pct           DECIMAL(5,2)        DEFAULT NULL,
 			created_at      DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -144,9 +145,30 @@ class RSA_DB {
 		// Seed default options if not present
 		self::seed_defaults();
 
+		// Run any incremental column migrations
+		self::maybe_upgrade();
+
 		// Schedule maintenance cron
 		if ( ! wp_next_scheduled( 'rsa_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'rsa_daily_maintenance' );
+		}
+	}
+
+	// ----------------------------------------------------------------
+	// Incremental column migrations (safe to re-run — ADD COLUMN IF NOT EXISTS)
+	// ----------------------------------------------------------------
+
+	public static function maybe_upgrade(): void {
+		global $wpdb;
+		$ct = self::clicks_table();
+
+		// v6: add matched_rule column if missing
+		$col = $wpdb->get_results( $wpdb->prepare(
+			'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+			DB_NAME, $ct, 'matched_rule'
+		) );
+		if ( empty( $col ) ) {
+			$wpdb->query( "ALTER TABLE `{$ct}` ADD COLUMN matched_rule VARCHAR(255) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 	}
 
@@ -156,16 +178,17 @@ class RSA_DB {
 
 	private static function seed_defaults(): void {
 		$defaults = [
-			'rsa_retention_days'           => 90,
-			'rsa_bot_score_threshold'      => 3,
-			'rsa_remove_data_on_uninstall' => 0,
-			'rsa_track_protocol_http'      => 1,
-			'rsa_track_protocol_tel'       => 1,
-			'rsa_track_protocol_mailto'    => 1,
-			'rsa_track_protocol_geo'       => 1,
-			'rsa_track_protocol_sms'       => 1,
-			'rsa_click_track_ids'          => '',
-			'rsa_click_track_classes'      => '',
+			'rsa_retention_days'              => 90,
+			'rsa_bot_score_threshold'         => 5,
+			'rsa_remove_data_on_uninstall'    => 0,
+			'rsa_track_protocol_http'         => 1,
+			'rsa_track_protocol_tel'          => 1,
+			'rsa_track_protocol_mailto'       => 1,
+			'rsa_track_protocol_geo'          => 1,
+			'rsa_track_protocol_sms'          => 1,
+			'rsa_track_protocol_download'     => 1,
+			'rsa_click_track_ids'             => '',
+			'rsa_click_track_classes'         => '',
 			'rsa_email_digest_enabled'     => 0,
 			'rsa_email_digest_frequency'   => 'weekly',
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
@@ -331,6 +354,7 @@ class RSA_DB {
 	public static function register_hooks(): void {
 		add_action( 'rsa_daily_maintenance', [ __CLASS__, 'daily_maintenance' ] );
 		add_action( 'wp_initialize_site',    [ __CLASS__, 'on_new_blog_event' ] );
+		add_action( 'admin_init',            [ __CLASS__, 'maybe_upgrade' ] );
 	}
 
 	public static function on_new_blog_event( $new_site ): void {

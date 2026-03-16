@@ -67,9 +67,12 @@ RSA_Admin::page_header( __( 'Data & Settings', 'rich-statistics' ) );
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header">
 			<h2><?php esc_html_e( 'Click Tracking Protocols', 'rich-statistics' ); ?></h2>
-			<?php if ( ! ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) ) : ?>
-			<span class="rsa-premium-badge"><?php esc_html_e( 'Premium', 'rich-statistics' ); ?></span>
-			<?php endif; ?>
+			<?php if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) : ?>
+			<span class="rsa-premium-badge"><?php esc_html_e( 'Premium', 'rich-statistics' ); ?></span>				<?php if ( function_exists( 'rs_fs' ) ) : ?>
+				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" style="font-size:12px;margin-left:6px;">
+					<small><?php esc_html_e( 'Unlock Pro', 'rich-statistics' ); ?></small>
+				</a>
+				<?php endif; ?>			<?php endif; ?>
 		</div>
 		<table class="form-table">
 			<?php

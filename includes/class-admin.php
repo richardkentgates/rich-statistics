@@ -59,7 +59,7 @@ class RSA_Admin {
 	}
 
 	private static function get_sub_pages(): array {
-		$is_premium = function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code();
+		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 		$pages = [
 			'overview'  => [ 'title' => __( 'Overview',  'rich-statistics' ), 'label' => __( 'Overview',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'manage_options' ],
@@ -67,12 +67,17 @@ class RSA_Admin {
 			'referrers' => [ 'title' => __( 'Referrers', 'rich-statistics' ), 'label' => __( 'Referrers', 'rich-statistics' ), 'cap' => 'manage_options' ],
 			'behavior'  => [ 'title' => __( 'Behavior',  'rich-statistics' ), 'label' => __( 'Behavior',  'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
+		$upgrade_label = function_exists( 'rs_fs' )
+			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
+			: '';
 		if ( $is_premium ) {
 			$pages['click-map'] = [ 'title' => __( 'Click Map', 'rich-statistics' ), 'label' => __( 'Click Map', 'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',   'rich-statistics' ), 'label' => __( 'Heatmap',   'rich-statistics' ), 'cap' => 'manage_options' ];
+		} else {
+			$pages['click-map'] = [ 'title' => __( 'Click Map', 'rich-statistics' ), 'label' => __( 'Click Map', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['heatmap']   = [ 'title' => __( 'Heatmap',   'rich-statistics' ), 'label' => __( 'Heatmap',   'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
-		$pages['email-settings'] = [ 'title' => __( 'Email',    'rich-statistics' ), 'label' => __( 'Email',    'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['data-settings']  = [ 'title' => __( 'Data',     'rich-statistics' ), 'label' => __( 'Data',     'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['preferences'] = [ 'title' => __( 'Preferences', 'rich-statistics' ), 'label' => __( 'Preferences', 'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
 
@@ -120,22 +125,47 @@ class RSA_Admin {
 
 	private static function get_page_data_for_current_screen( string $hook ): array {
 		$period = sanitize_text_field( $_GET['period'] ?? '30d' );
-		$allowed_periods = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
+		$allowed_periods = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 		if ( ! in_array( $period, $allowed_periods, true ) ) {
 			$period = '30d';
 		}
 
+		$date_from = $date_to = '';
+		if ( $period === 'custom' ) {
+			$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
+			$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
+		}
+
+		$page_filters = [
+			'browser'   => sanitize_text_field( $_GET['browser']  ?? '' ),
+			'os'        => sanitize_text_field( $_GET['os']       ?? '' ),
+			'search'    => sanitize_text_field( $_GET['search']   ?? '' ),
+			'page'      => sanitize_text_field( $_GET['ref_page'] ?? '' ),
+			'sort'      => in_array( $_GET['sort'] ?? '', [ 'views', 'avg_time' ], true ) ? $_GET['sort'] : 'views',
+			'sort_dir'  => ( ( $_GET['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc',
+			'date_from' => $date_from,
+			'date_to'   => $date_to,
+		];
+
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-pages' ) ) {
-			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period ), 'period' => $period ];
+			$pf         = $page_filters;
+			$pf['page'] = sanitize_text_field( $_GET['path'] ?? '' );
+			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period, 20, $pf ), 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-audience' ) ) {
-			return [ 'view' => 'audience', 'data' => RSA_Analytics::get_audience( $period ), 'period' => $period ];
+			return [ 'view' => 'audience', 'data' => RSA_Analytics::get_audience( $period, $page_filters ), 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-referrers' ) ) {
-			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period ), 'period' => $period ];
+			$ref_filters = [ 'page' => $page_filters['page'] ];
+			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-behavior' ) ) {
-			return [ 'view' => 'behavior', 'data' => RSA_Analytics::get_behavior( $period ), 'period' => $period ];
+			$beh_filters           = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
+			$beh_data              = RSA_Analytics::get_behavior( $period, $beh_filters );
+			$beh_data['user_flow'] = RSA_Analytics::get_user_flow( $period, $beh_filters );
+			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );
@@ -143,7 +173,7 @@ class RSA_Admin {
 		}
 
 		// Default: overview
-		return [ 'view' => 'overview', 'data' => RSA_Analytics::get_overview( $period ), 'period' => $period ];
+		return [ 'view' => 'overview', 'data' => RSA_Analytics::get_overview( $period, $page_filters ), 'period' => $period ];
 	}
 
 	// ----------------------------------------------------------------
@@ -157,8 +187,7 @@ class RSA_Admin {
 	public static function page_behavior():       void { self::render( 'behavior' ); }
 	public static function page_click_map():      void { self::render( 'click-map' ); }
 	public static function page_heatmap():        void { self::render( 'heatmap' ); }
-	public static function page_email_settings(): void { self::render( 'email-settings' ); }
-	public static function page_data_settings():  void { self::render( 'data-settings' ); }
+	public static function page_preferences():      void { self::render( 'preferences' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
 	private static function render( string $template ): void {
@@ -182,13 +211,14 @@ class RSA_Admin {
 			'rsa_retention_days'           => 'absint',
 			'rsa_bot_score_threshold'      => 'absint',
 			'rsa_remove_data_on_uninstall' => 'absint',
-			'rsa_track_protocol_http'      => 'absint',
-			'rsa_track_protocol_tel'       => 'absint',
-			'rsa_track_protocol_mailto'    => 'absint',
-			'rsa_track_protocol_geo'       => 'absint',
-			'rsa_track_protocol_sms'       => 'absint',
-			'rsa_click_track_ids'          => 'sanitize_text_field',
-			'rsa_click_track_classes'      => 'sanitize_text_field',
+			'rsa_track_protocol_http'         => 'absint',
+			'rsa_track_protocol_tel'          => 'absint',
+			'rsa_track_protocol_mailto'       => 'absint',
+			'rsa_track_protocol_geo'          => 'absint',
+			'rsa_track_protocol_sms'          => 'absint',
+			'rsa_track_protocol_download'     => 'absint',
+			'rsa_click_track_ids'             => 'sanitize_text_field',
+			'rsa_click_track_classes'         => 'sanitize_text_field',
 			'rsa_email_digest_enabled'     => 'absint',
 			'rsa_email_digest_frequency'   => 'sanitize_text_field',
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
@@ -211,7 +241,7 @@ class RSA_Admin {
 			}
 		}
 
-		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-data-settings', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -220,25 +250,49 @@ class RSA_Admin {
 	// ----------------------------------------------------------------
 
 	public static function profile_webapp_button( WP_User $profile_user ): void {
-		if ( ! ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) ) {
-			return;
-		}
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$webapp_url = RSA_URL . 'webapp/index.html';
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			if ( function_exists( 'rs_fs' ) ) {
+				?>
+				<tr class="rsa-webapp-row">
+					<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
+					<td>
+						<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+							<?php esc_html_e( 'Upgrade to unlock the Stats App', 'rich-statistics' ); ?>
+						</a>
+						<p class="description"><?php esc_html_e( 'The Rich Statistics App lets you view your stats from any device as a PWA — no browser required. Available with a premium licence.', 'rich-statistics' ); ?></p>
+					</td>
+				</tr>
+				<?php
+			}
+			return;
+		}
+
+		$download_url    = wp_nonce_url(
+			admin_url( 'admin-ajax.php?action=rsa_download_pwa' ),
+			'rsa_download_pwa'
+		);
+		$site_config_url = wp_nonce_url(
+			admin_url( 'admin-ajax.php?action=rsa_site_config' ),
+			'rsa_site_config'
+		);
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
 			<td>
-				<a href="<?php echo esc_url( $webapp_url ); ?>"
-				   class="button button-primary"
-				   target="_blank"
-				   rel="noopener noreferrer">
-					<?php esc_html_e( 'Open / Install Web App', 'rich-statistics' ); ?>
+				<a href="<?php echo esc_url( $site_config_url ); ?>"
+				   class="button button-primary">
+					<?php esc_html_e( 'Add This Site to App', 'rich-statistics' ); ?>
+				</a>
+				<a href="<?php echo esc_url( $download_url ); ?>"
+				   class="button"
+				   style="margin-left:8px;">
+					<?php esc_html_e( 'Download App', 'rich-statistics' ); ?>
 				</a>
 				<p class="description">
-					<?php esc_html_e( 'Open on any device. Use an Application Password below to authenticate.', 'rich-statistics' ); ?>
+					<?php esc_html_e( 'First time? Use "Download App" to install the app once on any device. Then return here and click "Add This Site to App" — open the app, import the downloaded file, and enter your Application Password below to connect.', 'rich-statistics' ); ?>
 				</p>
 			</td>
 		</tr>
@@ -258,16 +312,38 @@ class RSA_Admin {
 			'lastmonth' => __( 'Last month',    'rich-statistics' ),
 		];
 
-		$page = sanitize_text_field( $_GET['page'] ?? 'rich-statistics' );
-		$url  = admin_url( 'admin.php' );
+		$page      = sanitize_text_field( $_GET['page'] ?? 'rich-statistics' );
+		$url       = admin_url( 'admin.php' );
+		$is_custom = ( $current === 'custom' );
+		$date_from = $is_custom ? sanitize_text_field( $_GET['date_from'] ?? '' ) : '';
+		$date_to   = $is_custom ? sanitize_text_field( $_GET['date_to']   ?? '' ) : '';
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
 
 		$html = '<div class="rsa-period-selector">';
 		foreach ( $options as $val => $label ) {
-			$href     = add_query_arg( [ 'page' => $page, 'period' => $val ], $url );
-			$active   = $val === $current ? ' rsa-period-active' : '';
-			$html    .= '<a href="' . esc_url( $href ) . '" class="rsa-period-btn' . $active . '">' . esc_html( $label ) . '</a>';
+			$href   = add_query_arg( [ 'page' => $page, 'period' => $val ], $url );
+			$active = $val === $current ? ' rsa-period-active' : '';
+			$html  .= '<a href="' . esc_url( $href ) . '" class="rsa-period-btn' . $active . '">' . esc_html( $label ) . '</a>';
 		}
+		$custom_active = $is_custom ? ' rsa-period-active' : '';
+		$html .= '<button type="button" class="rsa-period-btn' . $custom_active . '" '
+		       . 'onclick="var el=document.getElementById(\'rsa-dates\');el.style.display=el.style.display===\'none\'?\'flex\':\'none\';">'
+		       . esc_html__( 'Custom', 'rich-statistics' ) . '</button>';
 		$html .= '</div>';
+
+		$show  = $is_custom ? 'flex' : 'none';
+		$html .= '<div id="rsa-dates" class="rsa-custom-range" style="display:' . esc_attr( $show ) . ';">';
+		$html .= '<form method="get" action="' . esc_url( $url ) . '" class="rsa-custom-range-form">';
+		$html .= '<input type="hidden" name="page" value="' . esc_attr( $page ) . '">';
+		$html .= '<input type="hidden" name="period" value="custom">';
+		$html .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html .= '<span class="rsa-date-sep">' . esc_html__( 'to', 'rich-statistics' ) . '</span>';
+		$html .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html .= '<button type="submit" class="button button-small">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
+		$html .= '</form>';
+		$html .= '</div>';
+
 		return $html;
 	}
 
@@ -283,8 +359,19 @@ class RSA_Admin {
 					<span class="rsa-logo">📊</span>
 					<?php echo esc_html( $title ); ?>
 				</h1>
-				<?php echo wp_kses_post( self::period_selector( $period ) ); ?>
+				<?php echo self::period_selector( $period ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
+			<?php if ( function_exists( 'rs_fs' ) && rs_fs()->is_not_paying() ) : ?>
+			<div class="rsa-upsell-banner">
+				<div class="rsa-upsell-banner__content">
+					<strong><?php esc_html_e( 'Unlock Click Maps, Heatmaps &amp; the Stats App', 'rich-statistics' ); ?></strong>
+					<?php esc_html_e( 'Get the full picture — see exactly where visitors click, scroll, and engage on every page.', 'rich-statistics' ); ?>
+				</div>
+				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+					<?php esc_html_e( 'Upgrade Now', 'rich-statistics' ); ?>
+				</a>
+			</div>
+			<?php endif; ?>
 		<?php
 	}
 

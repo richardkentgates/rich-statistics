@@ -1,3 +1,5 @@
+/* <fs_premium_only> */
+
 /**
  * Rich Statistics — Heatmap Canvas Overlay
  *
@@ -135,3 +137,5 @@
 	}
 
 }() );
+
+/* </fs_premium_only> */

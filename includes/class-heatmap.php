@@ -2,6 +2,8 @@
 /**
  * [PREMIUM] Heatmap — aggregation scheduling and data ops.
  * The canvas overlay renderer is in assets/js/heatmap-overlay.js.
+ *
+ * @fs_premium_only
  */
 defined( 'ABSPATH' ) || exit;
 

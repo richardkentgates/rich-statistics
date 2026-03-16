@@ -251,7 +251,7 @@ class RSA_CLI extends WP_CLI_Command {
 	 * @subcommand status
 	 */
 	public function status( array $args, array $assoc ): void {
-		$is_premium = function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code();
+		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 
 		WP_CLI::line( WP_CLI::colorize( '%BRich Statistics Status%n' ) );
 		WP_CLI::line( '' );

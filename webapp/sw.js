@@ -10,6 +10,7 @@ const CACHE_VERSION = 'rsa-v1';
 
 const SHELL_ASSETS = [
 	'./index.html',
+	'./config.js',
 	'./app.js',
 	'./app.css',
 	'./manifest.json',

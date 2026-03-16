@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
 
 $period  = sanitize_text_field( $_GET['period'] ?? '30d' );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
+$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
 // Data is loaded via RSA_DATA JS object (see class-admin.php enqueue)

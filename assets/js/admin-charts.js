@@ -17,29 +17,29 @@
 	// Global Chart.js defaults — consistent look across all charts
 	// ----------------------------------------------------------------
 	var PALETTE = [
-		'#6366f1', '#22d3ee', '#f59e0b', '#10b981',
-		'#f43f5e', '#a78bfa', '#34d399', '#fb923c',
-		'#38bdf8', '#e879f9', '#a3e635', '#fbbf24',
+		'#2271b1', '#00a32a', '#dba617', '#d63638',
+		'#135e96', '#008a20', '#b8860b', '#a02020',
+		'#1a9ed9', '#3bc1a3', '#9c6ed5', '#e8832a',
 	];
 
 	Chart.defaults.font.family  = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 	Chart.defaults.font.size    = 12;
-	Chart.defaults.color        = '#64748b';
-	Chart.defaults.borderColor  = 'rgba(100,116,139,0.12)';
+	Chart.defaults.color        = '#646970';
+	Chart.defaults.borderColor  = 'rgba(195,196,199,0.2)';
 
 	var GRID = {
-		color: 'rgba(100,116,139,0.1)',
+		color: 'rgba(195,196,199,0.15)',
 		drawBorder: false,
 	};
 
 	var TOOLTIP_DEFAULTS = {
-		backgroundColor  : '#1e293b',
-		titleColor       : '#f1f5f9',
-		bodyColor        : '#cbd5e1',
+		backgroundColor  : '#1d2327',
+		titleColor       : '#f0f0f1',
+		bodyColor        : '#c3c4c7',
 		borderColor      : 'rgba(255,255,255,0.08)',
 		borderWidth      : 1,
 		padding          : 10,
-		cornerRadius     : 6,
+		cornerRadius     : 3,
 		displayColors    : true,
 		boxPadding       : 4,
 	};
@@ -268,7 +268,139 @@
 				values( data.session_depth, 'count' )
 			) );
 		}
+
+		if ( data.user_flow && data.user_flow.length ) {
+			initFlowChart( data.user_flow );
+		}
 	}
+
+	// ----------------------------------------------------------------
+	// User flow: SVG Sankey diagram of page-to-page transitions
+	// ----------------------------------------------------------------
+
+	function initFlowChart( flow ) {
+		var container = document.getElementById( 'rsa-flow-chart' );
+		if ( ! container || ! flow || ! flow.length ) { return; }
+
+		var svgNS = 'http://www.w3.org/2000/svg';
+
+		// Aggregate totals per source / destination
+		var srcTotals = {}, dstTotals = {};
+		flow.forEach( function ( t ) {
+			srcTotals[ t.from_page ] = ( srcTotals[ t.from_page ] || 0 ) + t.count;
+			dstTotals[ t.to_page ]   = ( dstTotals[ t.to_page ]   || 0 ) + t.count;
+		} );
+
+		var sources = Object.keys( srcTotals )
+			.sort( function ( a, b ) { return srcTotals[ b ] - srcTotals[ a ]; } ).slice( 0, 8 );
+		var targets = Object.keys( dstTotals )
+			.sort( function ( a, b ) { return dstTotals[ b ] - dstTotals[ a ]; } ).slice( 0, 8 );
+
+		var visible = flow.filter( function ( t ) {
+			return sources.indexOf( t.from_page ) !== -1 && targets.indexOf( t.to_page ) !== -1;
+		} );
+		if ( ! visible.length ) { return; }
+
+		// Layout constants
+		var W      = 700;
+		var nodeW  = 12;
+		var GAP    = 8;
+		var textW  = 185;
+		var srcX   = textW;
+		var dstX   = W - textW - nodeW;
+		var BAND_H = 340;
+
+		function buildNodes( keys, totals, nodeLeftX ) {
+			var total  = keys.reduce( function ( s, k ) { return s + totals[ k ]; }, 0 );
+			var nodes  = {};
+			var usable = BAND_H - GAP * ( keys.length - 1 );
+			var y      = 0;
+			keys.forEach( function ( k ) {
+				var h = Math.max( 14, Math.round( usable * totals[ k ] / total ) );
+				nodes[ k ] = { x: nodeLeftX, y: y, h: h, offIn: 0, offOut: 0 };
+				y += h + GAP;
+			} );
+			return nodes;
+		}
+
+		var srcNodes = buildNodes( sources, srcTotals, srcX );
+		var dstNodes = buildNodes( targets, dstTotals, dstX );
+
+		var lastS = srcNodes[ sources[ sources.length - 1 ] ];
+		var lastD = dstNodes[ targets[ targets.length - 1 ] ];
+		var svgH  = Math.max( lastS.y + lastS.h, lastD.y + lastD.h ) + 20;
+
+		var svg = document.createElementNS( svgNS, 'svg' );
+		svg.setAttribute( 'viewBox', '0 0 ' + W + ' ' + svgH );
+		svg.setAttribute( 'width', '100%' );
+		svg.style.display   = 'block';
+		svg.style.maxHeight = '440px';
+
+		// Draw ribbons first (behind nodes)
+		visible.forEach( function ( t, idx ) {
+			var sn = srcNodes[ t.from_page ];
+			var dn = dstNodes[ t.to_page ];
+			if ( ! sn || ! dn ) { return; }
+
+			var fh  = Math.max( 2, Math.round( sn.h * t.count / srcTotals[ t.from_page ] ) );
+			var th  = Math.max( 2, Math.round( dn.h * t.count / dstTotals[ t.to_page ] ) );
+			var y1t = sn.y + sn.offOut;
+			var y2t = dn.y + dn.offIn;
+			var y1b = y1t + fh;
+			var y2b = y2t + th;
+			sn.offOut += fh;
+			dn.offIn  += th;
+
+			var x1  = srcX + nodeW;
+			var x2  = dstX;
+			var cpx = ( x2 - x1 ) * 0.45;
+
+			var path = document.createElementNS( svgNS, 'path' );
+			path.setAttribute( 'd',
+				'M '  + x1 + ' ' + y1t +
+				' C ' + ( x1 + cpx ) + ' ' + y1t + ' ' + ( x2 - cpx ) + ' ' + y2t + ' ' + x2 + ' ' + y2t +
+				' L ' + x2 + ' ' + y2b +
+				' C ' + ( x2 - cpx ) + ' ' + y2b + ' ' + ( x1 + cpx ) + ' ' + y1b + ' ' + x1 + ' ' + y1b +
+				' Z'
+			);
+			path.setAttribute( 'fill', PALETTE[ idx % PALETTE.length ] );
+			path.setAttribute( 'fill-opacity', '0.28' );
+			svg.appendChild( path );
+		} );
+
+		// Node rectangles + labels
+		var font = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+
+		function drawNode( k, n, labelX, anchor, color ) {
+			var rect = document.createElementNS( svgNS, 'rect' );
+			rect.setAttribute( 'x', n.x );
+			rect.setAttribute( 'y', n.y );
+			rect.setAttribute( 'width', nodeW );
+			rect.setAttribute( 'height', n.h );
+			rect.setAttribute( 'fill', color );
+			rect.setAttribute( 'rx', '2' );
+			svg.appendChild( rect );
+
+			var max  = 26;
+			var lbl  = k.length > max ? '\u2026' + k.slice( -( max - 1 ) ) : k;
+			var text = document.createElementNS( svgNS, 'text' );
+			text.setAttribute( 'x', labelX );
+			text.setAttribute( 'y', n.y + n.h / 2 + 4 );
+			text.setAttribute( 'text-anchor', anchor );
+			text.setAttribute( 'font-size', '11' );
+			text.setAttribute( 'font-family', font );
+			text.setAttribute( 'fill', '#646970' );
+			text.textContent = lbl;
+			svg.appendChild( text );
+		}
+
+		sources.forEach( function ( k ) { drawNode( k, srcNodes[ k ], srcX - 6,         'end',   PALETTE[0] ); } );
+		targets.forEach( function ( k ) { drawNode( k, dstNodes[ k ], dstX + nodeW + 6, 'start', PALETTE[1] ); } );
+
+		container.appendChild( svg );
+	}
+
+	/* <fs_premium_only> */
 
 	// ----------------------------------------------------------------
 	// View: Click Map
@@ -280,9 +412,11 @@
 
 		var top = data.slice( 0, 15 );
 		var rowLabels = top.map( function ( r ) {
+			// Prefer the explicit matched rule as the label (most specific)
+			if ( r.matched_rule ) { return r.matched_rule; }
 			var label = r.tag || '';
-			if ( r.id )    { label += '#' + r.id; }
-			else if ( r.protocol ) { label += ' (' + r.protocol + ')'; }
+			if ( r.id )            { label += '#' + r.id; }
+			if ( r.protocol )      { label += ' (' + r.protocol + ')'; }
 			return label || 'element';
 		} );
 
@@ -316,5 +450,7 @@
 			case 'click-map': initClickMap( data );  break;
 		}
 	} );
+
+	/* </fs_premium_only> */
 
 }() );

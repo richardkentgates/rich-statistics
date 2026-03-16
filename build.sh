@@ -42,11 +42,7 @@ cd "$SCRIPT_DIR"
 if [ -n "${1:-}" ]; then
     VERSION="$1"
 else
-    VERSION=$(php -r "
-        \$content = file_get_contents('rich-statistics.php');
-        preg_match('/define\s*\(\s*['\''\"']RSA_VERSION['\''\"']\s*,\s*['\''\"']([^'\''\""]+)['\''\"']/i', \$content, \$m);
-        echo \$m[1] ?? '0.0.0';
-    ")
+    VERSION=$(grep -oP "define\s*\(\s*['\"]RSA_VERSION['\"]\s*,\s*['\"]?\K[0-9][0-9.]*" rich-statistics.php | head -1)
 fi
 
 info "Building Rich Statistics v${VERSION}"

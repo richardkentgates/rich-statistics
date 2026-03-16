@@ -512,3 +512,167 @@ html, body {
 
 	.rsa-td-path { max-width: 320px; }
 }
+
+/* =========================================================================
+   Site switcher
+   ========================================================================= */
+.rsa-site-switcher {
+	position: relative;
+	padding: 8px 12px 10px;
+	border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.rsa-switcher-btn {
+	width: 100%;
+	background: rgba(255,255,255,.1);
+	border: 1px solid rgba(255,255,255,.2);
+	border-radius: var(--rsa-radius);
+	padding: 5px 10px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	color: #fff;
+	gap: 6px;
+}
+.rsa-switcher-btn:hover { background: rgba(255,255,255,.18); }
+
+#rsa-active-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex: 1;
+	text-align: left;
+}
+
+.rsa-switcher-caret { font-size: 10px; flex-shrink: 0; opacity: .7; }
+
+.rsa-site-menu {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	top: calc(100% - 2px);
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	box-shadow: 0 4px 16px rgba(0,0,0,.15);
+	z-index: 300;
+	overflow: hidden;
+}
+
+.rsa-site-menu-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--rsa-text);
+	border-bottom: 1px solid var(--rsa-border);
+}
+.rsa-site-menu-item:hover { background: var(--rsa-bg); }
+.rsa-site-menu-item.rsa-active { color: var(--rsa-accent); font-weight: 600; }
+
+.rsa-site-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rsa-site-menu-remove {
+	background: none;
+	border: none;
+	color: var(--rsa-muted);
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 1;
+	padding: 0 2px;
+	flex-shrink: 0;
+}
+.rsa-site-menu-remove:hover { color: var(--rsa-danger); }
+
+.rsa-site-menu-add {
+	display: block;
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 9px 12px;
+	text-align: left;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--rsa-accent);
+	font-weight: 500;
+}
+.rsa-site-menu-add:hover { background: var(--rsa-bg); }
+
+/* =========================================================================
+   Import hint (login screen)
+   ========================================================================= */
+.rsa-import-hint {
+	margin-top: 16px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--rsa-muted);
+}
+
+.rsa-import-label {
+	color: var(--rsa-accent);
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.rsa-import-block {
+	display: block;
+	text-align: center;
+	padding: 12px;
+	border: 2px dashed var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	color: var(--rsa-accent);
+	cursor: pointer;
+	margin-bottom: 16px;
+	font-size: 14px;
+	transition: border-color .15s, background .15s;
+}
+.rsa-import-block:hover {
+	border-color: var(--rsa-accent);
+	background: rgba(99,102,241,.04);
+}
+
+/* =========================================================================
+   Add-Site overlay
+   ========================================================================= */
+.rsa-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	z-index: 500;
+}
+.rsa-overlay .rsa-login-card { max-width: 440px; width: 100%; }
+
+.rsa-divider {
+	text-align: center;
+	color: var(--rsa-muted);
+	font-size: 12px;
+	margin: 14px 0;
+	position: relative;
+}
+.rsa-divider::before,
+.rsa-divider::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	width: calc(50% - 52px);
+	height: 1px;
+	background: var(--rsa-border);
+}
+.rsa-divider::before { left: 0; }
+.rsa-divider::after  { right: 0; }
+
+.rsa-field-row {
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+}
+.rsa-field-row .rsa-btn,
+.rsa-field-row .rsa-btn-ghost { flex: 1; }

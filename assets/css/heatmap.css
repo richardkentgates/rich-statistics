@@ -1,3 +1,5 @@
+/* <fs_premium_only> */
+
 /* ==========================================================================
    Rich Statistics — Heatmap Admin CSS  (Premium)
    ========================================================================== */
@@ -27,3 +29,5 @@
 	height         : 100% !important;
 	pointer-events : none;
 }
+
+/* </fs_premium_only> */

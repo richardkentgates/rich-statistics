@@ -51,7 +51,7 @@ class RSA_Tracker {
 
 		// Premium: click tracking config
 		$premium_config = [];
-		if ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) {
+		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 			$premium_config = [
 				'clickEnabled'  => true,
 				'trackIds'      => array_filter( array_map( 'trim', explode( ',', get_option( 'rsa_click_track_ids', '' ) ) ) ),
@@ -67,7 +67,7 @@ class RSA_Tracker {
 		] );
 
 		// Enqueue heatmap overlay if premium
-		if ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) {
+		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 			$hm_file    = RSA_DIR . 'assets/js/heatmap-overlay.js';
 			$hm_version = file_exists( $hm_file ) ? filemtime( $hm_file ) : RSA_VERSION;
 			wp_enqueue_script(
@@ -82,11 +82,12 @@ class RSA_Tracker {
 
 	private static function get_protocol_options(): array {
 		return [
-			'http'    => (bool) get_option( 'rsa_track_protocol_http',    1 ),
-			'tel'     => (bool) get_option( 'rsa_track_protocol_tel',     1 ),
-			'mailto'  => (bool) get_option( 'rsa_track_protocol_mailto',  1 ),
-			'geo'     => (bool) get_option( 'rsa_track_protocol_geo',     1 ),
-			'sms'     => (bool) get_option( 'rsa_track_protocol_sms',     1 ),
+			'http'     => (bool) get_option( 'rsa_track_protocol_http',     1 ),
+			'tel'      => (bool) get_option( 'rsa_track_protocol_tel',      1 ),
+			'mailto'   => (bool) get_option( 'rsa_track_protocol_mailto',   1 ),
+			'geo'      => (bool) get_option( 'rsa_track_protocol_geo',      1 ),
+			'sms'      => (bool) get_option( 'rsa_track_protocol_sms',      1 ),
+			'download' => (bool) get_option( 'rsa_track_protocol_download', 1 ),
 		];
 	}
 

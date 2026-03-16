@@ -235,17 +235,29 @@
 		}
 	}
 
+	// Safety net: fire after 1.5s for mobile/WebView scenarios where unload never fires
+	var safetyTimer = setTimeout( function () {
+		if ( ! sent ) {
+			computeTimeOnPage();
+			sendEvent();
+		}
+	}, 1500 );
+
 	// Capture time on unload
 	window.addEventListener( 'pagehide', function () {
+		clearTimeout( safetyTimer );
 		computeTimeOnPage();
 		sendEvent();
 	} );
 
 	// Also try beforeunload as secondary trigger
 	window.addEventListener( 'beforeunload', function () {
+		clearTimeout( safetyTimer );
 		computeTimeOnPage();
 		sendEvent();
 	} );
+
+	/* <fs_premium_only> */
 
 	// ----------------------------------------------------------------
 	// Premium — Click tracking
@@ -278,6 +290,8 @@
 		}
 
 		function getHrefProtocol( el ) {
+			// Download attribute on any element — track if enabled in settings
+			if ( el.hasAttribute( 'download' ) && el.getAttribute( 'href' ) && protocols.download ) return 'download';
 			var href = ( el.getAttribute( 'href' ) || '' ).toLowerCase();
 			if ( ! href ) return null;
 			if ( /^https?:/.test( href ) && protocols.http )   return 'http';
@@ -288,21 +302,25 @@
 			return null;
 		}
 
+		/**
+		 * Returns the matched configured rule string ('#id' or '.class')
+		 * if the element matches a configured ID or class, otherwise null.
+		 */
 		function elementMatchesConfig( el ) {
 			// Check configured IDs
 			if ( trackIds.length && el.id ) {
 				for ( var i = 0; i < trackIds.length; i++ ) {
-					if ( el.id === trackIds[ i ] ) return true;
+					if ( el.id === trackIds[ i ] ) return '#' + trackIds[ i ];
 				}
 			}
 			// Check configured classes
 			if ( trackClasses.length ) {
 				var classList = Array.prototype.slice.call( el.classList || [] );
 				for ( var j = 0; j < trackClasses.length; j++ ) {
-					if ( classList.indexOf( trackClasses[ j ] ) !== -1 ) return true;
+					if ( classList.indexOf( trackClasses[ j ] ) !== -1 ) return '.' + trackClasses[ j ];
 				}
 			}
-			return false;
+			return null;
 		}
 
 		document.addEventListener( 'click', function ( e ) {
@@ -316,10 +334,10 @@
 				}
 
 				var hrefProtocol = getHrefProtocol( el );
-				var matchesConfig = elementMatchesConfig( el );
+				var matchedRule  = elementMatchesConfig( el );
 
-				// Only track if: protocol match OR configured ID/class
-				if ( ! hrefProtocol && ! matchesConfig ) {
+				// Only track if: protocol/download match OR configured ID/class match
+				if ( ! hrefProtocol && ! matchedRule ) {
 					el = el.parentElement;
 					continue;
 				}
@@ -343,6 +361,7 @@
 					element_class : elClass,
 					element_text  : ( el.innerText || el.value || '' ).substring( 0, 255 ),
 					href_protocol : hrefProtocol || '',
+					matched_rule  : matchedRule  || '',
 					x_pct         : xPct,
 					y_pct         : yPct,
 				};
@@ -362,5 +381,7 @@
 			}
 		}, { passive: true } );
 	}
+
+	/* </fs_premium_only> */
 
 } ( window.jQuery, window.RSA ) );

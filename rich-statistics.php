@@ -15,73 +15,78 @@
  * Network:           true
  */
 
-defined( 'ABSPATH' ) || exit;
-
-// --------------------------------------------------------------------
-// Constants
-// --------------------------------------------------------------------
-define( 'RSA_VERSION',     '1.0.1' );
-define( 'RSA_FILE',        __FILE__ );
-define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
-define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );
-define( 'RSA_ASSETS_URL',  RSA_URL . 'assets/' );
-define( 'RSA_MIN_WP',      '6.0' );
-define( 'RSA_MIN_PHP',     '8.0' );
-
-// --------------------------------------------------------------------
-// Freemius SDK bootstrap
-//
-// Production: freemius/start.php is downloaded by build.sh and included
-//             in the distributable ZIP uploaded to Freemius.
-//
-// To configure for your Freemius account, replace the two placeholder
-// values below with your product ID and public key from:
-// https://dashboard.freemius.com → My Plugins → Your Plugin → Integration
-// --------------------------------------------------------------------
-if ( function_exists( 'rsa_fs' ) ) {
-	rsa_fs()->set_basename( false, __FILE__ );
-} else {
-	require_once RSA_DIR . 'vendor/freemius/start.php';
-
-	if ( ! function_exists( 'rsa_fs' ) ) {
-		function rsa_fs(): object {
-			global $rsa_fs;
-			if ( ! isset( $rsa_fs ) ) {
-				$rsa_fs = fs_dynamic_init( [
-					// -------------------------------------------------------
-					// ⚠️  FILL IN BEFORE UPLOADING TO FREEMIUS
-					// -------------------------------------------------------
-					'id'                          => '0000',                          // Your Freemius plugin ID
-					'public_key'                  => 'pk_REPLACE_WITH_YOUR_KEY',      // Your Freemius public key
-					// -------------------------------------------------------
-					'slug'                        => 'rich-statistics',
-					'type'                        => 'plugin',
-					'is_premium'                  => true,
-					'can_be_deactivated_for_free' => true,
-					'has_addons'                  => false,
-					'has_paid_plans'              => true,
-					'trial'                       => [
-						'days'               => 14,
-						'is_require_payment' => false,
-					],
-					'menu'                        => [
-						'slug'    => 'rich-statistics',
-						'network' => true,
-					],
-					'is_org_compliant'            => true,
-					'navigation'                  => 'menu',
-				] );
-			}
-			return $rsa_fs;
-		}
-	}
-	rsa_fs();
-	do_action( 'rsa_fs_loaded' );
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-// --------------------------------------------------------------------
-// Autoload core classes
-// --------------------------------------------------------------------
+if ( function_exists( 'rs_fs' ) ) {
+	rs_fs()->set_basename( true, __FILE__ );
+} else {
+	// --------------------------------------------------------------------
+	// Constants
+	// --------------------------------------------------------------------
+	define( 'RSA_VERSION',     '1.0.1' );
+	define( 'RSA_FILE',        __FILE__ );
+	define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
+	define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );
+	define( 'RSA_ASSETS_URL',  RSA_URL . 'assets/' );
+	define( 'RSA_MIN_WP',      '6.0' );
+	define( 'RSA_MIN_PHP',     '8.0' );
+
+	/**
+	 * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
+	 * `function_exists` CALL ABOVE TO PROPERLY WORK.
+	 */
+	if ( ! function_exists( 'rs_fs' ) ) {
+		// Create a helper function for easy SDK access.
+		function rs_fs() {
+			global $rs_fs;
+
+			if ( ! isset( $rs_fs ) ) {
+				// Activate multisite network integration.
+				if ( ! defined( 'WP_FS__PRODUCT_25954_MULTISITE' ) ) {
+					define( 'WP_FS__PRODUCT_25954_MULTISITE', true );
+				}
+
+				// Include Freemius SDK.
+				require_once dirname( __FILE__ ) . '/vendor/freemius/start.php';
+
+				$rs_fs = fs_dynamic_init( array(
+					'id'                  => '25954',
+					'slug'                => 'rich-statistics',
+					'type'                => 'plugin',
+					'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
+					'is_premium'          => true,
+					'premium_suffix'      => 'Publisher',
+					'has_premium_version' => true,
+					'has_addons'          => false,
+					'has_paid_plans'      => true,
+					'is_org_compliant'    => true,
+					'wp_org_gatekeeper'   => 'OA7#BoRiBNqdf52FvzEf!!074aRLPs8fspif$7K1#4u4Csys1fQlCecVcUTOs2mcpeVHi#C2j9d09fOTvbC0HloPT7fFee5WdS3G',
+					'trial'               => array(
+						'days'               => 30,
+						'is_require_payment' => true,
+					),
+					'menu'                => array(
+						'slug'           => 'rich-statistics',
+						'support'        => false,
+						'network'        => true,
+					),
+				) );
+			}
+
+			return $rs_fs;
+		}
+
+		// Init Freemius.
+		rs_fs();
+		// Signal that SDK was initiated.
+		do_action( 'rs_fs_loaded' );
+	}
+
+	// --------------------------------------------------------------------
+	// Autoload core classes
+	// --------------------------------------------------------------------
 $rsa_classes = [
 	'RSA_DB',
 	'RSA_Bot_Detection',
@@ -104,12 +109,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'rich-stats', 'RSA_CLI' );
 }
 
-// Premium-only classes (gated by Freemius)
-if ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) {
+// Premium-only classes (gated by Freemius — entire block stripped from free version)
+if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 	$rsa_premium = [
 		'RSA_Click_Tracking',
 		'RSA_Heatmap',
 		'RSA_Rest_API',
+		'RSA_Pwa_Download',
 	];
 	foreach ( $rsa_premium as $class ) {
 		$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( [ 'RSA_', '_' ], [ '', '-' ], $class ) ) . '.php';
@@ -125,8 +131,24 @@ if ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) {
 register_activation_hook( RSA_FILE, [ 'RSA_DB', 'activate' ] );
 register_deactivation_hook( RSA_FILE, [ 'RSA_DB', 'deactivate' ] );
 
-// Uninstall is handled via uninstall.php
-// (WordPress calls uninstall.php automatically when uninstall hook is absent and file exists)
+// Uninstall — hooked via Freemius so the uninstall event + user feedback
+// is reported to Freemius before our cleanup runs.
+rs_fs()->add_action( 'after_uninstall', 'rs_fs_uninstall_cleanup' );
+
+function rs_fs_uninstall_cleanup() {
+	if ( is_multisite() ) {
+		$sites = get_sites( [ 'fields' => 'ids', 'number' => 0 ] );
+		foreach ( $sites as $blog_id ) {
+			switch_to_blog( $blog_id );
+			RSA_DB::maybe_remove_data();
+			restore_current_blog();
+		}
+		// Remove network-level options
+		delete_site_option( 'rsa_network_settings' );
+	} else {
+		RSA_DB::maybe_remove_data();
+	}
+}
 
 // --------------------------------------------------------------------
 // Bootstrap
@@ -150,7 +172,7 @@ function rsa_init() {
 	RSA_Email::init();
 
 	// Boot premium
-	if ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) {
+	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 		if ( class_exists( 'RSA_Click_Tracking' ) ) {
 			RSA_Click_Tracking::init();
 		}
@@ -159,6 +181,9 @@ function rsa_init() {
 		}
 		if ( class_exists( 'RSA_Rest_API' ) ) {
 			RSA_Rest_API::init();
+		}
+		if ( class_exists( 'RSA_Pwa_Download' ) ) {
+			RSA_Pwa_Download::init();
 		}
 	}
 }
@@ -172,3 +197,4 @@ function rsa_version_notice() {
 	);
 	echo '<div class="notice notice-error"><p>' . esc_html( $msg ) . '</p></div>';
 }
+} // end else

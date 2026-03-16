@@ -5,9 +5,15 @@
  * by index.html.  All REST calls go to /wp-json/rsa/v1/* using WP Application
  * Passwords (Basic auth, base64 encoded).
  *
- * Storage:
- *   localStorage['rsa_site_url']    – site root URL
- *   localStorage['rsa_credentials'] – base64(username:password)
+ * Multi-site storage (localStorage):
+ *   rsa_sites   – JSON array of { id, label, siteUrl, credentials, pendingToken }
+ *   rsa_active  – id of the currently active site
+ *   rsa_period  – last-selected period string
+ *
+ * Adding a site:
+ *   1. Click "Add This Site to App" on any WP profile page  →  downloads a .rsasite file
+ *   2. Open app, tap the site switcher  →  "+ Add site"
+ *   3. Import the .rsasite file  →  enter App Password  →  done
  *
  * Views: overview | pages | audience | referrers | behavior | clicks
  */
@@ -19,8 +25,10 @@
 	// State
 	// -----------------------------------------------------------------------
 	var state = {
-		siteUrl    : '',
-		credentials: '',        // base64(user:app_pass)
+		sites      : [],        // array of { id, label, siteUrl, credentials, pendingToken }
+		activeId   : '',        // id of the currently active site
+		siteUrl    : '',        // computed from active site
+		credentials: '',        // computed: base64(user:app_pass)
 		period     : '30d',
 		view       : 'overview',
 		charts     : {},        // keyed by canvas id
@@ -32,9 +40,10 @@
 	// Init
 	// -----------------------------------------------------------------------
 	document.addEventListener( 'DOMContentLoaded', function () {
-		loadStoredCredentials();
+		loadStoredSites();
 
 		if ( state.siteUrl && state.credentials ) {
+			renderSiteSwitcher();
 			showApp();
 			renderView( state.view );
 		} else {
@@ -42,37 +51,130 @@
 		}
 
 		bindLoginForm();
+		bindImportFile();
 		bindNav();
 		bindPeriodSelect();
 		bindMenuToggle();
 		bindSignOut();
+		bindAddSite();
 	} );
 
 	// -----------------------------------------------------------------------
-	// Credential helpers
+	// Multi-site storage
 	// -----------------------------------------------------------------------
-	function loadStoredCredentials() {
-		state.siteUrl     = localStorage.getItem( 'rsa_site_url' )    || '';
-		state.credentials = localStorage.getItem( 'rsa_credentials' ) || '';
-		state.period      = localStorage.getItem( 'rsa_period' )      || '30d';
+
+	function loadStoredSites() {
+		// Migrate single-site legacy format
+		var oldUrl  = localStorage.getItem( 'rsa_site_url' );
+		var oldCred = localStorage.getItem( 'rsa_credentials' );
+		if ( oldUrl && oldCred && ! localStorage.getItem( 'rsa_sites' ) ) {
+			var migrated = [ {
+				id         : uid(),
+				label      : hostname( oldUrl ),
+				siteUrl    : oldUrl,
+				credentials: oldCred,
+				pendingToken: null,
+			} ];
+			localStorage.setItem( 'rsa_sites',  JSON.stringify( migrated ) );
+			localStorage.setItem( 'rsa_active', migrated[0].id );
+			localStorage.removeItem( 'rsa_site_url' );
+			localStorage.removeItem( 'rsa_credentials' );
+		}
+
+		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
+		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
+		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
+		syncActiveState();
 	}
 
-	function saveCredentials( siteUrl, username, appPassword ) {
-		// Strip trailing slash
+	/** Compute siteUrl / credentials from the active site entry. */
+	function syncActiveState() {
+		var site = state.sites.find( function ( s ) { return s.id === state.activeId; } );
+		if ( ! site && state.sites.length ) {
+			site           = state.sites[0];
+			state.activeId = site.id;
+		}
+		state.siteUrl     = site ? site.siteUrl     : '';
+		state.credentials = site ? site.credentials : '';
+		state.cache       = {};
+	}
+
+	function setActiveSite( id ) {
+		state.activeId = id;
+		localStorage.setItem( 'rsa_active', id );
+		syncActiveState();
+		renderSiteSwitcher();
+	}
+
+	/** Save a new site after a successful connection test.  Returns the site object. */
+	function persistSite( siteUrl, username, appPassword, label, pendingToken ) {
 		siteUrl = siteUrl.replace( /\/$/, '' );
-		var encoded = btoa( username + ':' + appPassword );
-		localStorage.setItem( 'rsa_site_url',    siteUrl );
-		localStorage.setItem( 'rsa_credentials', encoded );
-		state.siteUrl     = siteUrl;
-		state.credentials = encoded;
+		var site = {
+			id          : uid(),
+			label       : label || hostname( siteUrl ),
+			siteUrl     : siteUrl,
+			credentials : btoa( username + ':' + appPassword ),
+			pendingToken: pendingToken || null,
+		};
+		state.sites.push( site );
+		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		state.activeId = site.id;
+		localStorage.setItem( 'rsa_active', site.id );
+		syncActiveState();
+		return site;
 	}
 
-	function clearCredentials() {
-		localStorage.removeItem( 'rsa_site_url' );
-		localStorage.removeItem( 'rsa_credentials' );
+	function removeSite( id ) {
+		state.sites = state.sites.filter( function ( s ) { return s.id !== id; } );
+		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		if ( state.activeId === id ) {
+			state.activeId = state.sites.length ? state.sites[0].id : '';
+			localStorage.setItem( 'rsa_active', state.activeId );
+		}
+		syncActiveState();
+	}
+
+	function clearAllSites() {
+		state.sites       = [];
+		state.activeId    = '';
 		state.siteUrl     = '';
 		state.credentials = '';
 		state.cache       = {};
+		localStorage.removeItem( 'rsa_sites' );
+		localStorage.removeItem( 'rsa_active' );
+	}
+
+	/**
+	 * Consume the single-use install token embedded in a .rsasite file.
+	 * Called once after the first successful API call for a new site.
+	 * Silent — failure never breaks anything.
+	 */
+	function verifyPendingToken( siteId ) {
+		var site = state.sites.find( function ( s ) { return s.id === siteId; } );
+		if ( ! site || ! site.pendingToken ) {
+			return;
+		}
+		var token = site.pendingToken;
+		// Clear immediately so it doesn't auto-retry on next load
+		site.pendingToken = null;
+		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+
+		fetch( site.siteUrl + '/wp-json/rsa/v1/verify-install', {
+			method : 'POST',
+			headers: {
+				'Authorization': 'Basic ' + site.credentials,
+				'Content-Type' : 'application/json',
+			},
+			body: JSON.stringify( { site_token: token } ),
+		} ).catch( function () { /* intentionally silent */ } );
+	}
+
+	function uid() {
+		return Math.random().toString( 36 ).slice( 2, 10 ) + Date.now().toString( 36 );
+	}
+
+	function hostname( url ) {
+		try { return new URL( url ).hostname; } catch ( _ ) { return url; }
 	}
 
 	// -----------------------------------------------------------------------
@@ -144,14 +246,23 @@
 				return;
 			}
 
-			// Temporarily save then test connection
-			saveCredentials( siteUrl, username, appPass );
+			// Test with temporary credentials (not yet persisted)
+			state.siteUrl     = siteUrl.replace( /\/$/, '' );
+			state.credentials = btoa( username + ':' + appPass );
 
 			apiGet( 'overview', { period: '7d' } ).then( function () {
+				var pending = state._pendingImport || {};
+				var site    = persistSite( siteUrl, username, appPass, pending.siteLabel || null, pending.siteToken || null );
+				state._pendingImport = null;
+				if ( site.pendingToken ) {
+					verifyPendingToken( site.id );
+				}
+				renderSiteSwitcher();
 				showApp();
 				renderView( 'overview' );
 			} ).catch( function ( err ) {
-				clearCredentials();
+				state.siteUrl     = '';
+				state.credentials = '';
 				var msg = err.message === 'auth'
 					? 'Authentication failed. Check your username and Application Password.'
 					: 'Could not reach the site. Check the URL and try again.';
@@ -173,12 +284,247 @@
 	}
 
 	function showApp() {
-		document.getElementById( 'rsa-login' ).hidden = true;
-		document.getElementById( 'rsa-app' ).hidden   = false;
+		document.getElementById( 'rsa-login' ).hidden    = true;
+		document.getElementById( 'rsa-add-site' ).hidden = true;
+		document.getElementById( 'rsa-app' ).hidden      = false;
 
-		// Sync period selector
 		var sel = document.getElementById( 'rsa-period-select' );
 		sel.value = state.period;
+	}
+
+	// -----------------------------------------------------------------------
+	// Import .rsasite file (login screen)
+	// -----------------------------------------------------------------------
+	function bindImportFile() {
+		var input = document.getElementById( 'rsa-import-file' );
+		if ( ! input ) return;
+
+		input.addEventListener( 'change', function () {
+			var file = this.files[0];
+			if ( ! file ) return;
+			parseSiteFile( file, function ( cfg ) {
+				var urlField  = document.getElementById( 'rsa-site-url' );
+				var userField = document.getElementById( 'rsa-username' );
+				if ( urlField  ) { urlField.value  = cfg.siteUrl;  urlField.readOnly = true; }
+				if ( userField ) { userField.value = cfg.username; }
+				state._pendingImport = { siteToken: cfg.siteToken || null, siteLabel: cfg.siteLabel || null };
+				var passField = document.getElementById( 'rsa-app-pass' );
+				if ( passField ) passField.focus();
+			} );
+			this.value = '';
+		} );
+	}
+
+	/** Parse a .rsasite JSON file.  Calls back with the parsed config or alerts on error. */
+	function parseSiteFile( file, callback ) {
+		var reader = new FileReader();
+		reader.onload = function ( e ) {
+			try {
+				var cfg = JSON.parse( e.target.result );
+				if ( typeof cfg.siteUrl !== 'string' || typeof cfg.username !== 'string' ) {
+					throw new Error( 'missing fields' );
+				}
+				callback( cfg );
+			} catch ( _ ) {
+				alert( 'Could not read the .rsasite file. Make sure it is the original unmodified file from your WordPress profile.' );
+			}
+		};
+		reader.readAsText( file );
+	}
+
+	// -----------------------------------------------------------------------
+	// Site switcher (nav dropdown)
+	// -----------------------------------------------------------------------
+	function renderSiteSwitcher() {
+		var label = document.getElementById( 'rsa-active-label' );
+		var menu  = document.getElementById( 'rsa-site-menu' );
+		if ( ! label || ! menu ) return;
+
+		var active = state.sites.find( function ( s ) { return s.id === state.activeId; } );
+		label.textContent = active ? active.label : '—';
+
+		var items = state.sites.map( function ( s ) {
+			var cls = 'rsa-site-menu-item' + ( s.id === state.activeId ? ' rsa-active' : '' );
+			return '<div class="' + cls + '" data-id="' + esc( s.id ) + '">' +
+				'<span class="rsa-site-menu-label">' + esc( s.label ) + '</span>' +
+				'<button class="rsa-site-menu-remove" data-remove-id="' + esc( s.id ) + '" ' +
+				        'title="Remove site" aria-label="Remove ' + esc( s.label ) + '">&times;</button>' +
+				'</div>';
+		} ).join( '' );
+
+		menu.innerHTML = items + '<button class="rsa-site-menu-add" id="rsa-site-menu-add-btn">+ Add site</button>';
+
+		menu.querySelectorAll( '.rsa-site-menu-item' ).forEach( function ( el ) {
+			el.addEventListener( 'click', function ( e ) {
+				if ( e.target.dataset.removeId ) return;
+				var id = this.dataset.id;
+				if ( id !== state.activeId ) {
+					setActiveSite( id );
+					destroyCharts();
+					renderView( state.view );
+				}
+				menu.hidden = true;
+			} );
+		} );
+
+		menu.querySelectorAll( '.rsa-site-menu-remove' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function ( e ) {
+				e.stopPropagation();
+				var id       = this.dataset.removeId;
+				var wasActive = ( id === state.activeId );
+				if ( ! confirm( 'Remove this site from the app?' ) ) return;
+				removeSite( id );
+				renderSiteSwitcher();
+				if ( wasActive ) {
+					destroyCharts();
+					if ( state.siteUrl ) {
+						renderView( state.view );
+					} else {
+						showLogin();
+					}
+				}
+				menu.hidden = true;
+			} );
+		} );
+
+		var addBtn = menu.querySelector( '#rsa-site-menu-add-btn' );
+		if ( addBtn ) {
+			addBtn.addEventListener( 'click', function () {
+				menu.hidden = true;
+				showAddSiteOverlay( null );
+			} );
+		}
+	}
+
+	function bindSiteSwitcher() {
+		var btn  = document.getElementById( 'rsa-switcher-btn' );
+		var menu = document.getElementById( 'rsa-site-menu' );
+		if ( ! btn || ! menu ) return;
+
+		btn.addEventListener( 'click', function ( e ) {
+			e.stopPropagation();
+			menu.hidden = ! menu.hidden;
+		} );
+		document.addEventListener( 'click', function () {
+			if ( menu ) menu.hidden = true;
+		} );
+	}
+
+	function destroyCharts() {
+		Object.keys( state.charts ).forEach( function ( id ) {
+			state.charts[ id ].destroy();
+		} );
+		state.charts = {};
+	}
+
+	// -----------------------------------------------------------------------
+	// Add Site overlay
+	// -----------------------------------------------------------------------
+	function showAddSiteOverlay( prefill ) {
+		var overlay  = document.getElementById( 'rsa-add-site' );
+		var urlField = document.getElementById( 'rsa-add-site-url' );
+		var usrField = document.getElementById( 'rsa-add-username' );
+		var pwdField = document.getElementById( 'rsa-add-app-pass' );
+		var errBox   = document.getElementById( 'rsa-add-error' );
+		if ( ! overlay ) return;
+
+		if ( urlField ) { urlField.value = ( prefill && prefill.siteUrl  ) ? prefill.siteUrl  : ''; urlField.readOnly = false; }
+		if ( usrField ) { usrField.value = ( prefill && prefill.username ) ? prefill.username : ''; }
+		if ( pwdField ) { pwdField.value = ''; }
+		if ( errBox   ) { errBox.hidden = true; }
+		overlay._pendingImport = prefill || null;
+
+		document.getElementById( 'rsa-app' ).hidden = true;
+		overlay.hidden = false;
+		if ( pwdField && prefill && prefill.siteUrl ) pwdField.focus();
+	}
+
+	function hideAddSiteOverlay() {
+		var overlay = document.getElementById( 'rsa-add-site' );
+		if ( overlay ) overlay.hidden = true;
+		document.getElementById( 'rsa-app' ).hidden = false;
+	}
+
+	function bindAddSite() {
+		// File import inside the overlay
+		var addImport = document.getElementById( 'rsa-add-import-file' );
+		if ( addImport ) {
+			addImport.addEventListener( 'change', function () {
+				var file = this.files[0];
+				if ( ! file ) return;
+				parseSiteFile( file, function ( cfg ) {
+					var urlField = document.getElementById( 'rsa-add-site-url' );
+					var usrField = document.getElementById( 'rsa-add-username' );
+					var overlay  = document.getElementById( 'rsa-add-site' );
+					if ( urlField ) { urlField.value = cfg.siteUrl;  urlField.readOnly = true; }
+					if ( usrField ) { usrField.value = cfg.username; }
+					if ( overlay  ) { overlay._pendingImport = { siteToken: cfg.siteToken || null, siteLabel: cfg.siteLabel || null }; }
+					var passField = document.getElementById( 'rsa-add-app-pass' );
+					if ( passField ) passField.focus();
+				} );
+				this.value = '';
+			} );
+		}
+
+		// Cancel
+		var cancelBtn = document.getElementById( 'rsa-add-cancel-btn' );
+		if ( cancelBtn ) {
+			cancelBtn.addEventListener( 'click', hideAddSiteOverlay );
+		}
+
+		// Connect
+		var confirmBtn = document.getElementById( 'rsa-add-confirm-btn' );
+		var errBox     = document.getElementById( 'rsa-add-error' );
+		if ( ! confirmBtn ) return;
+
+		confirmBtn.addEventListener( 'click', function () {
+			var siteUrl  = ( ( document.getElementById( 'rsa-add-site-url' ) || {} ).value || '' ).trim();
+			var username = ( ( document.getElementById( 'rsa-add-username'  ) || {} ).value || '' ).trim();
+			var appPass  = ( ( document.getElementById( 'rsa-add-app-pass'  ) || {} ).value || '' ).trim();
+
+			var urlObj;
+			try { urlObj = new URL( siteUrl ); } catch ( _ ) { urlObj = null; }
+			if ( ! urlObj || ( urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:' ) ) {
+				if ( errBox ) { errBox.textContent = 'Please enter a valid URL (including https://).'; errBox.hidden = false; }
+				return;
+			}
+			if ( ! username || ! appPass ) {
+				if ( errBox ) { errBox.textContent = 'Username and Application Password are required.'; errBox.hidden = false; }
+				return;
+			}
+
+			confirmBtn.disabled    = true;
+			confirmBtn.textContent = 'Connecting…';
+			if ( errBox ) errBox.hidden = true;
+
+			// Temporarily set state to test credentials
+			var prevUrl  = state.siteUrl;
+			var prevCred = state.credentials;
+			state.siteUrl     = siteUrl.replace( /\/$/, '' );
+			state.credentials = btoa( username + ':' + appPass );
+			state.cache       = {};
+
+			apiGet( 'overview', { period: '7d' } ).then( function () {
+				var overlay = document.getElementById( 'rsa-add-site' );
+				var pending = ( overlay && overlay._pendingImport ) || {};
+				var site    = persistSite( siteUrl, username, appPass, pending.siteLabel || null, pending.siteToken || null );
+				if ( site.pendingToken ) verifyPendingToken( site.id );
+				renderSiteSwitcher();
+				hideAddSiteOverlay();
+				destroyCharts();
+				renderView( state.view );
+			} ).catch( function ( err ) {
+				state.siteUrl     = prevUrl;
+				state.credentials = prevCred;
+				state.cache       = {};
+				var msg = err.message === 'auth'
+					? 'Authentication failed. Check your Application Password.'
+					: 'Could not reach the site. Check the URL.';
+				if ( errBox ) { errBox.textContent = msg; errBox.hidden = false; }
+				confirmBtn.disabled    = false;
+				confirmBtn.textContent = 'Connect';
+			} );
+		} );
 	}
 
 	// -----------------------------------------------------------------------
@@ -192,6 +538,7 @@
 				closeNav();
 			} );
 		} );
+		bindSiteSwitcher();
 	}
 
 	function switchView( view ) {
@@ -258,12 +605,8 @@
 
 	function bindSignOut() {
 		document.getElementById( 'rsa-signout' ).addEventListener( 'click', function () {
-			clearCredentials();
-			// Destroy all charts to prevent canvas reuse errors
-			Object.keys( state.charts ).forEach( function ( id ) {
-				state.charts[ id ].destroy();
-			} );
-			state.charts = {};
+			clearAllSites();
+			destroyCharts();
 			showLogin();
 		} );
 	}
@@ -467,7 +810,7 @@
 	function handleApiError( err ) {
 		setLoading( false );
 		if ( err.message === 'auth' ) {
-			clearCredentials();
+			clearAllSites();
 			showLogin();
 		}
 		// Offline — show stale content via service worker cache (already painted)

@@ -28,14 +28,14 @@ define( 'RSA_MIN_WP',    '6.0' );
 define( 'RSA_MIN_PHP',   '8.0' );
 
 // -----------------------------------------------------------------------
-// Stub rsa_fs() for unit tests — tests never need the real Freemius SDK
+// Stub rs_fs() for unit tests — tests never need the real Freemius SDK
 // -----------------------------------------------------------------------
-if ( ! function_exists( 'rsa_fs' ) ) {
-	function rsa_fs(): object {
+if ( ! function_exists( 'rs_fs' ) ) {
+	function rs_fs(): object {
 		static $stub = null;
 		if ( $stub === null ) {
 			$stub = new class {
-				public function can_use_premium_code(): bool { return false; }
+				public function can_use_premium_code__premium_only(): bool { return false; }
 				public function is_premium(): bool           { return false; }
 				public function is_paying(): bool            { return false; }
 				public function is_trial(): bool             { return false; }

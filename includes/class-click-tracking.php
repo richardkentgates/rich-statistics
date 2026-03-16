@@ -2,6 +2,8 @@
 /**
  * [PREMIUM] Click tracking — server-side ingest handler.
  * The client-side collection is part of tracker.js (gated by RSA.premium.clickEnabled).
+ *
+ * @fs_premium_only
  */
 defined( 'ABSPATH' ) || exit;
 
@@ -39,6 +41,8 @@ class RSA_Click_Tracking {
 		$element_class = substr( sanitize_text_field( $data['element_class'] ?? '' ), 0, 512 );
 		$element_text  = substr( sanitize_text_field( $data['element_text']  ?? '' ), 0, 255 );
 		$href_protocol = substr( sanitize_text_field( $data['href_protocol'] ?? '' ), 0, 32 );
+		// '#id' or '.classname' — which configured rule triggered this track
+		$matched_rule  = substr( sanitize_text_field( $data['matched_rule']  ?? '' ), 0, 255 );
 
 		$x_pct = round( min( 100, max( 0, (float) ( $data['x_pct'] ?? 0 ) ) ), 2 );
 		$y_pct = round( min( 100, max( 0, (float) ( $data['y_pct'] ?? 0 ) ) ), 2 );
@@ -53,10 +57,11 @@ class RSA_Click_Tracking {
 				'element_class' => $element_class ?: null,
 				'element_text'  => $element_text  ?: null,
 				'href_protocol' => $href_protocol ?: null,
+				'matched_rule'  => $matched_rule  ?: null,
 				'x_pct'         => $x_pct > 0 ? $x_pct : null,
 				'y_pct'         => $y_pct > 0 ? $y_pct : null,
 			],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f' ]
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f' ]
 		);
 
 		wp_send_json_success( [ 'ok' => true ] );

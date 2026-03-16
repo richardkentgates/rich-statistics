@@ -2,11 +2,25 @@
 /**
  * Premium: Heatmap template.
  * Renders a live page in an iframe and overlays canvas heatmap via JS.
+ *
+ * @fs_premium_only
  */
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
-if ( ! ( function_exists( 'rsa_fs' ) && rsa_fs()->can_use_premium_code() ) ) {
-	wp_die( esc_html__( 'This feature requires Rich Statistics Premium.', 'rich-statistics' ) );
+if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+	RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ) );
+	?>
+	<div class="rsa-upsell-notice">
+		<h2><?php esc_html_e( 'Heatmap is a Premium Feature', 'rich-statistics' ); ?></h2>
+		<p><?php esc_html_e( 'Visualise scroll depth and engagement intensity across any page with a real-time heatmap overlay — no external service required.', 'rich-statistics' ); ?></p>
+		<?php if ( function_exists( 'rs_fs' ) ) : ?>
+		<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary button-hero">
+			<?php esc_html_e( 'Upgrade to Unlock Heatmap', 'rich-statistics' ); ?>
+		</a>
+		<?php endif; ?>
+	</div>
+	<?php
+	return;
 }
 
 $period  = sanitize_text_field( $_GET['period'] ?? '30d' );

@@ -7,6 +7,8 @@
  *                No custom token system — use a WP user account with
  *                the Application Password generated in their profile.
  *
+ * @fs_premium_only
+ *
  * Notes on security:
  * - All read endpoints require 'manage_options' (admin-level).
  * - The ingest POST endpoint (/track) is public but nonce-protected.
@@ -63,6 +65,20 @@ class RSA_Rest_API {
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'post_track' ],
 			'permission_callback' => '__return_true',
+		] );
+
+		// Install token verification — authenticated, single-use
+		register_rest_route( self::NS, '/verify-install', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'post_verify_install' ],
+			'permission_callback' => $auth,
+			'args'                => [
+				'site_token' => [
+					'type'              => 'string',
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+			],
 		] );
 	}
 
@@ -125,6 +141,39 @@ class RSA_Rest_API {
 		}
 
 		return self::ok( json_decode( $data, true ) );
+	}
+
+	// ----------------------------------------------------------------
+	// Install token verification
+	// ----------------------------------------------------------------
+
+	/**
+	 * Consume the single-use install token embedded in a personalised PWA
+	 * download.  Called on the first successful login from that device.
+	 * Fails silently in the app — app functionality is never gated on this.
+	 */
+	public static function post_verify_install( WP_REST_Request $r ): WP_REST_Response|WP_Error {
+		$user_id = get_current_user_id();
+		$stored  = get_user_meta( $user_id, 'rsa_install_token', true );
+
+		if ( empty( $stored ) || ! is_array( $stored ) ) {
+			return new WP_Error( 'no_token', 'No pending install token for this user.', [ 'status' => 404 ] );
+		}
+
+		if ( time() > (int) $stored['expires'] ) {
+			delete_user_meta( $user_id, 'rsa_install_token' );
+			return new WP_Error( 'token_expired', 'Install token has expired. Download a fresh copy from your profile.', [ 'status' => 410 ] );
+		}
+
+		// Constant-time comparison prevents timing side-channel
+		if ( ! hash_equals( (string) $stored['token'], (string) $r['site_token'] ) ) {
+			return new WP_Error( 'invalid_token', 'Invalid install token.', [ 'status' => 403 ] );
+		}
+
+		// Token consumed — delete so replay on a second device fails
+		delete_user_meta( $user_id, 'rsa_install_token' );
+
+		return self::ok( [ 'verified' => true ] );
 	}
 
 	// ----------------------------------------------------------------

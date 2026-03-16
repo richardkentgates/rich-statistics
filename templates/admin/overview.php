@@ -10,12 +10,21 @@ if ( ! current_user_can( 'manage_options' ) ) {
 }
 
 $period  = sanitize_text_field( $_GET['period'] ?? '30d' );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
+$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) {
 	$period = '30d';
 }
 
-$data = RSA_Analytics::get_overview( $period );
+$date_from = $date_to = '';
+if ( $period === 'custom' ) {
+	$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
+	$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
+}
+
+$date_filters = [ 'date_from' => $date_from, 'date_to' => $date_to ];
+$data = RSA_Analytics::get_overview( $period, $date_filters );
 
 RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 ?>
@@ -67,7 +76,7 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 			   class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
 		</div>
 		<?php
-		$top_pages = RSA_Analytics::get_top_pages( $period, 5 );
+		$top_pages = RSA_Analytics::get_top_pages( $period, 5, $date_filters );
 		if ( $top_pages ) :
 		?>
 		<table class="rsa-table">
@@ -99,7 +108,7 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 			   class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
 		</div>
 		<?php
-		$referrers = RSA_Analytics::get_referrers( $period, 5 );
+		$referrers = RSA_Analytics::get_referrers( $period, 5, $date_filters );
 		if ( $referrers ) :
 		?>
 		<table class="rsa-table">

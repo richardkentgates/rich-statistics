@@ -2,21 +2,21 @@
    Rich Statistics — Admin Styles
    ========================================================================== */
 
-/* Variables */
+/* Variables — aligned with WP admin native palette */
 :root {
-	--rsa-bg         : #f8fafc;
-	--rsa-surface    : #ffffff;
-	--rsa-border     : #e2e8f0;
-	--rsa-text       : #1e293b;
-	--rsa-muted      : #64748b;
-	--rsa-accent     : #6366f1;
-	--rsa-accent-lt  : rgba(99, 102, 241, 0.08);
-	--rsa-success    : #10b981;
-	--rsa-danger     : #f43f5e;
-	--rsa-warning    : #f59e0b;
-	--rsa-radius     : 10px;
-	--rsa-shadow     : 0 1px 4px rgba(0, 0, 0, 0.07);
-	--rsa-shadow-md  : 0 4px 16px rgba(0, 0, 0, 0.10);
+	--rsa-bg         : #f0f0f1;                    /* WP admin body */
+	--rsa-surface    : #fff;                       /* card/box background */
+	--rsa-border     : #c3c4c7;                    /* WP native border */
+	--rsa-text       : #1d2327;                    /* WP native body text */
+	--rsa-muted      : #646970;                    /* WP native muted text */
+	--rsa-accent     : #2271b1;                    /* WP primary blue */
+	--rsa-accent-lt  : rgba(34, 113, 177, 0.07);   /* light tint */
+	--rsa-success    : #00a32a;                    /* WP native green */
+	--rsa-danger     : #d63638;                    /* WP native red */
+	--rsa-warning    : #dba617;                    /* WP native yellow */
+	--rsa-radius     : 3px;                        /* WP native radius */
+	--rsa-shadow     : none;                       /* WP is flat */
+	--rsa-shadow-md  : 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Wrapper */
@@ -33,8 +33,7 @@
 	flex-wrap: wrap;
 	gap: 12px;
 	margin: 20px 0 24px;
-	padding-bottom: 16px;
-	border-bottom: 1px solid var(--rsa-border);
+	padding-bottom: 0;
 }
 
 .rsa-title {
@@ -59,7 +58,7 @@
 .rsa-period-btn {
 	display: inline-block;
 	padding: 5px 12px;
-	border-radius: 6px;
+	border-radius: var(--rsa-radius);
 	font-size: 12px;
 	font-weight: 500;
 	text-decoration: none;
@@ -82,6 +81,42 @@
 	border-color: var(--rsa-accent) !important;
 }
 
+/* Custom date range row */
+.rsa-custom-range {
+	align-items: center;
+	margin: -16px 0 20px;
+	padding: 10px 0;
+	border-top: 1px solid var(--rsa-border);
+}
+
+.rsa-custom-range-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-custom-range input[type="date"] {
+	margin: 0;
+	padding: 4px 8px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 13px;
+	color: var(--rsa-text);
+	background: #fff;
+}
+
+.rsa-date-sep {
+	color: var(--rsa-muted);
+	font-size: 13px;
+}
+
+/* Flow chart container */
+#rsa-flow-chart {
+	min-height: 60px;
+	overflow-x: auto;
+}
+
 /* KPI Grid */
 .rsa-kpi-grid {
 	display: grid;
@@ -91,11 +126,7 @@
 }
 
 .rsa-kpi-card {
-	background: var(--rsa-surface);
-	border: 1px solid var(--rsa-border);
-	border-radius: var(--rsa-radius);
-	padding: 20px 24px;
-	box-shadow: var(--rsa-shadow);
+	padding: 16px 8px;
 }
 
 .rsa-kpi-label {
@@ -116,12 +147,9 @@
 
 /* Card */
 .rsa-card {
-	background: var(--rsa-surface);
-	border: 1px solid var(--rsa-border);
-	border-radius: var(--rsa-radius);
-	box-shadow: var(--rsa-shadow);
-	margin-bottom: 24px;
-	overflow: hidden;
+	border-top: 1px solid var(--rsa-border);
+	padding-top: 20px;
+	margin-bottom: 28px;
 }
 
 .rsa-card-full {
@@ -136,9 +164,10 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 16px 20px;
+	padding: 0 0 12px;
 	border-bottom: 1px solid var(--rsa-border);
-	background: var(--rsa-bg);
+	margin-bottom: 16px;
+	background: transparent;
 }
 
 .rsa-card-header h2 {
@@ -149,9 +178,10 @@
 }
 
 .rsa-card-footer {
-	padding: 16px 20px;
+	padding: 12px 0 0;
 	border-top: 1px solid var(--rsa-border);
-	background: var(--rsa-bg);
+	margin-top: 16px;
+	background: transparent;
 }
 
 /* Two-column layout */
@@ -172,7 +202,7 @@
 
 /* Chart wrappers */
 .rsa-chart-wrap {
-	padding: 20px;
+	padding: 16px 0;
 	position: relative;
 }
 
@@ -205,7 +235,7 @@
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: var(--rsa-muted);
-	background: var(--rsa-bg);
+	background: transparent;
 	border-bottom: 1px solid var(--rsa-border);
 }
 
@@ -234,13 +264,39 @@
 }
 
 .rsa-td-page,
-.rsa-td-classes {
+.rsa-td-classes,
+.rsa-td-text {
 	font-family: ui-monospace, "SFMono-Regular", monospace;
 	font-size: 12px;
 	max-width: 360px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* Click map element descriptor */
+.rsa-el-id {
+	color: var(--rsa-accent);
+}
+
+.rsa-el-class {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 11px;
+	color: var(--rsa-muted);
+}
+
+/* Click trigger badges */
+.rsa-trigger-rule {
+	color: #00a32a;
+	background: rgba(0,163,42,0.08);
+	padding: 1px 6px;
+	border-radius: var(--rsa-radius);
+}
+
+.rsa-trigger-protocol {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+	color: var(--rsa-accent);
 }
 
 /* Bar cell (inline bar in table column) */
@@ -285,6 +341,32 @@
 	flex-wrap: wrap;
 }
 
+/* Filter bar (above data tables) */
+.rsa-filter-bar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+
+.rsa-filter-bar select,
+.rsa-filter-bar input[type="search"],
+.rsa-filter-bar input[type="text"] {
+	margin: 0;
+}
+
+/* Sortable column header links */
+.rsa-table thead th a {
+	color: var(--rsa-text);
+	text-decoration: none;
+}
+
+.rsa-table thead th a:hover {
+	color: var(--rsa-accent);
+	text-decoration: underline;
+}
+
 /* Settings form */
 .rsa-settings-form .form-table th {
 	padding-top: 14px;
@@ -299,7 +381,7 @@
 .rsa-premium-badge {
 	display: inline-block;
 	padding: 2px 8px;
-	background: linear-gradient(135deg, #6366f1, #ec4899);
+	background: linear-gradient(135deg, #2271b1, #135e96);
 	color: #fff;
 	font-size: 11px;
 	font-weight: 600;
@@ -312,6 +394,8 @@
 	font-family: ui-monospace, "SFMono-Regular", monospace;
 	font-size: 12px;
 }
+
+/* <fs_premium_only> */
 
 /* Heatmap viewer */
 .rsa-heatmap-controls form {
@@ -353,6 +437,8 @@
 	pointer-events: none;
 }
 
+/* </fs_premium_only> */
+
 /* Webapp profile button row */
 .rsa-webapp-row th,
 .rsa-webapp-row td {
@@ -379,4 +465,66 @@
 	.rsa-chart-wrap--doughnut {
 		max-height: none;
 	}
+}
+
+/* ----------------------------------------------------------------
+   Upsell banner (shown to non-paying users across all admin pages)
+   ---------------------------------------------------------------- */
+.rsa-upsell-banner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+background: linear-gradient(135deg, #1d2327 0%, #2c3338 100%);
+border-left: 4px solid #2271b1;
+color: #f0f0f1;
+padding: 14px 18px;
+margin-bottom: 16px;
+border-radius: 0 4px 4px 0;
+}
+
+.rsa-upsell-banner__content {
+flex: 1;
+font-size: 13px;
+line-height: 1.5;
+}
+
+.rsa-upsell-banner__content strong {
+display: block;
+font-size: 14px;
+margin-bottom: 2px;
+color: #fff;
+}
+
+.rsa-upsell-banner .button-primary {
+white-space: nowrap;
+flex-shrink: 0;
+}
+
+/* Upsell full-page notice (click-map / heatmap locked pages) */
+.rsa-upsell-notice {
+background: #fff;
+border: 1px solid #dcdcde;
+border-top: 4px solid #2271b1;
+border-radius: 4px;
+padding: 32px 28px;
+max-width: 640px;
+margin-top: 20px;
+}
+
+.rsa-upsell-notice h2 {
+margin-top: 0;
+font-size: 20px;
+}
+
+.rsa-upsell-notice p {
+color: #50575e;
+margin-bottom: 20px;
+}
+
+@media screen and (max-width: 600px) {
+.rsa-upsell-banner {
+flex-direction: column;
+align-items: flex-start;
+}
 }

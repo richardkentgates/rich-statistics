@@ -42,7 +42,7 @@ class RSA_Bot_Detection {
 		self::CS_INSTANT_LOAD       => 2,
 		self::CS_NO_CANVAS          => 2,
 		self::CS_HIDDEN_ON_ARRIVAL  => 2,
-		self::CS_NO_HUMAN_EVENT     => 3,  // strong signal — real humans move/scroll
+		self::CS_NO_HUMAN_EVENT     => 1,  // passive readers don't interact — soft signal only
 		self::CS_CHROME_MISSING_OBJ => 3,
 	];
 

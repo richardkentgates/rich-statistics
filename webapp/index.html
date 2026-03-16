@@ -54,6 +54,11 @@
 			</button>
 			<div id="rsa-login-error" class="rsa-alert rsa-alert-error" hidden></div>
 		</form>
+		<div class="rsa-import-hint">
+			<span>Have a <code>.rsasite</code> file? </span>
+			<label for="rsa-import-file" class="rsa-import-label">Import it →</label>
+			<input type="file" id="rsa-import-file" accept=".rsasite,application/json" hidden>
+		</div>
 	</div>
 </div>
 
@@ -64,6 +69,15 @@
 	<nav class="rsa-nav" id="rsa-nav">
 		<div class="rsa-nav-brand">
 			<span>📊</span> Rich Stats
+		</div>
+		<div class="rsa-site-switcher" id="rsa-site-switcher">
+			<button class="rsa-switcher-btn" id="rsa-switcher-btn">
+				<span id="rsa-active-label">—</span>
+				<span class="rsa-switcher-caret">▾</span>
+			</button>
+			<div class="rsa-site-menu" id="rsa-site-menu" hidden>
+				<!-- Populated by renderSiteSwitcher() -->
+			</div>
 		</div>
 		<ul class="rsa-nav-list">
 			<li><a href="#" data-view="overview"  class="rsa-nav-link rsa-active">Overview</a></li>
@@ -109,8 +123,42 @@
 	</main>
 </div>
 
+<!-- Add Site overlay (import .rsasite or manual entry) -->
+<div id="rsa-add-site" class="rsa-screen rsa-overlay" hidden>
+	<div class="rsa-login-card">
+		<h2 style="text-align:center;margin-bottom:16px;">Add Site</h2>
+		<label for="rsa-add-import-file" class="rsa-import-block">
+			📂 Import <code>.rsasite</code> file
+		</label>
+		<input type="file" id="rsa-add-import-file" accept=".rsasite,application/json" hidden>
+		<div class="rsa-divider">or enter manually</div>
+		<div class="rsa-field">
+			<label for="rsa-add-site-url">Site URL</label>
+			<input type="url" id="rsa-add-site-url" placeholder="https://yoursite.com" autocomplete="url">
+		</div>
+		<div class="rsa-field">
+			<label for="rsa-add-username">WordPress Username</label>
+			<input type="text" id="rsa-add-username" placeholder="admin" autocomplete="username">
+		</div>
+		<div class="rsa-field">
+			<label for="rsa-add-app-pass">Application Password</label>
+			<input type="password" id="rsa-add-app-pass"
+			       placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+			       autocomplete="current-password">
+		</div>
+		<div class="rsa-field-row">
+			<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-add-confirm-btn">Connect</button>
+			<button type="button" class="rsa-btn-ghost" id="rsa-add-cancel-btn">Cancel</button>
+		</div>
+		<div id="rsa-add-error" class="rsa-alert rsa-alert-error" hidden></div>
+	</div>
+</div>
+
 <!-- Chart.js — served from plugin directory (same file as admin) -->
 <script src="../vendor/chart.min.js"></script>
+<!-- Site-specific pre-configuration (empty when served from plugin URL;
+     replaced with your site URL + username in personalized downloads) -->
+<script src="config.js"></script>
 <script src="app.js"></script>
 <script>
 	// Register service worker for offline shell
