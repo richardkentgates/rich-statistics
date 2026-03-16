@@ -18,7 +18,6 @@ $f_browser = sanitize_text_field( $_GET['browser'] ?? '' );
 $f_os      = sanitize_text_field( $_GET['os']      ?? '' );
 $filters   = [ 'browser' => $f_browser, 'os' => $f_os, 'date_from' => $date_from, 'date_to' => $date_to ];
 $data      = RSA_Analytics::get_behavior( $period, $filters );
-$data['user_flow'] = RSA_Analytics::get_user_flow( $period, $filters );
 $opts      = RSA_Analytics::get_filter_options( $period, $filters );
 
 RSA_Admin::page_header( __( 'Behavior', 'rich-statistics' ), $period );
@@ -130,18 +129,6 @@ $base = admin_url( 'admin.php' );
 		<?php endif; ?>
 	</div>
 
-</div>
-
-<!-- User Flow -->
-<div class="rsa-card rsa-card-full">
-	<div class="rsa-card-header">
-		<h2><?php esc_html_e( 'User Flow', 'rich-statistics' ); ?></h2>
-	</div>
-	<div class="rsa-chart-wrap" id="rsa-flow-chart">
-		<?php if ( empty( $data['user_flow'] ) ) : ?>
-		<p class="rsa-empty"><?php esc_html_e( 'No navigation flow data yet. Flow tracking requires multi-page sessions.', 'rich-statistics' ); ?></p>
-		<?php endif; ?>
-	</div>
 </div>
 
 <?php RSA_Admin::page_footer(); ?>

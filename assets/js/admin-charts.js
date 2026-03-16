@@ -278,7 +278,8 @@
 	// User flow: SVG Sankey diagram of page-to-page transitions
 	// ----------------------------------------------------------------
 
-	function initFlowChart( flow ) {
+	function initFlowChart( flow, topN ) {
+		topN = topN || 8;
 		var container = document.getElementById( 'rsa-flow-chart' );
 		if ( ! container || ! flow || ! flow.length ) { return; }
 
@@ -292,9 +293,9 @@
 		} );
 
 		var sources = Object.keys( srcTotals )
-			.sort( function ( a, b ) { return srcTotals[ b ] - srcTotals[ a ]; } ).slice( 0, 8 );
+			.sort( function ( a, b ) { return srcTotals[ b ] - srcTotals[ a ]; } ).slice( 0, topN );
 		var targets = Object.keys( dstTotals )
-			.sort( function ( a, b ) { return dstTotals[ b ] - dstTotals[ a ]; } ).slice( 0, 8 );
+			.sort( function ( a, b ) { return dstTotals[ b ] - dstTotals[ a ]; } ).slice( 0, topN );
 
 		var visible = flow.filter( function ( t ) {
 			return sources.indexOf( t.from_page ) !== -1 && targets.indexOf( t.to_page ) !== -1;
@@ -449,6 +450,11 @@
 			case 'audience':  initAudience( data );  break;
 			case 'referrers': initReferrers( data ); break;
 			case 'behavior':  initBehavior( data );  break;
+			case 'user-flow':
+				if ( data.user_flow && data.user_flow.length ) {
+					initFlowChart( data.user_flow, RSA_DATA.top_n || 12 );
+				}
+				break;
 			/* <fs_premium_only> */
 			case 'click-map': initClickMap( data );  break;
 			/* </fs_premium_only> */

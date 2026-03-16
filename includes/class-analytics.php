@@ -415,6 +415,30 @@ class RSA_Analytics {
 		$et    = RSA_DB::events_table();
 		$bt    = self::bot_threshold();
 
+		$outer_where  = [ 'to_page IS NOT NULL', 'from_page != to_page' ];
+		$prepare_args = [ $range['start'], $range['end'], $bt ];
+
+		if ( ! empty( $filters['from_page'] ) ) {
+			$outer_where[]  = 'from_page = %s';
+			$prepare_args[] = $filters['from_page'];
+		}
+		if ( ! empty( $filters['to_page'] ) ) {
+			$outer_where[]  = 'to_page = %s';
+			$prepare_args[] = $filters['to_page'];
+		}
+
+		$where_sql = 'WHERE ' . implode( ' AND ', $outer_where );
+
+		$min_count  = max( 1, (int) ( $filters['min_count'] ?? 1 ) );
+		$having_sql = $min_count > 1 ? 'HAVING `count` >= ' . $min_count : '';
+
+		$valid_sorts = [ 'count', 'from_page', 'to_page' ];
+		$sort_col    = in_array( $filters['sort'] ?? '', $valid_sorts, true ) ? $filters['sort'] : 'count';
+		$sort_dir    = ( ( $filters['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'ASC' : 'DESC';
+		$order_sql   = '`' . $sort_col . '` ' . $sort_dir;
+
+		$limit = max( 10, min( 250, (int) ( $filters['limit'] ?? 30 ) ) );
+
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT from_page, to_page, COUNT(*) AS `count`
@@ -425,11 +449,12 @@ class RSA_Analytics {
 				     FROM `{$et}`
 				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
 				 ) transitions
-				 WHERE to_page IS NOT NULL AND from_page != to_page
+				 {$where_sql}
 				 GROUP BY from_page, to_page
-				 ORDER BY `count` DESC
-				 LIMIT 30", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt
+				 {$having_sql}
+				 ORDER BY {$order_sql}
+				 LIMIT {$limit}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				...$prepare_args
 			),
 			ARRAY_A
 		);

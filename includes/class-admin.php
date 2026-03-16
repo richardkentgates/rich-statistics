@@ -66,6 +66,7 @@ class RSA_Admin {
 			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'referrers' => [ 'title' => __( 'Referrers', 'rich-statistics' ), 'label' => __( 'Referrers', 'rich-statistics' ), 'cap' => 'manage_options' ],
 			'behavior'  => [ 'title' => __( 'Behavior',  'rich-statistics' ), 'label' => __( 'Behavior',  'rich-statistics' ), 'cap' => 'manage_options' ],
+			'user-flow' => [ 'title' => __( 'User Flow', 'rich-statistics' ), 'label' => __( 'User Flow', 'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
@@ -162,10 +163,20 @@ class RSA_Admin {
 			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-behavior' ) ) {
-			$beh_filters           = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
-			$beh_data              = RSA_Analytics::get_behavior( $period, $beh_filters );
-			$beh_data['user_flow'] = RSA_Analytics::get_user_flow( $period, $beh_filters );
+			$beh_filters = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
+			$beh_data    = RSA_Analytics::get_behavior( $period, $beh_filters );
 			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
+		}
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-user-flow' ) ) {
+			$uf_filters = [
+				'date_from'  => $date_from,
+				'date_to'    => $date_to,
+				'from_page'  => sanitize_text_field( $_GET['from_page'] ?? '' ),
+				'to_page'    => sanitize_text_field( $_GET['to_page']   ?? '' ),
+				'min_count'  => max( 1, (int) ( $_GET['min_count'] ?? 1 ) ),
+				'limit'      => 30,
+			];
+			return [ 'view' => 'user-flow', 'data' => [ 'user_flow' => RSA_Analytics::get_user_flow( $period, $uf_filters ) ], 'period' => $period, 'top_n' => 12 ];
 		}
 		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );
@@ -185,6 +196,7 @@ class RSA_Admin {
 	public static function page_audience():       void { self::render( 'audience' ); }
 	public static function page_referrers():      void { self::render( 'referrers' ); }
 	public static function page_behavior():       void { self::render( 'behavior' ); }
+	public static function page_user_flow():      void { self::render( 'user-flow' ); }
 	public static function page_click_map():      void { self::render( 'click-map' ); }
 	public static function page_heatmap():        void { self::render( 'heatmap' ); }
 	public static function page_preferences():      void { self::render( 'preferences' ); }
@@ -489,6 +501,14 @@ class RSA_Admin {
 					'<h2>' . esc_html__( 'Behavior Analysis', 'rich-statistics' ) . '</h2>' .
 					'<p>' . esc_html__( 'Time on page is measured using the Visibility API — the timer pauses when the visitor switches tabs and resumes when they return. The value is sent when the page is closed via the Beacon API.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Session depth shows how many pages most visitors view in a single session. Entry pages lists the pages where most sessions start.', 'rich-statistics' ) . '</p>',
+			],
+			'rich-statistics_page_rich-statistics-user-flow' => [
+				'id'      => 'rsa-user-flow-help',
+				'title'   => __( 'User Flow', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'User Flow Analysis', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'The flow chart visualises how visitors navigate between pages. Each ribbon represents a page-to-page transition; the wider the ribbon, the more visitors made that journey.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Use the Entry Page and Exit Page dropdowns to focus on traffic entering or leaving a specific page. Switch to the Transitions Table view to sort and browse every recorded page pair with counts and percentages.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-click-map' => [
 				'id'      => 'rsa-clicks-help',
