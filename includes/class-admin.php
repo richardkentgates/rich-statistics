@@ -149,25 +149,25 @@ class RSA_Admin {
 			'date_to'   => $date_to,
 		];
 
-		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-pages' ) ) {
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-pages' ) ) {
 			$pf         = $page_filters;
 			$pf['page'] = sanitize_text_field( $_GET['path'] ?? '' );
 			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period, 20, $pf ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-audience' ) ) {
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-audience' ) ) {
 			return [ 'view' => 'audience', 'data' => RSA_Analytics::get_audience( $period, $page_filters ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-referrers' ) ) {
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-referrers' ) ) {
 			$ref_filters = [ 'page' => $page_filters['page'] ];
 			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-behavior' ) ) {
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-behavior' ) ) {
 			$beh_filters           = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
 			$beh_data              = RSA_Analytics::get_behavior( $period, $beh_filters );
 			$beh_data['user_flow'] = RSA_Analytics::get_user_flow( $period, $beh_filters );
 			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
+		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );
 			return [ 'view' => 'click-map', 'data' => RSA_Analytics::get_click_map( $period, $page ), 'period' => $period ];
 		}
