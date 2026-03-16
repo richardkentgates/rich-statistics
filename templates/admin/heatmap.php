@@ -43,11 +43,21 @@ RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ), $period );
 	<form method="get" class="rsa-inline-form">
 		<input type="hidden" name="page"   value="rich-statistics-heatmap">
 		<input type="hidden" name="period" value="<?php echo esc_attr( $period ); ?>">
-		<label for="hm_page"><?php esc_html_e( 'Page path:', 'rich-statistics' ); ?></label>
+		<label for="hm_page"><?php esc_html_e( 'Page:', 'rich-statistics' ); ?></label>
+		<?php $trackable = RSA_Admin::get_trackable_pages(); ?>
+		<?php if ( $trackable ) : ?>
+		<select id="hm_page" name="hm_page">
+			<option value="/"><?php esc_html_e( '/ (Home)', 'rich-statistics' ); ?></option>
+			<?php foreach ( $trackable as $path => $label ) : ?>
+			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $page_path, $path ); ?>><?php echo esc_html( $label ); ?></option>
+			<?php endforeach; ?>
+		</select>
+		<?php else : ?>
 		<input type="text" id="hm_page" name="hm_page"
 		       value="<?php echo esc_attr( $page_path ); ?>"
 		       placeholder="/example-page/"
 		       class="regular-text">
+		<?php endif; ?>
 		<button type="submit" class="button button-primary"><?php esc_html_e( 'Load Heatmap', 'rich-statistics' ); ?></button>
 	</form>
 </div>

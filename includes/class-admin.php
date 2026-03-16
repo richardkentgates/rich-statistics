@@ -198,6 +198,32 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
+	// Page dropdown helper — WordPress-native list for page filters
+	// ----------------------------------------------------------------
+
+	public static function get_trackable_pages(): array {
+		$enabled_cpts = get_option( 'rsa_enabled_post_types', [] );
+		$post_types   = array_merge( [ 'page', 'post' ], is_array( $enabled_cpts ) ? $enabled_cpts : [] );
+
+		$posts = get_posts( [
+			'post_type'      => array_unique( $post_types ),
+			'post_status'    => 'publish',
+			'numberposts'    => 500,
+			'orderby'        => 'post_type',
+			'order'          => 'ASC',
+		] );
+
+		$pages = [];
+		foreach ( $posts as $post ) {
+			$url  = get_permalink( $post );
+			$path = wp_make_link_relative( $url );
+			$pages[ $path ] = get_the_title( $post ) . ' (' . $path . ')';
+		}
+		ksort( $pages );
+		return $pages;
+	}
+
+	// ----------------------------------------------------------------
 	// Settings save handler
 	// ----------------------------------------------------------------
 
@@ -240,6 +266,13 @@ class RSA_Admin {
 				update_option( $key, 0 );
 			}
 		}
+
+		// Custom post types array — sanitize each slug
+		$raw_cpts = isset( $_POST['rsa_enabled_post_types'] ) && is_array( $_POST['rsa_enabled_post_types'] )
+			? $_POST['rsa_enabled_post_types']
+			: [];
+		$safe_cpts = array_values( array_filter( array_map( 'sanitize_key', $raw_cpts ) ) );
+		update_option( 'rsa_enabled_post_types', $safe_cpts );
 
 		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
 		exit;

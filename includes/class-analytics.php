@@ -484,17 +484,24 @@ class RSA_Analytics {
 	public static function get_heatmap( string $page, string $period = '30d' ): array {
 		global $wpdb;
 		$range = self::period_range( $period );
-		$ht    = RSA_DB::heatmap_table();
+		$ct    = RSA_DB::clicks_table();
 
+		// Query raw clicks directly so data is always current (no nightly aggregation lag).
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT x_pct, y_pct, SUM(weight) AS weight
-				 FROM `{$ht}`
-				 WHERE page = %s AND date_bucket BETWEEN %s AND %s
-				 GROUP BY x_pct, y_pct", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT ROUND(x_pct / 2) * 2 AS x_pct,
+				        ROUND(y_pct / 2) * 2 AS y_pct,
+				        COUNT(*) AS weight
+				 FROM `{$ct}`
+				 WHERE page = %s
+				   AND created_at BETWEEN %s AND %s
+				   AND x_pct IS NOT NULL
+				   AND y_pct IS NOT NULL
+				 GROUP BY x_pct, y_pct
+				 ORDER BY weight DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$page,
-				substr( $range['start'], 0, 10 ),
-				substr( $range['end'],   0, 10 )
+				$range['start'],
+				$range['end']
 			),
 			ARRAY_A
 		);

@@ -52,17 +52,13 @@ $base = admin_url( 'admin.php' );
 			<input type="hidden" name="date_from" value="<?php echo esc_attr( $date_from ); ?>">
 			<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
 			<?php endif; ?>
-			<?php if ( $opts['pages'] ) : ?>
+			<?php $trackable = RSA_Admin::get_trackable_pages(); ?>
 			<select name="page_filter">
 				<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
-				<?php foreach ( $opts['pages'] as $p ) : ?>
-				<option value="<?php echo esc_attr( $p ); ?>" <?php selected( $page_filter, $p ); ?>><?php echo esc_html( $p ); ?></option>
+				<?php foreach ( $trackable as $path => $label ) : ?>
+				<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $page_filter, $path ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>
 			</select>
-			<?php else : ?>
-			<input type="text" name="page_filter" placeholder="<?php esc_attr_e( 'Filter by page path', 'rich-statistics' ); ?>"
-			       value="<?php echo esc_attr( $page_filter ); ?>">
-			<?php endif; ?>
 			<button type="submit" class="button"><?php esc_html_e( 'Filter', 'rich-statistics' ); ?></button>
 			<?php if ( $page_filter ) : ?>
 			<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-click-map', 'period' => $period ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>

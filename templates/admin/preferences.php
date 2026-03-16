@@ -91,6 +91,42 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		</table>
 	</div>
 
+	<!-- Custom Post Types -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'Custom Post Types in Page Dropdowns', 'rich-statistics' ); ?></h2></div>
+		<?php
+		$all_cpts = get_post_types( [ 'public' => true, '_builtin' => false ], 'objects' );
+		$enabled  = (array) get_option( 'rsa_enabled_post_types', [] );
+		?>
+		<?php if ( $all_cpts ) : ?>
+		<table class="form-table">
+			<?php foreach ( $all_cpts as $cpt ) : ?>
+			<tr>
+				<th><label for="rsa_cpt_<?php echo esc_attr( $cpt->name ); ?>"><?php echo esc_html( $cpt->label ); ?></label></th>
+				<td>
+					<input type="checkbox"
+					       id="rsa_cpt_<?php echo esc_attr( $cpt->name ); ?>"
+					       name="rsa_enabled_post_types[]"
+					       value="<?php echo esc_attr( $cpt->name ); ?>"
+					       <?php checked( in_array( $cpt->name, $enabled, true ) ); ?>>
+					<label for="rsa_cpt_<?php echo esc_attr( $cpt->name ); ?>">
+						<?php
+						printf(
+							/* translators: %s: post type slug */
+							esc_html__( 'Include %s in page filter dropdowns', 'rich-statistics' ),
+							'<code>' . esc_html( $cpt->name ) . '</code>'
+						);
+						?>
+					</label>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</table>
+		<?php else : ?>
+		<p class="description" style="padding:8px 0;"><?php esc_html_e( 'No public custom post types detected.', 'rich-statistics' ); ?></p>
+		<?php endif; ?>
+	</div>
+
 	<!-- Data Retention -->
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header"><h2><?php esc_html_e( 'Data Retention', 'rich-statistics' ); ?></h2></div>
