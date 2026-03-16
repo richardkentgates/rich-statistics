@@ -296,7 +296,15 @@
 			if ( el.hasAttribute( 'download' ) && el.getAttribute( 'href' ) && protocols.download ) return 'download';
 			var href = ( el.getAttribute( 'href' ) || '' ).toLowerCase();
 			if ( ! href ) return null;
-			if ( /^https?:/.test( href ) && protocols.http )   return 'http';
+			if ( /^https?:/.test( href ) ) {
+				// Distinguish inbound (same domain) from outbound (external)
+				var linkHostname = el.hostname || '';
+				var pageHostname = window.location.hostname || '';
+				var isInbound = linkHostname === pageHostname;
+				if ( isInbound && protocols.inbound )  return 'inbound';
+				if ( ! isInbound && protocols.outbound ) return 'outbound';
+				return null;
+			}
 			if ( /^tel:/.test( href )    && protocols.tel )    return 'tel';
 			if ( /^mailto:/.test( href ) && protocols.mailto ) return 'mailto';
 			if ( /^geo:/.test( href )    && protocols.geo )    return 'geo';

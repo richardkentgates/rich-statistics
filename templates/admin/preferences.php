@@ -49,7 +49,8 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		<table class="form-table">
 			<?php
 			$protocols = [
-			'http'     => __( 'HTTP/HTTPS links', 'rich-statistics' ),
+		'inbound'  => __( 'Inbound links (same-domain HTTP/HTTPS)', 'rich-statistics' ),
+		'outbound' => __( 'Outbound links (external HTTP/HTTPS)', 'rich-statistics' ),
 			'tel'      => __( 'tel: (phone number links)', 'rich-statistics' ),
 			'mailto'   => __( 'mailto: (email links)', 'rich-statistics' ),
 			'geo'      => __( 'geo: (map coordinate links)', 'rich-statistics' ),

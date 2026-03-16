@@ -82,7 +82,8 @@ class RSA_Tracker {
 
 	private static function get_protocol_options(): array {
 		return [
-			'http'     => (bool) get_option( 'rsa_track_protocol_http',     1 ),
+			'inbound'  => (bool) get_option( 'rsa_track_protocol_inbound',  1 ),
+			'outbound' => (bool) get_option( 'rsa_track_protocol_outbound', 1 ),
 			'tel'      => (bool) get_option( 'rsa_track_protocol_tel',      1 ),
 			'mailto'   => (bool) get_option( 'rsa_track_protocol_mailto',   1 ),
 			'geo'      => (bool) get_option( 'rsa_track_protocol_geo',      1 ),
