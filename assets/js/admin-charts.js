@@ -433,6 +433,8 @@
 		) );
 	}
 
+	/* </fs_premium_only> */
+
 	// ----------------------------------------------------------------
 	// Router: pick init function based on view key
 	// ----------------------------------------------------------------
@@ -447,10 +449,10 @@
 			case 'audience':  initAudience( data );  break;
 			case 'referrers': initReferrers( data ); break;
 			case 'behavior':  initBehavior( data );  break;
+			/* <fs_premium_only> */
 			case 'click-map': initClickMap( data );  break;
+			/* </fs_premium_only> */
 		}
 	} );
-
-	/* </fs_premium_only> */
 
 }() );
