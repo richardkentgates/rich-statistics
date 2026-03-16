@@ -315,34 +315,37 @@ class RSA_Admin {
 		$page      = sanitize_text_field( $_GET['page'] ?? 'rich-statistics' );
 		$url       = admin_url( 'admin.php' );
 		$is_custom = ( $current === 'custom' );
-		$date_from = $is_custom ? sanitize_text_field( $_GET['date_from'] ?? '' ) : '';
-		$date_to   = $is_custom ? sanitize_text_field( $_GET['date_to']   ?? '' ) : '';
+		// Always populate dates so the inputs are pre-filled regardless of mode
+		$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
+		$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
 
-		$html = '<div class="rsa-period-selector">';
+		$html = '<div class="rsa-period-controls">';
+
+		// Preset period buttons (navigational links)
+		$html .= '<div class="rsa-period-selector">';
 		foreach ( $options as $val => $label ) {
 			$href   = add_query_arg( [ 'page' => $page, 'period' => $val ], $url );
 			$active = $val === $current ? ' rsa-period-active' : '';
 			$html  .= '<a href="' . esc_url( $href ) . '" class="rsa-period-btn' . $active . '">' . esc_html( $label ) . '</a>';
 		}
-		$custom_active = $is_custom ? ' rsa-period-active' : '';
-		$html .= '<button type="button" class="rsa-period-btn' . $custom_active . '" '
-		       . 'onclick="var el=document.getElementById(\'rsa-dates\');el.style.display=el.style.display===\'none\'?\'flex\':\'none\';">'
-		       . esc_html__( 'Custom', 'rich-statistics' ) . '</button>';
 		$html .= '</div>';
 
-		$show  = $is_custom ? 'flex' : 'none';
-		$html .= '<div id="rsa-dates" class="rsa-custom-range" style="display:' . esc_attr( $show ) . ';">';
+		// Custom date range — always visible, no JS toggle
+		$custom_active = $is_custom ? ' rsa-period-active' : '';
+		$html .= '<div class="rsa-custom-range">';
 		$html .= '<form method="get" action="' . esc_url( $url ) . '" class="rsa-custom-range-form">';
 		$html .= '<input type="hidden" name="page" value="' . esc_attr( $page ) . '">';
 		$html .= '<input type="hidden" name="period" value="custom">';
 		$html .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
 		$html .= '<span class="rsa-date-sep">' . esc_html__( 'to', 'rich-statistics' ) . '</span>';
 		$html .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
-		$html .= '<button type="submit" class="button button-small">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
+		$html .= '<button type="submit" class="rsa-period-btn' . $custom_active . '">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
 		$html .= '</form>';
 		$html .= '</div>';
+
+		$html .= '</div>'; // .rsa-period-controls
 
 		return $html;
 	}

@@ -235,13 +235,15 @@
 		}
 	}
 
-	// Safety net: fire after 1.5s for mobile/WebView scenarios where unload never fires
+	// Safety net: fire after 30s as last resort for rare mobile/WebView scenarios
+	// where neither pagehide nor beforeunload ever fire. Keep delay long so it
+	// does not truncate real time-on-page measurements for normal navigation.
 	var safetyTimer = setTimeout( function () {
 		if ( ! sent ) {
 			computeTimeOnPage();
 			sendEvent();
 		}
-	}, 1500 );
+	}, 30000 );
 
 	// Capture time on unload
 	window.addEventListener( 'pagehide', function () {

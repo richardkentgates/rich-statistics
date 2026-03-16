@@ -23,24 +23,50 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 }
 
 $period  = sanitize_text_field( $_GET['period'] ?? '30d' );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
+$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
+$date_from = $date_to = '';
+if ( $period === 'custom' ) {
+	$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
+	$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
+}
+
 $page_filter = sanitize_text_field( $_GET['page_filter'] ?? '' );
+$opts        = RSA_Analytics::get_filter_options( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
 $rows        = RSA_Analytics::get_click_map( $period, $page_filter );
 
 RSA_Admin::page_header( __( 'Click Map', 'rich-statistics' ), $period );
+$base = admin_url( 'admin.php' );
 ?>
 
 <div class="rsa-card rsa-card-full">
 	<div class="rsa-card-header">
 		<h2><?php esc_html_e( 'Click Events', 'rich-statistics' ); ?></h2>
-		<form method="get" class="rsa-inline-form">
+		<form method="get" action="<?php echo esc_url( $base ); ?>" class="rsa-inline-form">
 			<input type="hidden" name="page" value="rich-statistics-click-map">
 			<input type="hidden" name="period" value="<?php echo esc_attr( $period ); ?>">
+			<?php if ( $period === 'custom' ) : ?>
+			<input type="hidden" name="date_from" value="<?php echo esc_attr( $date_from ); ?>">
+			<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
+			<?php endif; ?>
+			<?php if ( $opts['pages'] ) : ?>
+			<select name="page_filter">
+				<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
+				<?php foreach ( $opts['pages'] as $p ) : ?>
+				<option value="<?php echo esc_attr( $p ); ?>" <?php selected( $page_filter, $p ); ?>><?php echo esc_html( $p ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<?php else : ?>
 			<input type="text" name="page_filter" placeholder="<?php esc_attr_e( 'Filter by page path', 'rich-statistics' ); ?>"
-			       value="<?php echo esc_attr( $page_filter ); ?>" class="regular-text">
+			       value="<?php echo esc_attr( $page_filter ); ?>">
+			<?php endif; ?>
 			<button type="submit" class="button"><?php esc_html_e( 'Filter', 'rich-statistics' ); ?></button>
+			<?php if ( $page_filter ) : ?>
+			<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-click-map', 'period' => $period ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
+			<?php endif; ?>
 		</form>
 	</div>
 

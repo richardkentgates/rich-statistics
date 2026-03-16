@@ -327,11 +327,11 @@ class RSA_Analytics {
 			$wpdb->prepare(
 				"SELECT
 					CASE
-						WHEN time_on_page < 10  THEN '0\u20139s'
-						WHEN time_on_page < 30  THEN '10\u201329s'
-						WHEN time_on_page < 60  THEN '30\u201359s'
-						WHEN time_on_page < 120 THEN '1\u20132 min'
-						WHEN time_on_page < 300 THEN '2\u20135 min'
+						WHEN time_on_page < 10  THEN '0-9s'
+						WHEN time_on_page < 30  THEN '10-29s'
+						WHEN time_on_page < 60  THEN '30-59s'
+						WHEN time_on_page < 120 THEN '1-2 min'
+						WHEN time_on_page < 300 THEN '2-5 min'
 						ELSE '5+ min'
 					END AS bucket,
 					COUNT(*) AS count
@@ -344,7 +344,7 @@ class RSA_Analytics {
 		);
 
 		// Sort histogram in logical order
-		$bucket_order = [ '0\u20139s', '10\u201329s', '30\u201359s', '1\u20132 min', '2\u20135 min', '5+ min' ];
+		$bucket_order = [ '0-9s', '10-29s', '30-59s', '1-2 min', '2-5 min', '5+ min' ];
 		usort( $histogram_rows, function ( $a, $b ) use ( $bucket_order ) {
 			return array_search( $a['bucket'], $bucket_order ) - array_search( $b['bucket'], $bucket_order );
 		} );
@@ -356,8 +356,8 @@ class RSA_Analytics {
 					CASE
 						WHEN pages_viewed = 1 THEN '1 page'
 						WHEN pages_viewed = 2 THEN '2 pages'
-						WHEN pages_viewed <= 4 THEN '3\u20134 pages'
-						WHEN pages_viewed <= 7 THEN '5\u20137 pages'
+						WHEN pages_viewed <= 4 THEN '3-4 pages'
+						WHEN pages_viewed <= 7 THEN '5-7 pages'
 						ELSE '8+ pages'
 					END AS bucket,
 					COUNT(*) AS count
