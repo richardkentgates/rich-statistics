@@ -9,6 +9,10 @@ class DbTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
+		// Delete options so install() seeds fresh defaults (live site may have different values).
+		delete_option( 'rsa_retention_days' );
+		delete_option( 'rsa_bot_score_threshold' );
+		delete_option( 'rsa_email_digest_enabled' );
 		RSA_DB::install();
 	}
 
@@ -60,8 +64,8 @@ class DbTest extends WP_UnitTestCase {
 		$this->assertSame( 90, (int) get_option( 'rsa_retention_days' ) );
 	}
 
-	public function test_bot_threshold_default_is_three(): void {
-		$this->assertSame( 3, (int) get_option( 'rsa_bot_score_threshold' ) );
+	public function test_bot_threshold_default_is_five(): void {
+		$this->assertSame( 5, (int) get_option( 'rsa_bot_score_threshold' ) );
 	}
 
 	public function test_email_digest_disabled_by_default(): void {

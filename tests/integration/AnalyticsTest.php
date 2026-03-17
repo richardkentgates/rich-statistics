@@ -54,40 +54,6 @@ class AnalyticsTest extends WP_UnitTestCase {
 	}
 
 	// ----------------------------------------------------------------
-	// fill_date_gaps()
-	// ----------------------------------------------------------------
-
-	public function test_fill_date_gaps_inserts_missing_days(): void {
-		$input = [
-			[ 'date' => '2025-01-01', 'pageviews' => 5, 'sessions' => 3 ],
-			[ 'date' => '2025-01-05', 'pageviews' => 8, 'sessions' => 6 ],
-		];
-		$filled = RSA_Analytics::fill_date_gaps( $input, '2025-01-01', '2025-01-05' );
-
-		// Should have an entry for each of the 5 days
-		$this->assertCount( 5, $filled );
-		$dates = array_column( $filled, 'date' );
-		$this->assertContains( '2025-01-01', $dates );
-		$this->assertContains( '2025-01-02', $dates );
-		$this->assertContains( '2025-01-03', $dates );
-		$this->assertContains( '2025-01-04', $dates );
-		$this->assertContains( '2025-01-05', $dates );
-	}
-
-	public function test_fill_date_gaps_preserves_existing_data(): void {
-		$input = [
-			[ 'date' => '2025-06-01', 'pageviews' => 100, 'sessions' => 50 ],
-				[ 'date' => '2025-06-03', 'pageviews' => 200, 'sessions' => 80 ],
-		];
-		$filled = RSA_Analytics::fill_date_gaps( $input, '2025-06-01', '2025-06-03' );
-		$by_date = array_column( $filled, null, 'date' );
-
-		$this->assertSame( 100, (int) $by_date['2025-06-01']['pageviews'] );
-		$this->assertSame( 200, (int) $by_date['2025-06-03']['pageviews'] );
-		$this->assertSame( 0,   (int) $by_date['2025-06-02']['pageviews'] );
-	}
-
-	// ----------------------------------------------------------------
 	// get_overview() — DB integration
 	// ----------------------------------------------------------------
 

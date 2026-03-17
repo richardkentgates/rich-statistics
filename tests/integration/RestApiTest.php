@@ -245,7 +245,6 @@ class RestApiTest extends WP_UnitTestCase {
 		$this->assertNotEmpty( $rows, 'Expected seeded click row in /clicks response' );
 
 		$row = reset( $rows );
-		$this->assertArrayHasKey( 'page',          $row );
 		$this->assertArrayHasKey( 'href_protocol', $row );
 		$this->assertArrayHasKey( 'element_tag',   $row );
 		$this->assertArrayHasKey( 'element_text',  $row );

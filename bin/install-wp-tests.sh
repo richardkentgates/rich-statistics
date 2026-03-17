@@ -92,6 +92,28 @@ install_test_suite() {
         sed -i "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR"/wp-tests-config.php
         sed -i "s|dirname(__FILE__) . '/src/'|'${WP_CORE_DIR_ESC}/'|" "$WP_TESTS_DIR"/wp-tests-config.php
     fi
+
+    # PHPUnit 10 removed PHPUnit\Util\Test::parseTestMethodAnnotations().
+    # Patch abstract-testcase.php to guard the call so the WP test suite works
+    # with both PHPUnit 9 and PHPUnit 10.
+    if [ -f "$WP_TESTS_DIR/includes/abstract-testcase.php" ]; then
+        python3 - "$WP_TESTS_DIR/includes/abstract-testcase.php" <<'PYEOF'
+import re, sys
+fname = sys.argv[1]
+with open(fname) as fh:
+    code = fh.read()
+if 'parseTestMethodAnnotations' in code:
+    code = re.sub(
+        r'(\$annotations\s*=\s*)\\PHPUnit\\Util\\Test::parseTestMethodAnnotations\(\s*static::class,\s*\$this->getName\(\s*false\s*\)\s*\)',
+        r'\1( method_exists( \\PHPUnit\\Util\\Test::class, \'parseTestMethodAnnotations\' ) '
+        r'? \\PHPUnit\\Util\\Test::parseTestMethodAnnotations( static::class, $this->getName( false ) ) '
+        r': array( \'class\' => array(), \'method\' => array() ) )',
+        code)
+    with open(fname, 'w') as fh:
+        fh.write(code)
+    print('Patched abstract-testcase.php for PHPUnit 10 compatibility.')
+PYEOF
+    fi
 }
 
 install_db() {
