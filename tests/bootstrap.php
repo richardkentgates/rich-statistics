@@ -77,6 +77,16 @@ if ( is_dir( $wp_tests_dir ) ) {
 				require_once $f;
 			}
 		}
+
+		// Boot the REST routes so 'rest_api_init' hook is wired up before tests fire it.
+		if ( class_exists( 'RSA_Rest_API' ) ) {
+			RSA_Rest_API::init();
+		}
+
+		// Ensure DB tables exist for integration tests.
+		if ( class_exists( 'RSA_DB' ) ) {
+			RSA_DB::install();
+		}
 	} );
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';

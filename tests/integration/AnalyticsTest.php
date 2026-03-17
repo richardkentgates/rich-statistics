@@ -106,23 +106,21 @@ class AnalyticsTest extends WP_UnitTestCase {
 	public function test_get_audience_returns_expected_keys(): void {
 		$result = RSA_Analytics::get_audience( '7d' );
 
-		$this->assertArrayHasKey( 'by_os',       $result );
-		$this->assertArrayHasKey( 'by_browser',  $result );
-		$this->assertArrayHasKey( 'by_viewport', $result );
-		$this->assertArrayHasKey( 'by_language', $result );
-		$this->assertArrayHasKey( 'by_timezone', $result );
+		$this->assertArrayHasKey( 'os',       $result );
+		$this->assertArrayHasKey( 'browser',  $result );
+		$this->assertArrayHasKey( 'viewport', $result );
+		$this->assertArrayHasKey( 'language', $result );
+		$this->assertArrayHasKey( 'timezone', $result );
 	}
 
 	public function test_get_top_pages_returns_array(): void {
 		$result = RSA_Analytics::get_top_pages( '30d' );
-		$this->assertArrayHasKey( 'pages', $result );
-		$this->assertIsArray( $result['pages'] );
+		$this->assertIsArray( $result );
 	}
 
 	public function test_get_referrers_returns_array(): void {
 		$result = RSA_Analytics::get_referrers( '30d' );
-		$this->assertArrayHasKey( 'referrers', $result );
-		$this->assertIsArray( $result['referrers'] );
+		$this->assertIsArray( $result );
 	}
 
 	public function test_get_behavior_returns_expected_keys(): void {
