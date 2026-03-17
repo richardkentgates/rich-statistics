@@ -249,8 +249,6 @@ class RSA_Admin {
 			'rsa_retention_days'           => 'absint',
 			'rsa_bot_score_threshold'      => 'absint',
 			'rsa_remove_data_on_uninstall' => 'absint',
-			'rsa_track_protocol_inbound'      => 'absint',
-			'rsa_track_protocol_outbound'     => 'absint',
 			'rsa_track_protocol_tel'          => 'absint',
 			'rsa_track_protocol_mailto'       => 'absint',
 			'rsa_track_protocol_geo'          => 'absint',
@@ -515,7 +513,7 @@ class RSA_Admin {
 				'title'   => __( 'Click Map (Premium)', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'Click Tracking (Premium)', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'Click tracking captures interactions with links and clickable elements. By default, inbound links (same-domain HTTP/HTTPS), outbound links (external HTTP/HTTPS), tel, mailto, geo, and sms protocols are tracked. You can add additional element IDs and CSS classes in Data Settings.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Click tracking captures non-navigational interactions: phone links (tel:), email links (mailto:), map links (geo:), SMS links (sms:), and file downloads. HTTP/HTTPS link navigation is tracked automatically as pageviews. You can add additional element IDs and CSS classes in Preferences.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Click tracking uses event delegation — no inline event handlers are added to the page.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-heatmap' => [

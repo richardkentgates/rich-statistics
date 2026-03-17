@@ -181,8 +181,6 @@ class RSA_DB {
 			'rsa_retention_days'              => 90,
 			'rsa_bot_score_threshold'         => 5,
 			'rsa_remove_data_on_uninstall'    => 0,
-			'rsa_track_protocol_inbound'      => 1,
-			'rsa_track_protocol_outbound'     => 1,
 			'rsa_track_protocol_tel'          => 1,
 			'rsa_track_protocol_mailto'       => 1,
 			'rsa_track_protocol_geo'          => 1,

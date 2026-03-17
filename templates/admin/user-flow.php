@@ -32,8 +32,9 @@ $filters = [
 	'limit'     => $view_type === 'table' ? 250 : 30,
 ];
 
-$flow      = RSA_Analytics::get_user_flow( $period, $filters );
-$pages     = RSA_Admin::get_trackable_pages();
+$flow       = RSA_Analytics::get_user_flow( $period, $filters );
+$flow_stats = RSA_Analytics::get_flow_stats( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
+$pages      = RSA_Admin::get_trackable_pages();
 $total     = array_sum( array_column( $flow, 'count' ) );
 $uniq_src  = count( array_unique( array_column( $flow, 'from_page' ) ) );
 $uniq_dst  = count( array_unique( array_column( $flow, 'to_page' ) ) );
@@ -177,6 +178,65 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 	<?php else : ?>
 	<p class="rsa-empty"><?php esc_html_e( 'No transition data for this period and filter.', 'rich-statistics' ); ?></p>
 	<?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- Inbound / Outbound page stats -->
+<?php if ( ! empty( $flow_stats['outbound'] ) || ! empty( $flow_stats['inbound'] ) ) : ?>
+<div class="rsa-two-col">
+
+	<div class="rsa-card">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'Top Outbound Pages', 'rich-statistics' ); ?></h2><span class="rsa-card-header__sub"><?php esc_html_e( 'Pages that send visitors to other pages', 'rich-statistics' ); ?></span></div>
+		<?php if ( ! empty( $flow_stats['outbound'] ) ) : ?>
+		<table class="rsa-table rsa-table--full">
+			<thead><tr>
+				<th>#</th>
+				<th><?php esc_html_e( 'Page', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Transitions Out', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Unique Destinations', 'rich-statistics' ); ?></th>
+			</tr></thead>
+			<tbody>
+			<?php foreach ( $flow_stats['outbound'] as $i => $row ) : ?>
+			<tr>
+				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
+				<td class="rsa-td-page"><?php echo esc_html( $row['page'] ); ?></td>
+				<td><?php echo esc_html( number_format( $row['transitions_out'] ) ); ?></td>
+				<td><?php echo esc_html( number_format( $row['unique_destinations'] ) ); ?></td>
+			</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php else : ?>
+		<p class="rsa-empty"><?php esc_html_e( 'No data yet.', 'rich-statistics' ); ?></p>
+		<?php endif; ?>
+	</div>
+
+	<div class="rsa-card">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'Top Inbound Pages', 'rich-statistics' ); ?></h2><span class="rsa-card-header__sub"><?php esc_html_e( 'Pages that receive visitors from other pages', 'rich-statistics' ); ?></span></div>
+		<?php if ( ! empty( $flow_stats['inbound'] ) ) : ?>
+		<table class="rsa-table rsa-table--full">
+			<thead><tr>
+				<th>#</th>
+				<th><?php esc_html_e( 'Page', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Transitions In', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Unique Sources', 'rich-statistics' ); ?></th>
+			</tr></thead>
+			<tbody>
+			<?php foreach ( $flow_stats['inbound'] as $i => $row ) : ?>
+			<tr>
+				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
+				<td class="rsa-td-page"><?php echo esc_html( $row['page'] ); ?></td>
+				<td><?php echo esc_html( number_format( $row['transitions_in'] ) ); ?></td>
+				<td><?php echo esc_html( number_format( $row['unique_sources'] ) ); ?></td>
+			</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php else : ?>
+		<p class="rsa-empty"><?php esc_html_e( 'No data yet.', 'rich-statistics' ); ?></p>
+		<?php endif; ?>
+	</div>
+
 </div>
 <?php endif; ?>
 

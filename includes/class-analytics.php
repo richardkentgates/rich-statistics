@@ -466,6 +466,63 @@ class RSA_Analytics {
 		], $rows ) : [];
 	}
 
+	// Returns top outbound pages (pages that send visitors elsewhere) and
+	// top inbound pages (pages that receive visitors from other pages).
+	public static function get_flow_stats( string $period = '30d', array $filters = [] ): array {
+		global $wpdb;
+		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$et    = RSA_DB::events_table();
+		$bt    = self::bot_threshold();
+
+		$inner = "SELECT page AS from_page,
+		              LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS to_page
+		          FROM `{$et}`
+		          WHERE created_at BETWEEN %s AND %s AND bot_score < %d";
+
+		$outbound = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT from_page AS page,
+				        COUNT(*)              AS transitions_out,
+				        COUNT(DISTINCT to_page) AS unique_destinations
+				 FROM ( {$inner} ) t
+				 WHERE to_page IS NOT NULL AND from_page != to_page
+				 GROUP BY from_page
+				 ORDER BY transitions_out DESC
+				 LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$range['start'], $range['end'], $bt
+			),
+			ARRAY_A
+		);
+
+		$inbound = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT to_page AS page,
+				        COUNT(*)               AS transitions_in,
+				        COUNT(DISTINCT from_page) AS unique_sources
+				 FROM ( {$inner} ) t
+				 WHERE to_page IS NOT NULL AND from_page != to_page
+				 GROUP BY to_page
+				 ORDER BY transitions_in DESC
+				 LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$range['start'], $range['end'], $bt
+			),
+			ARRAY_A
+		);
+
+		return [
+			'outbound' => $outbound ? array_map( fn( $r ) => [
+				'page'                 => $r['page'],
+				'transitions_out'      => (int) $r['transitions_out'],
+				'unique_destinations'  => (int) $r['unique_destinations'],
+			], $outbound ) : [],
+			'inbound'  => $inbound  ? array_map( fn( $r ) => [
+				'page'            => $r['page'],
+				'transitions_in'  => (int) $r['transitions_in'],
+				'unique_sources'  => (int) $r['unique_sources'],
+			], $inbound ) : [],
+		];
+	}
+
 	// ----------------------------------------------------------------
 	// Premium: click map data
 	// ----------------------------------------------------------------
