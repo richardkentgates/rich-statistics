@@ -99,7 +99,7 @@ jobs:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
 
       - name: Run integration tests
-        run: composer test -- --testsuite integration
+        run: vendor/bin/phpunit --configuration phpunit.integration.xml --no-coverage --testsuite integration
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
 
