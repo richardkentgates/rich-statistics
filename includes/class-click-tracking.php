@@ -41,6 +41,7 @@ class RSA_Click_Tracking {
 		$element_class = substr( sanitize_text_field( $data['element_class'] ?? '' ), 0, 512 );
 		$element_text  = substr( sanitize_text_field( $data['element_text']  ?? '' ), 0, 255 );
 		$href_protocol = substr( sanitize_text_field( $data['href_protocol'] ?? '' ), 0, 32 );
+		$href_value    = substr( sanitize_text_field( $data['href_value']    ?? '' ), 0, 512 );
 		// '#id' or '.classname' — which configured rule triggered this track
 		$matched_rule  = substr( sanitize_text_field( $data['matched_rule']  ?? '' ), 0, 255 );
 
@@ -58,11 +59,12 @@ class RSA_Click_Tracking {
 				'element_class' => $element_class ?: null,
 				'element_text'  => $element_text  ?: null,
 				'href_protocol' => $href_protocol ?: null,
+				'href_value'    => $href_value    ?: null,
 				'matched_rule'  => $matched_rule  ?: null,
 				'x_pct'         => $x_pct > 0 ? $x_pct : null,
 				'y_pct'         => $y_pct > 0 ? $y_pct : null,
 			],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f' ]
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f' ]
 		);
 
 		wp_send_json_success( [ 'ok' => true ] );

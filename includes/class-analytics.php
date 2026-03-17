@@ -727,7 +727,7 @@ class RSA_Analytics {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT element_tag, element_id, element_class, href_protocol, matched_rule,
-				        MAX(element_text) AS element_text, COUNT(*) AS clicks
+				        MAX(element_text) AS element_text, MAX(href_value) AS href_value, COUNT(*) AS clicks
 				 FROM `{$ct}`
 				 WHERE created_at BETWEEN %s AND %s {$page_clause}
 				 GROUP BY element_tag, element_id, element_class, href_protocol, matched_rule
@@ -744,6 +744,7 @@ class RSA_Analytics {
 			'class'        => $r['element_class'],
 			'protocol'     => $r['href_protocol'],
 			'matched_rule' => $r['matched_rule'],
+			'href_value'   => $r['href_value'],
 			'text'         => $r['element_text'],
 			'clicks'       => (int) $r['clicks'],
 		], $rows );

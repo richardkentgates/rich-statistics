@@ -305,6 +305,32 @@
 		}
 
 		/**
+		 * Extract the meaningful destination value from a protocol href.
+		 * e.g. tel:+15551234567  →  +15551234567
+		 *      mailto:hi@example.com?subject=Hi  →  hi@example.com
+		 *      sms:+15551234567  →  +15551234567
+		 *      geo:37.786,-122.4  →  37.786,-122.4
+		 *      download href  →  the raw href (file path/URL)
+		 */
+		function getHrefValue( el, protocol ) {
+			if ( ! protocol ) return '';
+			var raw = el.getAttribute( 'href' ) || '';
+			if ( protocol === 'download' ) {
+				// Trim to 512 chars; strip auth credentials if any
+				return raw.replace( /:\/\/[^:@]+:[^@]+@/, '://' ).substring( 0, 512 );
+			}
+			// Strip the scheme prefix (tel:, mailto:, sms:, geo:)
+			var colonIdx = raw.indexOf( ':' );
+			var value    = colonIdx !== -1 ? raw.substring( colonIdx + 1 ) : raw;
+			// mailto: may have a ?subject=… query — keep only the address
+			if ( protocol === 'mailto' ) {
+				var qIdx = value.indexOf( '?' );
+				if ( qIdx !== -1 ) { value = value.substring( 0, qIdx ); }
+			}
+			return value.substring( 0, 512 );
+		}
+
+		/**
 		 * Returns the matched configured rule string ('#id' or '.class')
 		 * if the element matches a configured ID or class, otherwise null.
 		 */
@@ -363,6 +389,7 @@
 					element_class : elClass,
 					element_text  : ( el.innerText || el.value || '' ).substring( 0, 255 ),
 					href_protocol : hrefProtocol || '',
+					href_value    : getHrefValue( el, hrefProtocol ),
 					matched_rule  : matchedRule  || '',
 					x_pct         : xPct,
 					y_pct         : yPct,

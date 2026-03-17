@@ -106,15 +106,27 @@ class RSA_Rest_API {
 	}
 
 	public static function get_pages( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_top_pages( $r['period'], (int) $r['limit'] ) );
+		return self::ok( [ 'pages' => RSA_Analytics::get_top_pages( $r['period'], (int) $r['limit'] ) ] );
 	}
 
 	public static function get_audience( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_audience( $r['period'] ) );
+		$d = RSA_Analytics::get_audience( $r['period'] );
+		return self::ok( [
+			'by_os'       => $d['os'],
+			'by_browser'  => $d['browser'],
+			'by_viewport' => $d['viewport'],
+			'by_language' => $d['language'],
+			'by_timezone' => $d['timezone'],
+		] );
 	}
 
 	public static function get_referrers( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'] ) );
+		$rows = RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'] );
+		return self::ok( [ 'referrers' => array_map( fn( $row ) => [
+			'domain'    => $row['domain'],
+			'pageviews' => $row['visits'],
+			'top_page'  => $row['top_page'],
+		], $rows ) ] );
 	}
 
 	public static function get_behavior( WP_REST_Request $r ): WP_REST_Response {
@@ -122,7 +134,14 @@ class RSA_Rest_API {
 	}
 
 	public static function get_clicks( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_click_map( $r['period'], $r['page'] ) );
+		$rows = RSA_Analytics::get_click_map( $r['period'], $r['page'] );
+		return self::ok( [ 'clicks' => array_map( fn( $row ) => [
+			'href_protocol' => $row['protocol'],
+			'element_tag'   => $row['tag'],
+			'element_text'  => $row['text'],
+			'href_value'    => $row['href_value'],
+			'count'         => $row['clicks'],
+		], $rows ) ] );
 	}
 
 	public static function get_heatmap( WP_REST_Request $r ): WP_REST_Response {

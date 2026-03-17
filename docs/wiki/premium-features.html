@@ -58,6 +58,21 @@
       <li>Absolute pixel coordinates — only percentage positions</li>
     </ul>
 
+    <h2>Click Tracking &amp; Destination Capture</h2>
+    <p>Non-navigational link clicks are tracked by protocol: <code>tel:</code>, <code>mailto:</code>, <code>geo:</code>, <code>sms:</code>, and file downloads. HTTP/HTTPS navigation is tracked automatically as pageviews and is not double-counted here.</p>
+    <p>The <strong>Destination</strong> column in the Click Map records the actual value passed to the protocol handler:</p>
+    <table>
+      <thead><tr><th>Protocol</th><th>Destination stored</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>tel:</code></td><td>Phone number</td><td><code>+15551234567</code></td></tr>
+        <tr><td><code>mailto:</code></td><td>Email address</td><td><code>hello@example.com</code></td></tr>
+        <tr><td><code>sms:</code></td><td>SMS number</td><td><code>+15551234567</code></td></tr>
+        <tr><td><code>geo:</code></td><td>Coordinates</td><td><code>37.786,-122.4</code></td></tr>
+        <tr><td>download</td><td>File path or URL</td><td><code>/files/brochure.pdf</code></td></tr>
+      </tbody>
+    </table>
+    <p>You can also configure additional element IDs and CSS classes to track in <strong>Analytics → Preferences</strong>.</p>
+
     <h2>Scroll Heatmaps</h2>
     <p>The maximum scroll depth for each page session is recorded as a percentage. The scroll heatmap visualises the distribution of how far visitors scroll on each page.</p>
     <ul>

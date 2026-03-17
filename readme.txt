@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking, gdpr
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -99,10 +99,28 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 
 == Changelog ==
 
+= 1.1.0 =
+* Added click destination capture: phone numbers, email addresses, SMS numbers, geo coordinates, and download file URLs are now recorded per click event
+* Added Destination column to Click Map admin table
+* Added `wp rich-stats clicks` WP-CLI command (Premium)
+* Fixed REST API response shapes for all PWA endpoints
+* PWA service worker cache bumped to force refresh
+
+= 1.0.1 =
+* Fixed timezone detection (IANA names instead of UTC offset)
+* Renamed admin menu to Analytics
+* Redesigned User Flow chart as step-based Sankey diagram
+* Added WooCommerce page tracking
+* Added Multisite support improvements
+* Fixed CSV export formula injection escaping
+
 = 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Database schema updated automatically on activation (adds href_value column to clicks table). No manual action required.
 
 = 1.0.0 =
 Initial release. No upgrade actions required.

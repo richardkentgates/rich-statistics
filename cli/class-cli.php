@@ -274,6 +274,61 @@ class RSA_CLI extends WP_CLI_Command {
 	}
 
 	// ----------------------------------------------------------------
+	// clicks  (premium data)
+	// ----------------------------------------------------------------
+
+	/**
+	 * List tracked click events by protocol and element.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : One of: 7d, 30d, 90d, thismonth, lastmonth. Default: 30d.
+	 *
+	 * [--limit=<n>]
+	 * : Number of rows to show. Default: 20.
+	 *
+	 * [--page=<path>]
+	 * : Filter by page path. Default: all pages.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp rich-stats clicks --period=7d
+	 *     wp rich-stats clicks --period=30d --page=/contact/
+	 *
+	 * @subcommand clicks
+	 */
+	public function clicks( array $args, array $assoc ): void {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			WP_CLI::error( 'Click tracking requires a Rich Statistics Premium licence.' );
+		}
+
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$limit  = max( 1, (int) ( $assoc['limit'] ?? 20 ) );
+		$page   = sanitize_text_field( $assoc['page'] ?? '' );
+		$this->maybe_switch_blog( $assoc );
+
+		$rows = array_slice( RSA_Analytics::get_click_map( $period, $page ), 0, $limit );
+
+		if ( empty( $rows ) ) {
+			WP_CLI::warning( 'No click data found for this period.' );
+			return;
+		}
+
+		$items = [ [ 'Protocol', 'Destination', 'Tag', 'Text', 'Clicks' ] ];
+		foreach ( $rows as $r ) {
+			$items[] = [
+				$r['protocol']   ?: '—',
+				$r['href_value'] ?: '—',
+				$r['tag'],
+				mb_strimwidth( $r['text'] ?: '—', 0, 40, '…' ),
+				number_format( $r['clicks'] ),
+			];
+		}
+		$this->cli_table( $items );
+	}
+
+	// ----------------------------------------------------------------
 	// Private helpers
 	// ----------------------------------------------------------------
 

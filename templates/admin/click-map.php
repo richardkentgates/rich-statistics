@@ -76,6 +76,7 @@ $base = admin_url( 'admin.php' );
 				<th>#</th>
 				<th><?php esc_html_e( 'Element', 'rich-statistics' ); ?></th>
 				<th><?php esc_html_e( 'Trigger', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Destination', 'rich-statistics' ); ?></th>
 				<th><?php esc_html_e( 'Text / Label', 'rich-statistics' ); ?></th>
 				<th><?php esc_html_e( 'Clicks', 'rich-statistics' ); ?></th>
 			</tr>
@@ -99,6 +100,7 @@ $base = admin_url( 'admin.php' );
 				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
 				<td><?php echo wp_kses( $el_label, [ 'code' => [ 'class' => [] ], 'span' => [ 'class' => [] ] ] ); ?></td>
 				<td><?php echo wp_kses( $trigger, [ 'code' => [ 'class' => [] ], 'span' => [ 'class' => [] ] ] ); ?></td>
+				<td class="rsa-td-text"><?php echo esc_html( $row['href_value'] ?: '—' ); ?></td>
 				<td class="rsa-td-text"><?php echo esc_html( $row['text'] ?: '—' ); ?></td>
 				<td><strong><?php echo esc_html( number_format( $row['clicks'] ) ); ?></strong></td>
 			</tr>

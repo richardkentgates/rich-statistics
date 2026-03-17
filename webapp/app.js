@@ -209,7 +209,11 @@
 				throw new Error( 'HTTP ' + res.status );
 			}
 			return res.json();
-		} ).then( function ( data ) {
+		} ).then( function ( json ) {
+			// Unwrap REST API envelope: { ok: true, data: ... } → raw data
+			var data = ( json && typeof json === 'object' && json.ok === true && 'data' in json )
+				? json.data
+				: json;
 			state.cache[ cacheKey ] = data;
 			return data;
 		} );
@@ -763,7 +767,7 @@
 			);
 			// Session depth doughnut
 			drawDoughnut( 'c-beh-depth',
-				data.session_depth.map( function ( b ) { return b.depth + ' page' + ( b.depth === 1 ? '' : 's' ); } ),
+				data.session_depth.map( function ( b ) { return b.bucket; } ),
 				data.session_depth.map( function ( b ) { return b.count; } )
 			);
 		} ).catch( handleApiError );
@@ -781,8 +785,9 @@
 				return;
 			}
 			var rows = data.clicks.map( function ( c ) {
-				return '<tr><td class="rsa-td-path">' + esc( c.page ) + '</td>' +
+				return '<tr>' +
 					'<td>' + esc( c.href_protocol ) + '</td>' +
+					'<td class="rsa-td-text">' + esc( c.href_value || '—' ) + '</td>' +
 					'<td>' + esc( c.element_tag ) + '</td>' +
 					'<td>' + esc( c.element_text ) + '</td>' +
 					'<td>' + fmt( c.count ) + '</td></tr>';
@@ -790,13 +795,13 @@
 			container.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-click-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
-				'<thead><tr><th>Page</th><th>Protocol</th><th>Tag</th><th>Text</th><th>Clicks</th></tr></thead>' +
+				'<thead><tr><th>Protocol</th><th>Destination</th><th>Tag</th><th>Text</th><th>Clicks</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
 			setLoading( false );
 			var top = data.clicks.slice( 0, 10 );
 			drawBar( 'c-click-bar',
-				top.map( function ( c ) { return truncate( c.element_text || c.href_protocol, 30 ); } ),
+				top.map( function ( c ) { return truncate( c.href_value || c.element_text || c.href_protocol, 30 ); } ),
 				top.map( function ( c ) { return c.count; } ),
 				'Clicks',
 				true

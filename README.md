@@ -41,7 +41,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 
 | Feature | Description |
 |---|---|
-| Click tracking | Protocol tracking (http/tel/mailto/geo/sms) and by element ID/class |
+| Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click |
 | Heatmaps | Viewport-relative thermal overlay on any page URL |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |

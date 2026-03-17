@@ -101,18 +101,39 @@
     <pre><code>GET /wp-json/rich-statistics/v1/referrers?period=30d</code></pre>
     <pre><code>{
   "referrers": [
-    { "domain": "google.com", "count": 4120 },
-    { "domain": "(direct)", "count": 3980 }
+    { "domain": "google.com", "pageviews": 4120 },
+    { "domain": "(direct)", "pageviews": 3980 }
   ]
 }</code></pre>
 
     <h3>GET /behavior</h3>
-    <p>Engagement metrics: bounce rate and average time on page, broken down by page.</p>
+    <p>Engagement metrics: time-on-page histogram, session depth distribution, and entry/exit pages.</p>
     <pre><code>GET /wp-json/rich-statistics/v1/behavior?period=7d</code></pre>
     <pre><code>{
-  "rows": [
-    { "page": "/blog/privacy-analytics/", "bounce_rate": 0.31, "avg_time": 124 },
-    { "page": "/", "bounce_rate": 0.55, "avg_time": 42 }
+  "time_histogram": [ { "bucket": "0-9s", "count": 210 }, { "bucket": "30-59s", "count": 540 } ],
+  "session_depth":  [ { "bucket": "1 page", "count": 320 }, { "bucket": "2 pages", "count": 180 } ],
+  "entry_pages":    [ { "page": "/", "count": 820 } ]
+}</code></pre>
+
+    <h3>GET /clicks <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h3>
+    <p>Click events aggregated by element and protocol. The <code>href_value</code> field contains the actual destination: phone number for <code>tel:</code>, email address for <code>mailto:</code>, coordinates for <code>geo:</code>, SMS number for <code>sms:</code>, or file path for downloads.</p>
+    <pre><code>GET /wp-json/rsa/v1/clicks?period=30d</code></pre>
+    <pre><code>{
+  "clicks": [
+    {
+      "href_protocol": "tel",
+      "element_tag":   "a",
+      "element_text":  "Call us",
+      "href_value":    "+15551234567",
+      "count":         42
+    },
+    {
+      "href_protocol": "mailto",
+      "element_tag":   "a",
+      "element_text":  "Email us",
+      "href_value":    "hello@example.com",
+      "count":         18
+    }
   ]
 }</code></pre>
 

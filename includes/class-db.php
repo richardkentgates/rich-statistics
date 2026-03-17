@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 class RSA_DB {
 
 	// Schema version stored per-site
-	const SCHEMA_VERSION = 6;
+	const SCHEMA_VERSION = 7;
 	const OPTION_KEY     = 'rsa_db_version';
 
 	// ----------------------------------------------------------------
@@ -113,6 +113,7 @@ class RSA_DB {
 			element_class   VARCHAR(512)        DEFAULT NULL,
 			element_text    VARCHAR(255)        DEFAULT NULL,
 			href_protocol   VARCHAR(32)         DEFAULT NULL,
+			href_value      VARCHAR(512)        DEFAULT NULL,
 			matched_rule    VARCHAR(255)        DEFAULT NULL,
 			x_pct           DECIMAL(5,2)        DEFAULT NULL,
 			y_pct           DECIMAL(5,2)        DEFAULT NULL,
@@ -169,6 +170,15 @@ class RSA_DB {
 		) );
 		if ( empty( $col ) ) {
 			$wpdb->query( "ALTER TABLE `{$ct}` ADD COLUMN matched_rule VARCHAR(255) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// v7: add href_value column if missing
+		$col2 = $wpdb->get_results( $wpdb->prepare(
+			'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+			DB_NAME, $ct, 'href_value'
+		) );
+		if ( empty( $col2 ) ) {
+			$wpdb->query( "ALTER TABLE `{$ct}` ADD COLUMN href_value VARCHAR(512) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 	}
 

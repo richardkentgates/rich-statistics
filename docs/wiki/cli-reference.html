@@ -119,7 +119,28 @@ Exported 38,420 rows to /tmp/analytics-q1.csv</code></pre>
     <h2>wp rsa version</h2>
     <p>Print the plugin version.</p>
     <pre><code>$ wp rsa version
-Rich Statistics 1.0.0</code></pre>
+Rich Statistics 1.1.0</code></pre>
+
+    <h2>wp rich-stats clicks <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h2>
+    <p>List click events grouped by protocol and element. Shows the actual destination value for each click type.</p>
+    <pre><code>wp rich-stats clicks [--period=&lt;period&gt;] [--limit=&lt;n&gt;] [--page=&lt;path&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range: 7d, 30d, 90d, thismonth, lastmonth</td></tr>
+        <tr><td><code>--limit</code></td><td><code>20</code></td><td>Number of rows to display</td></tr>
+        <tr><td><code>--page</code></td><td>(all pages)</td><td>Filter by specific page path</td></tr>
+      </tbody>
+    </table>
+    <p>Example:</p>
+    <pre><code>$ wp rich-stats clicks --period=7d
++----------+----------------+---------+----------+--------+
+| Protocol | Destination    | Tag     | Text     | Clicks |
++----------+----------------+---------+----------+--------+
+| tel      | +15551234567   | a       | Call us  | 42     |
+| mailto   | hi@example.com | a       | Email us | 18     |
++----------+----------------+---------+----------+--------+</code></pre>
+    <div class="callout">Requires an active Premium licence. Returns an error on free-tier installs.</div>
   </main>
 </div>
 <footer class="site-footer">
