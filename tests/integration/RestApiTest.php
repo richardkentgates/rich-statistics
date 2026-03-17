@@ -23,6 +23,7 @@ class RestApiTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
+		RSA_DB::install(); // ensure plugin tables exist after WP test bootstrap resets
 
 		global $wp_rest_server;
 		$wp_rest_server = new WP_REST_Server();

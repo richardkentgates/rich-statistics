@@ -10,6 +10,11 @@
 
 class AnalyticsTest extends WP_UnitTestCase {
 
+	public function setUp(): void {
+		parent::setUp();
+		RSA_DB::install(); // ensure plugin tables exist after WP test bootstrap resets
+	}
+
 	// ----------------------------------------------------------------
 	// period_range()
 	// ----------------------------------------------------------------
