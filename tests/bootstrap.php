@@ -18,17 +18,11 @@ define( 'RSA_TESTS', true );
 // Composer autoloader (Brain\Monkey, Mockery, etc.)
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
-// Plugin constants needed by the classes under test
-define( 'ABSPATH',       sys_get_temp_dir() . '/' );
-define( 'RSA_VERSION',   '1.1.0' );
-define( 'RSA_DIR',       dirname( __DIR__ ) . '/' );
-define( 'RSA_URL',       'http://example.com/wp-content/plugins/rich-statistics/' );
-define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-define( 'RSA_MIN_WP',    '6.0' );
-define( 'RSA_MIN_PHP',   '8.0' );
+// RSA_DIR is needed by both modes to locate class files.
+define( 'RSA_DIR', dirname( __DIR__ ) . '/' );
 
 // -----------------------------------------------------------------------
-// Stub rs_fs() for unit tests — tests never need the real Freemius SDK
+// Stub rs_fs() — neither mode needs the real Freemius SDK
 // -----------------------------------------------------------------------
 if ( ! function_exists( 'rs_fs' ) ) {
 	function rs_fs(): object {
@@ -52,6 +46,18 @@ if ( ! function_exists( 'rs_fs' ) ) {
 $wp_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
 
 if ( is_dir( $wp_tests_dir ) ) {
+	// Do NOT pre-define ABSPATH or other WP constants here — the WP test
+	// bootstrap defines them correctly from the WP core install path.
+	// Pre-defining them causes harmless-looking but test-fatal PHP warnings
+	// because phpunit.xml.dist has failOnWarning=true.
+
+	// RSA plugin URL constants are needed when class files are loaded.
+	define( 'RSA_VERSION',    '1.1.0' );
+	define( 'RSA_URL',        'http://example.com/wp-content/plugins/rich-statistics/' );
+	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
+	define( 'RSA_MIN_WP',     '6.0' );
+	define( 'RSA_MIN_PHP',    '8.0' );
+
 	if ( ! defined( 'WP_TESTS_CONFIG_FILE_PATH' ) ) {
 		define( 'WP_TESTS_CONFIG_FILE_PATH', $wp_tests_dir . '/wp-tests-config.php' );
 	}
@@ -83,7 +89,8 @@ if ( is_dir( $wp_tests_dir ) ) {
 			RSA_Rest_API::init();
 		}
 
-		// Ensure DB tables exist for integration tests.
+		// Ensure DB tables exist for all integration tests (AnalyticsTest, RestApiTest
+		// don't call RSA_DB::install() in their setUp, so we do it here once).
 		if ( class_exists( 'RSA_DB' ) ) {
 			RSA_DB::install();
 		}
@@ -96,6 +103,14 @@ if ( is_dir( $wp_tests_dir ) ) {
 // -----------------------------------------------------------------------
 // Unit (no WordPress) — load Brain\Monkey stubs and plugin files directly
 // -----------------------------------------------------------------------
+
+// Define plugin constants that aren't set by the WP bootstrap in unit mode.
+define( 'ABSPATH',        sys_get_temp_dir() . '/' );
+define( 'RSA_VERSION',    '1.1.0' );
+define( 'RSA_URL',        'http://example.com/wp-content/plugins/rich-statistics/' );
+define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
+define( 'RSA_MIN_WP',     '6.0' );
+define( 'RSA_MIN_PHP',    '8.0' );
 
 // Provide minimal WP function stubs BEFORE loading plugin files, as some
 // classes call add_action() / add_filter() at file scope on load.
