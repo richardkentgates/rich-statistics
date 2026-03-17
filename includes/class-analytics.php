@@ -476,7 +476,6 @@ class RSA_Analytics {
 		global $wpdb;
 		$range    = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
 		$et       = RSA_DB::events_table();
-		$ct       = RSA_DB::clicks_table();
 		$bt       = self::bot_threshold();
 		$f_source = $filters['entry_source'] ?? '';
 		$f_page   = $filters['page']         ?? '';
@@ -513,20 +512,16 @@ class RSA_Analytics {
 			ARRAY_A
 		);
 
-		// ---- Page → Click action (any click on any page) -------------
-		$act_where = [
-			'c.created_at BETWEEN %s AND %s',
-			"c.href_protocol IS NOT NULL",
-			"c.href_protocol != ''",
-		];
-		$act_args = [ $range['start'], $range['end'] ];
+		// ---- Page → Exit page (last page before session ends) ----------
+		$exit_extra = '';
+		$exit_args  = [ $range['start'], $range['end'], $bt ];
 
 		if ( $f_page !== '' ) {
-			$act_where[] = 'c.page = %s';
-			$act_args[]  = $f_page;
+			$exit_extra  .= ' AND last_e.prev_page = %s';
+			$exit_args[]  = $f_page;
 		}
 		if ( $f_source !== '' ) {
-			$act_where[] = "c.session_id IN (
+			$exit_extra .= " AND last_e.session_id IN (
 				SELECT session_id
 				FROM (
 				    SELECT session_id,
@@ -537,23 +532,29 @@ class RSA_Analytics {
 				) s
 				WHERE rn = 1 AND src = %s
 			)";
-			$act_args[] = $range['start'];
-			$act_args[] = $range['end'];
-			$act_args[] = $bt;
-			$act_args[] = $f_source;
+			$exit_args[] = $range['start'];
+			$exit_args[] = $range['end'];
+			$exit_args[] = $bt;
+			$exit_args[] = $f_source;
 		}
 
-		$where_sql = 'WHERE ' . implode( ' AND ', $act_where );
-
-		$act_links = $wpdb->get_results(
+		$exit_links = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT c.page AS `from`, c.href_protocol AS `to`, COUNT(*) AS `count`
-				 FROM `{$ct}` c
-				 {$where_sql}
-				 GROUP BY c.page, c.href_protocol
+				"SELECT last_e.prev_page AS `from`, last_e.page AS `to`, COUNT(*) AS `count`
+				 FROM (
+				     SELECT session_id, page,
+				            LAG(page)  OVER (PARTITION BY session_id ORDER BY created_at) AS prev_page,
+				            LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS next_page
+				     FROM `{$et}`
+				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				 ) last_e
+				 WHERE last_e.next_page IS NULL
+				   AND last_e.prev_page IS NOT NULL
+				   {$exit_extra}
+				 GROUP BY `from`, `to`
 				 ORDER BY `count` DESC
 				 LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$act_args
+				...$exit_args
 			),
 			ARRAY_A
 		);
@@ -564,11 +565,11 @@ class RSA_Analytics {
 				'to'    => $r['to'],
 				'count' => (int) $r['count'],
 			], $source_links ) : [],
-			'page_to_action' => $act_links ? array_map( fn( $r ) => [
+			'page_to_exit' => $exit_links ? array_map( fn( $r ) => [
 				'from'  => $r['from'],
 				'to'    => $r['to'],
 				'count' => (int) $r['count'],
-			], $act_links ) : [],
+			], $exit_links ) : [],
 		];
 	}
 

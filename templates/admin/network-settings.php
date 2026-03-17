@@ -89,40 +89,62 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 	<hr>
 
 	<h2><?php esc_html_e( 'Sub-site Status', 'rich-statistics' ); ?></h2>
-	<p><?php esc_html_e( 'All sub-sites are tracked independently. Each site uses its own database tables. To view analytics for a specific site, switch to that site from the Network Admin Sites list.', 'rich-statistics' ); ?></p>
+	<p><?php esc_html_e( 'Per-site analytics for the last 30 days. Click the site name to view its full dashboard.', 'rich-statistics' ); ?></p>
 
 	<?php
-	$sites = get_sites( [ 'number' => 50, 'orderby' => 'id', 'order' => 'ASC' ] );
+	$sites = get_sites( [ 'number' => 100, 'orderby' => 'id', 'order' => 'ASC' ] );
 	if ( $sites ) :
 		global $wpdb;
+		$now   = current_time( 'mysql' );
+		$start = date( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		?>
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
 					<th><?php esc_html_e( 'Site', 'rich-statistics' ); ?></th>
 					<th><?php esc_html_e( 'ID', 'rich-statistics' ); ?></th>
-					<th><?php esc_html_e( 'Tables exist?', 'rich-statistics' ); ?></th>
+					<th><?php esc_html_e( 'Pageviews (30d)', 'rich-statistics' ); ?></th>
+					<th><?php esc_html_e( 'Sessions (30d)', 'rich-statistics' ); ?></th>
 					<th><?php esc_html_e( 'Retention (days)', 'rich-statistics' ); ?></th>
+					<th><?php esc_html_e( 'Tracker active?', 'rich-statistics' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 			<?php foreach ( $sites as $site ) :
 				switch_to_blog( $site->blog_id );
-				$prefix    = $wpdb->prefix;
-				$has_table = (bool) $wpdb->get_var(
-					$wpdb->prepare( "SHOW TABLES LIKE %s", $prefix . 'rsa_events' )
-				);
-				$retention = (int) get_option( 'rsa_retention_days', $default_retention );
+				$prefix     = $wpdb->prefix;
+				$et         = $prefix . 'rsa_events';
+				$st         = $prefix . 'rsa_sessions';
+				$has_table  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $et ) );
+				$retention  = (int) get_option( 'rsa_retention_days', $default_retention );
+				$bt         = (int) get_option( 'rsa_bot_score_threshold', 5 );
+				$tracker_on = ! (bool) get_option( 'rsa_network_disable_tracker', 0 );
+
+				$pageviews = 0;
+				$sessions  = 0;
+				if ( $has_table ) {
+					$pageviews = (int) $wpdb->get_var(
+						$wpdb->prepare( "SELECT COUNT(*) FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d", $start, $now, $bt ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					);
+					$sessions = (int) $wpdb->get_var(
+						$wpdb->prepare( "SELECT COUNT(*) FROM `{$st}` WHERE created_at BETWEEN %s AND %s", $start, $now ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					);
+				}
+
+				$site_details  = get_blog_details( $site->blog_id );
+				$dashboard_url = get_admin_url( $site->blog_id, 'admin.php?page=rich-statistics' );
 				restore_current_blog();
 				?>
 				<tr>
-					<td><?php echo esc_html( get_blog_details( $site->blog_id )->blogname ); ?></td>
+					<td><a href="<?php echo esc_url( $dashboard_url ); ?>"><?php echo esc_html( $site_details->blogname ); ?></a></td>
 					<td><?php echo (int) $site->blog_id; ?></td>
-					<td><?php echo $has_table
+					<td><?php echo $has_table ? esc_html( number_format( $pageviews ) ) : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
+					<td><?php echo $has_table ? esc_html( number_format( $sessions ) )  : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
+					<td><?php echo (int) $retention; ?></td>
+					<td><?php echo $tracker_on && $has_table
 						? '<span style="color:#10b981">&#10003; ' . esc_html__( 'Yes', 'rich-statistics' ) . '</span>'
 						: '<span style="color:#ef4444">&#10007; ' . esc_html__( 'No', 'rich-statistics' ) . '</span>';
 					?></td>
-					<td><?php echo (int) $retention; ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>

@@ -171,8 +171,8 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 		<h2><?php esc_html_e( 'Navigation Flow', 'rich-statistics' ); ?></h2>
 	</div>
 	<div class="rsa-chart-wrap" id="rsa-flow-chart">
-		<?php if ( empty( $journey['source_to_page'] ) && empty( $journey['page_to_action'] ) ) : ?>
-		<p class="rsa-empty"><?php esc_html_e( 'No journey data for this period. The chart shows entry sources on the left, pages visited in the middle, and click actions (tel, mailto, etc.) on the right. Try a wider date range, or note that click actions require visitors to trigger tracked link types.', 'rich-statistics' ); ?></p>
+		<?php if ( empty( $journey['source_to_page'] ) && empty( $journey['page_to_exit'] ) ) : ?>
+		<p class="rsa-empty"><?php esc_html_e( 'No journey data for this period. The chart shows entry sources on the left, pages visited in the middle, and exit pages (last page before leaving) on the right. Try a wider date range.', 'rich-statistics' ); ?></p>
 		<?php endif; ?>
 	</div>
 </div>

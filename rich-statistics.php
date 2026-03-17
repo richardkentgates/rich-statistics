@@ -171,6 +171,11 @@ function rsa_init() {
 	RSA_Admin::init();
 	RSA_Email::init();
 
+	// WooCommerce integration (free feature — no premium gate)
+	if ( class_exists( 'WooCommerce' ) ) {
+		RSA_Woocommerce::init();
+	}
+
 	// Boot premium
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 		if ( class_exists( 'RSA_Click_Tracking' ) ) {

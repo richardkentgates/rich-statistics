@@ -36,7 +36,7 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 	<!-- Click Tracking Protocols (shown always; click event recording is premium) -->
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header">
-			<h2><?php esc_html_e( 'Click Tracking Protocols', 'rich-statistics' ); ?></h2>
+			<h2><?php esc_html_e( 'Click Tracking', 'rich-statistics' ); ?></h2>
 			<?php if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) : ?>
 				<span class="rsa-premium-badge"><?php esc_html_e( 'Premium', 'rich-statistics' ); ?></span>
 				<?php if ( function_exists( 'rs_fs' ) ) : ?>
@@ -50,9 +50,9 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 			<?php
 			$protocols = [
 			'tel'      => __( 'tel: (phone number links)', 'rich-statistics' ),
+			'sms'      => __( 'sms: (text message links)', 'rich-statistics' ),
 			'mailto'   => __( 'mailto: (email links)', 'rich-statistics' ),
 			'geo'      => __( 'geo: (map coordinate links)', 'rich-statistics' ),
-			'sms'      => __( 'sms: (text message links)', 'rich-statistics' ),
 			'download' => __( 'download attribute (file downloads)', 'rich-statistics' ),
 			];
 			foreach ( $protocols as $key => $label ) :

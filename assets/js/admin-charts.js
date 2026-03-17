@@ -275,16 +275,16 @@
 	}
 
 	// ----------------------------------------------------------------
-	// Journey flow: 3-column Sankey — Entry Sources | Pages Visited | Click Actions
+	// Journey flow: 3-column Sankey — Entry Sources | Pages Visited | Exit Pages
 	// ----------------------------------------------------------------
 
 	function initFlowChart( journeyData ) {
 		var container = document.getElementById( 'rsa-flow-chart' );
 		if ( ! container ) { return; }
 
-		var srcLinks = ( journeyData && journeyData.source_to_page ) ? journeyData.source_to_page : [];
-		var actLinks = ( journeyData && journeyData.page_to_action ) ? journeyData.page_to_action : [];
-		if ( ! srcLinks.length && ! actLinks.length ) { return; }
+		var srcLinks  = ( journeyData && journeyData.source_to_page ) ? journeyData.source_to_page : [];
+		var exitLinks = ( journeyData && journeyData.page_to_exit )   ? journeyData.page_to_exit   : [];
+		if ( ! srcLinks.length && ! exitLinks.length ) { return; }
 
 		var svgNS = 'http://www.w3.org/2000/svg';
 		var TOP_N = 8;
@@ -292,14 +292,14 @@
 		// ---- Aggregate totals per column -------------------------------
 		var c0T    = {};  // col0: Entry Sources
 		var c1InT  = {};  // col1: Pages — incoming from sources
-		var c1OutT = {};  // col1: Pages — outgoing to actions
-		var c2T    = {};  // col2: Click Actions
+		var c1OutT = {};  // col1: Pages — outgoing to exit pages
+		var c2T    = {};  // col2: Exit Pages
 
 		srcLinks.forEach( function ( l ) {
 			c0T[ l.from ]   = ( c0T[ l.from ]   || 0 ) + l.count;
 			c1InT[ l.to ]   = ( c1InT[ l.to ]   || 0 ) + l.count;
 		} );
-		actLinks.forEach( function ( l ) {
+		exitLinks.forEach( function ( l ) {
 			c1OutT[ l.from ] = ( c1OutT[ l.from ] || 0 ) + l.count;
 			c2T[ l.to ]      = ( c2T[ l.to ]      || 0 ) + l.count;
 		} );
@@ -323,13 +323,13 @@
 		var col1 = topNodes( c1T );
 		var col2 = topNodes( c2T );
 
-		var visSrc = srcLinks.filter( function ( l ) {
+		var visSrc  = srcLinks.filter( function ( l ) {
 			return col0.indexOf( l.from ) > -1 && col1.indexOf( l.to ) > -1;
 		} );
-		var visAct = actLinks.filter( function ( l ) {
+		var visExit = exitLinks.filter( function ( l ) {
 			return col1.indexOf( l.from ) > -1 && col2.indexOf( l.to ) > -1;
 		} );
-		if ( ! visSrc.length && ! visAct.length ) { return; }
+		if ( ! visSrc.length && ! visExit.length ) { return; }
 
 		// ---- Layout constants ------------------------------------------
 		var W      = 960;
@@ -391,7 +391,7 @@
 		}
 		if ( col0.length ) { colHeader( x0 - 6,           'end',    'Entry Source' ); }
 		if ( col1.length ) { colHeader( x1 + nodeW / 2,   'middle', 'Pages Visited' ); }
-		if ( col2.length ) { colHeader( x2 + nodeW + 6,   'start',  'Click Actions' ); }
+		if ( col2.length ) { colHeader( x2 + nodeW + 6,   'start',  'Exit Page' ); }
 
 		// ---- Ribbon helper ---------------------------------------------
 		function ribbon( sn, sTot, dn, dTot, count, idx ) {
@@ -424,8 +424,8 @@
 		visSrc.forEach( function ( l, idx ) {
 			ribbon( n0[ l.from ], c0T[ l.from ], n1[ l.to ], c1T[ l.to ], l.count, idx );
 		} );
-		// Draw page → action ribbons
-		visAct.forEach( function ( l, idx ) {
+		// Draw page → exit page ribbons
+		visExit.forEach( function ( l, idx ) {
 			ribbon( n1[ l.from ], c1T[ l.from ], n2[ l.to ], c2T[ l.to ], l.count, idx + 4 );
 		} );
 

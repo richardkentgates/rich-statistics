@@ -12,6 +12,7 @@ class RSA_Admin {
 		add_action( 'network_admin_menu',     [ __CLASS__, 'register_network_menus' ] );
 		add_action( 'admin_enqueue_scripts',  [ __CLASS__, 'enqueue_assets' ] );
 		add_action( 'admin_post_rsa_save_settings', [ __CLASS__, 'save_settings' ] );
+		add_action( 'admin_post_rsa_export_csv',    [ __CLASS__, 'handle_export_csv' ] );
 		add_action( 'current_screen',        [ __CLASS__, 'register_help_tabs' ] );
 
 		// Show download button near Application Passwords in user profile
@@ -25,7 +26,7 @@ class RSA_Admin {
 	public static function register_menus(): void {
 		add_menu_page(
 			__( 'Rich Statistics', 'rich-statistics' ),
-			__( 'Rich Stats', 'rich-statistics' ),
+			__( 'Rich Statistics', 'rich-statistics' ),
 			'manage_options',
 			'rich-statistics',
 			[ __CLASS__, 'page_overview' ],
@@ -49,7 +50,7 @@ class RSA_Admin {
 	public static function register_network_menus(): void {
 		add_menu_page(
 			__( 'Rich Statistics (Network)', 'rich-statistics' ),
-			__( 'Rich Stats', 'rich-statistics' ),
+				__( 'Rich Statistics', 'rich-statistics' ),
 			'manage_network_options',
 			'rich-statistics-network',
 			[ __CLASS__, 'page_network_settings' ],
@@ -79,6 +80,7 @@ class RSA_Admin {
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',   'rich-statistics' ), 'label' => __( 'Heatmap',   'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
 		$pages['preferences'] = [ 'title' => __( 'Preferences', 'rich-statistics' ), 'label' => __( 'Preferences', 'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['export']      = [ 'title' => __( 'Export',      'rich-statistics' ), 'label' => __( 'Export',      'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
 
@@ -150,24 +152,24 @@ class RSA_Admin {
 			'date_to'   => $date_to,
 		];
 
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-pages' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-pages' ) ) {
 			$pf         = $page_filters;
 			$pf['page'] = sanitize_text_field( $_GET['path'] ?? '' );
 			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period, 20, $pf ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-audience' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-audience' ) ) {
 			return [ 'view' => 'audience', 'data' => RSA_Analytics::get_audience( $period, $page_filters ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-referrers' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-referrers' ) ) {
 			$ref_filters = [ 'page' => $page_filters['page'] ];
 			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-behavior' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-behavior' ) ) {
 			$beh_filters = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
 			$beh_data    = RSA_Analytics::get_behavior( $period, $beh_filters );
 			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
 		}
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-user-flow' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-user-flow' ) ) {
 			$entry_source = sanitize_text_field( $_GET['entry_source'] ?? '' );
 			$uf_page      = sanitize_text_field( $_GET['page_filter']  ?? '' );
 			$uf_filters   = [
@@ -192,7 +194,7 @@ class RSA_Admin {
 				'period' => $period,
 			];
 		}
-		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-click-map' ) ) {
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );
 			return [ 'view' => 'click-map', 'data' => RSA_Analytics::get_click_map( $period, $page ), 'period' => $period ];
 		}
@@ -214,6 +216,7 @@ class RSA_Admin {
 	public static function page_click_map():      void { self::render( 'click-map' ); }
 	public static function page_heatmap():        void { self::render( 'heatmap' ); }
 	public static function page_preferences():      void { self::render( 'preferences' ); }
+	public static function page_export():           void { self::render( 'export' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
 	private static function render( string $template ): void {
@@ -247,6 +250,84 @@ class RSA_Admin {
 		}
 		ksort( $pages );
 		return $pages;
+	}
+
+	// ----------------------------------------------------------------
+	// CSV Export handler
+	// ----------------------------------------------------------------
+
+	public static function handle_export_csv(): void {
+		check_admin_referer( 'rsa_export_csv' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'rich-statistics' ) );
+		}
+
+		global $wpdb;
+
+		$data_type = sanitize_key( $_POST['data_type'] ?? 'pageviews' );
+		$period    = sanitize_text_field( $_POST['period'] ?? '30d' );
+		$allowed   = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
+		if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+
+		$date_from = sanitize_text_field( $_POST['date_from'] ?? '' );
+		$date_to   = sanitize_text_field( $_POST['date_to']   ?? '' );
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = ''; }
+
+		$range = RSA_Analytics::period_range( $period, $date_from, $date_to );
+		$et    = RSA_DB::events_table();
+		$st    = RSA_DB::sessions_table();
+		$ct    = RSA_DB::clicks_table();
+		$bt    = (int) get_option( 'rsa_bot_score_threshold', 5 );
+
+		switch ( $data_type ) {
+			case 'sessions':
+				$rows = $wpdb->get_results( $wpdb->prepare(
+					"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at
+					 FROM `{$st}` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$range['start'], $range['end']
+				), ARRAY_A );
+				$headers = [ 'session_id', 'entry_page', 'exit_page', 'pages_viewed', 'total_time', 'browser', 'os', 'language', 'timezone', 'created_at' ];
+				break;
+			case 'clicks':
+				$rows = $wpdb->get_results( $wpdb->prepare(
+					"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at
+					 FROM `{$ct}` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$range['start'], $range['end']
+				), ARRAY_A );
+				$headers = [ 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
+				break;
+			case 'referrers':
+				$rows = $wpdb->get_results( $wpdb->prepare(
+					"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions
+					 FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					 GROUP BY referrer_domain ORDER BY pageviews DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$range['start'], $range['end'], $bt
+				), ARRAY_A );
+				$headers = [ 'referrer_domain', 'pageviews', 'sessions' ];
+				break;
+			default: // pageviews
+				$rows = $wpdb->get_results( $wpdb->prepare(
+					"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at
+					 FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$range['start'], $range['end'], $bt
+				), ARRAY_A );
+				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
+		}
+
+		$filename = 'rich-statistics-' . $data_type . '-' . date( 'Y-m-d', current_time( 'timestamp' ) ) . '.csv'; // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Pragma: no-cache' );
+
+		$out = fopen( 'php://output', 'w' );
+		fwrite( $out, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel
+		fputcsv( $out, $headers );
+		foreach ( $rows as $row ) {
+			fputcsv( $out, array_values( $row ) );
+		}
+		fclose( $out );
+		exit;
 	}
 
 	// ----------------------------------------------------------------
