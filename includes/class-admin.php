@@ -171,7 +171,9 @@ class RSA_Admin {
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-user-flow' ) ) {
 			$entry_source = sanitize_text_field( $_GET['entry_source'] ?? '' );
-			$uf_page      = sanitize_text_field( $_GET['page_filter']  ?? '' );
+			$focus_page   = sanitize_text_field( $_GET['focus_page']   ?? '' );
+			$min_sessions = max( 1, (int) ( $_GET['min_sessions'] ?? 1 ) );
+			$steps        = min( 5, max( 2, (int) ( $_GET['steps'] ?? 4 ) ) );
 			$uf_filters   = [
 				'date_from'  => $date_from,
 				'date_to'    => $date_to,
@@ -183,11 +185,13 @@ class RSA_Admin {
 			return [
 				'view'   => 'user-flow',
 				'data'   => [
-					'journey_flow' => RSA_Analytics::get_journey_flow( $period, [
+					'path_flow' => RSA_Analytics::get_path_flow( $period, [
 						'date_from'    => $date_from,
 						'date_to'      => $date_to,
 						'entry_source' => $entry_source,
-						'page'         => $uf_page,
+						'focus_page'   => $focus_page,
+						'min_sessions' => $min_sessions,
+						'steps'        => $steps,
 					] ),
 					'user_flow' => RSA_Analytics::get_user_flow( $period, $uf_filters ),
 				],

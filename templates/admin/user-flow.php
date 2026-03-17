@@ -15,8 +15,10 @@ if ( $period === 'custom' ) {
 }
 
 // Journey Sankey filters
-$f_source  = sanitize_text_field( $_GET['entry_source'] ?? '' );
-$f_page    = sanitize_text_field( $_GET['page_filter']  ?? '' );
+$f_source   = sanitize_text_field( $_GET['entry_source'] ?? '' );
+$f_focus    = sanitize_text_field( $_GET['focus_page']   ?? '' );
+$f_min_s    = max( 1, (int) ( $_GET['min_sessions'] ?? 1 ) );
+$f_steps    = min( 5, max( 2, (int) ( $_GET['steps'] ?? 4 ) ) );
 // Transitions table filters
 $f_from    = sanitize_text_field( $_GET['from_page'] ?? '' );
 $f_to      = sanitize_text_field( $_GET['to_page']   ?? '' );
@@ -26,11 +28,13 @@ $view_type = in_array( $_GET['view_type'] ?? 'chart', [ 'chart', 'table' ], true
 $sort      = in_array( $_GET['sort'] ?? 'count', [ 'count', 'from_page', 'to_page' ], true ) ? ( $_GET['sort'] ?? 'count' ) : 'count';
 $sort_dir  = ( ( $_GET['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc';
 
-$journey  = RSA_Analytics::get_journey_flow( $period, [
+$path_flow = RSA_Analytics::get_path_flow( $period, [
 	'date_from'    => $date_from,
 	'date_to'      => $date_to,
 	'entry_source' => $f_source,
-	'page'         => $f_page,
+	'focus_page'   => $f_focus,
+	'min_sessions' => $f_min_s,
+	'steps'        => $f_steps,
 ] );
 $flow     = RSA_Analytics::get_user_flow( $period, [
 	'date_from' => $date_from,
@@ -93,15 +97,29 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 		</select>
 		<?php endif; ?>
 
-		<select name="page_filter">
-			<option value=""><?php esc_html_e( 'All pages', 'rich-statistics' ); ?></option>
+		<select name="focus_page">
+			<option value=""><?php esc_html_e( 'Any page', 'rich-statistics' ); ?></option>
 			<?php foreach ( $pages as $path => $plabel ) : ?>
-			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_page, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
+			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_focus, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
 			<?php endforeach; ?>
 		</select>
 
+		<label class="rsa-filter-inline-label">
+			<?php esc_html_e( 'Min. sessions', 'rich-statistics' ); ?>
+			<input type="number" name="min_sessions" value="<?php echo esc_attr( $f_min_s ); ?>" min="1" max="9999" style="width:64px">
+		</label>
+
+		<label class="rsa-filter-inline-label">
+			<?php esc_html_e( 'Steps', 'rich-statistics' ); ?>
+			<select name="steps">
+				<?php foreach ( [ 2, 3, 4, 5 ] as $s ) : ?>
+				<option value="<?php echo $s; ?>" <?php selected( $f_steps, $s ); ?>><?php echo $s; ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+
 		<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
-		<?php if ( $f_source || $f_page ) : ?>
+		<?php if ( $f_source || $f_focus || $f_min_s > 1 || $f_steps !== 4 ) : ?>
 		<a href="<?php echo esc_url( add_query_arg( [ 'page' => $page_slug, 'period' => $period, 'view_type' => 'chart' ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 		<?php endif; ?>
 
@@ -171,8 +189,8 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 		<h2><?php esc_html_e( 'Navigation Flow', 'rich-statistics' ); ?></h2>
 	</div>
 	<div class="rsa-chart-wrap" id="rsa-flow-chart">
-		<?php if ( empty( $journey['source_to_page'] ) && empty( $journey['page_to_exit'] ) ) : ?>
-		<p class="rsa-empty"><?php esc_html_e( 'No journey data for this period. The chart shows entry sources on the left, pages visited in the middle, and exit pages (last page before leaving) on the right. Try a wider date range.', 'rich-statistics' ); ?></p>
+		<?php if ( empty( $path_flow['steps'] ) ) : ?>
+		<p class="rsa-empty"><?php esc_html_e( 'No path data for this period. The chart shows actual visitor journeys step-by-step — Step 1 is the first page, Step 2 the second, and so on. Sessions that end before the next step show an (exit) node. Try a wider date range or lower the minimum sessions threshold.', 'rich-statistics' ); ?></p>
 		<?php endif; ?>
 	</div>
 </div>

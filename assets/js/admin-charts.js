@@ -268,146 +268,113 @@
 				values( data.session_depth, 'count' )
 			) );
 		}
-
-		if ( data.user_flow && data.user_flow.length ) {
-			initFlowChart( data.user_flow );
-		}
 	}
 
 	// ----------------------------------------------------------------
-	// Journey flow: 3-column Sankey — Entry Sources | Pages Visited | Exit Pages
+	// Journey flow: N-step Sankey — Step 1 | Step 2 | Step 3 | …
+	// Each column = an actual chronological step in visitor sessions.
+	// Sessions that end before reaching the next step show an "(exit)" node.
 	// ----------------------------------------------------------------
 
-	function initFlowChart( journeyData ) {
+	function initFlowChart( pathData ) {
 		var container = document.getElementById( 'rsa-flow-chart' );
 		if ( ! container ) { return; }
 
-		var srcLinks  = ( journeyData && journeyData.source_to_page ) ? journeyData.source_to_page : [];
-		var exitLinks = ( journeyData && journeyData.page_to_exit )   ? journeyData.page_to_exit   : [];
-		if ( ! srcLinks.length && ! exitLinks.length ) { return; }
+		var steps = ( pathData && pathData.steps ) ? pathData.steps : {};
+		var links = ( pathData && pathData.links  ) ? pathData.links  : [];
+		var stepNums = Object.keys( steps ).map( Number ).sort( function ( a, b ) { return a - b; } );
+		if ( ! stepNums.length ) { return; }
 
-		var svgNS = 'http://www.w3.org/2000/svg';
-		var TOP_N = 8;
-
-		// ---- Aggregate totals per column -------------------------------
-		var c0T    = {};  // col0: Entry Sources
-		var c1InT  = {};  // col1: Pages — incoming from sources
-		var c1OutT = {};  // col1: Pages — outgoing to exit pages
-		var c2T    = {};  // col2: Exit Pages
-
-		srcLinks.forEach( function ( l ) {
-			c0T[ l.from ]   = ( c0T[ l.from ]   || 0 ) + l.count;
-			c1InT[ l.to ]   = ( c1InT[ l.to ]   || 0 ) + l.count;
-		} );
-		exitLinks.forEach( function ( l ) {
-			c1OutT[ l.from ] = ( c1OutT[ l.from ] || 0 ) + l.count;
-			c2T[ l.to ]      = ( c2T[ l.to ]      || 0 ) + l.count;
-		} );
-
-		// col1 size = max( in-total, out-total ) so ribbons fit on both sides
-		var c1T = {};
-		var c1All = {};
-		Object.keys( c1InT ).forEach(  function ( k ) { c1All[ k ] = true; } );
-		Object.keys( c1OutT ).forEach( function ( k ) { c1All[ k ] = true; } );
-		Object.keys( c1All ).forEach( function ( k ) {
-			c1T[ k ] = Math.max( c1InT[ k ] || 0, c1OutT[ k ] || 0 );
-		} );
-
-		function topNodes( totals ) {
-			return Object.keys( totals )
-				.sort( function ( a, b ) { return totals[ b ] - totals[ a ]; } )
-				.slice( 0, TOP_N );
-		}
-
-		var col0 = topNodes( c0T );
-		var col1 = topNodes( c1T );
-		var col2 = topNodes( c2T );
-
-		var visSrc  = srcLinks.filter( function ( l ) {
-			return col0.indexOf( l.from ) > -1 && col1.indexOf( l.to ) > -1;
-		} );
-		var visExit = exitLinks.filter( function ( l ) {
-			return col1.indexOf( l.from ) > -1 && col2.indexOf( l.to ) > -1;
-		} );
-		if ( ! visSrc.length && ! visExit.length ) { return; }
-
-		// ---- Layout constants ------------------------------------------
+		var svgNS  = 'http://www.w3.org/2000/svg';
 		var W      = 960;
 		var nodeW  = 12;
 		var GAP    = 8;
-		var BAND_H = 380;
-		var HEAD   = 28;  // vertical space above nodes for column headers
-		var labelW = 190;
-		var x0 = labelW;
-		var x1 = Math.round( ( W - nodeW ) / 2 );
-		var x2 = W - labelW - nodeW;
+		var BAND_H = 400;
+		var HEAD   = 28;
+		var labelW = 185;
+		var font   = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+		var EXIT_COLOR = '#a0a5ae';
 
-		function buildNodes( keys, totals, nodeX ) {
-			var total  = keys.reduce( function ( s, k ) { return s + ( totals[ k ] || 0 ); }, 0 );
-			var usable = BAND_H - GAP * Math.max( 0, keys.length - 1 );
+		var numCols = stepNums.length;
+
+		// x position for column c (0-based index)
+		function colX( c ) {
+			if ( numCols === 1 ) { return Math.round( ( W - nodeW ) / 2 ); }
+			// Left col starts at labelW, right col ends at W - labelW - nodeW
+			var left  = labelW;
+			var right = W - labelW - nodeW;
+			return Math.round( left + c * ( right - left ) / ( numCols - 1 ) );
+		}
+
+		// Build node layout for one column
+		function buildNodes( pageList ) {
+			var total  = pageList.reduce( function ( s, p ) { return s + p.sessions; }, 0 );
+			var usable = BAND_H - GAP * Math.max( 0, pageList.length - 1 );
 			var nodes  = {};
-			var y = HEAD;
-			keys.forEach( function ( k ) {
-				var h = Math.max( 14, Math.round( usable * ( totals[ k ] || 0 ) / total ) );
-				nodes[ k ] = { x: nodeX, y: y, h: h, offIn: 0, offOut: 0 };
+			var y      = HEAD;
+			pageList.forEach( function ( p ) {
+				var h = Math.max( 14, Math.round( usable * p.sessions / Math.max( total, 1 ) ) );
+				nodes[ p.page ] = { y: y, h: h, offIn: 0, offOut: 0, sessions: p.sessions };
 				y += h + GAP;
 			} );
 			return nodes;
 		}
 
-		var n0 = buildNodes( col0, c0T, x0 );
-		var n1 = buildNodes( col1, c1T, x1 );
-		var n2 = buildNodes( col2, c2T, x2 );
+		// Columns: node maps indexed by step number
+		var colNodes = {};
+		stepNums.forEach( function ( sn ) {
+			colNodes[ sn ] = buildNodes( steps[ sn ] );
+		} );
 
-		function colBottom( nodes, keys ) {
-			if ( ! keys.length ) { return HEAD; }
-			var last = nodes[ keys[ keys.length - 1 ] ];
-			return last ? last.y + last.h : HEAD;
-		}
-		var svgH = Math.max(
-			colBottom( n0, col0 ), colBottom( n1, col1 ), colBottom( n2, col2 )
-		) + 16;
+		// SVG height = tallest column bottom + padding
+		var svgH = HEAD + 16;
+		stepNums.forEach( function ( sn ) {
+			var pages = steps[ sn ];
+			if ( ! pages || ! pages.length ) { return; }
+			var last = colNodes[ sn ][ pages[ pages.length - 1 ].page ];
+			if ( last ) { svgH = Math.max( svgH, last.y + last.h + 16 ); }
+		} );
 
 		var svg = document.createElementNS( svgNS, 'svg' );
 		svg.setAttribute( 'viewBox', '0 0 ' + W + ' ' + svgH );
 		svg.setAttribute( 'width', '100%' );
 		svg.style.display   = 'block';
-		svg.style.maxHeight = '540px';
-
-		var font = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+		svg.style.maxHeight = '560px';
 
 		// ---- Column headers --------------------------------------------
-		function colHeader( tx, anchor, label ) {
-			var t = document.createElementNS( svgNS, 'text' );
-			t.setAttribute( 'x', String( tx ) );
-			t.setAttribute( 'y', '15' );
-			t.setAttribute( 'text-anchor', anchor );
+		stepNums.forEach( function ( sn, ci ) {
+			var x   = colX( ci );
+			var mid = x + nodeW / 2;
+			var t   = document.createElementNS( svgNS, 'text' );
+			t.setAttribute( 'x',           String( mid ) );
+			t.setAttribute( 'y',           '15' );
+			t.setAttribute( 'text-anchor', 'middle' );
 			t.setAttribute( 'font-size',   '10' );
 			t.setAttribute( 'font-family', font );
 			t.setAttribute( 'fill',        '#a0a5ae' );
 			t.setAttribute( 'font-weight', '600' );
-			t.textContent = label.toUpperCase();
+			t.textContent = ( 'STEP ' + sn ).toUpperCase();
 			svg.appendChild( t );
-		}
-		if ( col0.length ) { colHeader( x0 - 6,           'end',    'Entry Source' ); }
-		if ( col1.length ) { colHeader( x1 + nodeW / 2,   'middle', 'Pages Visited' ); }
-		if ( col2.length ) { colHeader( x2 + nodeW + 6,   'start',  'Exit Page' ); }
+		} );
 
 		// ---- Ribbon helper ---------------------------------------------
-		function ribbon( sn, sTot, dn, dTot, count, idx ) {
-			if ( ! sn || ! dn || ! sTot || ! dTot ) { return; }
-			var fh  = Math.max( 2, Math.round( sn.h * count / sTot ) );
-			var th  = Math.max( 2, Math.round( dn.h * count / dTot ) );
-			var y1t = sn.y + sn.offOut;
-			var y2t = dn.y + dn.offIn;
-			sn.offOut += fh;
-			dn.offIn  += th;
-			var y1b = y1t + fh;
-			var y2b = y2t + th;
-			var x1r = sn.x + nodeW;
-			var x2l = dn.x;
-			var cpx = ( x2l - x1r ) * 0.45;
-			var p   = document.createElementNS( svgNS, 'path' );
+		function ribbon( sn, dn, fromPage, toPage, sFromTot, sTotTo, count, colorIdx ) {
+			var snNode = sn[ fromPage ];
+			var dnNode = dn[ toPage ];
+			if ( ! snNode || ! dnNode ) { return; }
+			var fh  = Math.max( 2, Math.round( snNode.h * count / Math.max( snNode.sessions, 1 ) ) );
+			var th  = Math.max( 2, Math.round( dnNode.h * count / Math.max( dnNode.sessions, 1 ) ) );
+			var y1t = snNode.y + snNode.offOut;
+			var y2t = dnNode.y + dnNode.offIn;
+			snNode.offOut += fh;
+			dnNode.offIn  += th;
+			var y1b  = y1t + fh;
+			var y2b  = y2t + th;
+			var x1r  = snNode.x + nodeW;
+			var x2l  = dnNode.x;
+			var cpx  = ( x2l - x1r ) * 0.45;
+			var p    = document.createElementNS( svgNS, 'path' );
+			var isExit = ( toPage === '(exit)' );
 			p.setAttribute( 'd',
 				'M '  + x1r + ' ' + y1t +
 				' C ' + ( x1r + cpx ) + ' ' + y1t + ' ' + ( x2l - cpx ) + ' ' + y2t + ' ' + x2l + ' ' + y2t +
@@ -415,47 +382,87 @@
 				' C ' + ( x2l - cpx ) + ' ' + y2b + ' ' + ( x1r + cpx ) + ' ' + y1b + ' ' + x1r + ' ' + y1b +
 				' Z'
 			);
-			p.setAttribute( 'fill',         PALETTE[ idx % PALETTE.length ] );
-			p.setAttribute( 'fill-opacity', '0.28' );
+			p.setAttribute( 'fill',         isExit ? EXIT_COLOR : PALETTE[ colorIdx % PALETTE.length ] );
+			p.setAttribute( 'fill-opacity', isExit ? '0.18' : '0.28' );
 			svg.appendChild( p );
 		}
 
-		// Draw source → page ribbons
-		visSrc.forEach( function ( l, idx ) {
-			ribbon( n0[ l.from ], c0T[ l.from ], n1[ l.to ], c1T[ l.to ], l.count, idx );
+		// Store x on each node map after positions are computed
+		stepNums.forEach( function ( sn, ci ) {
+			var nx = colX( ci );
+			Object.keys( colNodes[ sn ] ).forEach( function ( page ) {
+				colNodes[ sn ][ page ].x = nx;
+			} );
 		} );
-		// Draw page → exit page ribbons
-		visExit.forEach( function ( l, idx ) {
-			ribbon( n1[ l.from ], c1T[ l.from ], n2[ l.to ], c2T[ l.to ], l.count, idx + 4 );
+
+		// ---- Draw ribbons (links) ---------------------------------------
+		links.forEach( function ( l, idx ) {
+			var fromSn = l.step;
+			var toSn   = l.step + 1;
+			// "(exit)" links go to a phantom node just to the right of the from column
+			var snNodes = colNodes[ fromSn ];
+			var dnNodes;
+			if ( l.to === '(exit)' ) {
+				// Create a temporary exit node if needed
+				var exitKey = '(exit)';
+				if ( ! colNodes[ fromSn + '_exit' ] ) {
+					colNodes[ fromSn + '_exit' ] = {};
+				}
+				dnNodes = colNodes[ fromSn + '_exit' ];
+				if ( ! dnNodes[ exitKey ] ) {
+					var snNode = snNodes[ l.from ];
+					var exitX  = colX( stepNums.indexOf( fromSn ) ) + nodeW + 40;
+					dnNodes[ exitKey ] = { x: exitX, y: snNode ? snNode.y : HEAD, h: 20, offIn: 0, offOut: 0, sessions: l.count };
+				}
+			} else {
+				dnNodes = colNodes[ toSn ];
+			}
+			if ( snNodes && dnNodes ) {
+				ribbon( snNodes, dnNodes, l.from, l.to, 1, 1, l.count, idx );
+			}
 		} );
 
 		// ---- Node rectangles + labels ----------------------------------
-		function drawNode( k, n, labelX, anchor, color ) {
+		function drawNode( page, node, nx, anchor, color ) {
 			var rect = document.createElementNS( svgNS, 'rect' );
-			rect.setAttribute( 'x',      n.x );
-			rect.setAttribute( 'y',      n.y );
+			rect.setAttribute( 'x',      nx );
+			rect.setAttribute( 'y',      node.y );
 			rect.setAttribute( 'width',  nodeW );
-			rect.setAttribute( 'height', n.h );
+			rect.setAttribute( 'height', node.h );
 			rect.setAttribute( 'fill',   color );
 			rect.setAttribute( 'rx',     '2' );
 			svg.appendChild( rect );
 
 			var MAX_L = 28;
-			var lbl   = k.length > MAX_L ? '\u2026' + k.slice( -( MAX_L - 1 ) ) : k;
+			var lbl   = page.length > MAX_L ? '\u2026' + page.slice( -( MAX_L - 1 ) ) : page;
+			var tx    = anchor === 'end' ? nx - 6 : nx + nodeW + 6;
 			var text  = document.createElementNS( svgNS, 'text' );
-			text.setAttribute( 'x',           labelX );
-			text.setAttribute( 'y',           n.y + n.h / 2 + 4 );
+			text.setAttribute( 'x',           tx );
+			text.setAttribute( 'y',           node.y + node.h / 2 + 4 );
 			text.setAttribute( 'text-anchor', anchor );
 			text.setAttribute( 'font-size',   '11' );
 			text.setAttribute( 'font-family', font );
-			text.setAttribute( 'fill',        '#646970' );
+			text.setAttribute( 'fill',        page === '(exit)' ? '#a0a5ae' : '#646970' );
 			text.textContent = lbl;
 			svg.appendChild( text );
 		}
 
-		col0.forEach( function ( k ) { drawNode( k, n0[ k ], x0 - 6,         'end',   PALETTE[0] ); } );
-		col1.forEach( function ( k ) { drawNode( k, n1[ k ], x1 + nodeW + 6, 'start', PALETTE[1] ); } );
-		col2.forEach( function ( k ) { drawNode( k, n2[ k ], x2 + nodeW + 6, 'start', PALETTE[3] ); } );
+		stepNums.forEach( function ( sn, ci ) {
+			var nx     = colX( ci );
+			var anchor = ci === numCols - 1 ? 'end' : 'start';
+			// All middle columns use start, last column uses end only when it's alone on the right edge
+			// Actually: first col labels go to right of node, last col labels go to right too (unless only col)
+			// We always put labels to the right, except the leftmost might be tighter.
+			// Simplest: labels always to the right of node (start), fits our standard layout.
+			anchor = 'start';
+			( steps[ sn ] || [] ).forEach( function ( pg, pidx ) {
+				var node  = colNodes[ sn ][ pg.page ];
+				if ( ! node ) { return; }
+				node.x = nx;
+				var color = pg.page === '(exit)' ? EXIT_COLOR : PALETTE[ pidx % PALETTE.length ];
+				drawNode( pg.page, node, nx, 'start', color );
+			} );
+		} );
 
 		container.appendChild( svg );
 	}
@@ -510,7 +517,7 @@
 			case 'referrers': initReferrers( data ); break;
 			case 'behavior':  initBehavior( data );  break;
 			case 'user-flow':
-				initFlowChart( data.journey_flow );
+				initFlowChart( data.path_flow );
 				break;
 			/* <fs_premium_only> */
 			case 'click-map': initClickMap( data );  break;

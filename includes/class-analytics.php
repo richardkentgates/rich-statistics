@@ -468,108 +468,224 @@ class RSA_Analytics {
 	}
 
 	/**
-	 * Three-column journey flow for the Sankey diagram:
-	 * col 0 (Entry Sources) → col 1 (Pages Visited) → col 2 (Click Actions).
-	 * Supports filtering by entry_source and/or a specific page.
+	 * Step-based path flow for the Sankey diagram.
+	 *
+	 * Columns represent actual chronological steps in visitor sessions
+	 * (Step 1 = first page, Step 2 = second page, …). Sessions that end
+	 * before reaching the next step contribute an "(exit)" node so
+	 * drop-off rates are visible at each stage.
+	 *
+	 * Returns:
+	 *   [
+	 *     'steps'          => [ 1 => [ ['page'=>…,'sessions'=>N], … ], 2 => […], … ],
+	 *     'links'          => [ ['step'=>1,'from'=>…,'to'=>…,'count'=>N], … ],
+	 *     'total_sessions' => N,
+	 *   ]
+	 *
+	 * Filters:
+	 *   date_from, date_to   — custom date range (when period = 'custom')
+	 *   entry_source         — restrict to sessions whose first event has this referrer domain
+	 *   focus_page           — restrict to sessions that include this page at any step
+	 *   min_sessions         — hide nodes/links with fewer sessions than this (default 1)
+	 *   steps                — max step depth to show (2–5, default 4)
 	 */
-	public static function get_journey_flow( string $period = '30d', array $filters = [] ): array {
+	public static function get_path_flow( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
-		$range    = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et       = RSA_DB::events_table();
-		$bt       = self::bot_threshold();
-		$f_source = $filters['entry_source'] ?? '';
-		$f_page   = $filters['page']         ?? '';
+		$range       = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$et          = RSA_DB::events_table();
+		$bt          = self::bot_threshold();
+		$f_source    = $filters['entry_source'] ?? '';
+		$f_focus     = $filters['focus_page']   ?? '';
+		$min_s       = max( 1, (int) ( $filters['min_sessions'] ?? 1 ) );
+		$max_steps   = min( 5, max( 2, (int) ( $filters['steps'] ?? 4 ) ) );
+		$top_n       = 8;  // top pages per step column
 
-		// ---- Source → Entry page (first event per session) -----------
-		$src_extra = '';
-		$src_args  = [ $range['start'], $range['end'], $bt ];
+		// ---- Base CTE: assign step_num per session via ROW_NUMBER ---------
+		// We build optional WHERE clauses that narrow the session set, then
+		// apply them as IN subqueries so the ROW_NUMBER stays correct.
+
+		$cte_where = 'created_at BETWEEN %s AND %s AND bot_score < %d';
+		$cte_args  = [ $range['start'], $range['end'], $bt ];
+
+		$session_filter_sql = '';
+
 		if ( $f_source !== '' ) {
-			$src_extra  .= " AND COALESCE(NULLIF(referrer_domain, ''), '(direct)') = %s";
-			$src_args[]  = $f_source;
-		}
-		if ( $f_page !== '' ) {
-			$src_extra  .= ' AND page = %s';
-			$src_args[]  = $f_page;
+			// Only sessions where the first event has this referrer domain
+			$session_filter_sql .= $wpdb->prepare(
+				" AND session_id IN (
+					SELECT session_id FROM (
+						SELECT session_id,
+						       COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+						FROM `{$et}`
+						WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					) _src WHERE rn = 1 AND src = %s
+				)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$range['start'], $range['end'], $bt, $f_source
+			);
 		}
 
-		$source_links = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT COALESCE(NULLIF(referrer_domain, ''), '(direct)') AS `from`,
-				        page AS `to`,
-				        COUNT(*) AS `count`
-				 FROM (
-				     SELECT referrer_domain, page,
-				            ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
-				     FROM `{$et}`
-				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				 ) first_events
-				 WHERE rn = 1 {$src_extra}
-				 GROUP BY `from`, `to`
-				 ORDER BY `count` DESC
-				 LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$src_args
-			),
+		if ( $f_focus !== '' ) {
+			// Only sessions that contain this page somewhere in their path
+			$session_filter_sql .= $wpdb->prepare(
+				" AND session_id IN (
+					SELECT DISTINCT session_id FROM `{$et}`
+					WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+				)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$range['start'], $range['end'], $bt, $f_focus
+			);
+		}
+
+		// ---- Step node counts per (step_num, page) ----------------------
+		$nodes_sql = "
+			SELECT step_num, page, COUNT(*) AS sessions
+			FROM (
+				SELECT session_id, page,
+				       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+				FROM `{$et}`
+				WHERE {$cte_where} {$session_filter_sql}
+			) _steps
+			WHERE step_num <= %d
+			GROUP BY step_num, page
+			HAVING sessions >= %d
+			ORDER BY step_num ASC, sessions DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$node_rows = $wpdb->get_results(
+			$wpdb->prepare( $nodes_sql, ...[...$cte_args, $max_steps, $min_s] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			ARRAY_A
 		);
 
-		// ---- Page → Exit page (last page before session ends) ----------
-		$exit_extra = '';
-		$exit_args  = [ $range['start'], $range['end'], $bt ];
-
-		if ( $f_page !== '' ) {
-			$exit_extra  .= ' AND last_e.prev_page = %s';
-			$exit_args[]  = $f_page;
+		if ( ! $node_rows ) {
+			return [ 'steps' => [], 'links' => [], 'total_sessions' => 0 ];
 		}
-		if ( $f_source !== '' ) {
-			$exit_extra .= " AND last_e.session_id IN (
-				SELECT session_id
+
+		// Build steps array, capping at top_n per step
+		$steps        = [];
+		$top_per_step = [];   // step_num => [ page, … ]  (the top-N pages, for link filtering)
+		foreach ( $node_rows as $r ) {
+			$sn = (int) $r['step_num'];
+			if ( ! isset( $steps[ $sn ] ) ) {
+				$steps[ $sn ] = [];
+			}
+			if ( count( $steps[ $sn ] ) < $top_n ) {
+				$steps[ $sn ][]       = [ 'page' => $r['page'], 'sessions' => (int) $r['sessions'] ];
+				$top_per_step[ $sn ][] = $r['page'];
+			}
+		}
+
+		// Total sessions = sum of nodes at step 1
+		$total_sessions = isset( $steps[1] ) ? array_sum( array_column( $steps[1], 'sessions' ) ) : 0;
+
+		// ---- Compute (exit) nodes: sessions at step N that have no step N+1
+		// exit_at_step[N] = sessions(step N) − sessions(step N+1)
+		// We only add "(exit)" nodes for steps N < max_steps so the last column
+		// doesn't need an "(exit)" (everything there already ended).
+		$step_totals = [];
+		foreach ( $steps as $sn => $nodes ) {
+			$step_totals[ $sn ] = array_sum( array_column( $nodes, 'sessions' ) );
+		}
+		for ( $sn = 1; $sn < $max_steps; $sn++ ) {
+			if ( ! isset( $step_totals[ $sn ] ) ) { continue; }
+			$next_total  = $step_totals[ $sn + 1 ] ?? 0;
+			$exit_count  = $step_totals[ $sn ] - $next_total;
+			if ( $exit_count >= $min_s ) {
+				$steps[ $sn ][] = [ 'page' => '(exit)', 'sessions' => $exit_count ];
+			}
+		}
+
+		// ---- Step transition links (step N → step N+1) ------------------
+		$links = [];
+		for ( $sn = 1; $sn < $max_steps; $sn++ ) {
+			if ( empty( $top_per_step[ $sn ] ) ) { continue; }
+
+			$from_pages = $top_per_step[ $sn ];
+			$to_pages   = $top_per_step[ $sn + 1 ] ?? [];
+
+			// Placeholders for IN clauses
+			$from_ph = implode( ',', array_fill( 0, count( $from_pages ), '%s' ) );
+			$to_ph   = $to_pages ? implode( ',', array_fill( 0, count( $to_pages ), '%s' ) ) : null;
+
+			$link_args = [ ...$cte_args, ...$cte_args, $sn, ...$from_pages ];
+
+			if ( $to_ph ) {
+				// Real transitions: from step N to step N+1 (both pages in top-N)
+				$link_sql = "
+					SELECT s1.page AS from_page, s2.page AS to_page, COUNT(*) AS cnt
+					FROM (
+						SELECT session_id, page,
+						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+						FROM `{$et}`
+						WHERE {$cte_where} {$session_filter_sql}
+					) s1
+					JOIN (
+						SELECT session_id, page,
+						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+						FROM `{$et}`
+						WHERE {$cte_where} {$session_filter_sql}
+					) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
+					WHERE s1.step_num = %d
+					  AND s1.page IN ({$from_ph})
+					  AND s2.page IN ({$to_ph})
+					GROUP BY s1.page, s2.page
+					HAVING cnt >= %d
+					ORDER BY cnt DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+				$link_rows = $wpdb->get_results(
+					$wpdb->prepare( $link_sql, [ ...$link_args, ...$to_pages, $min_s ] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					ARRAY_A
+				);
+
+				foreach ( $link_rows as $lr ) {
+					$links[] = [
+						'step'  => $sn,
+						'from'  => $lr['from_page'],
+						'to'    => $lr['to_page'],
+						'count' => (int) $lr['cnt'],
+					];
+				}
+			}
+
+			// "(exit)" links: sessions in step N that have no step N+1, grouped by from_page
+			$exit_sql = "
+				SELECT s1.page AS from_page, COUNT(*) AS cnt
 				FROM (
-				    SELECT session_id,
-				           COALESCE(NULLIF(referrer_domain, ''), '(direct)') AS src,
-				           ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
-				    FROM `{$et}`
-				    WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				) s
-				WHERE rn = 1 AND src = %s
-			)";
-			$exit_args[] = $range['start'];
-			$exit_args[] = $range['end'];
-			$exit_args[] = $bt;
-			$exit_args[] = $f_source;
-		}
+					SELECT session_id, page,
+					       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+					FROM `{$et}`
+					WHERE {$cte_where} {$session_filter_sql}
+				) s1
+				LEFT JOIN (
+					SELECT session_id,
+					       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+					FROM `{$et}`
+					WHERE {$cte_where} {$session_filter_sql}
+				) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
+				WHERE s1.step_num = %d
+				  AND s2.session_id IS NULL
+				  AND s1.page IN ({$from_ph})
+				GROUP BY s1.page
+				HAVING cnt >= %d
+				ORDER BY cnt DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		$exit_links = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT last_e.prev_page AS `from`, last_e.page AS `to`, COUNT(*) AS `count`
-				 FROM (
-				     SELECT session_id, page,
-				            LAG(page)  OVER (PARTITION BY session_id ORDER BY created_at) AS prev_page,
-				            LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS next_page
-				     FROM `{$et}`
-				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				 ) last_e
-				 WHERE last_e.next_page IS NULL
-				   AND last_e.prev_page IS NOT NULL
-				   {$exit_extra}
-				 GROUP BY `from`, `to`
-				 ORDER BY `count` DESC
-				 LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$exit_args
-			),
-			ARRAY_A
-		);
+			$exit_rows = $wpdb->get_results(
+				$wpdb->prepare( $exit_sql, [ ...$link_args, $min_s ] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				ARRAY_A
+			);
+
+			foreach ( $exit_rows as $er ) {
+				$links[] = [
+					'step'  => $sn,
+					'from'  => $er['from_page'],
+					'to'    => '(exit)',
+					'count' => (int) $er['cnt'],
+				];
+			}
+		}
 
 		return [
-			'source_to_page' => $source_links ? array_map( fn( $r ) => [
-				'from'  => $r['from'],
-				'to'    => $r['to'],
-				'count' => (int) $r['count'],
-			], $source_links ) : [],
-			'page_to_exit' => $exit_links ? array_map( fn( $r ) => [
-				'from'  => $r['from'],
-				'to'    => $r['to'],
-				'count' => (int) $r['count'],
-			], $exit_links ) : [],
+			'steps'          => $steps,
+			'links'          => $links,
+			'total_sessions' => $total_sessions,
 		];
 	}
 
