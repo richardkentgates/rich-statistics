@@ -481,7 +481,6 @@
 		stepNums.forEach( function ( sn, ci ) {
 			var nx        = colX( ci );
 			var colTotal  = ( steps[ sn ] || [] ).reduce( function ( s, pg ) { return s + pg.sessions; }, 0 );
-			anchor = 'start';
 			( steps[ sn ] || [] ).forEach( function ( pg, pidx ) {
 				var node  = colNodes[ sn ][ pg.page ];
 				if ( ! node ) { return; }

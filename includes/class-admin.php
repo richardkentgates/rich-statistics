@@ -15,10 +15,10 @@ class RSA_Admin {
 		add_action( 'admin_post_rsa_export_csv',    [ __CLASS__, 'handle_export_csv' ] );
 		add_action( 'current_screen',        [ __CLASS__, 'register_help_tabs' ] );
 
-		// Show OTP pairing panel BEFORE Application Passwords on the profile page
-		// (so "Generate App Code" comes first, then user creates an App Password below)
-		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ] );
-		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ] );
+		// Priority 1 ensures RSA section appears first among plugin sections,
+		// placing it directly after WP's built-in Application Passwords block.
+		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
+		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
 	}
 
