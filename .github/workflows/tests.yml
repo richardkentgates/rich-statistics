@@ -99,9 +99,17 @@ jobs:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
 
       - name: Run integration tests
-        run: vendor/bin/phpunit --configuration phpunit.integration.xml --no-coverage --testsuite integration
+        id: run_integration
+        run: |
+          vendor/bin/phpunit --configuration phpunit.integration.xml --no-coverage \
+            --testsuite integration --verbose 2>&1 | tee /tmp/phpunit-integration.txt
+          exit ${PIPESTATUS[0]}
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+      - name: Show integration test output on failure
+        if: failure()
+        run: tail -80 /tmp/phpunit-integration.txt
 
   # -----------------------------------------------------------------------
   # PHP syntax lint (fast, runs in parallel)
