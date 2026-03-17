@@ -479,7 +479,6 @@ class RSA_Admin {
 						<strong><?php esc_html_e( 'App Code:', 'rich-statistics' ); ?></strong>
 						<span id="rsa-otp-code"
 						      style="font-family:monospace;font-size:1.6em;letter-spacing:.12em;"
-						      aria-label="<?php esc_attr_e( 'App code', 'rich-statistics' ); ?>"
 						></span>
 						<button type="button" id="rsa-otp-copy" class="button button-small">
 							<?php esc_html_e( 'Copy', 'rich-statistics' ); ?>

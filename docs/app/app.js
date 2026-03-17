@@ -323,8 +323,8 @@
 
 		if ( urlField  ) { urlField.value = ''; urlField.readOnly = false; }
 		if ( otpField  ) { otpField.value = ''; }
-		if ( otpErr    ) { otpErr.hidden = true; }
-		if ( addErr    ) { addErr.hidden = true; }
+		if ( otpErr    ) { otpErr.textContent = ''; }
+		if ( addErr    ) { addErr.textContent = ''; }
 		if ( verifyBtn ) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Code'; }
 
 		state._otpVerified = null;
@@ -359,16 +359,16 @@
 				var siteUrl = ( ( document.getElementById( 'rsa-add-site-url' ) || {} ).value || '' ).trim();
 				var otp     = ( ( document.getElementById( 'rsa-add-otp' )      || {} ).value || '' ).replace( /\D/g, '' );
 
-				if ( otpErr ) otpErr.hidden = true;
+				if ( otpErr ) otpErr.textContent = '';
 
 				var urlObj;
 				try { urlObj = new URL( siteUrl ); } catch ( _ ) { urlObj = null; }
 				if ( ! urlObj || ( urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:' ) ) {
-					if ( otpErr ) { otpErr.textContent = 'Please enter a valid URL (including https://).'; otpErr.hidden = false; }
+						if ( otpErr ) { otpErr.textContent = 'Please enter a valid URL (including https://).'; }
 					return;
 				}
 				if ( otp.length !== 6 ) {
-					if ( otpErr ) { otpErr.textContent = 'Please enter the 6-digit code from your profile.'; otpErr.hidden = false; }
+						if ( otpErr ) { otpErr.textContent = 'Please enter the 6-digit code from your profile.'; }
 					return;
 				}
 
@@ -404,7 +404,7 @@
 					document.getElementById( 'rsa-add-step-2' ).hidden = false;
 				} )
 				.catch( function ( err ) {
-					if ( otpErr ) { otpErr.textContent = err.message; otpErr.hidden = false; }
+					if ( otpErr ) { otpErr.textContent = err.message; }
 					verifyBtn.disabled    = false;
 					verifyBtn.textContent = 'Verify Code';
 				} );
@@ -433,10 +433,10 @@
 		confirmBtn.addEventListener( 'click', function () {
 			var appPass = ( ( document.getElementById( 'rsa-add-app-pass' ) || {} ).value || '' ).trim();
 
-			if ( addErr ) addErr.hidden = true;
+			if ( addErr ) addErr.textContent = '';
 
 			if ( ! appPass ) {
-				if ( addErr ) { addErr.textContent = 'Application Password is required.'; addErr.hidden = false; }
+				if ( addErr ) { addErr.textContent = 'Application Password is required.'; }
 				return;
 			}
 
@@ -446,7 +446,7 @@
 			var label    = pending.siteLabel || '';
 
 			if ( ! siteUrl || ! username ) {
-				if ( addErr ) { addErr.textContent = 'Session expired. Please start over.'; addErr.hidden = false; }
+				if ( addErr ) { addErr.textContent = 'Session expired. Please start over.'; }
 				return;
 			}
 
@@ -473,7 +473,7 @@
 				var msg = err.message === 'auth'
 					? 'Authentication failed. Check your Application Password.'
 					: 'Could not reach the site. Please try again.';
-				if ( addErr ) { addErr.textContent = msg; addErr.hidden = false; }
+				if ( addErr ) { addErr.textContent = msg; }
 				confirmBtn.disabled    = false;
 				confirmBtn.textContent = 'Connect';
 			} );

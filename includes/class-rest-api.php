@@ -197,17 +197,17 @@ class RSA_Rest_API {
 		$stored  = get_user_meta( $user_id, 'rsa_install_token', true );
 
 		if ( empty( $stored ) || ! is_array( $stored ) ) {
-			return new WP_Error( 'no_token', 'No pending install token for this user.', [ 'status' => 404 ] );
+			return new WP_Error( 'no_token', __( 'No pending install token for this user.', 'rich-statistics' ), [ 'status' => 404 ] );
 		}
 
 		if ( time() > (int) $stored['expires'] ) {
 			delete_user_meta( $user_id, 'rsa_install_token' );
-			return new WP_Error( 'token_expired', 'Install token has expired. Download a fresh copy from your profile.', [ 'status' => 410 ] );
+			return new WP_Error( 'token_expired', __( 'Install token has expired. Download a fresh copy from your profile.', 'rich-statistics' ), [ 'status' => 410 ] );
 		}
 
 		// Constant-time comparison prevents timing side-channel
 		if ( ! hash_equals( (string) $stored['token'], (string) $r['site_token'] ) ) {
-			return new WP_Error( 'invalid_token', 'Invalid install token.', [ 'status' => 403 ] );
+			return new WP_Error( 'invalid_token', __( 'Invalid install token.', 'rich-statistics' ), [ 'status' => 403 ] );
 		}
 
 		// Token consumed — delete so replay on a second device fails

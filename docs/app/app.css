@@ -167,6 +167,7 @@ html, body {
 	font-size: 13px;
 	margin-top: 12px;
 }
+.rsa-alert:empty { display: none; }
 
 .rsa-alert-error {
 	background: #fef2f2;
