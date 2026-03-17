@@ -168,7 +168,9 @@ class RSA_Admin {
 			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-user-flow' ) ) {
-			$uf_filters = [
+			$entry_source = sanitize_text_field( $_GET['entry_source'] ?? '' );
+			$uf_page      = sanitize_text_field( $_GET['page_filter']  ?? '' );
+			$uf_filters   = [
 				'date_from'  => $date_from,
 				'date_to'    => $date_to,
 				'from_page'  => sanitize_text_field( $_GET['from_page'] ?? '' ),
@@ -176,7 +178,19 @@ class RSA_Admin {
 				'min_count'  => max( 1, (int) ( $_GET['min_count'] ?? 1 ) ),
 				'limit'      => 30,
 			];
-			return [ 'view' => 'user-flow', 'data' => [ 'user_flow' => RSA_Analytics::get_user_flow( $period, $uf_filters ) ], 'period' => $period, 'top_n' => 12 ];
+			return [
+				'view'   => 'user-flow',
+				'data'   => [
+					'journey_flow' => RSA_Analytics::get_journey_flow( $period, [
+						'date_from'    => $date_from,
+						'date_to'      => $date_to,
+						'entry_source' => $entry_source,
+						'page'         => $uf_page,
+					] ),
+					'user_flow' => RSA_Analytics::get_user_flow( $period, $uf_filters ),
+				],
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-stats_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );

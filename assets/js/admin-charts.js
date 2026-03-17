@@ -275,128 +275,187 @@
 	}
 
 	// ----------------------------------------------------------------
-	// User flow: SVG Sankey diagram of page-to-page transitions
+	// Journey flow: 3-column Sankey — Entry Sources | Pages Visited | Click Actions
 	// ----------------------------------------------------------------
 
-	function initFlowChart( flow, topN ) {
-		topN = topN || 8;
+	function initFlowChart( journeyData ) {
 		var container = document.getElementById( 'rsa-flow-chart' );
-		if ( ! container || ! flow || ! flow.length ) { return; }
+		if ( ! container ) { return; }
+
+		var srcLinks = ( journeyData && journeyData.source_to_page ) ? journeyData.source_to_page : [];
+		var actLinks = ( journeyData && journeyData.page_to_action ) ? journeyData.page_to_action : [];
+		if ( ! srcLinks.length && ! actLinks.length ) { return; }
 
 		var svgNS = 'http://www.w3.org/2000/svg';
+		var TOP_N = 8;
 
-		// Aggregate totals per source / destination
-		var srcTotals = {}, dstTotals = {};
-		flow.forEach( function ( t ) {
-			srcTotals[ t.from_page ] = ( srcTotals[ t.from_page ] || 0 ) + t.count;
-			dstTotals[ t.to_page ]   = ( dstTotals[ t.to_page ]   || 0 ) + t.count;
+		// ---- Aggregate totals per column -------------------------------
+		var c0T    = {};  // col0: Entry Sources
+		var c1InT  = {};  // col1: Pages — incoming from sources
+		var c1OutT = {};  // col1: Pages — outgoing to actions
+		var c2T    = {};  // col2: Click Actions
+
+		srcLinks.forEach( function ( l ) {
+			c0T[ l.from ]   = ( c0T[ l.from ]   || 0 ) + l.count;
+			c1InT[ l.to ]   = ( c1InT[ l.to ]   || 0 ) + l.count;
+		} );
+		actLinks.forEach( function ( l ) {
+			c1OutT[ l.from ] = ( c1OutT[ l.from ] || 0 ) + l.count;
+			c2T[ l.to ]      = ( c2T[ l.to ]      || 0 ) + l.count;
 		} );
 
-		var sources = Object.keys( srcTotals )
-			.sort( function ( a, b ) { return srcTotals[ b ] - srcTotals[ a ]; } ).slice( 0, topN );
-		var targets = Object.keys( dstTotals )
-			.sort( function ( a, b ) { return dstTotals[ b ] - dstTotals[ a ]; } ).slice( 0, topN );
-
-		var visible = flow.filter( function ( t ) {
-			return sources.indexOf( t.from_page ) !== -1 && targets.indexOf( t.to_page ) !== -1;
+		// col1 size = max( in-total, out-total ) so ribbons fit on both sides
+		var c1T = {};
+		var c1All = {};
+		Object.keys( c1InT ).forEach(  function ( k ) { c1All[ k ] = true; } );
+		Object.keys( c1OutT ).forEach( function ( k ) { c1All[ k ] = true; } );
+		Object.keys( c1All ).forEach( function ( k ) {
+			c1T[ k ] = Math.max( c1InT[ k ] || 0, c1OutT[ k ] || 0 );
 		} );
-		if ( ! visible.length ) { return; }
 
-		// Layout constants
-		var W      = 700;
+		function topNodes( totals ) {
+			return Object.keys( totals )
+				.sort( function ( a, b ) { return totals[ b ] - totals[ a ]; } )
+				.slice( 0, TOP_N );
+		}
+
+		var col0 = topNodes( c0T );
+		var col1 = topNodes( c1T );
+		var col2 = topNodes( c2T );
+
+		var visSrc = srcLinks.filter( function ( l ) {
+			return col0.indexOf( l.from ) > -1 && col1.indexOf( l.to ) > -1;
+		} );
+		var visAct = actLinks.filter( function ( l ) {
+			return col1.indexOf( l.from ) > -1 && col2.indexOf( l.to ) > -1;
+		} );
+		if ( ! visSrc.length && ! visAct.length ) { return; }
+
+		// ---- Layout constants ------------------------------------------
+		var W      = 960;
 		var nodeW  = 12;
 		var GAP    = 8;
-		var textW  = 185;
-		var srcX   = textW;
-		var dstX   = W - textW - nodeW;
-		var BAND_H = 340;
+		var BAND_H = 380;
+		var HEAD   = 28;  // vertical space above nodes for column headers
+		var labelW = 190;
+		var x0 = labelW;
+		var x1 = Math.round( ( W - nodeW ) / 2 );
+		var x2 = W - labelW - nodeW;
 
-		function buildNodes( keys, totals, nodeLeftX ) {
-			var total  = keys.reduce( function ( s, k ) { return s + totals[ k ]; }, 0 );
+		function buildNodes( keys, totals, nodeX ) {
+			var total  = keys.reduce( function ( s, k ) { return s + ( totals[ k ] || 0 ); }, 0 );
+			var usable = BAND_H - GAP * Math.max( 0, keys.length - 1 );
 			var nodes  = {};
-			var usable = BAND_H - GAP * ( keys.length - 1 );
-			var y      = 0;
+			var y = HEAD;
 			keys.forEach( function ( k ) {
-				var h = Math.max( 14, Math.round( usable * totals[ k ] / total ) );
-				nodes[ k ] = { x: nodeLeftX, y: y, h: h, offIn: 0, offOut: 0 };
+				var h = Math.max( 14, Math.round( usable * ( totals[ k ] || 0 ) / total ) );
+				nodes[ k ] = { x: nodeX, y: y, h: h, offIn: 0, offOut: 0 };
 				y += h + GAP;
 			} );
 			return nodes;
 		}
 
-		var srcNodes = buildNodes( sources, srcTotals, srcX );
-		var dstNodes = buildNodes( targets, dstTotals, dstX );
+		var n0 = buildNodes( col0, c0T, x0 );
+		var n1 = buildNodes( col1, c1T, x1 );
+		var n2 = buildNodes( col2, c2T, x2 );
 
-		var lastS = srcNodes[ sources[ sources.length - 1 ] ];
-		var lastD = dstNodes[ targets[ targets.length - 1 ] ];
-		var svgH  = Math.max( lastS.y + lastS.h, lastD.y + lastD.h ) + 20;
+		function colBottom( nodes, keys ) {
+			if ( ! keys.length ) { return HEAD; }
+			var last = nodes[ keys[ keys.length - 1 ] ];
+			return last ? last.y + last.h : HEAD;
+		}
+		var svgH = Math.max(
+			colBottom( n0, col0 ), colBottom( n1, col1 ), colBottom( n2, col2 )
+		) + 16;
 
 		var svg = document.createElementNS( svgNS, 'svg' );
 		svg.setAttribute( 'viewBox', '0 0 ' + W + ' ' + svgH );
 		svg.setAttribute( 'width', '100%' );
 		svg.style.display   = 'block';
-		svg.style.maxHeight = '440px';
+		svg.style.maxHeight = '540px';
 
-		// Draw ribbons first (behind nodes)
-		visible.forEach( function ( t, idx ) {
-			var sn = srcNodes[ t.from_page ];
-			var dn = dstNodes[ t.to_page ];
-			if ( ! sn || ! dn ) { return; }
-
-			var fh  = Math.max( 2, Math.round( sn.h * t.count / srcTotals[ t.from_page ] ) );
-			var th  = Math.max( 2, Math.round( dn.h * t.count / dstTotals[ t.to_page ] ) );
-			var y1t = sn.y + sn.offOut;
-			var y2t = dn.y + dn.offIn;
-			var y1b = y1t + fh;
-			var y2b = y2t + th;
-			sn.offOut += fh;
-			dn.offIn  += th;
-
-			var x1  = srcX + nodeW;
-			var x2  = dstX;
-			var cpx = ( x2 - x1 ) * 0.45;
-
-			var path = document.createElementNS( svgNS, 'path' );
-			path.setAttribute( 'd',
-				'M '  + x1 + ' ' + y1t +
-				' C ' + ( x1 + cpx ) + ' ' + y1t + ' ' + ( x2 - cpx ) + ' ' + y2t + ' ' + x2 + ' ' + y2t +
-				' L ' + x2 + ' ' + y2b +
-				' C ' + ( x2 - cpx ) + ' ' + y2b + ' ' + ( x1 + cpx ) + ' ' + y1b + ' ' + x1 + ' ' + y1b +
-				' Z'
-			);
-			path.setAttribute( 'fill', PALETTE[ idx % PALETTE.length ] );
-			path.setAttribute( 'fill-opacity', '0.28' );
-			svg.appendChild( path );
-		} );
-
-		// Node rectangles + labels
 		var font = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
 
+		// ---- Column headers --------------------------------------------
+		function colHeader( tx, anchor, label ) {
+			var t = document.createElementNS( svgNS, 'text' );
+			t.setAttribute( 'x', String( tx ) );
+			t.setAttribute( 'y', '15' );
+			t.setAttribute( 'text-anchor', anchor );
+			t.setAttribute( 'font-size',   '10' );
+			t.setAttribute( 'font-family', font );
+			t.setAttribute( 'fill',        '#a0a5ae' );
+			t.setAttribute( 'font-weight', '600' );
+			t.textContent = label.toUpperCase();
+			svg.appendChild( t );
+		}
+		if ( col0.length ) { colHeader( x0 - 6,           'end',    'Entry Source' ); }
+		if ( col1.length ) { colHeader( x1 + nodeW / 2,   'middle', 'Pages Visited' ); }
+		if ( col2.length ) { colHeader( x2 + nodeW + 6,   'start',  'Click Actions' ); }
+
+		// ---- Ribbon helper ---------------------------------------------
+		function ribbon( sn, sTot, dn, dTot, count, idx ) {
+			if ( ! sn || ! dn || ! sTot || ! dTot ) { return; }
+			var fh  = Math.max( 2, Math.round( sn.h * count / sTot ) );
+			var th  = Math.max( 2, Math.round( dn.h * count / dTot ) );
+			var y1t = sn.y + sn.offOut;
+			var y2t = dn.y + dn.offIn;
+			sn.offOut += fh;
+			dn.offIn  += th;
+			var y1b = y1t + fh;
+			var y2b = y2t + th;
+			var x1r = sn.x + nodeW;
+			var x2l = dn.x;
+			var cpx = ( x2l - x1r ) * 0.45;
+			var p   = document.createElementNS( svgNS, 'path' );
+			p.setAttribute( 'd',
+				'M '  + x1r + ' ' + y1t +
+				' C ' + ( x1r + cpx ) + ' ' + y1t + ' ' + ( x2l - cpx ) + ' ' + y2t + ' ' + x2l + ' ' + y2t +
+				' L ' + x2l + ' ' + y2b +
+				' C ' + ( x2l - cpx ) + ' ' + y2b + ' ' + ( x1r + cpx ) + ' ' + y1b + ' ' + x1r + ' ' + y1b +
+				' Z'
+			);
+			p.setAttribute( 'fill',         PALETTE[ idx % PALETTE.length ] );
+			p.setAttribute( 'fill-opacity', '0.28' );
+			svg.appendChild( p );
+		}
+
+		// Draw source → page ribbons
+		visSrc.forEach( function ( l, idx ) {
+			ribbon( n0[ l.from ], c0T[ l.from ], n1[ l.to ], c1T[ l.to ], l.count, idx );
+		} );
+		// Draw page → action ribbons
+		visAct.forEach( function ( l, idx ) {
+			ribbon( n1[ l.from ], c1T[ l.from ], n2[ l.to ], c2T[ l.to ], l.count, idx + 4 );
+		} );
+
+		// ---- Node rectangles + labels ----------------------------------
 		function drawNode( k, n, labelX, anchor, color ) {
 			var rect = document.createElementNS( svgNS, 'rect' );
-			rect.setAttribute( 'x', n.x );
-			rect.setAttribute( 'y', n.y );
-			rect.setAttribute( 'width', nodeW );
+			rect.setAttribute( 'x',      n.x );
+			rect.setAttribute( 'y',      n.y );
+			rect.setAttribute( 'width',  nodeW );
 			rect.setAttribute( 'height', n.h );
-			rect.setAttribute( 'fill', color );
-			rect.setAttribute( 'rx', '2' );
+			rect.setAttribute( 'fill',   color );
+			rect.setAttribute( 'rx',     '2' );
 			svg.appendChild( rect );
 
-			var max  = 26;
-			var lbl  = k.length > max ? '\u2026' + k.slice( -( max - 1 ) ) : k;
-			var text = document.createElementNS( svgNS, 'text' );
-			text.setAttribute( 'x', labelX );
-			text.setAttribute( 'y', n.y + n.h / 2 + 4 );
+			var MAX_L = 28;
+			var lbl   = k.length > MAX_L ? '\u2026' + k.slice( -( MAX_L - 1 ) ) : k;
+			var text  = document.createElementNS( svgNS, 'text' );
+			text.setAttribute( 'x',           labelX );
+			text.setAttribute( 'y',           n.y + n.h / 2 + 4 );
 			text.setAttribute( 'text-anchor', anchor );
-			text.setAttribute( 'font-size', '11' );
+			text.setAttribute( 'font-size',   '11' );
 			text.setAttribute( 'font-family', font );
-			text.setAttribute( 'fill', '#646970' );
+			text.setAttribute( 'fill',        '#646970' );
 			text.textContent = lbl;
 			svg.appendChild( text );
 		}
 
-		sources.forEach( function ( k ) { drawNode( k, srcNodes[ k ], srcX - 6,         'end',   PALETTE[0] ); } );
-		targets.forEach( function ( k ) { drawNode( k, dstNodes[ k ], dstX + nodeW + 6, 'start', PALETTE[1] ); } );
+		col0.forEach( function ( k ) { drawNode( k, n0[ k ], x0 - 6,         'end',   PALETTE[0] ); } );
+		col1.forEach( function ( k ) { drawNode( k, n1[ k ], x1 + nodeW + 6, 'start', PALETTE[1] ); } );
+		col2.forEach( function ( k ) { drawNode( k, n2[ k ], x2 + nodeW + 6, 'start', PALETTE[3] ); } );
 
 		container.appendChild( svg );
 	}
@@ -451,9 +510,7 @@
 			case 'referrers': initReferrers( data ); break;
 			case 'behavior':  initBehavior( data );  break;
 			case 'user-flow':
-				if ( data.user_flow && data.user_flow.length ) {
-					initFlowChart( data.user_flow, RSA_DATA.top_n || 12 );
-				}
+				initFlowChart( data.journey_flow );
 				break;
 			/* <fs_premium_only> */
 			case 'click-map': initClickMap( data );  break;

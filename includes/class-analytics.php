@@ -466,61 +466,133 @@ class RSA_Analytics {
 		], $rows ) : [];
 	}
 
-	// Returns top outbound pages (pages that send visitors elsewhere) and
-	// top inbound pages (pages that receive visitors from other pages).
-	public static function get_flow_stats( string $period = '30d', array $filters = [] ): array {
+	/**
+	 * Three-column journey flow for the Sankey diagram:
+	 * col 0 (Entry Sources) → col 1 (Pages Visited) → col 2 (Click Actions).
+	 * Supports filtering by entry_source and/or a specific page.
+	 */
+	public static function get_journey_flow( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
-		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
-		$bt    = self::bot_threshold();
+		$range    = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$et       = RSA_DB::events_table();
+		$ct       = RSA_DB::clicks_table();
+		$bt       = self::bot_threshold();
+		$f_source = $filters['entry_source'] ?? '';
+		$f_page   = $filters['page']         ?? '';
 
-		$inner = "SELECT page AS from_page,
-		              LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS to_page
-		          FROM `{$et}`
-		          WHERE created_at BETWEEN %s AND %s AND bot_score < %d";
+		// ---- Source → Entry page (first event per session) -----------
+		$src_extra = '';
+		$src_args  = [ $range['start'], $range['end'], $bt ];
+		if ( $f_source !== '' ) {
+			$src_extra  .= " AND COALESCE(NULLIF(referrer_domain, ''), '(direct)') = %s";
+			$src_args[]  = $f_source;
+		}
+		if ( $f_page !== '' ) {
+			$src_extra  .= ' AND page = %s';
+			$src_args[]  = $f_page;
+		}
 
-		$outbound = $wpdb->get_results(
+		$source_links = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT from_page AS page,
-				        COUNT(*)              AS transitions_out,
-				        COUNT(DISTINCT to_page) AS unique_destinations
-				 FROM ( {$inner} ) t
-				 WHERE to_page IS NOT NULL AND from_page != to_page
-				 GROUP BY from_page
-				 ORDER BY transitions_out DESC
-				 LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt
+				"SELECT COALESCE(NULLIF(referrer_domain, ''), '(direct)') AS `from`,
+				        page AS `to`,
+				        COUNT(*) AS `count`
+				 FROM (
+				     SELECT referrer_domain, page,
+				            ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+				     FROM `{$et}`
+				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				 ) first_events
+				 WHERE rn = 1 {$src_extra}
+				 GROUP BY `from`, `to`
+				 ORDER BY `count` DESC
+				 LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				...$src_args
 			),
 			ARRAY_A
 		);
 
-		$inbound = $wpdb->get_results(
+		// ---- Page → Click action (any click on any page) -------------
+		$act_where = [
+			'c.created_at BETWEEN %s AND %s',
+			"c.href_protocol IS NOT NULL",
+			"c.href_protocol != ''",
+		];
+		$act_args = [ $range['start'], $range['end'] ];
+
+		if ( $f_page !== '' ) {
+			$act_where[] = 'c.page = %s';
+			$act_args[]  = $f_page;
+		}
+		if ( $f_source !== '' ) {
+			$act_where[] = "c.session_id IN (
+				SELECT session_id
+				FROM (
+				    SELECT session_id,
+				           COALESCE(NULLIF(referrer_domain, ''), '(direct)') AS src,
+				           ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+				    FROM `{$et}`
+				    WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				) s
+				WHERE rn = 1 AND src = %s
+			)";
+			$act_args[] = $range['start'];
+			$act_args[] = $range['end'];
+			$act_args[] = $bt;
+			$act_args[] = $f_source;
+		}
+
+		$where_sql = 'WHERE ' . implode( ' AND ', $act_where );
+
+		$act_links = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT to_page AS page,
-				        COUNT(*)               AS transitions_in,
-				        COUNT(DISTINCT from_page) AS unique_sources
-				 FROM ( {$inner} ) t
-				 WHERE to_page IS NOT NULL AND from_page != to_page
-				 GROUP BY to_page
-				 ORDER BY transitions_in DESC
-				 LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt
+				"SELECT c.page AS `from`, c.href_protocol AS `to`, COUNT(*) AS `count`
+				 FROM `{$ct}` c
+				 {$where_sql}
+				 GROUP BY c.page, c.href_protocol
+				 ORDER BY `count` DESC
+				 LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				...$act_args
 			),
 			ARRAY_A
 		);
 
 		return [
-			'outbound' => $outbound ? array_map( fn( $r ) => [
-				'page'                 => $r['page'],
-				'transitions_out'      => (int) $r['transitions_out'],
-				'unique_destinations'  => (int) $r['unique_destinations'],
-			], $outbound ) : [],
-			'inbound'  => $inbound  ? array_map( fn( $r ) => [
-				'page'            => $r['page'],
-				'transitions_in'  => (int) $r['transitions_in'],
-				'unique_sources'  => (int) $r['unique_sources'],
-			], $inbound ) : [],
+			'source_to_page' => $source_links ? array_map( fn( $r ) => [
+				'from'  => $r['from'],
+				'to'    => $r['to'],
+				'count' => (int) $r['count'],
+			], $source_links ) : [],
+			'page_to_action' => $act_links ? array_map( fn( $r ) => [
+				'from'  => $r['from'],
+				'to'    => $r['to'],
+				'count' => (int) $r['count'],
+			], $act_links ) : [],
 		];
+	}
+
+	/** Distinct referrer domains for the entry-source dropdown. */
+	public static function get_entry_sources( string $period = '30d', array $filters = [] ): array {
+		global $wpdb;
+		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$et    = RSA_DB::events_table();
+		$bt    = self::bot_threshold();
+
+		$rows = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT referrer_domain
+				 FROM `{$et}`
+				 WHERE created_at BETWEEN %s AND %s
+				   AND bot_score < %d
+				   AND referrer_domain IS NOT NULL
+				   AND referrer_domain != ''
+				 ORDER BY referrer_domain
+				 LIMIT 200", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$range['start'], $range['end'], $bt
+			)
+		);
+
+		return $rows ?: [];
 	}
 
 	// ----------------------------------------------------------------
