@@ -70,21 +70,21 @@ install_test_suite() {
     mkdir -p "$WP_TESTS_DIR"
 
     # Try the requested tag/branch first; fall back to trunk on failure
-    svn_checkout() {
-        local path="$1" dest="$2"
-        if ! svn co --quiet --no-auth-cache "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/${path}/" "${dest}" 2>/dev/null; then
-            echo "SVN checkout of ${WP_TESTS_TAG}/${path} failed; falling back to trunk" >&2
+    svn_co_with_fallback() {
+        local path="$1"
+        local dest="$2"
+        svn co --quiet --no-auth-cache "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/${path}/" "${dest}" || \
             svn co --quiet --no-auth-cache "https://develop.svn.wordpress.org/trunk/${path}/" "${dest}"
-        fi
     }
 
-    svn_checkout "tests/phpunit/includes" "$WP_TESTS_DIR/includes"
-    svn_checkout "tests/phpunit/data"     "$WP_TESTS_DIR/data"
+    svn_co_with_fallback "tests/phpunit/includes" "$WP_TESTS_DIR/includes"
+    svn_co_with_fallback "tests/phpunit/data"     "$WP_TESTS_DIR/data"
 
     if [ ! -f "$WP_TESTS_DIR"/wp-tests-config.php ]; then
-        local cfg_url="https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php"
-        download "${cfg_url}" "$WP_TESTS_DIR"/wp-tests-config.php 2>/dev/null || \
-            download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" "$WP_TESTS_DIR"/wp-tests-config.php
+        download "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php" \
+            "$WP_TESTS_DIR"/wp-tests-config.php || \
+            download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" \
+                "$WP_TESTS_DIR"/wp-tests-config.php
         WP_CORE_DIR_ESC="${WP_CORE_DIR//\//\\/}"
         sed -i "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR"/wp-tests-config.php
         sed -i "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR"/wp-tests-config.php

@@ -30,10 +30,12 @@ if ( ! function_exists( 'rs_fs' ) ) {
 		if ( $stub === null ) {
 			$stub = new class {
 				public function can_use_premium_code__premium_only(): bool { return false; }
-				public function is_premium(): bool           { return false; }
-				public function is_paying(): bool            { return false; }
-				public function is_trial(): bool             { return false; }
-				public function is_free_plan(): bool         { return true; }
+				public function is_premium(): bool       { return false; }
+				public function is_paying(): bool        { return false; }
+				public function is_not_paying(): bool    { return true; }
+				public function is_trial(): bool         { return false; }
+				public function is_free_plan(): bool     { return true; }
+				public function get_upgrade_url(): string { return '#'; }
 			};
 		}
 		return $stub;
@@ -65,14 +67,15 @@ if ( is_dir( $wp_tests_dir ) ) {
 
 	// Load the plugin before WordPress finishes loading
 	tests_add_filter( 'muplugins_loaded', function () {
-		// Load only the core classes (not rich-statistics.php to avoid Freemius bootstrapping)
+		// Load only the core classes needed by integration tests.
+		// Omit class-admin.php and class-email.php — they use rs_fs()->get_upgrade_url()
+		// and other premium methods not stubbed in tests, and are not exercised by
+		// the integration test suite.
 		$classes = [
 			'class-db',
 			'class-bot-detection',
 			'class-tracker',
 			'class-analytics',
-			'class-admin',
-			'class-email',
 			'class-click-tracking',
 			'class-heatmap',
 			'class-rest-api',
