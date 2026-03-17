@@ -114,7 +114,7 @@ class AnalyticsTest extends WP_UnitTestCase {
 		global $wpdb;
 
 		// Insert a test click row with href_value populated
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
 			[
 				'session_id'   => 'test-session-clickmap',
@@ -144,6 +144,6 @@ class AnalyticsTest extends WP_UnitTestCase {
 		$this->assertSame( 'hello@example.com', $row['href_value'] );
 
 		// Cleanup
-		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'test-session-clickmap' ] );
+		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'test-session-clickmap' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 }

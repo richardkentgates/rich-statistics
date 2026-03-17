@@ -1,14 +1,14 @@
 === Rich Statistics ===
 Contributors: richardkentgates
-Tags: analytics, privacy, statistics, heatmap, click-tracking, gdpr
+Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Privacy-first analytics for WordPress publishers. No PII, no consent banners required. OS, browser, timezone, language, time on page, referrers and more.
+Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent banners required.
 
 == Description ==
 
@@ -99,6 +99,14 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 
 == Changelog ==
 
+= 1.2.0 =
+* Added PWA OTP pairing: "Generate App Code" button on the user profile page issues a 6-digit HMAC-signed code (valid 15 min) for secure app connection without manual credential entry
+* Added `rsa/v1/verify-otp` REST endpoint that validates the code and returns the verified username
+* Added two-step app connection flow in the PWA dashboard (OTP verify → Application Password)
+* Added hosted PWA at statistics.richardkentgates.com/app/ — install directly from any browser
+* Added "Get the App" section to the plugin website landing page
+* Fixed: Rich Statistics App profile section now appears before Application Passwords (correct reading order)
+
 = 1.1.0 =
 * Added click destination capture: phone numbers, email addresses, SMS numbers, geo coordinates, and download file URLs are now recorded per click event
 * Added Destination column to Click Map admin table
@@ -118,6 +126,9 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+No database schema changes. Update is safe to apply without any manual action.
 
 = 1.1.0 =
 Database schema updated automatically on activation (adds href_value column to clicks table). No manual action required.

@@ -1,20 +1,21 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
-
-$period  = sanitize_text_field( $_GET['period'] ?? '30d' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
+$period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
-	$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
-	$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-$f_page  = sanitize_text_field( $_GET['ref_page'] ?? '' );
+$f_page  = sanitize_text_field( wp_unslash( $_GET['ref_page'] ?? '' ) );
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 $filters = [ 'page' => $f_page, 'date_from' => $date_from, 'date_to' => $date_to ];
 $rows    = RSA_Analytics::get_referrers( $period, 100, $filters );
 $opts    = RSA_Analytics::get_filter_options( $period, $filters );

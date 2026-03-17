@@ -63,35 +63,32 @@ class RSA_Analytics {
 	public static function get_overview( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
-		$st    = RSA_DB::sessions_table();
 
-		$pageviews = (int) $wpdb->get_var(
+		$pageviews = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d",
 				$range['start'], $range['end'], self::bot_threshold()
 			)
 		);
 
-		$sessions = (int) $wpdb->get_var(
+		$sessions = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$st}` WHERE created_at BETWEEN %s AND %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s",
 				$range['start'], $range['end']
 			)
 		);
 
-		$avg_time = (float) $wpdb->get_var(
+		$avg_time = (float) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT AVG(time_on_page) FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND time_on_page > 0 AND bot_score < %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT AVG(time_on_page) FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND time_on_page > 0 AND bot_score < %d",
 				$range['start'], $range['end'], self::bot_threshold()
 			)
 		);
 
 		// Bounce: sessions with only 1 page viewed
-		$bounced = (int) $wpdb->get_var(
+		$bounced = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$st}` WHERE created_at BETWEEN %s AND %s AND pages_viewed = 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s AND pages_viewed = 1",
 				$range['start'], $range['end']
 			)
 		);
@@ -99,13 +96,9 @@ class RSA_Analytics {
 		$bounce_rate = $sessions > 0 ? round( ( $bounced / $sessions ) * 100, 1 ) : 0;
 
 		// Pageviews per day for sparkline
-		$daily_rows = $wpdb->get_results(
+		$daily_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT DATE(created_at) AS day, COUNT(*) AS views
-				 FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				 GROUP BY DATE(created_at)
-				 ORDER BY day ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT DATE(created_at) AS day, COUNT(*) AS views FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY DATE(created_at) ORDER BY day ASC",
 				$range['start'], $range['end'], self::bot_threshold()
 			),
 			ARRAY_A
@@ -126,44 +119,42 @@ class RSA_Analytics {
 
 	public static function get_top_pages( string $period = '30d', int $limit = 20, array $filters = [] ): array {
 		global $wpdb;
-		$range  = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et     = RSA_DB::events_table();
-		$bt     = self::bot_threshold();
+		$range       = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt          = self::bot_threshold();
+		$browser     = $filters['browser'] ?? '';
+		$os          = $filters['os']      ?? '';
+		$page_exact  = $filters['page']    ?? '';
+		$page_search = $filters['search']  ?? '';
+		$search_like = $page_search !== '' ? '%' . $wpdb->esc_like( $page_search ) . '%' : '';
+		$sort_col    = in_array( $filters['sort']     ?? '', [ 'views', 'avg_time' ], true ) ? $filters['sort']     : 'views';
+		$sort_dir    = ( ( $filters['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc';
 
-		$conds  = [ 'created_at BETWEEN %s AND %s AND bot_score < %d' ];
-		$params = [ $range['start'], $range['end'], $bt ];
-
-		if ( ! empty( $filters['browser'] ) ) {
-			$conds[]  = 'browser = %s';
-			$params[] = $filters['browser'];
-		}
-		if ( ! empty( $filters['os'] ) ) {
-			$conds[]  = 'os = %s';
-			$params[] = $filters['os'];
-		}
-		if ( ! empty( $filters['page'] ) ) {
-			$conds[]  = 'page = %s';
-			$params[] = $filters['page'];
-		} elseif ( ! empty( $filters['search'] ) ) {
-			$conds[]  = 'page LIKE %s';
-			$params[] = '%' . $wpdb->esc_like( $filters['search'] ) . '%';
-		}
-
-		$where    = implode( ' AND ', $conds );
-		$sort_map = [ 'views' => 'views', 'avg_time' => 'avg_time' ];
-		$sort_col = $sort_map[ $filters['sort'] ?? 'views' ] ?? 'views';
-		$sort_dir = ( ( $filters['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'ASC' : 'DESC';
-		$params[] = $limit;
-
-		$rows = $wpdb->get_results(
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
 				"SELECT page, COUNT(*) AS views, AVG(time_on_page) AS avg_time
-				 FROM `{$et}`
-				 WHERE {$where}
+				 FROM `{$wpdb->prefix}rsa_events`
+				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				   AND (%s = '' OR browser = %s)
+				   AND (%s = '' OR os = %s)
+				   AND (
+				     (%s = '' AND %s = '')
+				     OR (%s != '' AND page = %s)
+				     OR (%s = '' AND %s != '' AND page LIKE %s)
+				   )
 				 GROUP BY page
-				 ORDER BY {$sort_col} {$sort_dir}
-				 LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$params
+				 ORDER BY
+				   CASE WHEN %s = 'avg_time' THEN AVG(time_on_page) ELSE COUNT(*) END
+				   * CASE WHEN %s = 'asc' THEN 1 ELSE -1 END
+				 ASC
+				 LIMIT %d",
+				$range['start'], $range['end'], $bt,
+				$browser, $browser,
+				$os, $os,
+				$page_exact, $page_search,
+				$page_exact, $page_exact,
+				$page_exact, $page_search, $search_like,
+				$sort_col, $sort_dir,
+				$limit
 			),
 			ARRAY_A
 		);
@@ -174,7 +165,7 @@ class RSA_Analytics {
 				'views'    => (int) $r['views'],
 				'avg_time' => round( (float) $r['avg_time'] ),
 			];
-		}, $rows );
+		}, $rows ?? [] );
 	}
 
 	// ----------------------------------------------------------------
@@ -184,49 +175,52 @@ class RSA_Analytics {
 	public static function get_audience( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
+		$bt    = self::bot_threshold();
 
-		$aggregate = function ( string $column ) use ( $wpdb, $range, $et ): array {
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT `{$column}` AS label, COUNT(*) AS count
-					 FROM `{$et}`
-					 WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `{$column}` IS NOT NULL
-					 GROUP BY `{$column}`
-					 ORDER BY count DESC
-					 LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$range['start'], $range['end'], self::bot_threshold()
-				),
-				ARRAY_A
-			);
-			return array_map( fn( $r ) => [ 'label' => $r['label'] ?: 'Unknown', 'count' => (int) $r['count'] ], $rows );
-		};
+		$map_col = fn( $rows ) => array_map( fn( $r ) => [ 'label' => $r['label'] ?: 'Unknown', 'count' => (int) $r['count'] ], $rows );
+
+		$os_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT `os` AS label, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `os` IS NOT NULL GROUP BY `os` ORDER BY count DESC LIMIT 20",
+				$range['start'], $range['end'], $bt
+			), ARRAY_A
+		);
+
+		$browser_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT `browser` AS label, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `browser` IS NOT NULL GROUP BY `browser` ORDER BY count DESC LIMIT 20",
+				$range['start'], $range['end'], $bt
+			), ARRAY_A
+		);
+
+		$language_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT `language` AS label, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `language` IS NOT NULL GROUP BY `language` ORDER BY count DESC LIMIT 20",
+				$range['start'], $range['end'], $bt
+			), ARRAY_A
+		);
+
+		$timezone_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT `timezone` AS label, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `timezone` IS NOT NULL GROUP BY `timezone` ORDER BY count DESC LIMIT 20",
+				$range['start'], $range['end'], $bt
+			), ARRAY_A
+		);
 
 		// Viewport buckets (segment by width)
-		$viewport_rows = $wpdb->get_results(
+		$viewport_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT
-					CASE
-						WHEN viewport_w < 640  THEN 'Mobile (<640px)'
-						WHEN viewport_w < 1024 THEN 'Tablet (640–1023px)'
-						WHEN viewport_w < 1440 THEN 'Desktop (1024–1439px)'
-						ELSE 'Wide (≥1440px)'
-					END AS label,
-					COUNT(*) AS count
-				 FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND viewport_w > 0
-				 GROUP BY label
-				 ORDER BY count DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], self::bot_threshold()
+				"SELECT CASE WHEN viewport_w < 640 THEN 'Mobile (<640px)' WHEN viewport_w < 1024 THEN 'Tablet (640\u{2013}1023px)' WHEN viewport_w < 1440 THEN 'Desktop (1024\u{2013}1439px)' ELSE 'Wide (\u{2265}1440px)' END AS label, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND viewport_w > 0 GROUP BY label ORDER BY count DESC",
+				$range['start'], $range['end'], $bt
 			),
 			ARRAY_A
 		);
 
 		return [
-			'os'       => $aggregate( 'os' ),
-			'browser'  => $aggregate( 'browser' ),
-			'language' => $aggregate( 'language' ),
-			'timezone' => $aggregate( 'timezone' ),
+			'os'       => $map_col( $os_rows ),
+			'browser'  => $map_col( $browser_rows ),
+			'language' => $map_col( $language_rows ),
+			'timezone' => $map_col( $timezone_rows ),
 			'viewport' => array_map( fn( $r ) => [ 'label' => $r['label'], 'count' => (int) $r['count'] ], $viewport_rows ),
 		];
 	}
@@ -237,30 +231,29 @@ class RSA_Analytics {
 
 	public static function get_referrers( string $period = '30d', int $limit = 20, array $filters = [] ): array {
 		global $wpdb;
-		$range  = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et     = RSA_DB::events_table();
-		$bt     = self::bot_threshold();
+		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt    = self::bot_threshold();
+		$page  = $filters['page'] ?? '';
 
-		$conds  = [ "created_at BETWEEN %s AND %s AND bot_score < %d AND referrer_domain IS NOT NULL AND referrer_domain != ''" ];
-		$params = [ $range['start'], $range['end'], $bt ];
-
-		if ( ! empty( $filters['page'] ) ) {
-			$conds[]  = 'page = %s';
-			$params[] = $filters['page'];
-		}
-
-		$where    = implode( ' AND ', $conds );
-		$params[] = $limit;
-
-		$rows = $wpdb->get_results(
+		// Single query with correlated subquery for top landing page per referrer
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT referrer_domain AS domain, COUNT(*) AS visits
-				 FROM `{$et}`
-				 WHERE {$where}
-				 GROUP BY referrer_domain
+				"SELECT e1.referrer_domain AS domain, COUNT(*) AS visits,
+				        (SELECT e2.page FROM `{$wpdb->prefix}rsa_events` e2
+				         WHERE e2.referrer_domain = e1.referrer_domain
+				           AND e2.created_at BETWEEN %s AND %s AND e2.bot_score < %d
+				         GROUP BY e2.page ORDER BY COUNT(*) DESC LIMIT 1) AS top_page
+				 FROM `{$wpdb->prefix}rsa_events` e1
+				 WHERE e1.created_at BETWEEN %s AND %s AND e1.bot_score < %d
+				   AND e1.referrer_domain IS NOT NULL AND e1.referrer_domain != ''
+				   AND (%s = '' OR e1.page = %s)
+				 GROUP BY e1.referrer_domain
 				 ORDER BY visits DESC
-				 LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$params
+				 LIMIT %d",
+				$range['start'], $range['end'], $bt,
+				$range['start'], $range['end'], $bt,
+				$page, $page,
+				$limit
 			),
 			ARRAY_A
 		);
@@ -269,34 +262,10 @@ class RSA_Analytics {
 			return [];
 		}
 
-		// Fetch top landing page per referrer domain
-		$domains    = array_column( $rows, 'domain' );
-		$in_holders = implode( ',', array_fill( 0, count( $domains ), '%s' ) );
-		$tp_params  = array_merge( [ $range['start'], $range['end'], $bt ], $domains );
-		$tp_rows    = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT referrer_domain, page
-				 FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				   AND referrer_domain IN ({$in_holders})
-				 GROUP BY referrer_domain, page
-				 ORDER BY referrer_domain, COUNT(*) DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$tp_params
-			),
-			ARRAY_A
-		);
-
-		$top_pages = [];
-		foreach ( $tp_rows as $r ) {
-			if ( ! isset( $top_pages[ $r['referrer_domain'] ] ) ) {
-				$top_pages[ $r['referrer_domain'] ] = $r['page'];
-			}
-		}
-
 		return array_map( fn( $r ) => [
 			'domain'   => $r['domain'],
 			'visits'   => (int) $r['visits'],
-			'top_page' => $top_pages[ $r['domain'] ] ?? '',
+			'top_page' => $r['top_page'] ?? '',
 		], $rows );
 	}
 
@@ -306,40 +275,18 @@ class RSA_Analytics {
 
 	public static function get_behavior( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
-		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
-		$st    = RSA_DB::sessions_table();
-		$bt    = self::bot_threshold();
+		$range   = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt      = self::bot_threshold();
+		$browser = $filters['browser'] ?? '';
+		$os      = $filters['os']      ?? '';
 
-		// Optional browser/OS filter on event-level queries
-		$evt_conds  = 'created_at BETWEEN %s AND %s AND bot_score < %d AND time_on_page > 0';
-		$evt_params = [ $range['start'], $range['end'], $bt ];
-		if ( ! empty( $filters['browser'] ) ) {
-			$evt_conds   .= ' AND browser = %s';
-			$evt_params[] = $filters['browser'];
-		}
-		if ( ! empty( $filters['os'] ) ) {
-			$evt_conds   .= ' AND os = %s';
-			$evt_params[] = $filters['os'];
-		}
-
-		// Time-on-page histogram buckets (seconds)
-		$histogram_rows = $wpdb->get_results(
+		// Time-on-page histogram buckets — OR-pattern for optional browser/os filters
+		$histogram_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT
-					CASE
-						WHEN time_on_page < 10  THEN '0-9s'
-						WHEN time_on_page < 30  THEN '10-29s'
-						WHEN time_on_page < 60  THEN '30-59s'
-						WHEN time_on_page < 120 THEN '1-2 min'
-						WHEN time_on_page < 300 THEN '2-5 min'
-						ELSE '5+ min'
-					END AS bucket,
-					COUNT(*) AS count
-				 FROM `{$et}`
-				 WHERE {$evt_conds}
-				 GROUP BY bucket", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$evt_params
+				"SELECT CASE WHEN time_on_page < 10 THEN '0-9s' WHEN time_on_page < 30 THEN '10-29s' WHEN time_on_page < 60 THEN '30-59s' WHEN time_on_page < 120 THEN '1-2 min' WHEN time_on_page < 300 THEN '2-5 min' ELSE '5+ min' END AS bucket, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND time_on_page > 0 AND (%s = '' OR browser = %s) AND (%s = '' OR os = %s) GROUP BY bucket",
+				$range['start'], $range['end'], $bt,
+				$browser, $browser,
+				$os, $os
 			),
 			ARRAY_A
 		);
@@ -351,48 +298,27 @@ class RSA_Analytics {
 		} );
 
 		// Session depth distribution
-		$depth_rows = $wpdb->get_results(
+		$depth_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT
-					CASE
-						WHEN pages_viewed = 1 THEN '1 page'
-						WHEN pages_viewed = 2 THEN '2 pages'
-						WHEN pages_viewed <= 4 THEN '3-4 pages'
-						WHEN pages_viewed <= 7 THEN '5-7 pages'
-						ELSE '8+ pages'
-					END AS bucket,
-					COUNT(*) AS count
-				 FROM `{$st}`
-				 WHERE created_at BETWEEN %s AND %s
-				 GROUP BY bucket", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT CASE WHEN pages_viewed = 1 THEN '1 page' WHEN pages_viewed = 2 THEN '2 pages' WHEN pages_viewed <= 4 THEN '3-4 pages' WHEN pages_viewed <= 7 THEN '5-7 pages' ELSE '8+ pages' END AS bucket, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s GROUP BY bucket",
 				$range['start'], $range['end']
 			),
 			ARRAY_A
 		);
 
 		// Entry pages
-		$entry_rows = $wpdb->get_results(
+		$entry_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT entry_page AS page, COUNT(*) AS count
-				 FROM `{$st}`
-				 WHERE created_at BETWEEN %s AND %s
-				 GROUP BY entry_page
-				 ORDER BY count DESC
-				 LIMIT 10", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT entry_page AS page, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s GROUP BY entry_page ORDER BY count DESC LIMIT 10",
 				$range['start'], $range['end']
 			),
 			ARRAY_A
 		);
 
 		// Exit pages
-		$exit_rows = $wpdb->get_results(
+		$exit_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT exit_page AS page, COUNT(*) AS count
-				 FROM `{$st}`
-				 WHERE created_at BETWEEN %s AND %s AND exit_page IS NOT NULL
-				 GROUP BY exit_page
-				 ORDER BY count DESC
-				 LIMIT 10", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT exit_page AS page, COUNT(*) AS count FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s AND exit_page IS NOT NULL GROUP BY exit_page ORDER BY count DESC LIMIT 10",
 				$range['start'], $range['end']
 			),
 			ARRAY_A
@@ -412,50 +338,48 @@ class RSA_Analytics {
 
 	public static function get_user_flow( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
-		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
-		$bt    = self::bot_threshold();
+		$range     = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt        = self::bot_threshold();
+		$from_page = $filters['from_page'] ?? '';
+		$to_page   = $filters['to_page']   ?? '';
+		$min_count = max( 1, (int) ( $filters['min_count'] ?? 1 ) );
+		$sort_col  = in_array( $filters['sort'] ?? '', [ 'count', 'from_page', 'to_page' ], true ) ? $filters['sort'] : 'count';
+		$sort_dir  = ( ( $filters['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc';
+		$limit     = max( 10, min( 250, (int) ( $filters['limit'] ?? 30 ) ) );
 
-		$outer_where  = [ 'to_page IS NOT NULL', 'from_page != to_page' ];
-		$prepare_args = [ $range['start'], $range['end'], $bt ];
-
-		if ( ! empty( $filters['from_page'] ) ) {
-			$outer_where[]  = 'from_page = %s';
-			$prepare_args[] = $filters['from_page'];
-		}
-		if ( ! empty( $filters['to_page'] ) ) {
-			$outer_where[]  = 'to_page = %s';
-			$prepare_args[] = $filters['to_page'];
-		}
-
-		$where_sql = 'WHERE ' . implode( ' AND ', $outer_where );
-
-		$min_count  = max( 1, (int) ( $filters['min_count'] ?? 1 ) );
-		$having_sql = $min_count > 1 ? 'HAVING `count` >= ' . $min_count : '';
-
-		$valid_sorts = [ 'count', 'from_page', 'to_page' ];
-		$sort_col    = in_array( $filters['sort'] ?? '', $valid_sorts, true ) ? $filters['sort'] : 'count';
-		$sort_dir    = ( ( $filters['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'ASC' : 'DESC';
-		$order_sql   = '`' . $sort_col . '` ' . $sort_dir;
-
-		$limit = max( 10, min( 250, (int) ( $filters['limit'] ?? 30 ) ) );
-
-		$rows = $wpdb->get_results(
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
 				"SELECT from_page, to_page, COUNT(*) AS `count`
 				 FROM (
-				     SELECT
-				         page AS from_page,
-				         LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS to_page
-				     FROM `{$et}`
-				     WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				   SELECT page AS from_page,
+				          LEAD(page) OVER (PARTITION BY session_id ORDER BY created_at) AS to_page
+				   FROM `{$wpdb->prefix}rsa_events`
+				   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
 				 ) transitions
-				 {$where_sql}
+				 WHERE to_page IS NOT NULL AND from_page != to_page
+				   AND (%s = '' OR from_page = %s)
+				   AND (%s = '' OR to_page = %s)
 				 GROUP BY from_page, to_page
-				 {$having_sql}
-				 ORDER BY {$order_sql}
-				 LIMIT {$limit}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				...$prepare_args
+				 HAVING `count` >= %d
+				 ORDER BY
+				   CASE WHEN %s = 'asc' THEN
+				     CASE WHEN %s = 'from_page' THEN from_page
+				          WHEN %s = 'to_page' THEN to_page
+				          ELSE LPAD(CAST(`count` AS CHAR), 20, '0') END
+				   END ASC,
+				   CASE WHEN %s = 'desc' THEN
+				     CASE WHEN %s = 'from_page' THEN from_page
+				          WHEN %s = 'to_page' THEN to_page
+				          ELSE LPAD(CAST(`count` AS CHAR), 20, '0') END
+				   END DESC
+				 LIMIT %d",
+				$range['start'], $range['end'], $bt,
+				$from_page, $from_page,
+				$to_page, $to_page,
+				$min_count,
+				$sort_dir, $sort_col, $sort_col,
+				$sort_dir, $sort_col, $sort_col,
+				$limit
 			),
 			ARRAY_A
 		);
@@ -491,67 +415,46 @@ class RSA_Analytics {
 	 */
 	public static function get_path_flow( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
-		$range       = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et          = RSA_DB::events_table();
-		$bt          = self::bot_threshold();
-		$f_source    = $filters['entry_source'] ?? '';
-		$f_focus     = $filters['focus_page']   ?? '';
-		$min_s       = max( 1, (int) ( $filters['min_sessions'] ?? 1 ) );
-		$max_steps   = min( 5, max( 2, (int) ( $filters['steps'] ?? 4 ) ) );
-		$top_n       = 8;  // top pages per step column
+		$range     = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt        = self::bot_threshold();
+		$f_source  = $filters['entry_source'] ?? '';
+		$f_focus   = $filters['focus_page']   ?? '';
+		$min_s     = max( 1, (int) ( $filters['min_sessions'] ?? 1 ) );
+		$max_steps = min( 5, max( 2, (int) ( $filters['steps'] ?? 4 ) ) );
+		$top_n     = 8;
 
-		// ---- Base CTE: assign step_num per session via ROW_NUMBER ---------
-		// We build optional WHERE clauses that narrow the session set, then
-		// apply them as IN subqueries so the ROW_NUMBER stays correct.
-
-		$cte_where = 'created_at BETWEEN %s AND %s AND bot_score < %d';
-		$cte_args  = [ $range['start'], $range['end'], $bt ];
-
-		$session_filter_sql = '';
-
-		if ( $f_source !== '' ) {
-			// Only sessions where the first event has this referrer domain
-			$session_filter_sql .= $wpdb->prepare(
-				" AND session_id IN (
-					SELECT session_id FROM (
-						SELECT session_id,
-						       COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
-						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
-						FROM `{$et}`
-						WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-					) _src WHERE rn = 1 AND src = %s
-				)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt, $f_source
-			);
-		}
-
-		if ( $f_focus !== '' ) {
-			// Only sessions that contain this page somewhere in their path
-			$session_filter_sql .= $wpdb->prepare(
-				" AND session_id IN (
-					SELECT DISTINCT session_id FROM `{$et}`
-					WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
-				)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt, $f_focus
-			);
-		}
-
-		// ---- Step node counts per (step_num, page) ----------------------
-		$nodes_sql = "
-			SELECT step_num, page, COUNT(*) AS sessions
-			FROM (
-				SELECT session_id, page,
-				       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
-				FROM `{$et}`
-				WHERE {$cte_where} {$session_filter_sql}
-			) _steps
-			WHERE step_num <= %d
-			GROUP BY step_num, page
-			HAVING sessions >= %d
-			ORDER BY step_num ASC, sessions DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-		$node_rows = $wpdb->get_results(
-			$wpdb->prepare( $nodes_sql, ...[...$cte_args, $max_steps, $min_s] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// Step node counts — using OR-pattern for optional session filters
+		$node_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time path flow
+			$wpdb->prepare(
+				"SELECT step_num, page, COUNT(*) AS sessions
+				 FROM (
+				   SELECT session_id, page,
+				          ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+				   FROM `{$wpdb->prefix}rsa_events`
+				   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				     AND (%s = '' OR session_id IN (
+				           SELECT session_id FROM (
+				             SELECT session_id,
+				                    COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+				                    ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+				             FROM `{$wpdb->prefix}rsa_events`
+				             WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				           ) _src WHERE rn = 1 AND src = %s
+				         ))
+				     AND (%s = '' OR session_id IN (
+				           SELECT DISTINCT session_id FROM `{$wpdb->prefix}rsa_events`
+				           WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+				         ))
+				 ) _steps
+				 WHERE step_num <= %d
+				 GROUP BY step_num, page
+				 HAVING sessions >= %d
+				 ORDER BY step_num ASC, sessions DESC",
+				$range['start'], $range['end'], $bt,
+				$f_source, $range['start'], $range['end'], $bt, $f_source,
+				$f_focus,  $range['start'], $range['end'], $bt, $f_focus,
+				$max_steps, $min_s
+			),
 			ARRAY_A
 		);
 
@@ -561,124 +464,177 @@ class RSA_Analytics {
 
 		// Build steps array, capping at top_n per step
 		$steps        = [];
-		$top_per_step = [];   // step_num => [ page, … ]  (the top-N pages, for link filtering)
+		$top_per_step = [];
 		foreach ( $node_rows as $r ) {
 			$sn = (int) $r['step_num'];
 			if ( ! isset( $steps[ $sn ] ) ) {
 				$steps[ $sn ] = [];
 			}
 			if ( count( $steps[ $sn ] ) < $top_n ) {
-				$steps[ $sn ][]       = [ 'page' => $r['page'], 'sessions' => (int) $r['sessions'] ];
+				$steps[ $sn ][]        = [ 'page' => $r['page'], 'sessions' => (int) $r['sessions'] ];
 				$top_per_step[ $sn ][] = $r['page'];
 			}
 		}
 
-		// Total sessions = sum of nodes at step 1
 		$total_sessions = isset( $steps[1] ) ? array_sum( array_column( $steps[1], 'sessions' ) ) : 0;
 
-		// ---- Compute (exit) nodes: sessions at step N that have no step N+1
-		// exit_at_step[N] = sessions(step N) − sessions(step N+1)
-		// We only add "(exit)" nodes for steps N < max_steps so the last column
-		// doesn't need an "(exit)" (everything there already ended).
+		// Compute (exit) nodes
 		$step_totals = [];
 		foreach ( $steps as $sn => $nodes ) {
 			$step_totals[ $sn ] = array_sum( array_column( $nodes, 'sessions' ) );
 		}
 		for ( $sn = 1; $sn < $max_steps; $sn++ ) {
 			if ( ! isset( $step_totals[ $sn ] ) ) { continue; }
-			$next_total  = $step_totals[ $sn + 1 ] ?? 0;
-			$exit_count  = $step_totals[ $sn ] - $next_total;
+			$exit_count = $step_totals[ $sn ] - ( $step_totals[ $sn + 1 ] ?? 0 );
 			if ( $exit_count >= $min_s ) {
 				$steps[ $sn ][] = [ 'page' => '(exit)', 'sessions' => $exit_count ];
 			}
 		}
 
-		// ---- Step transition links (step N → step N+1) ------------------
+		// Step transition links (step N → step N+1)
 		$links = [];
 		for ( $sn = 1; $sn < $max_steps; $sn++ ) {
 			if ( empty( $top_per_step[ $sn ] ) ) { continue; }
 
 			$from_pages = $top_per_step[ $sn ];
 			$to_pages   = $top_per_step[ $sn + 1 ] ?? [];
+			$from_n     = count( $from_pages );
+			$from_ph    = implode( ',', array_fill( 0, $from_n, '%s' ) );
 
-			// Placeholders for IN clauses
-			$from_ph = implode( ',', array_fill( 0, count( $from_pages ), '%s' ) );
-			$to_ph   = $to_pages ? implode( ',', array_fill( 0, count( $to_pages ), '%s' ) ) : null;
+			if ( $to_pages ) {
+				$to_ph = implode( ',', array_fill( 0, count( $to_pages ), '%s' ) );
 
-			$link_args = [ ...$cte_args, ...$cte_args, $sn, ...$from_pages ];
-
-			if ( $to_ph ) {
-				// Real transitions: from step N to step N+1 (both pages in top-N)
-				$link_sql = "
-					SELECT s1.page AS from_page, s2.page AS to_page, COUNT(*) AS cnt
-					FROM (
-						SELECT session_id, page,
-						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
-						FROM `{$et}`
-						WHERE {$cte_where} {$session_filter_sql}
-					) s1
-					JOIN (
-						SELECT session_id, page,
-						       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
-						FROM `{$et}`
-						WHERE {$cte_where} {$session_filter_sql}
-					) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
-					WHERE s1.step_num = %d
-					  AND s1.page IN ({$from_ph})
-					  AND s2.page IN ({$to_ph})
-					GROUP BY s1.page, s2.page
-					HAVING cnt >= %d
-					ORDER BY cnt DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-				$link_rows = $wpdb->get_results(
-					$wpdb->prepare( $link_sql, [ ...$link_args, ...$to_pages, $min_s ] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					ARRAY_A
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $from_ph/$to_ph contain only %s placeholders built from count()
+				$link_sql = $wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- count cannot be determined statically when using spread operator with array_merge
+					"SELECT s1.page AS from_page, s2.page AS to_page, COUNT(*) AS cnt
+					 FROM (
+					   SELECT session_id, page,
+					          ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+					   FROM `{$wpdb->prefix}rsa_events`
+					   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					     AND (%s = '' OR session_id IN (
+					           SELECT session_id FROM (
+					             SELECT session_id,
+					                    COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+					                    ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+					             FROM `{$wpdb->prefix}rsa_events`
+					             WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					           ) _src WHERE rn = 1 AND src = %s
+					         ))
+					     AND (%s = '' OR session_id IN (
+					           SELECT DISTINCT session_id FROM `{$wpdb->prefix}rsa_events`
+					           WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+					         ))
+					 ) s1
+					 JOIN (
+					   SELECT session_id, page,
+					          ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+					   FROM `{$wpdb->prefix}rsa_events`
+					   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					     AND (%s = '' OR session_id IN (
+					           SELECT session_id FROM (
+					             SELECT session_id,
+					                    COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+					                    ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+					             FROM `{$wpdb->prefix}rsa_events`
+					             WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+					           ) _src WHERE rn = 1 AND src = %s
+					         ))
+					     AND (%s = '' OR session_id IN (
+					           SELECT DISTINCT session_id FROM `{$wpdb->prefix}rsa_events`
+					           WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+					         ))
+					 ) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
+						 WHERE s1.step_num = %d AND s1.page IN ($from_ph) AND s2.page IN ($to_ph)
+					 GROUP BY s1.page, s2.page HAVING cnt >= %d ORDER BY cnt DESC",
+					...array_merge(
+						[
+							$range['start'], $range['end'], $bt,
+							$f_source, $range['start'], $range['end'], $bt, $f_source,
+							$f_focus,  $range['start'], $range['end'], $bt, $f_focus,
+							$range['start'], $range['end'], $bt,
+							$f_source, $range['start'], $range['end'], $bt, $f_source,
+							$f_focus,  $range['start'], $range['end'], $bt, $f_focus,
+							$sn,
+						],
+						$from_pages,
+						$to_pages,
+						[ $min_s ]
+					)
 				);
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+				$link_rows = $wpdb->get_results( $link_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared on preceding lines
 
 				foreach ( $link_rows as $lr ) {
-					$links[] = [
-						'step'  => $sn,
-						'from'  => $lr['from_page'],
-						'to'    => $lr['to_page'],
-						'count' => (int) $lr['cnt'],
-					];
+					$links[] = [ 'step' => $sn, 'from' => $lr['from_page'], 'to' => $lr['to_page'], 'count' => (int) $lr['cnt'] ];
 				}
 			}
 
-			// "(exit)" links: sessions in step N that have no step N+1, grouped by from_page
-			$exit_sql = "
-				SELECT s1.page AS from_page, COUNT(*) AS cnt
-				FROM (
-					SELECT session_id, page,
-					       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
-					FROM `{$et}`
-					WHERE {$cte_where} {$session_filter_sql}
-				) s1
-				LEFT JOIN (
-					SELECT session_id,
-					       ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
-					FROM `{$et}`
-					WHERE {$cte_where} {$session_filter_sql}
-				) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
-				WHERE s1.step_num = %d
-				  AND s2.session_id IS NULL
-				  AND s1.page IN ({$from_ph})
-				GROUP BY s1.page
-				HAVING cnt >= %d
-				ORDER BY cnt DESC"; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-			$exit_rows = $wpdb->get_results(
-				$wpdb->prepare( $exit_sql, [ ...$link_args, $min_s ] ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				ARRAY_A
+			// Exit links
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $from_ph contains only %s placeholders built from count()
+			$exit_sql = $wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- count cannot be determined statically when using spread operator with array_merge
+				"SELECT s1.page AS from_page, COUNT(*) AS cnt
+				 FROM (
+				   SELECT session_id, page,
+				          ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+				   FROM `{$wpdb->prefix}rsa_events`
+				   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				     AND (%s = '' OR session_id IN (
+				           SELECT session_id FROM (
+				             SELECT session_id,
+				                    COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+				                    ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+				             FROM `{$wpdb->prefix}rsa_events`
+				             WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				           ) _src WHERE rn = 1 AND src = %s
+				         ))
+				     AND (%s = '' OR session_id IN (
+				           SELECT DISTINCT session_id FROM `{$wpdb->prefix}rsa_events`
+				           WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+				         ))
+				 ) s1
+				 LEFT JOIN (
+				   SELECT session_id,
+				          ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS step_num
+				   FROM `{$wpdb->prefix}rsa_events`
+				   WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				     AND (%s = '' OR session_id IN (
+				           SELECT session_id FROM (
+				             SELECT session_id,
+				                    COALESCE(NULLIF(referrer_domain,''),'(direct)') AS src,
+				                    ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at) AS rn
+				             FROM `{$wpdb->prefix}rsa_events`
+				             WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				           ) _src WHERE rn = 1 AND src = %s
+				         ))
+				     AND (%s = '' OR session_id IN (
+				           SELECT DISTINCT session_id FROM `{$wpdb->prefix}rsa_events`
+				           WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page = %s
+				         ))
+				 ) s2 ON s1.session_id = s2.session_id AND s2.step_num = s1.step_num + 1
+				 WHERE s1.step_num = %d AND s2.session_id IS NULL AND s1.page IN ($from_ph)
+				 GROUP BY s1.page HAVING cnt >= %d ORDER BY cnt DESC",
+				...array_merge(
+					[
+						$range['start'], $range['end'], $bt,
+						$f_source, $range['start'], $range['end'], $bt, $f_source,
+						$f_focus,  $range['start'], $range['end'], $bt, $f_focus,
+						$range['start'], $range['end'], $bt,
+						$f_source, $range['start'], $range['end'], $bt, $f_source,
+						$f_focus,  $range['start'], $range['end'], $bt, $f_focus,
+						$sn,
+					],
+					$from_pages,
+					[ $min_s ]
+				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			$exit_rows = $wpdb->get_results( $exit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared on preceding lines
 
 			foreach ( $exit_rows as $er ) {
-				$links[] = [
-					'step'  => $sn,
-					'from'  => $er['from_page'],
-					'to'    => '(exit)',
-					'count' => (int) $er['cnt'],
-				];
+				$links[] = [ 'step' => $sn, 'from' => $er['from_page'], 'to' => '(exit)', 'count' => (int) $er['cnt'] ];
 			}
 		}
 
@@ -693,19 +649,11 @@ class RSA_Analytics {
 	public static function get_entry_sources( string $period = '30d', array $filters = [] ): array {
 		global $wpdb;
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
 		$bt    = self::bot_threshold();
 
-		$rows = $wpdb->get_col(
+		$rows = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
 			$wpdb->prepare(
-				"SELECT DISTINCT referrer_domain
-				 FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s
-				   AND bot_score < %d
-				   AND referrer_domain IS NOT NULL
-				   AND referrer_domain != ''
-				 ORDER BY referrer_domain
-				 LIMIT 200", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT DISTINCT referrer_domain FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND referrer_domain IS NOT NULL AND referrer_domain != '' ORDER BY referrer_domain LIMIT 200",
 				$range['start'], $range['end'], $bt
 			)
 		);
@@ -720,20 +668,11 @@ class RSA_Analytics {
 	public static function get_click_map( string $period = '30d', string $page = '' ): array {
 		global $wpdb;
 		$range = self::period_range( $period );
-		$ct    = RSA_DB::clicks_table();
 
-		$page_clause = $page ? $wpdb->prepare( 'AND page = %s', $page ) : '';
-
-		$rows = $wpdb->get_results(
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT element_tag, element_id, element_class, href_protocol, matched_rule,
-				        MAX(element_text) AS element_text, MAX(href_value) AS href_value, COUNT(*) AS clicks
-				 FROM `{$ct}`
-				 WHERE created_at BETWEEN %s AND %s {$page_clause}
-				 GROUP BY element_tag, element_id, element_class, href_protocol, matched_rule
-				 ORDER BY clicks DESC
-				 LIMIT 100", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end']
+				"SELECT element_tag, element_id, element_class, href_protocol, matched_rule, MAX(element_text) AS element_text, MAX(href_value) AS href_value, COUNT(*) AS clicks FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s AND (%s = '' OR page = %s) GROUP BY element_tag, element_id, element_class, href_protocol, matched_rule ORDER BY clicks DESC LIMIT 100",
+				$range['start'], $range['end'], $page, $page
 			),
 			ARRAY_A
 		);
@@ -757,21 +696,11 @@ class RSA_Analytics {
 	public static function get_heatmap( string $page, string $period = '30d' ): array {
 		global $wpdb;
 		$range = self::period_range( $period );
-		$ct    = RSA_DB::clicks_table();
 
 		// Query raw clicks directly so data is always current (no nightly aggregation lag).
-		$rows = $wpdb->get_results(
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT ROUND(x_pct / 2) * 2 AS x_pct,
-				        ROUND(y_pct / 2) * 2 AS y_pct,
-				        COUNT(*) AS weight
-				 FROM `{$ct}`
-				 WHERE page = %s
-				   AND created_at BETWEEN %s AND %s
-				   AND x_pct IS NOT NULL
-				   AND y_pct IS NOT NULL
-				 GROUP BY x_pct, y_pct
-				 ORDER BY weight DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT ROUND(x_pct / 2) * 2 AS x_pct, ROUND(y_pct / 2) * 2 AS y_pct, COUNT(*) AS weight FROM `{$wpdb->prefix}rsa_clicks` WHERE page = %s AND created_at BETWEEN %s AND %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL GROUP BY x_pct, y_pct ORDER BY weight DESC",
 				$page,
 				$range['start'],
 				$range['end']
@@ -793,15 +722,10 @@ class RSA_Analytics {
 	public static function export_events( string $period = '90d', string $format = 'json' ): string {
 		global $wpdb;
 		$range = self::period_range( $period );
-		$et    = RSA_DB::events_table();
 
-		$rows = $wpdb->get_results(
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- data export, no caching appropriate
 			$wpdb->prepare(
-				"SELECT session_id, page, referrer_domain, os, browser, browser_version,
-				        language, timezone, viewport_w, viewport_h, time_on_page, created_at
-				 FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				 ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at ASC",
 				$range['start'], $range['end'], self::bot_threshold()
 			),
 			ARRAY_A
@@ -850,30 +774,26 @@ class RSA_Analytics {
 	public static function get_filter_options( string $period, array $filters = [] ): array {
 		global $wpdb;
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$et    = RSA_DB::events_table();
 		$bt    = self::bot_threshold();
 
-		$col_opts = function ( string $col ) use ( $wpdb, $range, $et, $bt ): array {
-			return $wpdb->get_col( $wpdb->prepare(
-				"SELECT DISTINCT `{$col}` FROM `{$et}`
-				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-				   AND `{$col}` IS NOT NULL AND `{$col}` != ''
-				 ORDER BY `{$col}` ASC LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$range['start'], $range['end'], $bt
-			) ) ?: [];
-		};
+		$browsers = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
+			"SELECT DISTINCT `browser` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `browser` IS NOT NULL AND `browser` != '' ORDER BY `browser` ASC LIMIT 50",
+			$range['start'], $range['end'], $bt
+		) ) ?: [];
 
-		$pages = $wpdb->get_col( $wpdb->prepare(
-			"SELECT DISTINCT page FROM `{$et}`
-			 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-			   AND page IS NOT NULL AND page != ''
-			 ORDER BY page ASC LIMIT 200", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$os = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
+			"SELECT DISTINCT `os` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `os` IS NOT NULL AND `os` != '' ORDER BY `os` ASC LIMIT 50",
+			$range['start'], $range['end'], $bt
+		) ) ?: [];
+
+		$pages = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
+			"SELECT DISTINCT page FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page IS NOT NULL AND page != '' ORDER BY page ASC LIMIT 200",
 			$range['start'], $range['end'], $bt
 		) ) ?: [];
 
 		return [
-			'browsers' => $col_opts( 'browser' ),
-			'os'       => $col_opts( 'os' ),
+			'browsers' => $browsers,
+			'os'       => $os,
 			'pages'    => $pages,
 		];
 	}

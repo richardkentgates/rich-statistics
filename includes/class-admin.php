@@ -15,13 +15,44 @@ class RSA_Admin {
 		add_action( 'admin_post_rsa_export_csv',    [ __CLASS__, 'handle_export_csv' ] );
 		add_action( 'current_screen',        [ __CLASS__, 'register_help_tabs' ] );
 
-		// Show download button near Application Passwords in user profile
-		add_action( 'show_user_security_settings', [ __CLASS__, 'profile_webapp_button' ] );
+		// Show OTP pairing panel BEFORE Application Passwords on the profile page
+		// (so "Generate App Code" comes first, then user creates an App Password below)
+		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ] );
+		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
 	}
 
-	// ----------------------------------------------------------------
-	// Menus
-	// ----------------------------------------------------------------
+	/**
+	 * Enqueue the small OTP script only on the user profile / user-edit screen.
+	 */
+	public static function enqueue_profile_assets( string $hook ): void {
+		if ( ! in_array( $hook, [ 'profile.php', 'user-edit.php' ], true ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$js_file = RSA_DIR . 'assets/js/rsa-profile-otp.js';
+		wp_enqueue_script(
+			'rsa-profile-otp',
+			RSA_ASSETS_URL . 'js/rsa-profile-otp.js',
+			[],
+			(string) ( file_exists( $js_file ) ? filemtime( $js_file ) : RSA_VERSION ),
+			true
+		);
+		wp_localize_script( 'rsa-profile-otp', 'rsaOtp', [
+			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+			'nonce'          => wp_create_nonce( 'rsa_generate_otp' ),
+			'generateLabel'  => __( 'Generate App Code', 'rich-statistics' ),
+			'generating'     => __( 'Generating…',     'rich-statistics' ),
+			'regenerateLabel'=> __( 'New Code',           'rich-statistics' ),
+			'copyLabel'      => __( 'Copy',               'rich-statistics' ),
+			'copiedMsg'      => __( 'Copied!',            'rich-statistics' ),
+			'expiredMsg'     => __( 'Expired',            'rich-statistics' ),
+			'errorMsg'       => __( 'Could not generate a code. Please try again.', 'rich-statistics' ),
+		] );
+	}
+
 
 	public static function register_menus(): void {
 		add_menu_page(
@@ -127,7 +158,8 @@ class RSA_Admin {
 	}
 
 	private static function get_page_data_for_current_screen( string $hook ): array {
-		$period = sanitize_text_field( $_GET['period'] ?? '30d' );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display page; GET params control display filters only, no state changes
+		$period = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
 		$allowed_periods = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 		if ( ! in_array( $period, $allowed_periods, true ) ) {
 			$period = '30d';
@@ -135,26 +167,26 @@ class RSA_Admin {
 
 		$date_from = $date_to = '';
 		if ( $period === 'custom' ) {
-			$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
-			$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+			$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+			$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		}
 
 		$page_filters = [
-			'browser'   => sanitize_text_field( $_GET['browser']  ?? '' ),
-			'os'        => sanitize_text_field( $_GET['os']       ?? '' ),
-			'search'    => sanitize_text_field( $_GET['search']   ?? '' ),
-			'page'      => sanitize_text_field( $_GET['ref_page'] ?? '' ),
-			'sort'      => in_array( $_GET['sort'] ?? '', [ 'views', 'avg_time' ], true ) ? $_GET['sort'] : 'views',
-			'sort_dir'  => ( ( $_GET['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc',
+			'browser'   => sanitize_text_field( wp_unslash( $_GET['browser']  ?? '' ) ),
+			'os'        => sanitize_text_field( wp_unslash( $_GET['os']       ?? '' ) ),
+			'search'    => sanitize_text_field( wp_unslash( $_GET['search']   ?? '' ) ),
+			'page'      => sanitize_text_field( wp_unslash( $_GET['ref_page'] ?? '' ) ),
+			'sort'      => in_array( $_GET['sort'] ?? '', [ 'views', 'avg_time' ], true ) ? sanitize_key( $_GET['sort'] ) : 'views',
+			'sort_dir'  => ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) === 'asc' ) ? 'asc' : 'desc',
 			'date_from' => $date_from,
 			'date_to'   => $date_to,
 		];
 
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-pages' ) ) {
 			$pf         = $page_filters;
-			$pf['page'] = sanitize_text_field( $_GET['path'] ?? '' );
+			$pf['page'] = sanitize_text_field( wp_unslash( $_GET['path'] ?? '' ) );
 			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period, 20, $pf ), 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-audience' ) ) {
@@ -170,16 +202,16 @@ class RSA_Admin {
 			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-user-flow' ) ) {
-			$entry_source = sanitize_text_field( $_GET['entry_source'] ?? '' );
-			$focus_page   = sanitize_text_field( $_GET['focus_page']   ?? '' );
-			$min_sessions = max( 1, (int) ( $_GET['min_sessions'] ?? 1 ) );
-			$steps        = min( 5, max( 2, (int) ( $_GET['steps'] ?? 4 ) ) );
+			$entry_source = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
+			$focus_page   = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
+			$min_sessions = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
+			$steps        = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
 			$uf_filters   = [
 				'date_from'  => $date_from,
 				'date_to'    => $date_to,
-				'from_page'  => sanitize_text_field( $_GET['from_page'] ?? '' ),
-				'to_page'    => sanitize_text_field( $_GET['to_page']   ?? '' ),
-				'min_count'  => max( 1, (int) ( $_GET['min_count'] ?? 1 ) ),
+				'from_page'  => sanitize_text_field( wp_unslash( $_GET['from_page'] ?? '' ) ),
+				'to_page'    => sanitize_text_field( wp_unslash( $_GET['to_page']   ?? '' ) ),
+				'min_count'  => max( 1, absint( $_GET['min_count'] ?? 1 ) ),
 				'limit'      => 30,
 			];
 			return [
@@ -199,9 +231,10 @@ class RSA_Admin {
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
-			$page = sanitize_text_field( $_GET['page_filter'] ?? '' );
+			$page = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) );
 			return [ 'view' => 'click-map', 'data' => RSA_Analytics::get_click_map( $period, $page ), 'period' => $period ];
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		// Default: overview
 		return [ 'view' => 'overview', 'data' => RSA_Analytics::get_overview( $period, $page_filters ), 'period' => $period ];
@@ -268,52 +301,44 @@ class RSA_Admin {
 
 		global $wpdb;
 
-		$data_type = sanitize_key( $_POST['data_type'] ?? 'pageviews' );
-		$period    = sanitize_text_field( $_POST['period'] ?? '30d' );
+		$data_type = sanitize_key( wp_unslash( $_POST['data_type'] ?? 'pageviews' ) );
+		$period    = sanitize_text_field( wp_unslash( $_POST['period'] ?? '30d' ) );
 		$allowed   = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 		if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
-		$date_from = sanitize_text_field( $_POST['date_from'] ?? '' );
-		$date_to   = sanitize_text_field( $_POST['date_to']   ?? '' );
+		$date_from = sanitize_text_field( wp_unslash( $_POST['date_from'] ?? '' ) );
+		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to']   ?? '' ) );
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = ''; }
 
 		$range = RSA_Analytics::period_range( $period, $date_from, $date_to );
-		$et    = RSA_DB::events_table();
-		$st    = RSA_DB::sessions_table();
-		$ct    = RSA_DB::clicks_table();
 		$bt    = (int) get_option( 'rsa_bot_score_threshold', 5 );
 
 		switch ( $data_type ) {
 			case 'sessions':
-				$rows = $wpdb->get_results( $wpdb->prepare(
-					"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at
-					 FROM `{$st}` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+					"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
 					$range['start'], $range['end']
 				), ARRAY_A );
 				$headers = [ 'session_id', 'entry_page', 'exit_page', 'pages_viewed', 'total_time', 'browser', 'os', 'language', 'timezone', 'created_at' ];
 				break;
 			case 'clicks':
-				$rows = $wpdb->get_results( $wpdb->prepare(
-					"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at
-					 FROM `{$ct}` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+					"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
 					$range['start'], $range['end']
 				), ARRAY_A );
 				$headers = [ 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
 				break;
 			case 'referrers':
-				$rows = $wpdb->get_results( $wpdb->prepare(
-					"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions
-					 FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d
-					 GROUP BY referrer_domain ORDER BY pageviews DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+					"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
 					$range['start'], $range['end'], $bt
 				), ARRAY_A );
 				$headers = [ 'referrer_domain', 'pageviews', 'sessions' ];
 				break;
 			default: // pageviews
-				$rows = $wpdb->get_results( $wpdb->prepare(
-					"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at
-					 FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+					"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
 					$range['start'], $range['end'], $bt
 				), ARRAY_A );
 				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
@@ -324,13 +349,13 @@ class RSA_Admin {
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		header( 'Pragma: no-cache' );
 
-		$out = fopen( 'php://output', 'w' );
-		fwrite( $out, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel
+		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		fwrite( $out, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- UTF-8 BOM for Excel; php://output stream cannot use WP_Filesystem
 		fputcsv( $out, $headers );
 		foreach ( $rows as $row ) {
 			fputcsv( $out, array_values( $row ) );
 		}
-		fclose( $out );
+		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://output stream cannot use WP_Filesystem
 		exit;
 	}
 
@@ -362,7 +387,7 @@ class RSA_Admin {
 
 		foreach ( $fields as $key => $sanitizer ) {
 			if ( isset( $_POST[ $key ] ) ) {
-				$value = $sanitizer( $_POST[ $key ] );
+				$value = $sanitizer( wp_unslash( $_POST[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- $sanitizer is a sanitization callback from the $fields map
 				// Clamp numeric values
 				if ( $key === 'rsa_retention_days' ) {
 					$value = max( 1, min( 730, $value ) );
@@ -378,9 +403,11 @@ class RSA_Admin {
 		}
 
 		// Custom post types array — sanitize each slug
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- array is unslashed and each element sanitized via array_map below
 		$raw_cpts = isset( $_POST['rsa_enabled_post_types'] ) && is_array( $_POST['rsa_enabled_post_types'] )
-			? $_POST['rsa_enabled_post_types']
+			? array_map( 'wp_unslash', $_POST['rsa_enabled_post_types'] )
 			: [];
+		// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$safe_cpts = array_values( array_filter( array_map( 'sanitize_key', $raw_cpts ) ) );
 		update_option( 'rsa_enabled_post_types', $safe_cpts );
 
@@ -389,9 +416,26 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Profile: Web App download button near Application Passwords
+	// Profile: Rich Statistics App section (before Application Passwords)
 	// ----------------------------------------------------------------
 
+	/**
+	 * Output a full profile section. Hooks show_user_profile / edit_user_profile
+	 * fire outside any table context, so we provide the <h2> + table wrapper.
+	 */
+	public static function profile_webapp_section( WP_User $profile_user ): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<h2><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></h2>
+		<table class="form-table" role="presentation"><tbody>
+		<?php self::profile_webapp_button( $profile_user ); ?>
+		</tbody></table>
+		<?php
+	}
+
+	/** @internal Called from profile_webapp_section(); also used standalone in unit tests. */
 	public static function profile_webapp_button( WP_User $profile_user ): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -413,29 +457,47 @@ class RSA_Admin {
 			return;
 		}
 
-		$download_url    = wp_nonce_url(
+		$download_url = wp_nonce_url(
 			admin_url( 'admin-ajax.php?action=rsa_download_pwa' ),
 			'rsa_download_pwa'
-		);
-		$site_config_url = wp_nonce_url(
-			admin_url( 'admin-ajax.php?action=rsa_site_config' ),
-			'rsa_site_config'
 		);
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
 			<td>
-				<a href="<?php echo esc_url( $site_config_url ); ?>"
-				   class="button button-primary">
-					<?php esc_html_e( 'Add This Site to App', 'rich-statistics' ); ?>
-				</a>
+				<button type="button" id="rsa-generate-otp-btn" class="button button-primary">
+					<?php esc_html_e( 'Generate App Code', 'rich-statistics' ); ?>
+				</button>
 				<a href="<?php echo esc_url( $download_url ); ?>"
 				   class="button"
 				   style="margin-left:8px;">
 					<?php esc_html_e( 'Download App', 'rich-statistics' ); ?>
 				</a>
-				<p class="description">
-					<?php esc_html_e( 'First time? Use "Download App" to install the app once on any device. Then return here and click "Add This Site to App" — open the app, import the downloaded file, and enter your Application Password below to connect.', 'rich-statistics' ); ?>
+
+				<div id="rsa-otp-display" style="display:none;margin-top:14px;" aria-live="polite" aria-atomic="true">
+					<p style="margin:0 0 4px;display:flex;align-items:center;gap:10px;">
+						<strong><?php esc_html_e( 'App Code:', 'rich-statistics' ); ?></strong>
+						<span id="rsa-otp-code"
+						      style="font-family:monospace;font-size:1.6em;letter-spacing:.12em;"
+						      aria-label="<?php esc_attr_e( 'App code', 'rich-statistics' ); ?>"
+						></span>
+						<button type="button" id="rsa-otp-copy" class="button button-small">
+							<?php esc_html_e( 'Copy', 'rich-statistics' ); ?>
+						</button>
+					</p>
+					<p class="description" style="margin:4px 0;">
+						<?php
+						printf(
+							/* translators: %s is replaced by the countdown timer element */
+							esc_html__( 'Expires in %s — enter this code in the app when adding this site.', 'rich-statistics' ),
+							'<span id="rsa-otp-timer" aria-live="off">15:00</span>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static trusted HTML
+						);
+						?>
+					</p>
+				</div>
+
+				<p class="description" style="margin-top:10px;">
+					<?php esc_html_e( 'First time? Use “Download App” to install the app on any device. Then click “Generate App Code”, tap “Add Site” in the app, enter this site’s URL and the code, then create an Application Password in the section below to complete the connection.', 'rich-statistics' ); ?>
 				</p>
 			</td>
 		</tr>
@@ -455,12 +517,14 @@ class RSA_Admin {
 			'lastmonth' => __( 'Last month',    'rich-statistics' ),
 		];
 
-		$page      = sanitize_text_field( $_GET['page'] ?? 'rich-statistics' );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- period_selector only reads GET params for display; no state changes
+		$page      = sanitize_text_field( wp_unslash( $_GET['page'] ?? 'rich-statistics' ) );
 		$url       = admin_url( 'admin.php' );
 		$is_custom = ( $current === 'custom' );
 		// Always populate dates so the inputs are pre-filled regardless of mode
-		$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
-		$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+		$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+		$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
 

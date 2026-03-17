@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://richstatistics.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
@@ -11,7 +11,6 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       rich-statistics
- * Domain Path:       /languages
  * Network:           true
  */
 
@@ -25,7 +24,7 @@ if ( function_exists( 'rs_fs' ) ) {
 	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
-	define( 'RSA_VERSION',     '1.1.0' );
+	define( 'RSA_VERSION',     '1.2.0' );
 	define( 'RSA_FILE',        __FILE__ );
 	define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
 	define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );
@@ -162,9 +161,6 @@ function rsa_init() {
 		add_action( 'admin_notices', 'rsa_version_notice' );
 		return;
 	}
-
-	// Load text domain
-	load_plugin_textdomain( 'rich-statistics', false, dirname( plugin_basename( RSA_FILE ) ) . '/languages' );
 
 	// Boot core
 	RSA_Tracker::init();

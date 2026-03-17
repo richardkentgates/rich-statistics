@@ -11,6 +11,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.0] — 2026-03-17
+
+### Added
+- **PWA OTP pairing flow** — a "Generate App Code" button on the user profile page issues a server-side
+  HMAC-signed 6-digit code (valid 15 minutes). A new REST endpoint (`rsa/v1/verify-otp`) validates the
+  code and returns the authenticated username, removing the need to enter credentials manually in the app.
+- **Two-step app connection** — the webapp now guides users through: (1) enter site URL + App Code to
+  verify the site, then (2) enter the Application Password to complete the connection. Field pre-fill is
+  still supported for the personalized download path.
+- **GitHub Pages app hosting** — the PWA dashboard is now hosted at
+  `statistics.richardkentgates.com/app/` for direct browser installation without visiting the
+  WordPress admin. Chart.js is loaded from CDN in this hosted version.
+- **"Get the App" landing page section** — the plugin website now includes a dedicated section with
+  install instructions, "Open Web App" and "Download App ZIP" CTAs, and nav/footer links.
+
+### Fixed
+- Profile page section ordering: the **Rich Statistics App** section (with "Generate App Code") now
+  appears **before** the Application Passwords section in WordPress user profiles, so the instructions
+  read in the correct order.
+
+---
+
 ## [1.1.0] — 2026-03-16
 
 ### Added
@@ -72,7 +94,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/richardkentgates/rich-statistics/releases/tag/v1.0.0

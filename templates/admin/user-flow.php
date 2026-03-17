@@ -1,32 +1,33 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
-
-$period  = sanitize_text_field( $_GET['period'] ?? '30d' );
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
+$period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
-	$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
-	$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
 // Journey Sankey filters
-$f_source   = sanitize_text_field( $_GET['entry_source'] ?? '' );
-$f_focus    = sanitize_text_field( $_GET['focus_page']   ?? '' );
-$f_min_s    = max( 1, (int) ( $_GET['min_sessions'] ?? 1 ) );
-$f_steps    = min( 5, max( 2, (int) ( $_GET['steps'] ?? 4 ) ) );
+$f_source   = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
+$f_focus    = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
+$f_min_s    = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
+$f_steps    = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
 // Transitions table filters
-$f_from    = sanitize_text_field( $_GET['from_page'] ?? '' );
-$f_to      = sanitize_text_field( $_GET['to_page']   ?? '' );
-$f_min     = max( 1, (int) ( $_GET['min_count'] ?? 1 ) );
+$f_from    = sanitize_text_field( wp_unslash( $_GET['from_page'] ?? '' ) );
+$f_to      = sanitize_text_field( wp_unslash( $_GET['to_page']   ?? '' ) );
+$f_min     = max( 1, absint( $_GET['min_count'] ?? 1 ) );
 
-$view_type = in_array( $_GET['view_type'] ?? 'chart', [ 'chart', 'table' ], true ) ? ( $_GET['view_type'] ?? 'chart' ) : 'chart';
-$sort      = in_array( $_GET['sort'] ?? 'count', [ 'count', 'from_page', 'to_page' ], true ) ? ( $_GET['sort'] ?? 'count' ) : 'count';
-$sort_dir  = ( ( $_GET['sort_dir'] ?? 'desc' ) === 'asc' ) ? 'asc' : 'desc';
+$view_type = in_array( $_GET['view_type'] ?? 'chart', [ 'chart', 'table' ], true ) ? sanitize_key( $_GET['view_type'] ?? 'chart' ) : 'chart';
+$sort      = in_array( $_GET['sort'] ?? 'count', [ 'count', 'from_page', 'to_page' ], true ) ? sanitize_key( $_GET['sort'] ?? 'count' ) : 'count';
+$sort_dir  = ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) === 'asc' ) ? 'asc' : 'desc';
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $path_flow = RSA_Analytics::get_path_flow( $period, [
 	'date_from'    => $date_from,
@@ -113,7 +114,7 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 			<?php esc_html_e( 'Steps', 'rich-statistics' ); ?>
 			<select name="steps">
 				<?php foreach ( [ 2, 3, 4, 5 ] as $s ) : ?>
-				<option value="<?php echo $s; ?>" <?php selected( $f_steps, $s ); ?>><?php echo $s; ?></option>
+				<option value="<?php echo absint( $s ); ?>" <?php selected( $f_steps, $s ); ?>><?php echo absint( $s ); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</label>

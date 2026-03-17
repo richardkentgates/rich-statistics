@@ -114,7 +114,7 @@
 				       inputmode="numeric"
 				       autocomplete="one-time-code"
 				       maxlength="7">
-				<span class="rsa-field-hint">6-digit code · expires in 15 min</span>
+				<span class="rsa-field-hint">6-digit code · expires in 15 min</span>
 			</div>
 			<div class="rsa-field-row">
 				<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-add-verify-btn">Verify Code</button>
@@ -126,7 +126,7 @@
 		<!-- Step 2: Application Password -->
 		<div id="rsa-add-step-2" hidden>
 			<p class="rsa-field-hint" style="text-align:center;margin-bottom:16px;">
-				✓ Site verified! Enter your Application Password to connect.
+				✓ Site verified! Enter your Application Password to connect.
 			</p>
 			<div class="rsa-field">
 				<label for="rsa-add-site-label">Site</label>
@@ -154,10 +154,9 @@
 	</div>
 </div>
 
-<!-- Chart.js — served from plugin directory (same file as admin) -->
-<script src="../vendor/chart.min.js"></script>
-<!-- Site-specific pre-configuration (empty when served from plugin URL;
-     replaced with your site URL + username in personalized downloads) -->
+<!-- Chart.js from CDN (bundled in plugin ZIP; CDN used for this hosted version) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<!-- Empty config (no pre-fill when hosted standalone) -->
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script>

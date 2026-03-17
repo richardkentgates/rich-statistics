@@ -112,10 +112,7 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 			<tbody>
 			<?php foreach ( $sites as $site ) :
 				switch_to_blog( $site->blog_id );
-				$prefix     = $wpdb->prefix;
-				$et         = $prefix . 'rsa_events';
-				$st         = $prefix . 'rsa_sessions';
-				$has_table  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $et ) );
+				$has_table  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . 'rsa_events' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog table check
 				$retention  = (int) get_option( 'rsa_retention_days', $default_retention );
 				$bt         = (int) get_option( 'rsa_bot_score_threshold', 5 );
 				$tracker_on = ! (bool) get_option( 'rsa_network_disable_tracker', 0 );
@@ -123,11 +120,11 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 				$pageviews = 0;
 				$sessions  = 0;
 				if ( $has_table ) {
-					$pageviews = (int) $wpdb->get_var(
-						$wpdb->prepare( "SELECT COUNT(*) FROM `{$et}` WHERE created_at BETWEEN %s AND %s AND bot_score < %d", $start, $now, $bt ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$pageviews = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog stats
+						$wpdb->prepare( "SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d", $start, $now, $bt )
 					);
-					$sessions = (int) $wpdb->get_var(
-						$wpdb->prepare( "SELECT COUNT(*) FROM `{$st}` WHERE created_at BETWEEN %s AND %s", $start, $now ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$sessions = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog stats
+						$wpdb->prepare( "SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s", $start, $now )
 					);
 				}
 

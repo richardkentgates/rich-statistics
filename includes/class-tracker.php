@@ -114,10 +114,10 @@ class RSA_Tracker {
 		// NO IP address (REMOTE_ADDR) is ever passed or stored.
 		$bot_score = RSA_Bot_Detection::score(
 			$payload['bot_signals'],
-			$_SERVER['HTTP_USER_AGENT'] ?? '',
+			sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ),
 			[
-				'HTTP_ACCEPT_LANGUAGE' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
-				'HTTP_ACCEPT'          => $_SERVER['HTTP_ACCEPT'] ?? '',
+				'HTTP_ACCEPT_LANGUAGE' => sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '' ) ),
+				'HTTP_ACCEPT'          => sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ?? '' ) ),
 			]
 		);
 
@@ -127,7 +127,7 @@ class RSA_Tracker {
 		}
 
 		// Parse UA server-side
-		$ua_data = RSA_Bot_Detection::parse_ua( $_SERVER['HTTP_USER_AGENT'] ?? '' );
+		$ua_data = RSA_Bot_Detection::parse_ua( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) );
 
 		// Rate-limit check
 		if ( self::is_rate_limited( $payload['session_id'] ) ) {
@@ -149,23 +149,22 @@ class RSA_Tracker {
 		global $wpdb;
 
 		// Upsert session
-		$sessions_table = RSA_DB::sessions_table();
-		$existing       = $wpdb->get_row(
+		$existing = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker; session must be looked up fresh on each request
 			$wpdb->prepare(
-				"SELECT id, pages_viewed FROM `{$sessions_table}` WHERE session_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id, pages_viewed FROM `{$wpdb->prefix}rsa_sessions` WHERE session_id = %s",
 				$payload['session_id']
 			)
 		);
 
 		if ( $existing ) {
-			$wpdb->update(
-				$sessions_table,
+			$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker; session data must be updated immediately
+				$wpdb->prefix . 'rsa_sessions',
 				[
 					'pages_viewed' => (int) $existing->pages_viewed + 1,
 					'exit_page'    => $page,
 					'total_time'   => $payload['time_on_page'] > 0
-						? (int) $wpdb->get_var( $wpdb->prepare(
-							"SELECT total_time FROM `{$sessions_table}` WHERE session_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					? (int) $wpdb->get_var( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker
+						"SELECT total_time FROM `{$wpdb->prefix}rsa_sessions` WHERE session_id = %s",
 							$payload['session_id']
 						) ) + (int) $payload['time_on_page']
 						: null,
@@ -175,8 +174,8 @@ class RSA_Tracker {
 				[ '%s' ]
 			);
 		} else {
-			$wpdb->insert(
-				$sessions_table,
+			$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- real-time tracker session creation
+				$wpdb->prefix . 'rsa_sessions',
 				[
 					'session_id'  => $payload['session_id'],
 					'pages_viewed'=> 1,
@@ -192,7 +191,7 @@ class RSA_Tracker {
 		}
 
 		// Insert event row
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- real-time tracker event creation
 			RSA_DB::events_table(),
 			[
 				'session_id'      => $payload['session_id'],
@@ -221,7 +220,7 @@ class RSA_Tracker {
 
 	private static function parse_payload(): array|WP_Error {
 		// Only accept POST
-		if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
+		if ( ( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) !== 'POST' ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			return new WP_Error( 'method', 'POST required' );
 		}
 
@@ -230,7 +229,7 @@ class RSA_Tracker {
 
 		// Fall back to $_POST
 		if ( ! is_array( $data ) ) {
-			$data = $_POST;
+			$data = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified via check_ajax_referer() in handle_ingest() before parse_payload() is called
 		}
 
 		$session_id = sanitize_text_field( $data['session_id'] ?? '' );
