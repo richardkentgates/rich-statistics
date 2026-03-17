@@ -52,6 +52,7 @@ class RSA_Click_Tracking {
 			[
 				'session_id'    => $session_id,
 				'page'          => $page,
+				'created_at'    => current_time( 'mysql' ),
 				'element_tag'   => $element_tag   ?: null,
 				'element_id'    => $element_id    ?: null,
 				'element_class' => $element_class ?: null,

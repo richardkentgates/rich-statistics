@@ -19,14 +19,15 @@ class RSA_Analytics {
 	 * for the given period string (7d, 30d, 90d, thismonth, lastmonth).
 	 */
 	public static function period_range( string $period, string $date_from = '', string $date_to = '' ): array {
-		$now = time(); // UTC — matches DB CURRENT_TIMESTAMP
+		// Use WordPress local time so date bucketing matches the site's configured timezone.
+		$now = current_time( 'timestamp' );
 		if ( $period === 'custom' && $date_from && $date_to ) {
 			$start = strtotime( $date_from . ' 00:00:00' );
 			$end   = strtotime( $date_to   . ' 23:59:59' );
 			if ( $start > $end ) { [ $start, $end ] = [ $end, $start ]; }
 			return [
-				'start' => gmdate( 'Y-m-d H:i:s', $start ),
-				'end'   => gmdate( 'Y-m-d H:i:s', $end ),
+				'start' => date( 'Y-m-d H:i:s', $start ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				'end'   => date( 'Y-m-d H:i:s', $end ),   // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 			];
 		}
 		switch ( $period ) {
@@ -40,18 +41,18 @@ class RSA_Analytics {
 				$start = strtotime( '-90 days', $now );
 				break;
 			case 'thismonth':
-				$start = strtotime( gmdate( 'Y-m-01', $now ) );
+				$start = strtotime( date( 'Y-m-01', $now ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 				break;
 			case 'lastmonth':
-				$start = strtotime( gmdate( 'Y-m-01', strtotime( '-1 month', $now ) ) );
-				$now   = strtotime( gmdate( 'Y-m-t', strtotime( '-1 month', $now ) ) . ' 23:59:59' );
+				$start = strtotime( date( 'Y-m-01', strtotime( '-1 month', $now ) ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$now   = strtotime( date( 'Y-m-t', strtotime( '-1 month', $now ) ) . ' 23:59:59' ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 				break;
 			default: // Default 30d
 				$start = strtotime( '-30 days', $now );
 		}
 		return [
-			'start' => gmdate( 'Y-m-d H:i:s', $start ),
-			'end'   => gmdate( 'Y-m-d H:i:s', $now ),
+			'start' => date( 'Y-m-d H:i:s', $start ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+			'end'   => date( 'Y-m-d H:i:s', $now ),   // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		];
 	}
 

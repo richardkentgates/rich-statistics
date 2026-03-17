@@ -181,12 +181,13 @@ class RSA_Tracker {
 					'session_id'  => $payload['session_id'],
 					'pages_viewed'=> 1,
 					'entry_page'  => $page,
+					'created_at'  => current_time( 'mysql' ),
 					'os'          => $ua_data['os'],
 					'browser'     => $ua_data['browser'],
 					'language'    => $payload['language'],
 					'timezone'    => $payload['timezone'],
 				],
-				[ '%s', '%d', '%s', '%s', '%s', '%s', '%s' ]
+				[ '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' ]
 			);
 		}
 
@@ -197,6 +198,7 @@ class RSA_Tracker {
 				'session_id'      => $payload['session_id'],
 				'page'            => $page,
 				'referrer_domain' => $referrer_domain,
+				'created_at'      => current_time( 'mysql' ),
 				'os'              => $ua_data['os'],
 				'browser'         => $ua_data['browser'],
 				'browser_version' => $ua_data['browser_version'],
