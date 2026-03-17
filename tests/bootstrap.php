@@ -20,7 +20,7 @@ require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 // Plugin constants needed by the classes under test
 define( 'ABSPATH',       sys_get_temp_dir() . '/' );
-define( 'RSA_VERSION',   '1.0.0' );
+define( 'RSA_VERSION',   '1.1.0' );
 define( 'RSA_DIR',       dirname( __DIR__ ) . '/' );
 define( 'RSA_URL',       'http://example.com/wp-content/plugins/rich-statistics/' );
 define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );

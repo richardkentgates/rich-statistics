@@ -131,4 +131,50 @@ class AnalyticsTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'session_depth',  $result );
 		$this->assertArrayHasKey( 'entry_pages',    $result );
 	}
+
+	// ----------------------------------------------------------------
+	// get_click_map() — structure and href_value field
+	// ----------------------------------------------------------------
+
+	public function test_get_click_map_returns_array(): void {
+		$result = RSA_Analytics::get_click_map( '30d' );
+		$this->assertIsArray( $result );
+	}
+
+	public function test_get_click_map_rows_have_expected_keys(): void {
+		global $wpdb;
+
+		// Insert a test click row with href_value populated
+		$wpdb->insert(
+			$wpdb->prefix . 'rsa_clicks',
+			[
+				'session_id'   => 'test-session-clickmap',
+				'page'         => '/test-page/',
+				'href_protocol' => 'mailto',
+				'element_tag'  => 'A',
+				'element_text' => 'Contact',
+				'x_pct'        => 50,
+				'y_pct'        => 25,
+				'href_value'   => 'hello@example.com',
+				'created_at'   => current_time( 'mysql' ),
+			]
+		);
+
+		$result = RSA_Analytics::get_click_map( '30d' );
+
+		// Filter to our test row
+		$rows = array_filter( $result, fn( $r ) => $r['href_value'] === 'hello@example.com' );
+		$this->assertNotEmpty( $rows, 'Expected to find row with href_value=hello@example.com' );
+
+		$row = reset( $rows );
+		$this->assertArrayHasKey( 'tag',        $row );
+		$this->assertArrayHasKey( 'protocol',   $row );
+		$this->assertArrayHasKey( 'text',       $row );
+		$this->assertArrayHasKey( 'clicks',     $row );
+		$this->assertArrayHasKey( 'href_value', $row );
+		$this->assertSame( 'hello@example.com', $row['href_value'] );
+
+		// Cleanup
+		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'test-session-clickmap' ] );
+	}
 }

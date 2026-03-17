@@ -52,9 +52,9 @@ class BotDetectionTest extends TestCase {
 		       | RSA_Bot_Detection::CS_HIDDEN_ON_ARRIVAL
 		       | RSA_Bot_Detection::CS_NO_HUMAN_EVENT
 		       | RSA_Bot_Detection::CS_CHROME_MISSING_OBJ;
-		// 4+1+2+3+1+2+2+2+3+3 = 23
+		// 4+1+2+3+1+2+2+2+1+3 = 21
 		$score = RSA_Bot_Detection::score_client_bitmask( $all );
-		$this->assertSame( 23, $score );
+		$this->assertSame( 21, $score );
 	}
 
 	// ----------------------------------------------------------------

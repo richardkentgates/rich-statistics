@@ -85,4 +85,23 @@ class DbTest extends WP_UnitTestCase {
 		$this->expectNotToPerformAssertions();
 		RSA_DB::prune_old_data();
 	}
+
+	// ----------------------------------------------------------------
+	// Schema version
+	// ----------------------------------------------------------------
+
+	public function test_schema_version_is_seven(): void {
+		$this->assertSame( 7, RSA_DB::SCHEMA_VERSION );
+	}
+
+	// ----------------------------------------------------------------
+	// href_value column exists in clicks table
+	// ----------------------------------------------------------------
+
+	public function test_clicks_table_has_href_value_column(): void {
+		global $wpdb;
+		$table   = $wpdb->prefix . 'rsa_clicks';
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$this->assertContains( 'href_value', $columns, "Expected href_value column in {$table}" );
+	}
 }
