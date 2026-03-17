@@ -14,11 +14,12 @@ use PHPUnit\Framework\TestCase;
 class ClickTrackingTest extends TestCase {
 
 	// ----------------------------------------------------------------
-	// RSA_DB::SCHEMA_VERSION — must equal 7 after href_value migration
+	// RSA_DB::SCHEMA_VERSION — bump this comment when the version changes
+	// v8: utm_source, utm_medium, utm_campaign columns on rsa_events
 	// ----------------------------------------------------------------
 
-	public function test_schema_version_constant_is_seven(): void {
-		$this->assertSame( 7, RSA_DB::SCHEMA_VERSION );
+	public function test_schema_version_constant(): void {
+		$this->assertSame( 8, RSA_DB::SCHEMA_VERSION );
 	}
 
 	public function test_option_key_constant(): void {

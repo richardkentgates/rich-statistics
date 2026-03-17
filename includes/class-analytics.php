@@ -270,6 +270,66 @@ class RSA_Analytics {
 	}
 
 	// ----------------------------------------------------------------
+	// UTM Campaigns
+	// ----------------------------------------------------------------
+
+	public static function get_campaigns( string $period = '30d', int $limit = 100, array $filters = [] ): array {
+		global $wpdb;
+		$range  = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$bt     = self::bot_threshold();
+		$medium = $filters['medium'] ?? '';
+
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT utm_source AS source, utm_medium AS medium, utm_campaign AS campaign,
+				        COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions
+				 FROM `{$wpdb->prefix}rsa_events`
+				 WHERE created_at BETWEEN %s AND %s
+				   AND bot_score < %d
+				   AND utm_campaign IS NOT NULL AND utm_campaign != ''
+				   AND (%s = '' OR utm_medium = %s)
+				 GROUP BY utm_source, utm_medium, utm_campaign
+				 ORDER BY sessions DESC, pageviews DESC
+				 LIMIT %d",
+				$range['start'], $range['end'], $bt,
+				$medium, $medium,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		if ( ! $rows ) {
+			return [];
+		}
+
+		return array_map( fn( $r ) => [
+			'source'    => $r['source']   ?? '',
+			'medium'    => $r['medium']   ?? '',
+			'campaign'  => $r['campaign'] ?? '',
+			'pageviews' => (int) $r['pageviews'],
+			'sessions'  => (int) $r['sessions'],
+		], $rows );
+	}
+
+	/** Distinct utm_medium values for the filter dropdown. */
+	public static function get_utm_mediums( string $period = '30d' ): array {
+		global $wpdb;
+		$range = self::period_range( $period );
+		$bt    = self::bot_threshold();
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT DISTINCT utm_medium FROM `{$wpdb->prefix}rsa_events`
+				 WHERE created_at BETWEEN %s AND %s AND bot_score < %d
+				   AND utm_medium IS NOT NULL AND utm_medium != ''
+				 ORDER BY utm_medium LIMIT 50",
+				$range['start'], $range['end'], $bt
+			),
+			ARRAY_A
+		);
+		return $rows ? array_column( $rows, 'utm_medium' ) : [];
+	}
+
+	// ----------------------------------------------------------------
 	// Behavior: time-on-page histogram + session depth
 	// ----------------------------------------------------------------
 
@@ -360,17 +420,17 @@ class RSA_Analytics {
 				   AND (%s = '' OR from_page = %s)
 				   AND (%s = '' OR to_page = %s)
 				 GROUP BY from_page, to_page
-				 HAVING `count` >= %d
+				 HAVING COUNT(*) >= %d
 				 ORDER BY
 				   CASE WHEN %s = 'asc' THEN
 				     CASE WHEN %s = 'from_page' THEN from_page
 				          WHEN %s = 'to_page' THEN to_page
-				          ELSE LPAD(CAST(`count` AS CHAR), 20, '0') END
+				          ELSE LPAD(CAST(COUNT(*) AS CHAR), 20, '0') END
 				   END ASC,
 				   CASE WHEN %s = 'desc' THEN
 				     CASE WHEN %s = 'from_page' THEN from_page
 				          WHEN %s = 'to_page' THEN to_page
-				          ELSE LPAD(CAST(`count` AS CHAR), 20, '0') END
+				          ELSE LPAD(CAST(COUNT(*) AS CHAR), 20, '0') END
 				   END DESC
 				 LIMIT %d",
 				$range['start'], $range['end'], $bt,

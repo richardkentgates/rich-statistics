@@ -76,12 +76,12 @@ composer phpcbf
 
 ## Submitting a Pull Request
 
-1. Create a feature branch FROM `main`: `git checkout -b feature/your-feature-name`
+1. Create a feature branch FROM `develop`: `git checkout -b feature/your-feature-name`
 2. Make your changes, add/update tests for new behaviour
 3. Ensure `composer test` passes with zero failures
 4. Ensure `composer phpcs` reports no errors
 5. Update `CHANGELOG.md` under **[Unreleased]** describing your change
-6. Open a PR against `main` — describe the motivation, what changed, and how to test it
+6. Open a PR against `develop` — describe the motivation, what changed, and how to test it
 
 ### What we review
 

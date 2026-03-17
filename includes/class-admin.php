@@ -96,8 +96,9 @@ class RSA_Admin {
 			'overview'  => [ 'title' => __( 'Overview',  'rich-statistics' ), 'label' => __( 'Overview',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'manage_options' ],
 			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'manage_options' ],
-			'referrers' => [ 'title' => __( 'Referrers', 'rich-statistics' ), 'label' => __( 'Referrers', 'rich-statistics' ), 'cap' => 'manage_options' ],
-			'behavior'  => [ 'title' => __( 'Behavior',  'rich-statistics' ), 'label' => __( 'Behavior',  'rich-statistics' ), 'cap' => 'manage_options' ],
+			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'manage_options' ],
+			'campaigns' => [ 'title' => __( 'Campaigns',  'rich-statistics' ), 'label' => __( 'Campaigns',  'rich-statistics' ), 'cap' => 'manage_options' ],
+			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'manage_options' ],
 			'user-flow' => [ 'title' => __( 'User Flow', 'rich-statistics' ), 'label' => __( 'User Flow', 'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
 		$upgrade_label = function_exists( 'rs_fs' )
@@ -196,6 +197,16 @@ class RSA_Admin {
 			$ref_filters = [ 'page' => $page_filters['page'] ];
 			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
 		}
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-campaigns' ) ) {
+			$medium = sanitize_text_field( wp_unslash( $_GET['utm_medium'] ?? '' ) );
+			$cam_filters = [ 'medium' => $medium, 'date_from' => $date_from, 'date_to' => $date_to ];
+			return [
+				'view'    => 'campaigns',
+				'data'    => RSA_Analytics::get_campaigns( $period, 100, $cam_filters ),
+				'mediums' => RSA_Analytics::get_utm_mediums( $period ),
+				'period'  => $period,
+			];
+		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-behavior' ) ) {
 			$beh_filters = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
 			$beh_data    = RSA_Analytics::get_behavior( $period, $beh_filters );
@@ -248,6 +259,7 @@ class RSA_Admin {
 	public static function page_pages():          void { self::render( 'pages' ); }
 	public static function page_audience():       void { self::render( 'audience' ); }
 	public static function page_referrers():      void { self::render( 'referrers' ); }
+	public static function page_campaigns():      void { self::render( 'campaigns' ); }
 	public static function page_behavior():       void { self::render( 'behavior' ); }
 	public static function page_user_flow():      void { self::render( 'user-flow' ); }
 	public static function page_click_map():      void { self::render( 'click-map' ); }
@@ -654,6 +666,14 @@ class RSA_Admin {
 					'<p>' . esc_html__( 'Only the referring domain is stored — never the full URL. This prevents leaking of personal data that might appear in referrer URLs (e.g. search queries, email campaign tokens).', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Direct traffic, bookmark visits, and traffic from HTTPS sites to your HTTP site appear as "(direct)" because browsers do not send a Referer header in these cases.', 'rich-statistics' ) . '</p>',
 			],
+			'rich-statistics_page_rich-statistics-campaigns' => [
+				'id'      => 'rsa-campaigns-help',
+				'title'   => __( 'Campaigns', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'UTM Campaign Tracking', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'Campaigns are tracked automatically when visitors land on your site with UTM parameters in the URL (utm_source, utm_medium, utm_campaign). The values are captured from the landing-page URL and attributed to every pageview in that browser session.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Use the Medium filter to isolate traffic from a specific channel (e.g. email, cpc, social).', 'rich-statistics' ) . '</p>',
+			],
 			'rich-statistics_page_rich-statistics-behavior' => [
 				'id'      => 'rsa-behavior-help',
 				'title'   => __( 'Behavior', 'rich-statistics' ),
@@ -702,7 +722,7 @@ class RSA_Admin {
 				'content' =>
 					'<h2>' . esc_html__( 'Data & Privacy Settings', 'rich-statistics' ) . '</h2>' .
 					'<p><strong>' . esc_html__( 'Retention days', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Events older than this number of days are deleted nightly. Range: 1–730. Default: 90.', 'rich-statistics' ) . '</p>' .
-					'<p><strong>' . esc_html__( 'Bot threshold', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Any request scoring at or above this value is silently discarded as a bot. Range: 1–10. Default: 3. Lower = more aggressive filtering.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Bot threshold', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Any request scoring at or above this value is silently discarded as a bot. Range: 1–10. Default: 5. Lower = more aggressive filtering.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Remove data on uninstall', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'When enabled, all plugin data and options are permanently deleted when you delete the plugin. Cannot be undone.', 'rich-statistics' ) . '</p>',
 			],
 		];

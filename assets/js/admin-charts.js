@@ -423,7 +423,7 @@
 		} );
 
 		// ---- Node rectangles + labels ----------------------------------
-		function drawNode( page, node, nx, anchor, color ) {
+		function drawNode( page, node, nx, anchor, color, colTotal ) {
 			var rect = document.createElementNS( svgNS, 'rect' );
 			rect.setAttribute( 'x',      nx );
 			rect.setAttribute( 'y',      node.y );
@@ -433,34 +433,61 @@
 			rect.setAttribute( 'rx',     '2' );
 			svg.appendChild( rect );
 
-			var MAX_L = 28;
+			var MAX_L = 24;
 			var lbl   = page.length > MAX_L ? '\u2026' + page.slice( -( MAX_L - 1 ) ) : page;
 			var tx    = anchor === 'end' ? nx - 6 : nx + nodeW + 6;
-			var text  = document.createElementNS( svgNS, 'text' );
-			text.setAttribute( 'x',           tx );
-			text.setAttribute( 'y',           node.y + node.h / 2 + 4 );
-			text.setAttribute( 'text-anchor', anchor );
-			text.setAttribute( 'font-size',   '11' );
-			text.setAttribute( 'font-family', font );
-			text.setAttribute( 'fill',        page === '(exit)' ? '#a0a5ae' : '#646970' );
-			text.textContent = lbl;
-			svg.appendChild( text );
+			var midY  = node.y + node.h / 2;
+			// Show page name and count+% on two lines when node is tall enough, otherwise one line
+			var isExit  = page === '(exit)';
+			var fillCol = isExit ? '#a0a5ae' : '#646970';
+			var pct     = colTotal > 0 ? Math.round( node.sessions / colTotal * 100 ) : 0;
+			var statLbl = node.sessions.toLocaleString() + ' (' + pct + '%)';
+
+			if ( node.h >= 26 ) {
+				// Two-line: page path on first line, count+% on second
+				var t1 = document.createElementNS( svgNS, 'text' );
+				t1.setAttribute( 'x',           tx );
+				t1.setAttribute( 'y',           midY );
+				t1.setAttribute( 'text-anchor', anchor );
+				t1.setAttribute( 'font-size',   '11' );
+				t1.setAttribute( 'font-family', font );
+				t1.setAttribute( 'fill',        fillCol );
+				t1.textContent = lbl;
+				svg.appendChild( t1 );
+
+				var t2 = document.createElementNS( svgNS, 'text' );
+				t2.setAttribute( 'x',           tx );
+				t2.setAttribute( 'y',           midY + 13 );
+				t2.setAttribute( 'text-anchor', anchor );
+				t2.setAttribute( 'font-size',   '10' );
+				t2.setAttribute( 'font-family', font );
+				t2.setAttribute( 'fill',        isExit ? '#a0a5ae' : '#8c949e' );
+				t2.textContent = statLbl;
+				svg.appendChild( t2 );
+			} else {
+				// Single line: page path + count inline
+				var t = document.createElementNS( svgNS, 'text' );
+				t.setAttribute( 'x',           tx );
+				t.setAttribute( 'y',           midY + 4 );
+				t.setAttribute( 'text-anchor', anchor );
+				t.setAttribute( 'font-size',   '11' );
+				t.setAttribute( 'font-family', font );
+				t.setAttribute( 'fill',        fillCol );
+				t.textContent = lbl + ' \u2014 ' + statLbl;
+				svg.appendChild( t );
+			}
 		}
 
 		stepNums.forEach( function ( sn, ci ) {
-			var nx     = colX( ci );
-			var anchor = ci === numCols - 1 ? 'end' : 'start';
-			// All middle columns use start, last column uses end only when it's alone on the right edge
-			// Actually: first col labels go to right of node, last col labels go to right too (unless only col)
-			// We always put labels to the right, except the leftmost might be tighter.
-			// Simplest: labels always to the right of node (start), fits our standard layout.
+			var nx        = colX( ci );
+			var colTotal  = ( steps[ sn ] || [] ).reduce( function ( s, pg ) { return s + pg.sessions; }, 0 );
 			anchor = 'start';
 			( steps[ sn ] || [] ).forEach( function ( pg, pidx ) {
 				var node  = colNodes[ sn ][ pg.page ];
 				if ( ! node ) { return; }
 				node.x = nx;
 				var color = pg.page === '(exit)' ? EXIT_COLOR : PALETTE[ pidx % PALETTE.length ];
-				drawNode( pg.page, node, nx, 'start', color );
+				drawNode( pg.page, node, nx, 'start', color, colTotal );
 			} );
 		} );
 

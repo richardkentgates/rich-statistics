@@ -9,6 +9,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- **UTM campaign tracking** — `utm_source`, `utm_medium`, and `utm_campaign` parameters are now captured
+  automatically from landing-page URLs and persisted for the browser session via `sessionStorage`. Values
+  are stored in three new columns on `rsa_events` and displayed in a new **Campaigns** admin page.
+  Existing installs are migrated automatically on activation (schema v8).
+- **Campaigns admin page** — new sub-menu page under Rich Statistics shows each source / medium /
+  campaign combination with session counts, pageview counts, and share bars. Filterable by medium.
+
+### Fixed
+- **User Flow SQL error** — `HAVING \`count\`` referenced a SELECT-level alias which MySQL rejects in a
+  HAVING clause. Replaced all three occurrences with the aggregate expression `COUNT(*)` directly.
+- **Flow chart node labels** — Sankey chart nodes now display the visit count and percentage share
+  (e.g. `1,234 (42%)`) alongside the page path so traffic volume is visible without hovering.
+
 ---
 
 ## [1.2.0] — 2026-03-17

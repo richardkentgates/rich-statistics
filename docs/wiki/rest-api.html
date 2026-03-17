@@ -28,6 +28,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html" aria-current="page">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -36,21 +37,19 @@
   </nav>
   <main class="wiki-content">
     <h1>REST API</h1>
-    <p>All analytics data is available via the WordPress REST API under the <code>/wp-json/rich-statistics/v1/</code> namespace. All read endpoints require the <code>manage_options</code> capability (administrator).</p>
+    <p>All analytics data is available via the WordPress REST API under the <code>/wp-json/rsa/v1/</code> namespace. All read endpoints require the <code>manage_options</code> capability (administrator).</p>
 
     <h2>Authentication</h2>
     <p>Use WordPress application passwords (WP 5.6+) for API access from external tools:</p>
     <pre><code>curl -u "admin:xxxx xxxx xxxx xxxx xxxx xxxx" \
-  https://example.com/wp-json/rich-statistics/v1/overview</code></pre>
+  https://example.com/wp-json/rsa/v1/overview</code></pre>
     <p>Within the WordPress admin, all requests are automatically authenticated via nonce.</p>
 
     <h2>Common query parameters</h2>
     <table>
       <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>period</code></td><td>string</td><td><code>7d</code></td><td>Time range. One of: <code>today</code>, <code>yesterday</code>, <code>7d</code>, <code>30d</code>, <code>90d</code>, <code>custom</code></td></tr>
-        <tr><td><code>from</code></td><td>string</td><td>—</td><td>Start date <code>YYYY-MM-DD</code> (required when <code>period=custom</code>)</td></tr>
-        <tr><td><code>to</code></td><td>string</td><td>—</td><td>End date <code>YYYY-MM-DD</code> (required when <code>period=custom</code>)</td></tr>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range. One of: <code>7d</code>, <code>30d</code>, <code>90d</code>, <code>thismonth</code>, <code>lastmonth</code></td></tr>
       </tbody>
     </table>
 
@@ -58,7 +57,7 @@
 
     <h3>GET /overview</h3>
     <p>Summary metrics for the selected period.</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/overview?period=7d</code></pre>
+    <pre><code>GET /wp-json/rsa/v1/overview?period=7d</code></pre>
     <pre><code>{
   "pageviews": 14823,
   "sessions": 9241,
@@ -71,7 +70,7 @@
 
     <h3>GET /pages</h3>
     <p>Top pages ranked by pageviews.</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/pages?period=30d</code></pre>
+    <pre><code>GET /wp-json/rsa/v1/pages?period=30d</code></pre>
     <pre><code>{
   "pages": [
     { "page": "/blog/privacy-analytics/", "views": 3210, "sessions": 2150 },
@@ -81,7 +80,7 @@
 
     <h3>GET /audience</h3>
     <p>Browser, OS, and screen resolution breakdowns.</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/audience?period=7d</code></pre>
+    <pre><code>GET /wp-json/rsa/v1/audience?period=7d</code></pre>
     <pre><code>{
   "browsers": [
     { "browser": "Chrome", "version": "120", "count": 5120 },
@@ -98,7 +97,7 @@
 
     <h3>GET /referrers</h3>
     <p>Traffic sources (domain-only, no paths or tokens).</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/referrers?period=30d</code></pre>
+    <pre><code>GET /wp-json/rsa/v1/referrers?period=30d</code></pre>
     <pre><code>{
   "referrers": [
     { "domain": "google.com", "pageviews": 4120 },
@@ -108,7 +107,7 @@
 
     <h3>GET /behavior</h3>
     <p>Engagement metrics: time-on-page histogram, session depth distribution, and entry/exit pages.</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/behavior?period=7d</code></pre>
+    <pre><code>GET /wp-json/rsa/v1/behavior?period=7d</code></pre>
     <pre><code>{
   "time_histogram": [ { "bucket": "0-9s", "count": 210 }, { "bucket": "30-59s", "count": 540 } ],
   "session_depth":  [ { "bucket": "1 page", "count": 320 }, { "bucket": "2 pages", "count": 180 } ],
@@ -137,10 +136,13 @@
   ]
 }</code></pre>
 
-    <h3>GET /realtime</h3>
-    <p>Current active sessions (visitors active in the last 5 minutes).</p>
-    <pre><code>GET /wp-json/rich-statistics/v1/realtime</code></pre>
-    <pre><code>{ "active": 14 }</code></pre>
+    <h3>GET /heatmap <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h3>
+    <p>Click-position data for a specific page, used to render the heatmap overlay.</p>
+    <pre><code>GET /wp-json/rsa/v1/heatmap?period=30d&amp;page=/about/</code></pre>
+
+    <h3>GET /export</h3>
+    <p>Export raw event data for the given period. Supports <code>json</code> (default) and <code>csv</code> formats via the <code>format</code> parameter.</p>
+    <pre><code>GET /wp-json/rsa/v1/export?period=90d&amp;format=csv</code></pre>
 
     <h2>Error responses</h2>
     <table>
@@ -148,7 +150,7 @@
       <tbody>
         <tr><td>401</td><td><code>rest_not_logged_in</code></td><td>No authentication provided</td></tr>
         <tr><td>403</td><td><code>rest_forbidden</code></td><td>Authenticated but lacks <code>manage_options</code></td></tr>
-        <tr><td>400</td><td><code>invalid_period</code></td><td>Unrecognised <code>period</code> value or missing <code>from</code>/<code>to</code> for custom</td></tr>
+        <tr><td>400</td><td><code>invalid_period</code></td><td>Unrecognised <code>period</code> value</td></tr>
       </tbody>
     </table>
   </main>

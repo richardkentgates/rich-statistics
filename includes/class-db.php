@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 class RSA_DB {
 
 	// Schema version stored per-site
-	const SCHEMA_VERSION = 7;
+	const SCHEMA_VERSION = 8;
 	const OPTION_KEY     = 'rsa_db_version';
 
 	// ----------------------------------------------------------------
@@ -79,11 +79,15 @@ class RSA_DB {
 			viewport_h    SMALLINT UNSIGNED   DEFAULT NULL,
 			time_on_page  SMALLINT UNSIGNED   DEFAULT NULL,
 			bot_score     TINYINT UNSIGNED    DEFAULT 0,
+			utm_source    VARCHAR(100)        DEFAULT NULL,
+			utm_medium    VARCHAR(100)        DEFAULT NULL,
+			utm_campaign  VARCHAR(255)        DEFAULT NULL,
 			created_at    DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY session_id  (session_id),
 			KEY page        (page(191)),
-			KEY created_at  (created_at)
+			KEY created_at  (created_at),
+			KEY utm_campaign (utm_campaign(191))
 		) $charset;";
 
 		$sessions = "CREATE TABLE " . self::sessions_table() . " (
@@ -180,6 +184,37 @@ class RSA_DB {
 		) );
 		if ( empty( $col2 ) ) {
 			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_clicks` ADD COLUMN href_value VARCHAR(512) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		// v8: add UTM columns to rsa_events if missing
+		$col3 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_source'
+			)
+		);
+		if ( empty( $col3 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_source VARCHAR(100) DEFAULT NULL AFTER bot_score" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		$col4 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_medium'
+			)
+		);
+		if ( empty( $col4 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_medium VARCHAR(100) DEFAULT NULL AFTER utm_source" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		$col5 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_campaign'
+			)
+		);
+		if ( empty( $col5 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_campaign VARCHAR(255) DEFAULT NULL AFTER utm_medium" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
 		}
 	}
 

@@ -207,8 +207,11 @@ class RSA_Tracker {
 				'viewport_h'      => $payload['viewport_h'],
 				'time_on_page'    => $payload['time_on_page'],
 				'bot_score'       => $bot_score,
+				'utm_source'      => $payload['utm_source'],
+				'utm_medium'      => $payload['utm_medium'],
+				'utm_campaign'    => $payload['utm_campaign'],
 			],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d' ]
+			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%s' ]
 		);
 
 		wp_send_json_success( [ 'ok' => true ] );
@@ -252,6 +255,9 @@ class RSA_Tracker {
 			'viewport_h'   => min( absint( $data['viewport_h'] ?? 0 ), 65535 ),
 			'time_on_page' => min( absint( $data['time_on_page'] ?? 0 ), 32767 ),
 			'bot_signals'  => absint( $data['bot_signals'] ?? 0 ),
+			'utm_source'   => substr( sanitize_text_field( $data['utm_source']   ?? '' ), 0, 100 ),
+			'utm_medium'   => substr( sanitize_text_field( $data['utm_medium']   ?? '' ), 0, 100 ),
+			'utm_campaign' => substr( sanitize_text_field( $data['utm_campaign'] ?? '' ), 0, 255 ),
 		];
 	}
 

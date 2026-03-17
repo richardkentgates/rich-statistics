@@ -20,6 +20,7 @@ Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent
 * Audience breakdown: OS, browser version, viewport, language, timezone
 * Top pages ranked by views with average time on page
 * Referrer tracking at the domain level only
+* UTM campaign tracking (utm_source, utm_medium, utm_campaign) — auto-captured from landing page URL, persisted for the session
 * Behavior analysis: time-on-page histogram, session depth, entry pages
 * Aggressive bot detection: 10 client-side signals plus server-side UA/header scoring
 * Configurable data retention (1–730 days, default 90)
