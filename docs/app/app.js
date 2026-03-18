@@ -609,8 +609,9 @@
 			] ) + '<div class="rsa-chart-wrap"><canvas id="c-overview-daily"></canvas></div>';
 
 			setLoading( false );
-		drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
-			[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) }] );
+			drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
+				[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) }] );
+		} ).catch( handleApiError );
 	}
 
 	// -----------------------------------------------------------------------
