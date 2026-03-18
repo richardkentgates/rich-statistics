@@ -27,13 +27,16 @@ class RSA_Admin {
 		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
 
-		// Suppress admin bar in heatmap iframe preview
-		add_action( 'init', [ __CLASS__, 'maybe_hide_preview_bar' ] );
-	}
+// Suppress admin bar in heatmap iframe preview.
+			// Called directly (not via add_action) so the filter is registered at plugins_loaded
+			// time, before _wp_admin_bar_init fires at init priority 40.
+			self::maybe_hide_preview_bar();
+		}
 
-	/**
-	 * Hide the WP admin bar when the page is loaded inside the heatmap iframe preview.
-	 * The flag is a read-only display hint — no nonce required.
+		/**
+		 * Hide the WP admin bar when the page is loaded inside the heatmap iframe preview.
+		 * Must be called before init fires so the show_admin_bar filter is in place
+		 * before _wp_admin_bar_init() evaluates it at init priority 40.
 	 */
 	public static function maybe_hide_preview_bar(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display flag only, no state change
@@ -96,9 +99,17 @@ class RSA_Admin {
 		$html = str_replace( '</head>', $config_script . '</head>', $html );
 
 		// Rewrite relative asset src/href to absolute plugin URLs.
+		// Append ?v=RSA_VERSION so browsers fetch fresh assets after each plugin update.
+		$v    = rawurlencode( RSA_VERSION );
 		$html = str_replace(
 			[ 'href="app.css"', 'src="./chart.min.js"', 'src="config.js"', 'src="app.js"', "register( 'sw.js' )" ],
-			[ 'href="' . esc_url( $assets_url . 'app.css' ) . '"', 'src="' . esc_url( $assets_url . 'chart.min.js' ) . '"', 'src="' . esc_url( $assets_url . 'config.js' ) . '"', 'src="' . esc_url( $assets_url . 'app.js' ) . '"', "register( '" . esc_url( $assets_url . 'sw.js' ) . "' )" ],
+			[
+				'href="' . esc_url( $assets_url . 'app.css?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'chart.min.js?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'config.js?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'app.js?v=' . $v ) . '"',
+				"register( '" . esc_url( $assets_url . 'sw.js?v=' . $v ) . "' )",
+			],
 			$html
 		);
 

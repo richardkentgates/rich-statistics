@@ -23,7 +23,7 @@ $status_labels = [
 
 $nonce = wp_create_nonce( 'wp_rest' );
 ?>
-<?php RSA_Admin::page_header(); ?>
+<?php RSA_Admin::page_header( __( 'Maintenance', 'rich-statistics' ) ); ?>
 
 <div class="rsa-section">
 	<div class="rsa-chart-card">
