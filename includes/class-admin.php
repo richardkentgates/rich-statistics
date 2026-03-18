@@ -460,10 +460,7 @@ class RSA_Admin {
 			return;
 		}
 
-		$download_url = wp_nonce_url(
-			admin_url( 'admin-ajax.php?action=rsa_download_pwa' ),
-			'rsa_download_pwa'
-		);
+		$app_url = plugins_url( 'docs/app/', RSA_FILE );
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
@@ -471,10 +468,12 @@ class RSA_Admin {
 				<button type="button" id="rsa-generate-otp-btn" class="button button-primary">
 					<?php esc_html_e( 'Generate App Code', 'rich-statistics' ); ?>
 				</button>
-				<a href="<?php echo esc_url( $download_url ); ?>"
+				<a href="<?php echo esc_url( $app_url ); ?>"
 				   class="button"
+				   target="_blank"
+				   rel="noopener"
 				   style="margin-left:8px;">
-					<?php esc_html_e( 'Download App', 'rich-statistics' ); ?>
+					<?php esc_html_e( 'Open App', 'rich-statistics' ); ?>
 				</a>
 
 				<div id="rsa-otp-display" style="display:none;margin-top:14px;" aria-live="polite" aria-atomic="true">
@@ -499,7 +498,7 @@ class RSA_Admin {
 				</div>
 
 				<p class="description" style="margin-top:10px;">
-					<?php esc_html_e( 'First time? Use “Download App” to install the app on any device. Then click “Generate App Code”, tap “Add Site” in the app, enter this site’s URL and the code, then create an Application Password in the section below to complete the connection.', 'rich-statistics' ); ?>
+					<?php esc_html_e( 'Click "Open App" to launch the Stats App. On first visit, click "Generate App Code", tap "Add Site" in the app, enter this site\'s URL and the code, then create an Application Password in the section below to complete the connection.', 'rich-statistics' ); ?>
 				</p>
 			</td>
 		</tr>
