@@ -23,6 +23,38 @@ class RSA_Rest_API {
 
 	public static function init(): void {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
+		add_action( 'rest_api_init', [ __CLASS__, 'add_cors_headers' ] );
+	}
+
+	/**
+	 * Add CORS headers for rsa/v1 routes so the PWA (served from a different
+	 * origin) can reach the REST API.  Handles the OPTIONS preflight too.
+	 */
+	public static function add_cors_headers(): void {
+		// Only act on our own namespace.
+		$route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( strpos( $route, '/rsa/v1/' ) === false ) {
+			return;
+		}
+
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+
+		if ( $origin ) {
+			header( 'Access-Control-Allow-Origin: ' . $origin );
+		} else {
+			header( 'Access-Control-Allow-Origin: *' );
+		}
+		header( 'Access-Control-Allow-Credentials: true' );
+		header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
+		header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
+		header( 'Vary: Origin' );
+
+		// Respond immediately to preflight requests.
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
+			header( 'Access-Control-Max-Age: 86400' );
+			status_header( 204 );
+			exit;
+		}
 	}
 
 	// ----------------------------------------------------------------
