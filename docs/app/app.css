@@ -403,6 +403,7 @@ html, body {
 }
 
 .rsa-chart-card canvas { height: 160px !important; }
+#c-heatmap { height: auto !important; width: 100% !important; }
 
 .rsa-table-card {
 	background: var(--rsa-surface);

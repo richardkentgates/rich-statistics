@@ -660,12 +660,14 @@
 				'<div class="rsa-chart-card"><h3>Timezone</h3>' +
 				'<canvas id="c-aud-tz"></canvas></div>';
 
-			setLoading( false );
-			drawDoughnut( 'c-aud-os',   kvLabels( data.by_os ),   kvValues( data.by_os ) );
-			drawDoughnut( 'c-aud-br',   kvLabels( data.by_browser ), kvValues( data.by_browser ) );
-			drawDoughnut( 'c-aud-vp',   kvLabels( data.by_viewport ), kvValues( data.by_viewport ) );
-			drawDoughnut( 'c-aud-lang', kvLabels( data.by_language ), kvValues( data.by_language ) );
-			drawBar( 'c-aud-tz', kvLabels( data.by_timezone ), kvValues( data.by_timezone ), 'Sessions', true );
+				setLoading( false );
+			var al = function ( arr ) { return ( arr || [] ).map( function ( d ) { return d.label; } ); };
+			var av = function ( arr ) { return ( arr || [] ).map( function ( d ) { return d.count; } ); };
+			drawDoughnut( 'c-aud-os',   al( data.by_os ),       av( data.by_os ) );
+			drawDoughnut( 'c-aud-br',   al( data.by_browser ),  av( data.by_browser ) );
+			drawDoughnut( 'c-aud-vp',   al( data.by_viewport ), av( data.by_viewport ) );
+			drawDoughnut( 'c-aud-lang', al( data.by_language ), av( data.by_language ) );
+			drawBar( 'c-aud-tz', al( data.by_timezone ), av( data.by_timezone ), 'Sessions', true );
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
@@ -807,17 +809,28 @@
 			}
 
 			var total = data.total_sessions || 0;
+			var exits = data.links ? data.links.reduce( function ( s, l ) { return s + ( l.to === '(exit)' ? l.count : 0 ); }, 0 ) : 0;
+			var exitRate = total > 0 ? ( exits / total * 100 ).toFixed( 1 ) : '—';
+			var entryPgs = stepNums.length > 0 ? ( steps[ stepNums[0] ] || [] ).filter( function ( n ) { return n.page !== '(exit)'; } ).length : 0;
+			var kpiHtml = total > 0 ?
+				'<div class="rsa-kpi-grid" style="margin-bottom:16px">' +
+				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( total ) + '</div><div class="rsa-kpi-label">Sessions Tracked</div></div>' +
+				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( entryPgs ) + '</div><div class="rsa-kpi-label">Entry Pages</div></div>' +
+				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + stepNums.length + '</div><div class="rsa-kpi-label">Steps in Flow</div></div>' +
+				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + exitRate + '%</div><div class="rsa-kpi-label">Exit Rate</div></div>' +
+				'</div>' : '';
 			var html  = '';
 
 			stepNums.forEach( function ( sn ) {
 				var nodes = steps[ sn ];
 				var label = sn === 1 ? 'Entry' : 'Step ' + sn;
 				var stepTotal = nodes.reduce( function ( s, n ) { return s + ( n.page === '(exit)' ? 0 : n.sessions ); }, 0 );
+				var retainedPct = total > 0 ? ( stepTotal / total * 100 ).toFixed( 1 ) : '0.0';
 
 				html += '<div class="rsa-uf-step">' +
 					'<div class="rsa-uf-step-hd">' +
 						'<span class="rsa-uf-step-label">' + label + '</span>' +
-						( total ? '<span class="rsa-uf-step-pct">' + fmtPct( stepTotal / total ) + ' retained</span>' : '' ) +
+						( total ? '<span class="rsa-uf-step-pct">' + retainedPct + '% retained</span>' : '' ) +
 					'</div>' +
 					'<table class="rsa-table rsa-uf-table">' +
 					'<thead><tr><th>Page</th><th>Sessions</th></tr></thead><tbody>';
@@ -833,7 +846,7 @@
 				html += '</tbody></table></div>';
 			} );
 
-			container.innerHTML = '<div class="rsa-uf-wrap">' + html + '</div>';
+			container.innerHTML = kpiHtml + '<div class="rsa-uf-wrap">' + html + '</div>';
 			setLoading( false );
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
@@ -886,15 +899,13 @@
 					'<input type="text" id="rsa-hm-page" placeholder="/" ' +
 						'style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
 						'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
-					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load" style="flex-shrink:0">Load Heatmap</button>' +
+					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load" style="flex-shrink:0">Reload</button>' +
 				'</div>' +
 				'<p class="rsa-field-hint" style="margin-top:8px">Enter a page path (e.g. <code>/about/</code>). Click data is aggregated nightly for the selected period.</p>' +
 			'</div>' +
 			'<div id="rsa-hm-results"></div>';
 
-		setLoading( false );
-
-		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
+		function loadHeatmap() {
 			var pagePath = ( document.getElementById( 'rsa-hm-page' ).value || '/' ).trim() || '/';
 			var results  = document.getElementById( 'rsa-hm-results' );
 			results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
@@ -909,12 +920,15 @@
 					return;
 				}
 
+				// Size canvas: 800 wide x 1120 tall (A4-like page silhouette)
+				var W = 800, H = 1120;
+
 				results.innerHTML =
 					'<div class="rsa-chart-card" style="margin-top:16px">' +
 						'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
 						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
-						'<div style="position:relative;width:100%;background:var(--rsa-surface);border-radius:var(--rsa-radius);overflow:hidden">' +
-							'<canvas id="c-heatmap" style="display:block;width:100%;height:auto"></canvas>' +
+						'<div style="position:relative;width:100%">' +
+							'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;height:auto;border-radius:var(--rsa-radius)"></canvas>' +
 						'</div>' +
 						'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
 							'<span>Low</span>' +
@@ -925,11 +939,6 @@
 
 				var canvas = document.getElementById( 'c-heatmap' );
 				if ( ! canvas ) return;
-
-				// Size canvas: 800 wide x 1120 tall (A4-like page silhouette)
-				var W = 800, H = 1120;
-				canvas.width  = W;
-				canvas.height = H;
 
 				var ctx = canvas.getContext( '2d' );
 
@@ -994,7 +1003,14 @@
 						'<p class="rsa-empty">Could not load heatmap data. Please try again.</p>' +
 					'</div>';
 			} );
+		}
+
+		setLoading( false );
+		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
+			loadHeatmap();
 		} );
+		// Auto-load the root path on open
+		loadHeatmap();
 	}
 
 	// -----------------------------------------------------------------------
