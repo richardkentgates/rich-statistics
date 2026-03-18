@@ -600,17 +600,40 @@
 	// Overview
 	// -----------------------------------------------------------------------
 	function renderOverview( container ) {
-		apiGet( 'overview', { period: state.period } ).then( function ( data ) {
-			container.innerHTML = tmplKpiGrid( [
-				{ label: 'Pageviews',    value: fmt( data.pageviews )    },
-				{ label: 'Sessions',     value: fmt( data.sessions )     },
-				{ label: 'Avg. Time',    value: fmtSecs( data.avg_time ) },
-				{ label: 'Bounce Rate',  value: fmtPct( data.bounce_rate ) },
-			] ) + '<div class="rsa-chart-wrap"><canvas id="c-overview-daily"></canvas></div>';
+		Promise.all( [
+			apiGet( 'overview',  { period: state.period } ),
+			apiGet( 'pages',     { period: state.period, limit: 5 } ),
+			apiGet( 'referrers', { period: state.period, limit: 5 } ),
+		] ).then( function ( results ) {
+			var data = results[0], pagesData = results[1], refData = results[2];
+
+			var pageRows = ( pagesData.pages || [] ).map( function ( p, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.views ) + '</td></tr>';
+			} ).join( '' );
+			var refRows = ( refData.referrers || [] ).map( function ( r, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( r.domain || '(direct)' ) + '</td><td>' + fmt( r.pageviews ) + '</td></tr>';
+			} ).join( '' );
+
+			container.innerHTML =
+				tmplKpiGrid( [
+					{ label: 'Pageviews',   value: fmt( data.pageviews )    },
+					{ label: 'Sessions',    value: fmt( data.sessions )     },
+					{ label: 'Avg. Time',   value: fmtSecs( data.avg_time ) },
+					{ label: 'Bounce Rate', value: fmtPct( data.bounce_rate ) },
+				] ) +
+				'<div class="rsa-chart-wrap"><canvas id="c-overview-daily"></canvas></div>' +
+				'<div class="rsa-grid-2" style="margin-top:20px">' +
+					'<div class="rsa-table-card"><h3>Top Pages</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+					'<thead><tr><th>#</th><th>Page</th><th>Views</th></tr></thead>' +
+					'<tbody>' + ( pageRows || '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody></table></div></div>' +
+					'<div class="rsa-table-card"><h3>Top Referrers</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+					'<thead><tr><th>#</th><th>Domain</th><th>Visits</th></tr></thead>' +
+					'<tbody>' + ( refRows  || '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody></table></div></div>' +
+				'</div>';
 
 			setLoading( false );
 			drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
-				[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) }] );
+				[ { label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) } ] );
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 

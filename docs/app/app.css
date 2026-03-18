@@ -403,7 +403,7 @@ html, body {
 }
 
 .rsa-chart-card canvas { height: 160px !important; }
-#c-heatmap { height: auto !important; width: 100% !important; }
+#c-heatmap { height: auto !important; width: 100% !important; aspect-ratio: 800 / 1120; }
 
 .rsa-table-card {
 	background: var(--rsa-surface);
@@ -701,15 +701,19 @@ font-size: 12px;
 ----------------------------------------------------------------------- */
 .rsa-uf-wrap {
 display: flex;
-flex-direction: column;
+flex-direction: row;
 gap: 20px;
 padding: 16px 0;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
 }
 .rsa-uf-step {
 background: var(--rsa-surface);
 border: 1px solid var(--rsa-border);
 border-radius: 10px;
 overflow: hidden;
+min-width: 220px;
+flex-shrink: 0;
 }
 .rsa-uf-step-hd {
 display: flex;
