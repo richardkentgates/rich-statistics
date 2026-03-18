@@ -24,6 +24,36 @@ class RSA_Rest_API {
 	public static function init(): void {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
 		add_action( 'rest_api_init', [ __CLASS__, 'add_cors_headers' ] );
+
+		// When the PWA is served on the same origin as the WP site, the browser
+		// sends session cookies with every fetch().  WP's cookie auth sees the
+		// cookies but no nonce and marks the request unauthenticated — even when
+		// a valid Authorization: Basic (Application Password) header is also
+		// present.  Remove cookie authentication entirely for our namespace so
+		// only Application Password auth is used.
+		add_filter( 'rest_authentication_errors', [ __CLASS__, 'remove_cookie_auth' ], 5 );
+	}
+
+	/**
+	 * If no error has been set yet (i.e. no auth mechanism has run or rejected
+	 * the request) return null to let Application Password auth proceed.
+	 * We only suppress the cookie-auth rejection; the Basic-auth handler runs
+	 * independently and will authenticate the user correctly.
+	 */
+	public static function remove_cookie_auth( $result ) {
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return $result;
+		}
+		$route = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( strpos( $route, '/rsa/v1/' ) === false ) {
+			return $result;
+		}
+		// A WP_Error here from cookie auth (no nonce) would block other auth
+		// methods.  Return null to allow Application Password auth to proceed.
+		if ( is_wp_error( $result ) ) {
+			return null;
+		}
+		return $result;
 	}
 
 	/**
