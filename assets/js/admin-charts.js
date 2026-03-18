@@ -17,9 +17,18 @@
 	// Global Chart.js defaults — consistent look across all charts
 	// ----------------------------------------------------------------
 	var PALETTE = [
-		'#2271b1', '#00a32a', '#dba617', '#d63638',
-		'#135e96', '#008a20', '#b8860b', '#a02020',
-		'#1a9ed9', '#3bc1a3', '#9c6ed5', '#e8832a',
+		'#4a90b8',  // primary calm blue
+		'#6aaed6',  // lighter blue
+		'#8ec6e0',  // soft sky
+		'#2e6f8e',  // deeper slate-blue
+		'#a8c8d8',  // pale steel
+		'#3a7fa0',  // mid blue
+		'#b5d5e5',  // lightest
+		'#537b8e',  // blue-grey
+		'#7ba8be',  // muted teal-blue
+		'#c5dce8',  // near-white blue
+		'#1d5570',  // dark anchor
+		'#92b8cc',  // grey-blue
 	];
 
 	Chart.defaults.font.family  = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -149,7 +158,7 @@
 			label           : 'Page Views',
 			data            : views,
 			borderColor     : PALETTE[0],
-			backgroundColor : 'rgba(99,102,241,0.1)',
+			backgroundColor : 'rgba(74,144,184,0.15)',
 			borderWidth     : 2,
 			pointRadius     : views.length > 30 ? 0 : 3,
 			pointHoverRadius: 4,

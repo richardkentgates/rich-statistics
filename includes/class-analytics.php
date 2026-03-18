@@ -805,6 +805,68 @@ class RSA_Analytics {
 		return wp_json_encode( $rows );
 	}
 
+	/**
+	 * Export any data type for the REST API or admin.
+	 *
+	 * @param string $data_type  pageviews | sessions | clicks | referrers
+	 * @param string $period     Period key (7d, 30d, etc.)
+	 * @param string $format     json | csv
+	 * @param string $date_from  Y-m-d (optional, for custom range)
+	 * @param string $date_to    Y-m-d (optional, for custom range)
+	 */
+	public static function export_data( string $data_type, string $period = '30d', string $format = 'json', string $date_from = '', string $date_to = '' ): string {
+		global $wpdb;
+		$range   = self::period_range( $period, $date_from, $date_to );
+		$bt      = self::bot_threshold();
+		$headers = [];
+
+		switch ( $data_type ) {
+			case 'sessions':
+				$rows    = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
+					"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
+					$range['start'], $range['end']
+				), ARRAY_A ) ?: [];
+				$headers = [ 'session_id', 'entry_page', 'exit_page', 'pages_viewed', 'total_time', 'browser', 'os', 'language', 'timezone', 'created_at' ];
+				break;
+
+			case 'clicks':
+				$rows    = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
+					"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
+					$range['start'], $range['end']
+				), ARRAY_A ) ?: [];
+				$headers = [ 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
+				break;
+
+			case 'referrers':
+				$rows    = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
+					"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
+					$range['start'], $range['end'], $bt
+				), ARRAY_A ) ?: [];
+				$headers = [ 'referrer_domain', 'pageviews', 'sessions' ];
+				break;
+
+			default: // pageviews
+				$rows    = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
+					"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
+					$range['start'], $range['end'], $bt
+				), ARRAY_A ) ?: [];
+				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
+		}
+
+		if ( $format === 'csv' ) {
+			if ( empty( $rows ) ) {
+				return "\xEF\xBB\xBF" . implode( ',', $headers ) . "\n";
+			}
+			$out = "\xEF\xBB\xBF" . implode( ',', $headers ) . "\n"; // UTF-8 BOM for Excel
+			foreach ( $rows as $row ) {
+				$out .= implode( ',', array_map( static fn( $v ) => '"' . str_replace( '"', '""', (string) $v ) . '"', array_values( $row ) ) ) . "\n";
+			}
+			return $out;
+		}
+
+		return wp_json_encode( $rows );
+	}
+
 	// ----------------------------------------------------------------
 	// Utility: fill date gaps so charts don't have holes
 	// ----------------------------------------------------------------
