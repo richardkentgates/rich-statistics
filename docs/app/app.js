@@ -1678,18 +1678,59 @@
 			'<div class="rsa-chart-card">' +
 				'<h3>Click Heatmap</h3>' +
 				'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-					'<label for="rsa-hm-page" style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
-					'<input type="text" id="rsa-hm-page" placeholder="/" ' +
-						'style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
+					'<label style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
+					'<select id="rsa-hm-page" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
 						'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
-					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load" style="flex-shrink:0">Reload</button>' +
+						'<option value="/">Loading\u2026</option>' +
+					'</select>' +
 				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:8px">Enter a page path (e.g. <code>/about/</code>). Click data is aggregated nightly for the selected period.</p>' +
 			'</div>' +
 			'<div id="rsa-hm-results"></div>';
 
+		var isSameOrigin = !!( window.RSA_CONFIG && window.RSA_CONFIG.nonce );
+
+		// Map normalised weight [0-1] to an RGBA colour: blue → green → yellow → red
+		function heatColour( t, alpha ) {
+			var seg, r, g, b;
+			if ( t < 0.25 ) {
+				seg = t / 0.25;
+				r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
+			} else if ( t < 0.5 ) {
+				seg = ( t - 0.25 ) / 0.25;
+				r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
+			} else if ( t < 0.75 ) {
+				seg = ( t - 0.5 ) / 0.25;
+				r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
+			} else {
+				seg = ( t - 0.75 ) / 0.25;
+				r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
+			}
+			return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+		}
+
+		// Draw heatmap dots onto a canvas; W/H are the canvas coordinate dimensions
+		function drawDots( ctx, data, W, H ) {
+			var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight || 1; } ) );
+			data.forEach( function ( p ) {
+				var t    = ( p.weight || 1 ) / maxW;
+				var px   = ( p.x / 100 ) * W;
+				var py   = ( p.y / 100 ) * H;
+				var brad = Math.max( 24, Math.round( t * 80 ) );
+				if ( isNaN( px ) || isNaN( py ) ) return;
+				var grad = ctx.createRadialGradient( px, py, 0, px, py, brad );
+				grad.addColorStop( 0,   heatColour( t, 0.85 ) );
+				grad.addColorStop( 0.5, heatColour( t, 0.4 ) );
+				grad.addColorStop( 1,   heatColour( t, 0 ) );
+				ctx.fillStyle = grad;
+				ctx.beginPath();
+				ctx.arc( px, py, brad, 0, Math.PI * 2 );
+				ctx.fill();
+			} );
+		}
+
 		function loadHeatmap() {
-			var pagePath = ( document.getElementById( 'rsa-hm-page' ).value || '/' ).trim() || '/';
+			var sel      = document.getElementById( 'rsa-hm-page' );
+			var pagePath = sel ? ( sel.value || '/' ) : '/';
 			var results  = document.getElementById( 'rsa-hm-results' );
 			results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
 
@@ -1703,177 +1744,147 @@
 					return;
 				}
 
-				// Size canvas: 800 wide x 1120 tall (A4-like page silhouette)
 				var W = 800, H = 1120;
-
-				results.innerHTML =
-					'<div class="rsa-chart-card" style="margin-top:16px">' +
-						'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
-						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
-						'<div style="position:relative;width:100%">' +
-							'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;border-radius:var(--rsa-radius)"></canvas>' +
-						'</div>' +
-						'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
-							'<span>Low</span>' +
-							'<div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(to right,#4a90b8,#90c060,#f5c518,#e8532a)"></div>' +
-							'<span>High</span>' +
-						'</div>' +
+				var legend =
+					'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
+						'<span>Low</span>' +
+						'<div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(to right,#4a90b8,#90c060,#f5c518,#e8532a)"></div>' +
+						'<span>High</span>' +
 					'</div>';
 
-				var canvas = document.getElementById( 'c-heatmap' );
-				if ( ! canvas ) return;
+				if ( isSameOrigin ) {
+					// Same-origin: show the real page in an iframe with a canvas overlay
+					var pageUrl = ( state.siteUrl || '' ).replace( /\/$/, '' ) + pagePath;
+					results.innerHTML =
+						'<div class="rsa-chart-card" style="margin-top:16px">' +
+							'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
+							'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
+							'<div style="position:relative;overflow:hidden;border-radius:var(--rsa-radius)">' +
+								'<iframe id="rsa-hm-iframe" src="' + esc( pageUrl ) + '" ' +
+									'style="display:block;width:100%;height:700px;border:none" ' +
+									'scrolling="no" sandbox="allow-same-origin allow-scripts"></iframe>' +
+								'<canvas id="c-heatmap" ' +
+									'style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>' +
+							'</div>' +
+							legend +
+						'</div>';
 
-				// Ensure canvas CSS height stays proportional after layout
-				( function scaleCanvas() {
-					var displayW = canvas.offsetWidth;
-					if ( displayW > 0 ) {
-						canvas.style.height = Math.round( displayW * H / W ) + 'px';
-					} else {
-						requestAnimationFrame( scaleCanvas );
-					}
-				}() );
+					// Size canvas to match the rendered iframe dimensions, then draw dots
+					requestAnimationFrame( function () {
+						var canvas = document.getElementById( 'c-heatmap' );
+						if ( ! canvas ) return;
+						canvas.width  = canvas.offsetWidth  || W;
+						canvas.height = canvas.offsetHeight || 700;
+						var ctx = canvas.getContext( '2d' );
+						if ( ctx ) drawDots( ctx, data, canvas.width, canvas.height );
+					} );
 
-				var ctx = canvas.getContext( '2d' );
-				if ( ! ctx ) return;
+				} else {
+					// Fallback: canvas page silhouette (cross-origin)
+					results.innerHTML =
+						'<div class="rsa-chart-card" style="margin-top:16px">' +
+							'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
+							'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
+							'<div style="position:relative;width:100%">' +
+								'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;border-radius:var(--rsa-radius)"></canvas>' +
+							'</div>' +
+							legend +
+						'</div>';
 
-				// ── Page silhouette ──────────────────────────────────────
-				// White page body
-				ctx.fillStyle = '#ffffff';
-				ctx.fillRect( 0, 0, W, H );
+					var canvas = document.getElementById( 'c-heatmap' );
+					if ( ! canvas ) return;
 
-				// Top navigation bar (dark)
-				ctx.fillStyle = '#2c3e50';
-				ctx.fillRect( 0, 0, W, 60 );
+					( function scaleCanvas() {
+						var displayW = canvas.offsetWidth;
+						if ( displayW > 0 ) {
+							canvas.style.height = Math.round( displayW * H / W ) + 'px';
+						} else {
+							requestAnimationFrame( scaleCanvas );
+						}
+					}() );
 
-				// Nav logo placeholder
-				ctx.fillStyle = '#4a90b8';
-				ctx.fillRect( 20, 16, 100, 28 );
+					var ctx = canvas.getContext( '2d' );
+					if ( ! ctx ) return;
 
-				// Nav links (right side)
-				ctx.fillStyle = 'rgba(255,255,255,0.5)';
-				[ W - 220, W - 160, W - 100, W - 48 ].forEach( function ( x ) {
-					ctx.fillRect( x, 22, 44, 16 );
-				} );
+					// ── Page silhouette ──────────────────────────────────────
+					ctx.fillStyle = '#ffffff';
+					ctx.fillRect( 0, 0, W, H );
 
-				// Hero section background
-				ctx.fillStyle = '#e8f0f7';
-				ctx.fillRect( 0, 60, W, 180 );
+					ctx.fillStyle = '#2c3e50';
+					ctx.fillRect( 0, 0, W, 60 );
 
-				// Hero heading
-				ctx.fillStyle = '#bbc8d4';
-				ctx.fillRect( 60, 96, W - 280, 28 );
-				ctx.fillRect( 60, 134, W - 360, 20 );
+					ctx.fillStyle = '#4a90b8';
+					ctx.fillRect( 20, 16, 100, 28 );
 
-				// Hero CTA button
-				ctx.fillStyle = '#4a90b8';
-				ctx.beginPath();
-				ctx.roundRect( 60, 168, 140, 40, 6 );
-				ctx.fill();
+					ctx.fillStyle = 'rgba(255,255,255,0.5)';
+					[ W - 220, W - 160, W - 100, W - 48 ].forEach( function ( x ) {
+						ctx.fillRect( x, 22, 44, 16 );
+					} );
 
-				// Content area — two columns
-				var col1W = Math.round( W * 0.62 );
-				var col2X = col1W + 24;
-				var col2W = W - col2X - 24;
-				var yBase = 272;
+					ctx.fillStyle = '#e8f0f7';
+					ctx.fillRect( 0, 60, W, 180 );
 
-				// Section heading
-				ctx.fillStyle = '#cdd5dc';
-				ctx.fillRect( 24, yBase, 220, 22 );
-				yBase += 40;
+					ctx.fillStyle = '#bbc8d4';
+					ctx.fillRect( 60, 96, W - 280, 28 );
+					ctx.fillRect( 60, 134, W - 360, 20 );
 
-				// Text paragraph lines (left column)
-				ctx.fillStyle = '#e4e9ee';
-				for ( var li = 0; li < 5; li++ ) {
-					ctx.fillRect( 24, yBase + li * 22, ( li === 4 ? col1W * 0.6 : col1W - 24 ), 14 );
-				}
-				yBase += 5 * 22 + 24;
-
-				// Image placeholder (left column)
-				ctx.fillStyle = '#dde4ec';
-				ctx.fillRect( 24, yBase, col1W - 24, 180 );
-				// Image icon
-				ctx.fillStyle = '#c0cbd6';
-				ctx.fillRect( 24 + ( col1W - 24 ) / 2 - 24, yBase + 75, 48, 30 );
-				yBase += 210;
-
-				// Another paragraph block
-				ctx.fillStyle = '#e4e9ee';
-				for ( var li2 = 0; li2 < 4; li2++ ) {
-					ctx.fillRect( 24, yBase + li2 * 22, ( li2 === 3 ? col1W * 0.4 : col1W - 24 ), 14 );
-				}
-
-				// Right sidebar
-				var sbY = 272 + 40;
-				ctx.fillStyle = '#f2f5f8';
-				ctx.beginPath();
-				if ( ctx.roundRect ) { ctx.roundRect( col2X, sbY, col2W, 160, 8 ); } else { ctx.rect( col2X, sbY, col2W, 160 ); }
-				ctx.fill();
-				ctx.fillStyle = '#dde4ec';
-				ctx.fillRect( col2X + 16, sbY + 20, col2W - 32, 14 );
-				ctx.fillRect( col2X + 16, sbY + 44, col2W - 32, 10 );
-				ctx.fillRect( col2X + 16, sbY + 62, col2W - 64, 10 );
-				ctx.fillStyle = '#4a90b8';
-				ctx.beginPath();
-				if ( ctx.roundRect ) { ctx.roundRect( col2X + 16, sbY + 88, col2W - 32, 34, 6 ); } else { ctx.rect( col2X + 16, sbY + 88, col2W - 32, 34 ); }
-				ctx.fill();
-
-				// Footer
-				ctx.fillStyle = '#2c3e50';
-				ctx.fillRect( 0, H - 80, W, 80 );
-				ctx.fillStyle = 'rgba(255,255,255,0.2)';
-				[ 24, W / 4, W / 2, W * 0.75 ].forEach( function ( x ) {
-					ctx.fillRect( x, H - 60, 80, 10 );
-					ctx.fillRect( x, H - 44, 60, 8 );
-					ctx.fillRect( x, H - 30, 70, 8 );
-				} );
-				// ── End page silhouette ────────────────────────────────
-
-				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight || 1; } ) );
-
-				// Helper: map normalised weight [0-1] to an RGBA colour
-				// blue → green → yellow → orange-red
-				function heatColour( t, alpha ) {
-					var seg, r, g, b;
-					if ( t < 0.25 ) {
-						// blue → cyan
-						seg = t / 0.25;
-						r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
-					} else if ( t < 0.5 ) {
-						// cyan → yellow-green
-						seg = ( t - 0.25 ) / 0.25;
-						r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
-					} else if ( t < 0.75 ) {
-						// yellow-green → orange
-						seg = ( t - 0.5 ) / 0.25;
-						r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
-					} else {
-						// orange → red
-						seg = ( t - 0.75 ) / 0.25;
-						r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
-					}
-					return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-				}
-
-				// Draw each point as a radial-gradient "blob"
-				// p.x and p.y are percentages (0-100) from the API
-				data.forEach( function ( p ) {
-					var t    = ( p.weight || 1 ) / maxW;           // normalised 0-1
-					var px   = ( p.x / 100 ) * W;                  // convert % to canvas pixels
-					var py   = ( p.y / 100 ) * H;
-					var brad = Math.max( 24, Math.round( t * 80 ) );
-
-					if ( isNaN( px ) || isNaN( py ) ) return;
-
-					var grad = ctx.createRadialGradient( px, py, 0, px, py, brad );
-					grad.addColorStop( 0,   heatColour( t, 0.85 ) );
-					grad.addColorStop( 0.5, heatColour( t, 0.4 ) );
-					grad.addColorStop( 1,   heatColour( t, 0 ) );
-
-					ctx.fillStyle = grad;
+					ctx.fillStyle = '#4a90b8';
 					ctx.beginPath();
-					ctx.arc( px, py, brad, 0, Math.PI * 2 );
+					ctx.roundRect( 60, 168, 140, 40, 6 );
 					ctx.fill();
-				} );
+
+					var col1W = Math.round( W * 0.62 );
+					var col2X = col1W + 24;
+					var col2W = W - col2X - 24;
+					var yBase = 272;
+
+					ctx.fillStyle = '#cdd5dc';
+					ctx.fillRect( 24, yBase, 220, 22 );
+					yBase += 40;
+
+					ctx.fillStyle = '#e4e9ee';
+					for ( var li = 0; li < 5; li++ ) {
+						ctx.fillRect( 24, yBase + li * 22, ( li === 4 ? col1W * 0.6 : col1W - 24 ), 14 );
+					}
+					yBase += 5 * 22 + 24;
+
+					ctx.fillStyle = '#dde4ec';
+					ctx.fillRect( 24, yBase, col1W - 24, 180 );
+					ctx.fillStyle = '#c0cbd6';
+					ctx.fillRect( 24 + ( col1W - 24 ) / 2 - 24, yBase + 75, 48, 30 );
+					yBase += 210;
+
+					ctx.fillStyle = '#e4e9ee';
+					for ( var li2 = 0; li2 < 4; li2++ ) {
+						ctx.fillRect( 24, yBase + li2 * 22, ( li2 === 3 ? col1W * 0.4 : col1W - 24 ), 14 );
+					}
+
+					var sbY = 272 + 40;
+					ctx.fillStyle = '#f2f5f8';
+					ctx.beginPath();
+					if ( ctx.roundRect ) { ctx.roundRect( col2X, sbY, col2W, 160, 8 ); } else { ctx.rect( col2X, sbY, col2W, 160 ); }
+					ctx.fill();
+					ctx.fillStyle = '#dde4ec';
+					ctx.fillRect( col2X + 16, sbY + 20, col2W - 32, 14 );
+					ctx.fillRect( col2X + 16, sbY + 44, col2W - 32, 10 );
+					ctx.fillRect( col2X + 16, sbY + 62, col2W - 64, 10 );
+					ctx.fillStyle = '#4a90b8';
+					ctx.beginPath();
+					if ( ctx.roundRect ) { ctx.roundRect( col2X + 16, sbY + 88, col2W - 32, 34, 6 ); } else { ctx.rect( col2X + 16, sbY + 88, col2W - 32, 34 ); }
+					ctx.fill();
+
+					ctx.fillStyle = '#2c3e50';
+					ctx.fillRect( 0, H - 80, W, 80 );
+					ctx.fillStyle = 'rgba(255,255,255,0.2)';
+					[ 24, W / 4, W / 2, W * 0.75 ].forEach( function ( x ) {
+						ctx.fillRect( x, H - 60, 80, 10 );
+						ctx.fillRect( x, H - 44, 60, 8 );
+						ctx.fillRect( x, H - 30, 70, 8 );
+					} );
+					// ── End page silhouette ────────────────────────────────
+
+					drawDots( ctx, data, W, H );
+				}
 
 			} ).catch( function () {
 				results.innerHTML =
@@ -1883,12 +1894,27 @@
 			} );
 		}
 
-		setLoading( false );
-		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
+		// Populate page dropdown from filter-options, then auto-load
+		apiGet( 'filter-options', { period: state.period } ).then( function ( opts ) {
+			var pages = ( opts && opts.pages && opts.pages.length ) ? opts.pages : [ '/' ];
+			var sel   = document.getElementById( 'rsa-hm-page' );
+			if ( sel ) {
+				sel.innerHTML = pages.map( function ( p ) {
+					return '<option value="' + esc( p ) + '">' + esc( p ) + '</option>';
+				} ).join( '' );
+				sel.addEventListener( 'change', loadHeatmap );
+			}
+			setLoading( false );
+			loadHeatmap();
+		} ).catch( function () {
+			var sel = document.getElementById( 'rsa-hm-page' );
+			if ( sel ) {
+				sel.innerHTML = '<option value="/">/</option>';
+				sel.addEventListener( 'change', loadHeatmap );
+			}
+			setLoading( false );
 			loadHeatmap();
 		} );
-		// Auto-load the root path on open
-		loadHeatmap();
 	}
 
 	// -----------------------------------------------------------------------
