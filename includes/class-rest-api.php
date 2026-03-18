@@ -26,31 +26,31 @@ class RSA_Rest_API {
 		add_action( 'rest_api_init', [ __CLASS__, 'add_cors_headers' ] );
 
 		// When the PWA is served on the same origin as the WP site, the browser
-		// sends session cookies with every fetch().  WP's cookie auth sees the
-		// cookies but no nonce and marks the request unauthenticated — even when
-		// a valid Authorization: Basic (Application Password) header is also
-		// present.  Remove cookie authentication entirely for our namespace so
-		// only Application Password auth is used.
-		add_filter( 'rest_authentication_errors', [ __CLASS__, 'remove_cookie_auth' ], 5 );
+		// sends session cookies with every fetch().  WP's cookie-nonce check
+		// (priority 100) sets a WP_Error when those cookies carry no nonce —
+		// even when a valid Authorization: Basic (Application Password) header
+		// is also present.  We run at priority 200 (after the cookie check) and
+		// clear that error when an Authorization header is present, allowing
+		// Application Password auth to succeed.
+		add_filter( 'rest_authentication_errors', [ __CLASS__, 'remove_cookie_auth' ], 200 );
 	}
 
 	/**
-	 * If no error has been set yet (i.e. no auth mechanism has run or rejected
-	 * the request) return null to let Application Password auth proceed.
-	 * We only suppress the cookie-auth rejection; the Basic-auth handler runs
-	 * independently and will authenticate the user correctly.
+	 * Clear cookie-auth errors for rsa/v1 requests that carry an Authorization
+	 * header so Application Password authentication is not blocked.
 	 */
 	public static function remove_cookie_auth( $result ) {
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! is_wp_error( $result ) ) {
 			return $result;
 		}
-		$route = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		if ( strpos( $route, '/rsa/v1/' ) === false ) {
 			return $result;
 		}
-		// A WP_Error here from cookie auth (no nonce) would block other auth
-		// methods.  Return null to allow Application Password auth to proceed.
-		if ( is_wp_error( $result ) ) {
+		// Only clear the error if the client is actually providing credentials
+		// via an Authorization header (Application Password).
+		$has_auth = ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) || ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		if ( $has_auth ) {
 			return null;
 		}
 		return $result;
