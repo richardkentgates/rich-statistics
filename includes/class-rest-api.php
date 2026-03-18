@@ -152,6 +152,15 @@ class RSA_Rest_API {
 		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
+		register_rest_route( self::NS, '/purge-page', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'purge_page' ],
+			'permission_callback' => $auth,
+			'args'                => [
+				'page' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
+			],
+		] );
+
 		// Plugin info — public, no auth required (version badge + version sync for the PWA)
 		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
 
@@ -375,6 +384,12 @@ class RSA_Rest_API {
 
 	public static function get_filter_options( WP_REST_Request $r ): WP_REST_Response {
 		return self::ok( RSA_Analytics::get_filter_options( $r['period'] ) );
+	}
+
+	public static function purge_page( WP_REST_Request $r ): WP_REST_Response {
+		$page    = $r->get_param( 'page' );
+		$deleted = RSA_DB::purge_page_data( $page );
+		return self::ok( [ 'deleted' => $deleted, 'page' => $page ] );
 	}
 
 	public static function get_campaigns( WP_REST_Request $r ): WP_REST_Response {

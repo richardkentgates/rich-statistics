@@ -914,9 +914,13 @@ class RSA_Analytics {
 		) ) ?: [];
 
 		return [
-			'browsers' => $browsers,
-			'os'       => $os,
-			'pages'    => $pages,
+			'browsers'      => $browsers,
+			'os'            => $os,
+			'pages'         => $pages,
+			'heatmap_pages' => $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
+				"SELECT DISTINCT page FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s AND page IS NOT NULL AND page != '' ORDER BY page ASC LIMIT 200",
+				$range['start'], $range['end']
+			) ) ?: [],
 		];
 	}
 
@@ -931,5 +935,60 @@ class RSA_Analytics {
 			self::$bot_threshold = (int) get_option( 'rsa_bot_score_threshold', 3 );
 		}
 		return self::$bot_threshold;
+	}
+
+	// ----------------------------------------------------------------
+	// Maintenance: all tracked paths with live / deleted status
+	// ----------------------------------------------------------------
+
+	public static function get_all_tracked_pages(): array {
+		global $wpdb;
+
+		// Union of distinct page paths across all three tables, with per-table counts
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance query
+			"SELECT page,
+				SUM(ev) AS events,
+				SUM(cl) AS clicks,
+				SUM(hm) AS heatmap
+			FROM (
+				SELECT page, COUNT(*) AS ev, 0 AS cl, 0 AS hm FROM `{$wpdb->prefix}rsa_events` WHERE page != '' AND page IS NOT NULL GROUP BY page
+				UNION ALL
+				SELECT page, 0, COUNT(*), 0 FROM `{$wpdb->prefix}rsa_clicks` WHERE page != '' AND page IS NOT NULL GROUP BY page
+				UNION ALL
+				SELECT page, 0, 0, SUM(weight) FROM `{$wpdb->prefix}rsa_heatmap` WHERE page != '' AND page IS NOT NULL GROUP BY page
+			) sub
+			GROUP BY page
+			ORDER BY events DESC
+			LIMIT 500",
+			ARRAY_A
+		) ?: [];
+
+		$site_url = trailingslashit( get_site_url() );
+
+		return array_map( static function ( $row ) use ( $site_url ) {
+			$path    = $row['page'];
+			$is_home = ( $path === '/' || $path === '' );
+			$post_id = $is_home ? 0 : url_to_postid( $site_url . ltrim( $path, '/' ) );
+
+			if ( $is_home ) {
+				$status = 'live';
+			} elseif ( $post_id > 0 && get_post_status( $post_id ) === 'publish' ) {
+				$status = 'live';
+			} elseif ( $post_id > 0 ) {
+				// Post exists but is not published (draft, trash, private, etc.)
+				$status = 'unpublished';
+			} else {
+				// No post ID — could be a live archive/shop/custom endpoint or a deleted/bogus path
+				$status = 'unmatched';
+			}
+
+			return [
+				'page'    => $path,
+				'events'  => (int) $row['events'],
+				'clicks'  => (int) $row['clicks'],
+				'heatmap' => (int) $row['heatmap'],
+				'status'  => $status,
+			];
+		}, $rows );
 	}
 }

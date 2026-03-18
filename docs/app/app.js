@@ -1822,9 +1822,11 @@
 					'</div>';
 
 				if ( isSameOrigin ) {
-					// Same-origin: show the real page in an iframe with a canvas overlay
+					// Same-origin: show the real page in an iframe with a canvas overlay.
+					// ?rsa_preview=1 suppresses the WP admin bar so coordinates match recorded clicks.
 					var iframeH = 700;
-					var pageUrl = ( state.siteUrl || '' ).replace( /\/$/, '' ) + pagePath;
+					var pageUrl = ( state.siteUrl || '' ).replace( /\/$/, '' ) + pagePath +
+						( pagePath.indexOf( '?' ) === -1 ? '?' : '&' ) + 'rsa_preview=1';
 					results.innerHTML =
 						'<div class="rsa-chart-card" style="margin-top:16px">' +
 							'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
@@ -1964,9 +1966,10 @@
 			} );
 		}
 
-		// Populate page dropdown from filter-options, then auto-load
+		// Populate page dropdown from filter-options (heatmap_pages = pages with actual click data), then auto-load
 		apiGet( 'filter-options', { period: state.period } ).then( function ( opts ) {
-			var pages = ( opts && opts.pages && opts.pages.length ) ? opts.pages : [ '/' ];
+			var pages = ( opts && opts.heatmap_pages && opts.heatmap_pages.length ) ? opts.heatmap_pages
+				: ( opts && opts.pages && opts.pages.length ) ? opts.pages : [ '/' ];
 			var sel   = document.getElementById( 'rsa-hm-page' );
 			if ( sel ) {
 				sel.innerHTML = pages.map( function ( p ) {

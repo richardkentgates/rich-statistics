@@ -26,6 +26,20 @@ class RSA_Admin {
 		add_filter( 'query_vars',        [ __CLASS__, 'add_app_query_var' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
+
+		// Suppress admin bar in heatmap iframe preview
+		add_action( 'init', [ __CLASS__, 'maybe_hide_preview_bar' ] );
+	}
+
+	/**
+	 * Hide the WP admin bar when the page is loaded inside the heatmap iframe preview.
+	 * The flag is a read-only display hint — no nonce required.
+	 */
+	public static function maybe_hide_preview_bar(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display flag only, no state change
+		if ( ! empty( $_GET['rsa_preview'] ) ) {
+			add_filter( 'show_admin_bar', '__return_false' );
+		}
 	}
 
 	public static function register_app_rewrite(): void {
@@ -223,8 +237,9 @@ class RSA_Admin {
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
-		$pages['preferences'] = [ 'title' => __( 'Preferences', 'rich-statistics' ), 'label' => __( 'Preferences', 'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['export']      = [ 'title' => __( 'Export',      'rich-statistics' ), 'label' => __( 'Export',      'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['export']       = [ 'title' => __( 'Export',        'rich-statistics' ), 'label' => __( 'Export',        'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
 
@@ -368,6 +383,7 @@ class RSA_Admin {
 	public static function page_click_map():      void { self::render( 'click-map' ); }
 	public static function page_heatmap():        void { self::render( 'heatmap' ); }
 	public static function page_preferences():      void { self::render( 'preferences' ); }
+	public static function page_maintenance():       void { self::render( 'maintenance' ); }
 	public static function page_export():           void { self::render( 'export' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
