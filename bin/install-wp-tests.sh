@@ -88,6 +88,12 @@ install_test_suite() {
     svn_co_with_fallback "tests/phpunit/includes" "$WP_TESTS_DIR/includes"
     svn_co_with_fallback "tests/phpunit/data"     "$WP_TESTS_DIR/data"
 
+    # Always create a src/ symlink so ABSPATH works whether the config uses
+    # dirname(__FILE__).'/src/' (old format) or the actual WP_CORE_DIR path.
+    if [ ! -e "${WP_TESTS_DIR}/src" ]; then
+        ln -s "${WP_CORE_DIR}" "${WP_TESTS_DIR}/src"
+    fi
+
     if [ ! -f "$WP_TESTS_DIR"/wp-tests-config.php ]; then
         download "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php" \
             "$WP_TESTS_DIR"/wp-tests-config.php || \
