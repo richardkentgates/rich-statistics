@@ -878,41 +878,59 @@
 	// -----------------------------------------------------------------------
 	function renderHeatmap( container ) {
 		container.innerHTML =
-			'<div class="rsa-field">' +
-				'<label for="rsa-hm-page">Page URL path</label>' +
-				'<input type="text" id="rsa-hm-page" placeholder="/" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--rsa-border);border-radius:var(--rsa-radius);font-size:14px;color:var(--rsa-text);background:var(--rsa-surface);margin-bottom:8px">' +
+			'<div class="rsa-chart-card">' +
+				'<h3>Heatmap Controls</h3>' +
+				'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+					'<label for="rsa-hm-page" style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
+					'<input type="text" id="rsa-hm-page" placeholder="/" ' +
+						'style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
+						'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
+					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load" style="flex-shrink:0">Load Heatmap</button>' +
+				'</div>' +
+				'<p class="rsa-field-hint" style="margin-top:8px">Enter a page path (e.g. <code>/about/</code>). Click data is aggregated nightly for the selected period.</p>' +
 			'</div>' +
-			'<div class="rsa-field-row" style="margin-top:0">' +
-				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load">Load Heatmap</button>' +
-			'</div>' +
-			'<div id="rsa-hm-results" style="margin-top:20px"></div>';
+			'<div id="rsa-hm-results"></div>';
 
 		setLoading( false );
 
 		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
 			var pagePath = ( document.getElementById( 'rsa-hm-page' ).value || '/' ).trim() || '/';
 			var results  = document.getElementById( 'rsa-hm-results' );
-			results.innerHTML = '<p class="rsa-field-hint">Loading\u2026</p>';
+			results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
 
 			apiGet( 'heatmap', { period: state.period, page: pagePath } ).then( function ( data ) {
 				if ( ! data || ! data.length ) {
-					results.innerHTML = '<p class="rsa-empty">No click data for this page and period.</p>';
+					results.innerHTML =
+						'<div class="rsa-chart-card" style="margin-top:16px">' +
+							'<p class="rsa-empty">No heatmap data for <code>' + esc( pagePath ) + '</code> in this period.<br>' +
+							'Data is aggregated nightly from click events.</p>' +
+						'</div>';
 					return;
 				}
 
 				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight; } ) );
-				var rows = data.slice( 0, 20 ).map( function ( p ) {
-					return '<tr><td>' + p.x.toFixed( 3 ) + '</td><td>' + p.y.toFixed( 3 ) + '</td><td>' + fmt( p.weight ) + '</td></tr>';
+				var rows = data.slice( 0, 20 ).map( function ( p, i ) {
+					return '<tr><td>' + ( i + 1 ) + '</td><td>' + p.x.toFixed( 3 ) + '</td><td>' + p.y.toFixed( 3 ) + '</td><td>' + fmt( p.weight ) + '</td></tr>';
 				} ).join( '' );
 
 				results.innerHTML =
-					'<div class="rsa-chart-wrap" style="height:320px"><canvas id="c-heatmap-scatter"></canvas></div>' +
-					'<div class="rsa-table-wrap" style="margin-top:16px"><table class="rsa-table">' +
-					'<thead><tr><th>X (relative)</th><th>Y (relative)</th><th>Clicks</th></tr></thead>' +
-					'<tbody>' + rows + '</tbody></table></div>';
+					'<div class="rsa-chart-card" style="margin-top:16px">' +
+						'<h3>Click Distribution \u2014 ' + esc( pagePath ) + '</h3>' +
+						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' data point' + ( data.length !== 1 ? 's' : '' ) + ' &mdash; bubble size reflects relative click weight.</p>' +
+						'<div class="rsa-chart-wrap" style="height:300px"><canvas id="c-heatmap-scatter"></canvas></div>' +
+					'</div>' +
+					'<div class="rsa-table-card" style="margin-top:16px">' +
+						'<h3>Top Click Coordinates</h3>' +
+						'<div class="rsa-table-wrap"><table class="rsa-table">' +
+						'<thead><tr><th>#</th><th>X (left\u2192right)</th><th>Y (top\u2192bottom)</th><th>Clicks</th></tr></thead>' +
+						'<tbody>' + rows + '</tbody></table></div>' +
+					'</div>';
 
 				var canvas = document.getElementById( 'c-heatmap-scatter' );
 				if ( canvas ) {
+					if ( state.charts[ 'c-heatmap-scatter' ] ) {
+						state.charts[ 'c-heatmap-scatter' ].destroy();
+					}
 					state.charts[ 'c-heatmap-scatter' ] = new Chart( canvas, {
 						type: 'bubble',
 						data: {
@@ -931,14 +949,17 @@
 							maintainAspectRatio: false,
 							plugins: { legend: { display: false } },
 							scales: {
-								x: { min: 0, max: 1, title: { display: true, text: 'X (left\u2192right)' } },
-								y: { min: 0, max: 1, reverse: true, title: { display: true, text: 'Y (top\u2192bottom)' } },
+								x: { min: 0, max: 1, title: { display: true, text: 'X (left \u2192 right)' } },
+								y: { min: 0, max: 1, reverse: true, title: { display: true, text: 'Y (top \u2192 bottom)' } },
 							},
 						},
 					} );
 				}
 			} ).catch( function () {
-				results.innerHTML = '<p class="rsa-empty">Could not load heatmap data. Please try again.</p>';
+				results.innerHTML =
+					'<div class="rsa-chart-card" style="margin-top:16px">' +
+						'<p class="rsa-empty">Could not load heatmap data. Please try again.</p>' +
+					'</div>';
 			} );
 		} );
 	}
@@ -948,20 +969,47 @@
 	// -----------------------------------------------------------------------
 	function renderExport( container ) {
 		container.innerHTML =
-			'<p class="rsa-field-hint" style="margin-bottom:16px">' +
-				'Export all tracked events for the selected period. The download will begin immediately in your browser.' +
-			'</p>' +
-			'<div class="rsa-field-row" style="margin-top:0">' +
-				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-export-json">Download JSON</button>' +
-				'<button type="button" class="rsa-btn rsa-btn-ghost"  id="rsa-export-csv">Download CSV</button>' +
-			'</div>' +
-			'<div id="rsa-export-status" class="rsa-field-hint" style="margin-top:12px"></div>';
+			'<div class="rsa-chart-card">' +
+				'<h3>Export Data</h3>' +
+				'<table class="rsa-table" style="margin-bottom:16px">' +
+					'<tbody>' +
+						'<tr>' +
+							'<th style="width:140px;text-align:left;padding:10px 12px;font-weight:600">Data type</th>' +
+							'<td style="padding:10px 12px">Pageviews &amp; events (all tracked activity)</td>' +
+						'</tr>' +
+						'<tr>' +
+							'<th style="text-align:left;padding:10px 12px;font-weight:600">Period</th>' +
+							'<td style="padding:10px 12px" id="rsa-export-period-label"></td>' +
+						'</tr>' +
+						'<tr>' +
+							'<th style="text-align:left;padding:10px 12px;font-weight:600">Format</th>' +
+							'<td style="padding:10px 12px">CSV or JSON</td>' +
+						'</tr>' +
+					'</tbody>' +
+				'</table>' +
+				'<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-export-csv">Download CSV</button>' +
+					'<button type="button" class="rsa-btn rsa-btn-ghost"  id="rsa-export-json">Download JSON</button>' +
+				'</div>' +
+				'<div id="rsa-export-status" class="rsa-field-hint" style="margin-top:10px"></div>' +
+			'</div>';
+
+		var periodLabels = {
+			'7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days',
+			'thismonth': 'This month', 'lastmonth': 'Last month',
+		};
+		var labelEl = document.getElementById( 'rsa-export-period-label' );
+		if ( labelEl ) { labelEl.textContent = periodLabels[ state.period ] || state.period; }
 
 		setLoading( false );
 
 		function doExport( format ) {
-			var status = document.getElementById( 'rsa-export-status' );
+			var status  = document.getElementById( 'rsa-export-status' );
+			var csvBtn  = document.getElementById( 'rsa-export-csv' );
+			var jsonBtn = document.getElementById( 'rsa-export-json' );
 			status.textContent = 'Preparing download\u2026';
+			if ( csvBtn )  { csvBtn.disabled  = true; }
+			if ( jsonBtn ) { jsonBtn.disabled = true; }
 
 			var url = state.siteUrl + '/wp-json/rsa/v1/export' +
 				'?period=' + encodeURIComponent( state.period ) +
@@ -988,18 +1036,22 @@
 				document.body.removeChild( a );
 				URL.revokeObjectURL( a.href );
 				status.textContent = 'Download started.';
+				if ( csvBtn )  { csvBtn.disabled  = false; }
+				if ( jsonBtn ) { jsonBtn.disabled = false; }
 			} ).catch( function ( err ) {
 				if ( err.message === 'auth' ) {
 					clearAllSites();
 					showLogin();
 				} else {
 					status.textContent = 'Export failed. Please try again.';
+					if ( csvBtn )  { csvBtn.disabled  = false; }
+					if ( jsonBtn ) { jsonBtn.disabled = false; }
 				}
 			} );
 		}
 
-		document.getElementById( 'rsa-export-json' ).addEventListener( 'click', function () { doExport( 'json' ); } );
 		document.getElementById( 'rsa-export-csv'  ).addEventListener( 'click', function () { doExport( 'csv' ); } );
+		document.getElementById( 'rsa-export-json' ).addEventListener( 'click', function () { doExport( 'json' ); } );
 	}
 
 	// -----------------------------------------------------------------------
