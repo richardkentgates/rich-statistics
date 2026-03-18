@@ -338,6 +338,25 @@
 			headers: getAuthHeaders( url ),
 		} ).then( function ( res ) {
 			if ( res.status === 401 || res.status === 403 ) {
+				// If using nonce auth and we get a 403, the nonce may have expired.
+				// Fetch a fresh nonce from WP and retry once.
+				var nonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+				var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+				if ( res.status === 403 && nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
+					return fetch( autoUrl + '/wp-json/', { headers: { 'Accept': 'application/json' } } )
+						.then( function ( r ) { return r.ok ? r.json() : null; } )
+						.then( function ( json ) {
+							if ( json && json.nonce ) {
+								window.RSA_CONFIG.nonce = json.nonce;
+							}
+							return fetch( url, { method: 'GET', headers: getAuthHeaders( url ) } );
+						} )
+						.then( function ( r2 ) {
+							if ( r2.status === 401 || r2.status === 403 ) throw new Error( 'auth' );
+							if ( ! r2.ok ) throw new Error( 'HTTP ' + r2.status );
+							return r2.json();
+						} );
+				}
 				throw new Error( 'auth' );
 			}
 			if ( ! res.ok ) {

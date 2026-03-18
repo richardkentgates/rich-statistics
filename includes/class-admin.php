@@ -46,6 +46,13 @@ class RSA_Admin {
 			return;
 		}
 
+		// Require WP login — without a valid session the injected nonce is for
+		// user 0 and all REST calls will fail with 401.
+		if ( ! is_user_logged_in() ) {
+			wp_redirect( wp_login_url( home_url( 'rs-app/' ) ) );
+			exit;
+		}
+
 		// Premium gate — must have an active premium licence
 		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 			wp_die( esc_html__( 'The Rich Statistics App requires a premium licence.', 'rich-statistics' ), 403 );
