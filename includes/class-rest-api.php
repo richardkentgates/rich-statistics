@@ -207,7 +207,7 @@ class RSA_Rest_API {
 	public static function get_info(): WP_REST_Response {
 		return self::ok( [
 			'version'   => RSA_VERSION,
-			'app_url'   => plugins_url( 'docs/app/', RSA_FILE ),
+			'app_url'   => trailingslashit( home_url( 'rs-app' ) ),
 			'site_name' => get_bloginfo( 'name' ),
 			'site_url'  => get_site_url(),
 		] );

@@ -20,6 +20,70 @@ class RSA_Admin {
 		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
+
+		// Serve the PWA at yoursite.com/rs-app/
+		add_action( 'init',              [ __CLASS__, 'register_app_rewrite' ] );
+		add_filter( 'query_vars',        [ __CLASS__, 'add_app_query_var' ] );
+		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
+	}
+
+	public static function register_app_rewrite(): void {
+		add_rewrite_rule( '^rs-app/?$', 'index.php?rsa_app=1', 'top' );
+	}
+
+	public static function add_app_query_var( array $vars ): array {
+		$vars[] = 'rsa_app';
+		return $vars;
+	}
+
+	/**
+	 * Output the PWA shell when visiting /rs-app/.
+	 * Injects RSA_CONFIG with the site URL and replaces relative asset
+	 * references with absolute plugin URLs so the JS/CSS/SW load correctly.
+	 */
+	public static function serve_app(): void {
+		if ( ! get_query_var( 'rsa_app' ) ) {
+			return;
+		}
+
+		// Premium gate — must have an active premium licence
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			wp_die( esc_html__( 'The Rich Statistics App requires a premium licence.', 'rich-statistics' ), 403 );
+		}
+
+		$assets_url = RSA_URL . 'docs/app/';
+		$site_url   = get_site_url();
+		$app_url    = trailingslashit( home_url( 'rs-app' ) );
+
+		nocache_headers();
+		header( 'Content-Type: text/html; charset=UTF-8' );
+
+		$template = RSA_DIR . 'docs/app/index.html';
+		$html     = file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file
+
+		// Inject RSA_CONFIG before </head> so config.js / app.js can read it.
+		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
+			'autoSiteUrl' => $site_url,
+			'appUrl'      => $app_url,
+		] ) . ';</script>';
+		$html = str_replace( '</head>', $config_script . '</head>', $html );
+
+		// Rewrite relative asset src/href to absolute plugin URLs.
+		$html = str_replace(
+			[ 'href="app.css"', 'src="./chart.min.js"', 'src="config.js"', 'src="app.js"', "register( 'sw.js' )" ],
+			[ 'href="' . esc_url( $assets_url . 'app.css' ) . '"', 'src="' . esc_url( $assets_url . 'chart.min.js' ) . '"', 'src="' . esc_url( $assets_url . 'config.js' ) . '"', 'src="' . esc_url( $assets_url . 'app.js' ) . '"', "register( '" . esc_url( $assets_url . 'sw.js' ) . "' )" ],
+			$html
+		);
+
+		// Manifest and icons
+		$html = str_replace(
+			[ 'href="manifest.json"', 'href="icons/icon-192.png"', 'href="icons/icon-64.png"', 'src="icons/icon-192.png"', 'src="icons/icon-64.png"' ],
+			[ 'href="' . esc_url( $assets_url . 'manifest.json' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"' ],
+			$html
+		);
+
+		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitised HTML from our own plugin file
+		exit;
 	}
 
 	/**
@@ -460,7 +524,7 @@ class RSA_Admin {
 			return;
 		}
 
-		$app_url = plugins_url( 'docs/app/', RSA_FILE );
+		$app_url = trailingslashit( home_url( 'rs-app' ) );
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>

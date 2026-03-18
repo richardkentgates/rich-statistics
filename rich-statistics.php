@@ -128,6 +128,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 // Activation / Deactivation / Uninstall hooks
 // --------------------------------------------------------------------
 register_activation_hook( RSA_FILE, [ 'RSA_DB', 'activate' ] );
+register_activation_hook( RSA_FILE, function() { RSA_Admin::register_app_rewrite(); flush_rewrite_rules(); } );
 register_deactivation_hook( RSA_FILE, [ 'RSA_DB', 'deactivate' ] );
 
 // Uninstall — hooked via Freemius so the uninstall event + user feedback
