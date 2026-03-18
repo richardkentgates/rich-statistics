@@ -515,12 +515,14 @@
 
 		// Update top bar title
 		var titles = {
-			overview : 'Overview',
-			pages    : 'Top Pages',
-			audience : 'Audience',
-			referrers: 'Referrers',
-			behavior : 'Behavior',
-			clicks   : 'Click Map',
+			overview   : 'Overview',
+			pages      : 'Top Pages',
+			audience   : 'Audience',
+			referrers  : 'Referrers',
+			behavior   : 'Behavior',
+			campaigns  : 'Campaigns',
+			'user-flow': 'User Flow',
+			clicks     : 'Click Tracking',
 		};
 		document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -574,12 +576,14 @@
 		setLoading( true );
 
 		switch ( view ) {
-			case 'overview' : renderOverview( container );  break;
-			case 'pages'    : renderPages( container );     break;
-			case 'audience' : renderAudience( container );  break;
-			case 'referrers': renderReferrers( container ); break;
-			case 'behavior' : renderBehavior( container );  break;
-			case 'clicks'   : renderClicks( container );    break;
+			case 'overview'  : renderOverview( container );   break;
+			case 'pages'     : renderPages( container );      break;
+			case 'audience'  : renderAudience( container );   break;
+			case 'referrers' : renderReferrers( container );  break;
+			case 'behavior'  : renderBehavior( container );   break;
+			case 'campaigns' : renderCampaigns( container );  break;
+			case 'user-flow' : renderUserFlow( container );   break;
+			case 'clicks'    : renderClicks( container );     break;
 			default: setLoading( false );
 		}
 	}
@@ -719,6 +723,92 @@
 				data.session_depth.map( function ( b ) { return b.bucket; } ),
 				data.session_depth.map( function ( b ) { return b.count; } )
 			);
+		} ).catch( handleApiError );
+	}
+
+	// -----------------------------------------------------------------------
+	// Campaigns
+	// -----------------------------------------------------------------------
+	function renderCampaigns( container ) {
+		apiGet( 'campaigns', { period: state.period } ).then( function ( data ) {
+			var rows = data.campaigns.map( function ( c, i ) {
+				return '<tr>' +
+					'<td>' + ( i + 1 ) + '</td>' +
+					'<td>' + esc( c.source   || '—' ) + '</td>' +
+					'<td>' + esc( c.medium   || '—' ) + '</td>' +
+					'<td class="rsa-td-text">' + esc( c.campaign || '—' ) + '</td>' +
+					'<td>' + fmt( c.sessions )   + '</td>' +
+					'<td>' + fmt( c.pageviews )  + '</td>' +
+					'</tr>';
+			} );
+
+			if ( ! rows.length ) {
+				container.innerHTML = '<p class="rsa-empty">No campaign data for this period.<br>' +
+					'Add <code>utm_source</code>, <code>utm_medium</code>, and <code>utm_campaign</code> to your links.</p>';
+				setLoading( false );
+				return;
+			}
+
+			container.innerHTML =
+				'<div class="rsa-chart-wrap"><canvas id="c-camp-bar"></canvas></div>' +
+				'<div class="rsa-table-wrap"><table class="rsa-table">' +
+				'<thead><tr><th>#</th><th>Source</th><th>Medium</th><th>Campaign</th><th>Sessions</th><th>Pageviews</th></tr></thead>' +
+				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
+
+			setLoading( false );
+			var top = data.campaigns.slice( 0, 10 );
+			drawBar( 'c-camp-bar',
+				top.map( function ( c ) { return truncate( ( c.campaign || c.source || '?' ), 36 ); } ),
+				top.map( function ( c ) { return c.sessions; } ),
+				'Sessions',
+				true
+			);
+		} ).catch( handleApiError );
+	}
+
+	// -----------------------------------------------------------------------
+	// User Flow
+	// -----------------------------------------------------------------------
+	function renderUserFlow( container ) {
+		apiGet( 'user-flow', { period: state.period } ).then( function ( data ) {
+			var steps = data.steps;
+			var stepNums = Object.keys( steps ).map( Number ).sort( function ( a, b ) { return a - b; } );
+
+			if ( ! stepNums.length ) {
+				container.innerHTML = '<p class="rsa-empty">No path data for this period.</p>';
+				setLoading( false );
+				return;
+			}
+
+			var total = data.total_sessions || 0;
+			var html  = '';
+
+			stepNums.forEach( function ( sn ) {
+				var nodes = steps[ sn ];
+				var label = sn === 1 ? 'Entry' : 'Step ' + sn;
+				var stepTotal = nodes.reduce( function ( s, n ) { return s + ( n.page === '(exit)' ? 0 : n.sessions ); }, 0 );
+
+				html += '<div class="rsa-uf-step">' +
+					'<div class="rsa-uf-step-hd">' +
+						'<span class="rsa-uf-step-label">' + label + '</span>' +
+						( total ? '<span class="rsa-uf-step-pct">' + fmtPct( stepTotal / total ) + ' retained</span>' : '' ) +
+					'</div>' +
+					'<table class="rsa-table rsa-uf-table">' +
+					'<thead><tr><th>Page</th><th>Sessions</th></tr></thead><tbody>';
+
+				nodes.forEach( function ( n ) {
+					var isExit = n.page === '(exit)';
+					html += '<tr' + ( isExit ? ' class="rsa-uf-exit"' : '' ) + '>' +
+						'<td class="rsa-td-path">' + esc( n.page ) + '</td>' +
+						'<td>' + fmt( n.sessions ) + '</td>' +
+						'</tr>';
+				} );
+
+				html += '</tbody></table></div>';
+			} );
+
+			container.innerHTML = '<div class="rsa-uf-wrap">' + html + '</div>';
+			setLoading( false );
 		} ).catch( handleApiError );
 	}
 

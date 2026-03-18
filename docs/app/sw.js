@@ -1,15 +1,12 @@
 /**
- * Rich Statistics — Service Worker (hosted / GitHub Pages version)
+ * Rich Statistics — Service Worker
  *
  * Strategy:
  *  • App shell (HTML/CSS/JS)  → Cache-first (serve cached, refresh in background)
  *  • API calls to wp-json/    → Network-first (cache result for offline fallback)
- *
- * Note: Chart.js is loaded from CDN in this hosted version and is not
- * pre-cached here — Chart.js has its own long-lived CDN cache headers.
  */
 
-const CACHE_VERSION = 'rsa-hosted-v2';
+const CACHE_VERSION = 'rsa-v3';
 
 const SHELL_ASSETS = [
 	'./index.html',
@@ -17,6 +14,7 @@ const SHELL_ASSETS = [
 	'./app.js',
 	'./app.css',
 	'./manifest.json',
+	'../vendor/chart.min.js',
 ];
 
 // -------------------------------------------------------------------------
@@ -66,7 +64,7 @@ self.addEventListener( 'fetch', function ( event ) {
 
 	// App shell assets → cache-first, refresh in background (stale-while-revalidate)
 	const isShellAsset = SHELL_ASSETS.some( function ( asset ) {
-		return url.pathname.endsWith( asset.replace( './', '' ) );
+		return url.pathname.endsWith( asset.replace( './', '' ).replace( '../', '' ) );
 	} );
 
 	if ( isShellAsset ) {
@@ -74,7 +72,7 @@ self.addEventListener( 'fetch', function ( event ) {
 		return;
 	}
 
-	// Everything else (CDN, external): network only
+	// Everything else: network only
 } );
 
 // -------------------------------------------------------------------------

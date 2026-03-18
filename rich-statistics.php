@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name:       Rich Statistics
- * Plugin URI:        https://richstatistics.com
+ * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
- * Author URI:        https://richstatistics.com
+ * Author URI:        https://richardkentgates.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       rich-statistics
@@ -24,7 +24,7 @@ if ( function_exists( 'rs_fs' ) ) {
 	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
-	define( 'RSA_VERSION',     '1.2.0' );
+	define( 'RSA_VERSION',     '1.3.0' );
 	define( 'RSA_FILE',        __FILE__ );
 	define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
 	define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );

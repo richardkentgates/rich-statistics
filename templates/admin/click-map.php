@@ -1,20 +1,20 @@
 <?php
 /**
- * Premium: Click Map template.
+ * Premium: Click Tracking template.
  *
  * @fs_premium_only
  */
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-	RSA_Admin::page_header( __( 'Click Map', 'rich-statistics' ) );
+	RSA_Admin::page_header( __( 'Click Tracking', 'rich-statistics' ) );
 	?>
 	<div class="rsa-upsell-notice">
-		<h2><?php esc_html_e( 'Click Map is a Premium Feature', 'rich-statistics' ); ?></h2>
+		<h2><?php esc_html_e( 'Click Tracking is a Premium Feature', 'rich-statistics' ); ?></h2>
 		<p><?php esc_html_e( 'See exactly where visitors click on every page. Identify high-interest areas, dead zones, and navigation patterns at a glance.', 'rich-statistics' ); ?></p>
 		<?php if ( function_exists( 'rs_fs' ) ) : ?>
 		<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary button-hero">
-			<?php esc_html_e( 'Upgrade to Unlock Click Map', 'rich-statistics' ); ?>
+			<?php esc_html_e( 'Upgrade to Unlock Click Tracking', 'rich-statistics' ); ?>
 		</a>
 		<?php endif; ?>
 	</div>
@@ -38,7 +38,7 @@ $page_filter = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) ); 
 $opts        = RSA_Analytics::get_filter_options( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
 $rows        = RSA_Analytics::get_click_map( $period, $page_filter );
 
-RSA_Admin::page_header( __( 'Click Map', 'rich-statistics' ), $period );
+RSA_Admin::page_header( __( 'Click Tracking', 'rich-statistics' ), $period );
 $base = admin_url( 'admin.php' );
 ?>
 

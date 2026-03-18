@@ -59,6 +59,10 @@ class RSA_Rest_API {
 		register_rest_route( self::NS, '/export',    [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_export'    ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
 			'format' => [ 'type' => 'string', 'default' => 'json', 'enum' => [ 'json', 'csv' ] ],
 		] ) ] );
+		register_rest_route( self::NS, '/campaigns', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_campaigns' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+			'limit' => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
+		] ) ] );
+		register_rest_route( self::NS, '/user-flow', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
 		// Ingest endpoint — public (no auth), nonce verified inside
 		register_rest_route( self::NS, '/track', [
@@ -181,6 +185,16 @@ class RSA_Rest_API {
 		}
 
 		return self::ok( json_decode( $data, true ) );
+	}
+
+	public static function get_campaigns( WP_REST_Request $r ): WP_REST_Response {
+		$rows = RSA_Analytics::get_campaigns( $r['period'], (int) $r['limit'] );
+		return self::ok( [ 'campaigns' => $rows ] );
+	}
+
+	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response {
+		$data = RSA_Analytics::get_path_flow( $r['period'] );
+		return self::ok( $data );
 	}
 
 	// ----------------------------------------------------------------

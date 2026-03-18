@@ -105,11 +105,11 @@ class RSA_Admin {
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
 			: '';
 		if ( $is_premium ) {
-			$pages['click-map'] = [ 'title' => __( 'Click Map', 'rich-statistics' ), 'label' => __( 'Click Map', 'rich-statistics' ), 'cap' => 'manage_options' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',   'rich-statistics' ), 'label' => __( 'Heatmap',   'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'manage_options' ];
 		} else {
-			$pages['click-map'] = [ 'title' => __( 'Click Map', 'rich-statistics' ), 'label' => __( 'Click Map', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',   'rich-statistics' ), 'label' => __( 'Heatmap',   'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
 		$pages['preferences'] = [ 'title' => __( 'Preferences', 'rich-statistics' ), 'label' => __( 'Preferences', 'rich-statistics' ), 'cap' => 'manage_options' ];
 		$pages['export']      = [ 'title' => __( 'Export',      'rich-statistics' ), 'label' => __( 'Export',      'rich-statistics' ), 'cap' => 'manage_options' ];
@@ -217,14 +217,6 @@ class RSA_Admin {
 			$focus_page   = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
 			$min_sessions = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
 			$steps        = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
-			$uf_filters   = [
-				'date_from'  => $date_from,
-				'date_to'    => $date_to,
-				'from_page'  => sanitize_text_field( wp_unslash( $_GET['from_page'] ?? '' ) ),
-				'to_page'    => sanitize_text_field( wp_unslash( $_GET['to_page']   ?? '' ) ),
-				'min_count'  => max( 1, absint( $_GET['min_count'] ?? 1 ) ),
-				'limit'      => 30,
-			];
 			return [
 				'view'   => 'user-flow',
 				'data'   => [
@@ -236,7 +228,6 @@ class RSA_Admin {
 						'min_sessions' => $min_sessions,
 						'steps'        => $steps,
 					] ),
-					'user_flow' => RSA_Analytics::get_user_flow( $period, $uf_filters ),
 				],
 				'period' => $period,
 			];
@@ -585,7 +576,7 @@ class RSA_Admin {
 			<?php if ( function_exists( 'rs_fs' ) && rs_fs()->is_not_paying() ) : ?>
 			<div class="rsa-upsell-banner">
 				<div class="rsa-upsell-banner__content">
-					<strong><?php esc_html_e( 'Unlock Click Maps, Heatmaps &amp; the Stats App', 'rich-statistics' ); ?></strong>
+					<strong><?php esc_html_e( 'Unlock Click Tracking, Heatmap &amp; the Stats App', 'rich-statistics' ); ?></strong>
 					<?php esc_html_e( 'Get the full picture — see exactly where visitors click, scroll, and engage on every page.', 'rich-statistics' ); ?>
 				</div>
 				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
@@ -687,12 +678,12 @@ class RSA_Admin {
 				'title'   => __( 'User Flow', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'User Flow Analysis', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'The flow chart visualises how visitors navigate between pages. Each ribbon represents a page-to-page transition; the wider the ribbon, the more visitors made that journey.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Use the Entry Page and Exit Page dropdowns to focus on traffic entering or leaving a specific page. Switch to the Transitions Table view to sort and browse every recorded page pair with counts and percentages.', 'rich-statistics' ) . '</p>',
+					'<p>' . esc_html__( 'The Path Explorer shows page-to-page navigation in Miller columns. Each column is one step in the journey — click any page to drill forward and see where visitors went next. A drop-off funnel above the columns shows how many sessions reached each step.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Percentages in each column are relative to the selected page in the previous column, so they reflect "of visitors who reached this page, N% continued to…". Switch to the Journey Table view to browse every recorded page pair with counts and percentages.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-click-map' => [
 				'id'      => 'rsa-clicks-help',
-				'title'   => __( 'Click Map (Premium)', 'rich-statistics' ),
+				'title'   => __( 'Click Tracking (Premium)', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'Click Tracking (Premium)', 'rich-statistics' ) . '</h2>' .
 					'<p>' . esc_html__( 'Click tracking captures non-navigational interactions: phone links (tel:), email links (mailto:), map links (geo:), SMS links (sms:), and file downloads. HTTP/HTTPS link navigation is tracked automatically as pageviews. You can add additional element IDs and CSS classes in Preferences.', 'rich-statistics' ) . '</p>' .

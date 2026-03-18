@@ -45,28 +45,16 @@
     <h1>Installation</h1>
     <p>Rich Statistics requires WordPress 6.0 or higher and PHP 8.0 or higher. It works on single-site and multisite installations.</p>
 
-    <h2>Option 1 — WordPress Plugin Directory</h2>
+    <h2>Option 1 — richardkentgates.com</h2>
     <ol>
-      <li>In your WordPress admin, go to <strong>Plugins → Add New</strong>.</li>
-      <li>Search for <strong>Rich Statistics</strong>.</li>
-      <li>Click <strong>Install Now</strong>, then <strong>Activate</strong>.</li>
-    </ol>
-
-    <h2>Option 2 — WP-CLI</h2>
-    <pre><code>wp plugin install rich-statistics --activate</code></pre>
-    <p>For multisite, network-activate:</p>
-    <pre><code>wp plugin install rich-statistics --activate-network</code></pre>
-
-    <h2>Option 3 — Manual upload</h2>
-    <p>If your server cannot reach WordPress.org, you can install manually:</p>
-    <ol>
-      <li>Download the latest free release ZIP from <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org</a>.</li>
+      <li>Download the plugin ZIP from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>.</li>
       <li>In WordPress admin, go to <strong>Plugins → Add New → Upload Plugin</strong>.</li>
       <li>Upload the ZIP and activate.</li>
     </ol>
-    <div class="callout callout--warn">
-      The ZIPs published on <a href="https://github.com/richardkentgates/rich-statistics/releases" target="_blank" rel="noopener">GitHub Releases</a> are build artifacts for developers and the files submitted to Freemius and WordPress.org. They are not intended as a separate user download channel.
-    </div>
+    <div class="callout">WordPress.org listing coming soon — once approved it will also be installable via the plugin directory and WP-CLI.</div>
+
+    <h2>Option 2 — Manual upload</h2>
+    <p>Same as above — download from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a> and upload via <strong>Plugins → Add New → Upload Plugin</strong>.</p>
 
     <h2>System Requirements</h2>
     <table>
@@ -86,7 +74,7 @@
       <tbody>
         <tr><td><code>rsa_events</code></td><td>One row per accepted pageview — page path, referrer domain, browser, OS, language, timezone, viewport, time on page</td></tr>
         <tr><td><code>rsa_sessions</code></td><td>Session-level data — UTM parameters, entry page, session UUID (tab-scoped only)</td></tr>
-        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for click maps (Premium)</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for heatmap and click tracking (Premium)</td></tr>
         <tr><td><code>rsa_heatmap</code></td><td>Scroll depth and hover data for heatmaps (Premium)</td></tr>
       </tbody>
     </table>

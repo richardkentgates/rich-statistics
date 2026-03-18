@@ -47,12 +47,14 @@
 			</div>
 		</div>
 		<ul class="rsa-nav-list">
-			<li><a href="#" data-view="overview"  class="rsa-nav-link rsa-active">Overview</a></li>
-			<li><a href="#" data-view="pages"     class="rsa-nav-link">Pages</a></li>
-			<li><a href="#" data-view="audience"  class="rsa-nav-link">Audience</a></li>
-			<li><a href="#" data-view="referrers" class="rsa-nav-link">Referrers</a></li>
-			<li><a href="#" data-view="behavior"  class="rsa-nav-link">Behavior</a></li>
-			<li><a href="#" data-view="clicks"    class="rsa-nav-link">Clicks</a></li>
+			<li><a href="#" data-view="overview"   class="rsa-nav-link rsa-active">Overview</a></li>
+			<li><a href="#" data-view="pages"      class="rsa-nav-link">Pages</a></li>
+			<li><a href="#" data-view="audience"   class="rsa-nav-link">Audience</a></li>
+			<li><a href="#" data-view="referrers"  class="rsa-nav-link">Referrers</a></li>
+			<li><a href="#" data-view="behavior"   class="rsa-nav-link">Behavior</a></li>
+			<li><a href="#" data-view="campaigns"  class="rsa-nav-link">Campaigns</a></li>
+			<li><a href="#" data-view="user-flow"  class="rsa-nav-link">User Flow</a></li>
+			<li><a href="#" data-view="clicks"     class="rsa-nav-link">Clicks</a></li>
 		</ul>
 		<div class="rsa-nav-footer">
 			<button class="rsa-btn-ghost rsa-signout-btn" id="rsa-signout">Sign out</button>
@@ -81,12 +83,14 @@
 		</div>
 
 		<!-- View containers -->
-		<div id="rsa-view-overview"  class="rsa-view rsa-active"></div>
-		<div id="rsa-view-pages"     class="rsa-view" hidden></div>
-		<div id="rsa-view-audience"  class="rsa-view" hidden></div>
-		<div id="rsa-view-referrers" class="rsa-view" hidden></div>
-		<div id="rsa-view-behavior"  class="rsa-view" hidden></div>
-		<div id="rsa-view-clicks"    class="rsa-view" hidden></div>
+		<div id="rsa-view-overview"   class="rsa-view rsa-active"></div>
+		<div id="rsa-view-pages"      class="rsa-view" hidden></div>
+		<div id="rsa-view-audience"   class="rsa-view" hidden></div>
+		<div id="rsa-view-referrers"  class="rsa-view" hidden></div>
+		<div id="rsa-view-behavior"   class="rsa-view" hidden></div>
+		<div id="rsa-view-campaigns"  class="rsa-view" hidden></div>
+		<div id="rsa-view-user-flow"  class="rsa-view" hidden></div>
+		<div id="rsa-view-clicks"     class="rsa-view" hidden></div>
 	</main>
 </div>
 
@@ -114,19 +118,19 @@
 				       inputmode="numeric"
 				       autocomplete="one-time-code"
 				       maxlength="7">
-				<span class="rsa-field-hint">6-digit code · expires in 15 min</span>
+				<span class="rsa-field-hint">6-digit code · expires in 15 min</span>
 			</div>
 			<div class="rsa-field-row">
 				<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-add-verify-btn">Verify Code</button>
 				<button type="button" class="rsa-btn-ghost" id="rsa-add-cancel-btn">Cancel</button>
 			</div>
-			<div id="rsa-add-otp-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
+				<div id="rsa-add-otp-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 		</div>
 
 		<!-- Step 2: Application Password -->
 		<div id="rsa-add-step-2" hidden>
 			<p class="rsa-field-hint" style="text-align:center;margin-bottom:16px;">
-				✓ Site verified! Enter your Application Password to connect.
+				✓ Site verified! Enter your Application Password to connect.
 			</p>
 			<div class="rsa-field">
 				<label for="rsa-add-site-label">Site</label>
@@ -149,14 +153,15 @@
 				<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-add-confirm-btn">Connect</button>
 				<button type="button" class="rsa-btn-ghost" id="rsa-add-back-btn">← Back</button>
 			</div>
-			<div id="rsa-add-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
+				<div id="rsa-add-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 		</div>
 	</div>
 </div>
 
-<!-- Chart.js from CDN (bundled in plugin ZIP; CDN used for this hosted version) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-<!-- Empty config (no pre-fill when hosted standalone) -->
+<!-- Chart.js — served from plugin directory (same file as admin) -->
+<script src="../vendor/chart.min.js"></script>
+<!-- Site-specific pre-configuration (empty when served from plugin URL;
+     replaced with your site URL + username in personalized downloads) -->
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script>

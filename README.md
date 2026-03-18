@@ -31,7 +31,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Referrer tracking | Domain-level only, no full URLs |
 | UTM campaign tracking | Capture `utm_source`, `utm_medium`, `utm_campaign` from landing URLs; attributed to the full session |
 | Campaigns view | Admin page showing each source/medium/campaign combination with sessions and pageviews |
-| User Flow | Step-by-step Sankey chart of page-to-page navigation across sessions |
+| User Flow | Path Explorer (Miller columns) with drop-off funnel — step-by-step page navigation across sessions |
 | Behavior analysis | Time-on-page histogram, session depth, entry pages |
 | Bot filtering | 10-signal client-side scoring + server-side UA/header checks |
 | Data retention | Configurable 1–730 days (default 90) |
@@ -45,7 +45,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Feature | Description |
 |---|---|
 | Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click |
-| Heatmaps | Viewport-relative thermal overlay on any page URL |
+| Heatmap | Viewport-relative thermal overlay on any page URL |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
 
@@ -61,12 +61,14 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 
 ## Installation
 
-### From Freemius (recommended)
+### From richardkentgates.com (recommended)
 
-1. Purchase or download the free version from [Freemius](https://freemius.com)
+1. Download the plugin from [richardkentgates.com](https://richardkentgates.com)
 2. Upload the ZIP via **WordPress → Plugins → Add New → Upload Plugin**
 3. Activate the plugin
-4. Navigate to **Rich Stats** in the admin sidebar
+4. Navigate to **Analytics** in the admin sidebar
+
+> WordPress.org listing coming soon — it will be available there as well once approved.
 
 ### Manual / Development
 

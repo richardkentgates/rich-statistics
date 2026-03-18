@@ -14,19 +14,13 @@ if ( $period === 'custom' ) {
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-// Journey Sankey filters
-$f_source   = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
-$f_focus    = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
-$f_min_s    = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
-$f_steps    = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
-// Transitions table filters
-$f_from    = sanitize_text_field( wp_unslash( $_GET['from_page'] ?? '' ) );
-$f_to      = sanitize_text_field( wp_unslash( $_GET['to_page']   ?? '' ) );
-$f_min     = max( 1, absint( $_GET['min_count'] ?? 1 ) );
-
-$view_type = in_array( $_GET['view_type'] ?? 'chart', [ 'chart', 'table' ], true ) ? sanitize_key( $_GET['view_type'] ?? 'chart' ) : 'chart';
-$sort      = in_array( $_GET['sort'] ?? 'count', [ 'count', 'from_page', 'to_page' ], true ) ? sanitize_key( $_GET['sort'] ?? 'count' ) : 'count';
-$sort_dir  = ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) === 'asc' ) ? 'asc' : 'desc';
+// Unified filters — shared by Path Explorer and Journey Table
+$f_source  = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
+$f_focus   = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
+$f_min_s   = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
+$f_steps   = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
+$view_type = in_array( $_GET['view_type'] ?? 'explorer', [ 'explorer', 'table' ], true )
+	? sanitize_key( $_GET['view_type'] ?? 'explorer' ) : 'explorer';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 $path_flow = RSA_Analytics::get_path_flow( $period, [
@@ -37,44 +31,38 @@ $path_flow = RSA_Analytics::get_path_flow( $period, [
 	'min_sessions' => $f_min_s,
 	'steps'        => $f_steps,
 ] );
-$flow     = RSA_Analytics::get_user_flow( $period, [
+$flow         = RSA_Analytics::get_user_flow( $period, [
 	'date_from' => $date_from,
 	'date_to'   => $date_to,
-	'from_page' => $f_from,
-	'to_page'   => $f_to,
-	'min_count' => $f_min,
-	'sort'      => $sort,
-	'sort_dir'  => $sort_dir,
-	'limit'     => $view_type === 'table' ? 250 : 30,
+	'from_page' => $f_focus,
+	'min_count' => $f_min_s,
+	'sort'      => 'count',
+	'sort_dir'  => 'desc',
+	'limit'     => 250,
 ] );
-$sources  = RSA_Analytics::get_entry_sources( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
-$pages    = RSA_Admin::get_trackable_pages();
-$total    = array_sum( array_column( $flow, 'count' ) );
-$uniq_src = count( array_unique( array_column( $flow, 'from_page' ) ) );
-$uniq_dst = count( array_unique( array_column( $flow, 'to_page' ) ) );
+$sources      = RSA_Analytics::get_entry_sources( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
+$pages        = RSA_Admin::get_trackable_pages();
+$grouped_flow = [];
+foreach ( $flow as $row ) {
+	$grouped_flow[ $row['from_page'] ][] = $row;
+}
 
 RSA_Admin::page_header( __( 'User Flow', 'rich-statistics' ), $period );
 
 $base      = admin_url( 'admin.php' );
 $page_slug = 'rich-statistics-user-flow';
 
-// Helper: build URLs preserving current filters
+// Helper: build filter-preserving URLs for toggle + clear links
 $common_params = array_filter( [
-	'page'      => $page_slug,
-	'period'    => $period,
-	'date_from' => $period === 'custom' ? $date_from : '',
-	'date_to'   => $period === 'custom' ? $date_to   : '',
+	'page'         => $page_slug,
+	'period'       => $period,
+	'date_from'    => $period === 'custom' ? $date_from : '',
+	'date_to'      => $period === 'custom' ? $date_to   : '',
+	'entry_source' => $f_source,
+	'focus_page'   => $f_focus,
+	'min_sessions' => $f_min_s > 1 ? (string) $f_min_s : '',
+	'steps'        => $f_steps !== 4 ? (string) $f_steps : '',
 ] );
-
-// Sort link closure (used in table view)
-$sort_link = static function ( string $col, string $label ) use ( $sort, $sort_dir, $base, $common_params, $view_type, $f_from, $f_to, $f_min ): string {
-	$is_active = ( $sort === $col );
-	$new_dir   = ( $is_active && $sort_dir === 'desc' ) ? 'asc' : 'desc';
-	$indicator = $is_active ? ( $sort_dir === 'asc' ? ' ▲' : ' ▼' ) : '';
-	$extra     = array_filter( [ 'view_type' => $view_type, 'sort' => $col, 'sort_dir' => $new_dir, 'from_page' => $f_from, 'to_page' => $f_to, 'min_count' => $f_min > 1 ? (string) $f_min : '' ] );
-	$url       = add_query_arg( array_merge( $common_params, $extra ), $base );
-	return '<a href="' . esc_url( $url ) . '">' . esc_html( $label . $indicator ) . '</a>';
-};
 ?>
 
 <!-- Filter bar -->
@@ -87,141 +75,133 @@ $sort_link = static function ( string $col, string $label ) use ( $sort, $sort_d
 	<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
 	<?php endif; ?>
 
-	<?php if ( $view_type === 'chart' ) : ?>
-		<?php if ( $sources ) : ?>
-		<select name="entry_source">
-			<option value=""><?php esc_html_e( 'All entry sources', 'rich-statistics' ); ?></option>
-			<option value="(direct)" <?php selected( $f_source, '(direct)' ); ?>><?php esc_html_e( '(direct)', 'rich-statistics' ); ?></option>
-			<?php foreach ( $sources as $src ) : ?>
-			<option value="<?php echo esc_attr( $src ); ?>" <?php selected( $f_source, $src ); ?>><?php echo esc_html( $src ); ?></option>
+	<?php if ( $sources ) : ?>
+	<select name="entry_source">
+		<option value=""><?php esc_html_e( 'All entry sources', 'rich-statistics' ); ?></option>
+		<option value="(direct)" <?php selected( $f_source, '(direct)' ); ?>><?php esc_html_e( '(direct)', 'rich-statistics' ); ?></option>
+		<?php foreach ( $sources as $src ) : ?>
+		<option value="<?php echo esc_attr( $src ); ?>" <?php selected( $f_source, $src ); ?>><?php echo esc_html( $src ); ?></option>
+		<?php endforeach; ?>
+	</select>
+	<?php endif; ?>
+
+	<select name="focus_page">
+		<option value=""><?php esc_html_e( 'Any page', 'rich-statistics' ); ?></option>
+		<?php foreach ( $pages as $path => $plabel ) : ?>
+		<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_focus, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
+		<?php endforeach; ?>
+	</select>
+
+	<label class="rsa-filter-inline-label">
+		<?php esc_html_e( 'Min. sessions', 'rich-statistics' ); ?>
+		<input type="number" name="min_sessions" value="<?php echo esc_attr( $f_min_s ); ?>" min="1" max="9999" style="width:64px">
+	</label>
+
+	<label class="rsa-filter-inline-label">
+		<?php esc_html_e( 'Steps', 'rich-statistics' ); ?>
+		<select name="steps">
+			<?php foreach ( [ 2, 3, 4, 5 ] as $s ) : ?>
+			<option value="<?php echo absint( $s ); ?>" <?php selected( $f_steps, $s ); ?>><?php echo absint( $s ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<?php endif; ?>
+	</label>
 
-		<select name="focus_page">
-			<option value=""><?php esc_html_e( 'Any page', 'rich-statistics' ); ?></option>
-			<?php foreach ( $pages as $path => $plabel ) : ?>
-			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_focus, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
-			<?php endforeach; ?>
-		</select>
-
-		<label class="rsa-filter-inline-label">
-			<?php esc_html_e( 'Min. sessions', 'rich-statistics' ); ?>
-			<input type="number" name="min_sessions" value="<?php echo esc_attr( $f_min_s ); ?>" min="1" max="9999" style="width:64px">
-		</label>
-
-		<label class="rsa-filter-inline-label">
-			<?php esc_html_e( 'Steps', 'rich-statistics' ); ?>
-			<select name="steps">
-				<?php foreach ( [ 2, 3, 4, 5 ] as $s ) : ?>
-				<option value="<?php echo absint( $s ); ?>" <?php selected( $f_steps, $s ); ?>><?php echo absint( $s ); ?></option>
-				<?php endforeach; ?>
-			</select>
-		</label>
-
-		<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
-		<?php if ( $f_source || $f_focus || $f_min_s > 1 || $f_steps !== 4 ) : ?>
-		<a href="<?php echo esc_url( add_query_arg( [ 'page' => $page_slug, 'period' => $period, 'view_type' => 'chart' ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
-		<?php endif; ?>
-
-	<?php else : ?>
-		<select name="from_page">
-			<option value=""><?php esc_html_e( 'Any from page', 'rich-statistics' ); ?></option>
-			<?php foreach ( $pages as $path => $plabel ) : ?>
-			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_from, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
-			<?php endforeach; ?>
-		</select>
-
-		<select name="to_page">
-			<option value=""><?php esc_html_e( 'Any to page', 'rich-statistics' ); ?></option>
-			<?php foreach ( $pages as $path => $plabel ) : ?>
-			<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_to, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
-			<?php endforeach; ?>
-		</select>
-
-		<label class="rsa-filter-inline-label">
-			<?php esc_html_e( 'Min. transitions', 'rich-statistics' ); ?>
-			<input type="number" name="min_count" value="<?php echo esc_attr( $f_min ); ?>" min="1" max="9999" style="width:72px">
-		</label>
-
-		<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
-		<?php if ( $f_from || $f_to || $f_min > 1 ) : ?>
-		<a href="<?php echo esc_url( add_query_arg( [ 'page' => $page_slug, 'period' => $period, 'view_type' => 'table' ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
-		<?php endif; ?>
+	<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
+	<?php if ( $f_source || $f_focus || $f_min_s > 1 || $f_steps !== 4 ) : ?>
+	<a href="<?php echo esc_url( add_query_arg( [ 'page' => $page_slug, 'period' => $period, 'view_type' => $view_type ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 	<?php endif; ?>
 </form>
 
 <!-- View toggle -->
 <div class="rsa-view-toggle" style="margin-bottom:16px">
 	<?php
-	$chart_url = add_query_arg( array_merge( $common_params, [ 'view_type' => 'chart' ] ), $base );
-	$table_url = add_query_arg( array_merge( $common_params, [ 'view_type' => 'table' ] ), $base );
+	$explorer_url = add_query_arg( array_merge( $common_params, [ 'view_type' => 'explorer' ] ), $base );
+	$table_url    = add_query_arg( array_merge( $common_params, [ 'view_type' => 'table'    ] ), $base );
 	?>
-	<a href="<?php echo esc_url( $chart_url ); ?>" class="button <?php echo $view_type === 'chart' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Flow Chart', 'rich-statistics' ); ?></a>
-	<a href="<?php echo esc_url( $table_url ); ?>" class="button <?php echo $view_type === 'table' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Transitions Table', 'rich-statistics' ); ?></a>
+	<a href="<?php echo esc_url( $explorer_url ); ?>" class="button <?php echo $view_type === 'explorer' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Path Explorer', 'rich-statistics' ); ?></a>
+	<a href="<?php echo esc_url( $table_url ); ?>" class="button <?php echo $view_type === 'table' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Journey Table', 'rich-statistics' ); ?></a>
 </div>
 
-<?php if ( ! empty( $flow ) ) : ?>
+<?php
+$pf_sessions  = (int) ( $path_flow['total_sessions'] ?? 0 );
+$pf_steps_cnt = count( $path_flow['steps'] ?? [] );
+$pf_entry_pgs = count( array_filter( $path_flow['steps'][1] ?? [], fn( $p ) => $p['page'] !== '(exit)' ) );
+$pf_exits     = array_sum( array_column( array_filter( $path_flow['links'] ?? [], fn( $l ) => $l['to'] === '(exit)' ), 'count' ) );
+$pf_exit_rate = $pf_sessions > 0 ? round( $pf_exits / $pf_sessions * 100, 1 ) : 0;
+if ( $pf_sessions > 0 ) :
+?>
 <!-- Metrics summary -->
 <div class="rsa-kpi-row">
 	<div class="rsa-kpi-card">
-		<div class="rsa-kpi-label"><?php esc_html_e( 'Total Transitions', 'rich-statistics' ); ?></div>
-		<div class="rsa-kpi-value"><?php echo esc_html( number_format( $total ) ); ?></div>
+		<div class="rsa-kpi-label"><?php esc_html_e( 'Sessions Tracked', 'rich-statistics' ); ?></div>
+		<div class="rsa-kpi-value"><?php echo esc_html( number_format( $pf_sessions ) ); ?></div>
 	</div>
 	<div class="rsa-kpi-card">
-		<div class="rsa-kpi-label"><?php esc_html_e( 'Unique From Pages', 'rich-statistics' ); ?></div>
-		<div class="rsa-kpi-value"><?php echo esc_html( number_format( $uniq_src ) ); ?></div>
+		<div class="rsa-kpi-label"><?php esc_html_e( 'Entry Pages', 'rich-statistics' ); ?></div>
+		<div class="rsa-kpi-value"><?php echo esc_html( number_format( $pf_entry_pgs ) ); ?></div>
 	</div>
 	<div class="rsa-kpi-card">
-		<div class="rsa-kpi-label"><?php esc_html_e( 'Unique To Pages', 'rich-statistics' ); ?></div>
-		<div class="rsa-kpi-value"><?php echo esc_html( number_format( $uniq_dst ) ); ?></div>
+		<div class="rsa-kpi-label"><?php esc_html_e( 'Steps in Flow', 'rich-statistics' ); ?></div>
+		<div class="rsa-kpi-value"><?php echo esc_html( $pf_steps_cnt ); ?></div>
 	</div>
 	<div class="rsa-kpi-card">
-		<div class="rsa-kpi-label"><?php esc_html_e( 'Page Pairs', 'rich-statistics' ); ?></div>
-		<div class="rsa-kpi-value"><?php echo esc_html( number_format( count( $flow ) ) ); ?></div>
+		<div class="rsa-kpi-label"><?php esc_html_e( 'Exit Rate', 'rich-statistics' ); ?></div>
+		<div class="rsa-kpi-value"><?php echo esc_html( $pf_exit_rate ) . '%'; ?></div>
 	</div>
 </div>
 <?php endif; ?>
 
-<?php if ( $view_type === 'chart' ) : ?>
-<!-- Sankey diagram (rendered by admin-charts.js) -->
+<?php if ( $view_type === 'explorer' ) : ?>
+<!-- Path Explorer (rendered by admin-charts.js) -->
 <div class="rsa-card rsa-card-full">
 	<div class="rsa-card-header">
-		<h2><?php esc_html_e( 'Navigation Flow', 'rich-statistics' ); ?></h2>
+		<h2><?php esc_html_e( 'Path Explorer', 'rich-statistics' ); ?></h2>
+		<p class="rsa-card-desc"><?php esc_html_e( 'Each column shows where visitors went at that step. Click any page to drill forward.', 'rich-statistics' ); ?></p>
 	</div>
-	<div class="rsa-chart-wrap" id="rsa-flow-chart">
+	<div id="rsa-flow-chart">
 		<?php if ( empty( $path_flow['steps'] ) ) : ?>
-		<p class="rsa-empty"><?php esc_html_e( 'No path data for this period. The chart shows actual visitor journeys step-by-step — Step 1 is the first page, Step 2 the second, and so on. Sessions that end before the next step show an (exit) node. Try a wider date range or lower the minimum sessions threshold.', 'rich-statistics' ); ?></p>
+		<p class="rsa-empty"><?php esc_html_e( 'No path data for this period. Try a wider date range or lower the minimum sessions threshold.', 'rich-statistics' ); ?></p>
 		<?php endif; ?>
 	</div>
 </div>
 
 <?php else : ?>
-<!-- Transitions table -->
+<!-- Journey Table: grouped by from_page -->
 <div class="rsa-card rsa-card-full">
 	<div class="rsa-card-header">
-		<h2><?php esc_html_e( 'All Transitions', 'rich-statistics' ); ?></h2>
+		<h2><?php esc_html_e( 'Journey Table', 'rich-statistics' ); ?></h2>
+		<p class="rsa-card-desc"><?php esc_html_e( 'Where visitors went next from each page. Percentage is share of outbound transitions from that page.', 'rich-statistics' ); ?></p>
 	</div>
-	<?php if ( ! empty( $flow ) ) : ?>
-	<table class="rsa-table rsa-table--full">
+	<?php if ( ! empty( $grouped_flow ) ) : ?>
+	<table class="rsa-table rsa-table--full rsa-table--grouped">
 		<thead>
 			<tr>
-				<th>#</th>
-				<th><?php echo $sort_link( 'from_page', __( 'From Page', 'rich-statistics' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></th>
-				<th><?php echo $sort_link( 'to_page',   __( 'To Page',   'rich-statistics' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></th>
-				<th><?php echo $sort_link( 'count',     __( 'Transitions', 'rich-statistics' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></th>
-				<th><?php esc_html_e( '% of Total', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'From Page', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'To Page', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( 'Transitions', 'rich-statistics' ); ?></th>
+				<th><?php esc_html_e( '% From Page', 'rich-statistics' ); ?></th>
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $flow as $i => $row ) : ?>
-			<tr>
-				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
-				<td class="rsa-td-page"><?php echo esc_html( $row['from_page'] ); ?></td>
+			<?php foreach ( $grouped_flow as $from_page => $destinations ) :
+				$group_total = array_sum( array_column( $destinations, 'count' ) );
+			?>
+			<?php foreach ( $destinations as $di => $row ) :
+				$pct = $group_total > 0 ? round( $row['count'] / $group_total * 100, 1 ) : 0;
+			?>
+			<tr<?php echo $di === 0 ? ' class="rsa-group-first"' : ''; ?>>
+				<td class="rsa-td-group-label"><?php echo $di === 0 ? esc_html( $from_page ) : ''; ?></td>
 				<td class="rsa-td-page"><?php echo esc_html( $row['to_page'] ); ?></td>
 				<td><?php echo esc_html( number_format( $row['count'] ) ); ?></td>
-				<td><?php echo $total > 0 ? esc_html( number_format( $row['count'] / $total * 100, 1 ) ) . '%' : '&mdash;'; ?></td>
+				<td class="rsa-td-bar">
+					<div class="rsa-bar-wrap">
+						<div class="rsa-bar-fill" style="width:<?php echo esc_attr( $pct ); ?>%"></div>
+						<span class="rsa-bar-label"><?php echo esc_html( number_format( $pct, 1 ) ) . '%'; ?></span>
+					</div>
+				</td>
 			</tr>
+			<?php endforeach; ?>
+			<tr class="rsa-group-spacer"><td colspan="4"></td></tr>
 			<?php endforeach; ?>
 		</tbody>
 	</table>

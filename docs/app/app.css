@@ -677,3 +677,55 @@ html, body {
 }
 .rsa-field-row .rsa-btn,
 .rsa-field-row .rsa-btn-ghost { flex: 1; }
+
+/* -----------------------------------------------------------------------
+   Campaigns empty state
+----------------------------------------------------------------------- */
+.rsa-empty {
+padding: 32px 16px;
+text-align: center;
+color: var(--rsa-muted);
+line-height: 1.7;
+}
+.rsa-empty code {
+background: var(--rsa-surface);
+border: 1px solid var(--rsa-border);
+border-radius: 4px;
+padding: 1px 5px;
+font-size: 12px;
+}
+
+/* -----------------------------------------------------------------------
+   User Flow step cards
+----------------------------------------------------------------------- */
+.rsa-uf-wrap {
+display: flex;
+flex-direction: column;
+gap: 20px;
+padding: 16px 0;
+}
+.rsa-uf-step {
+background: var(--rsa-surface);
+border: 1px solid var(--rsa-border);
+border-radius: 10px;
+overflow: hidden;
+}
+.rsa-uf-step-hd {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+background: var(--rsa-bg);
+border-bottom: 1px solid var(--rsa-border);
+}
+.rsa-uf-step-label {
+font-weight: 600;
+font-size: 13px;
+}
+.rsa-uf-step-pct {
+font-size: 12px;
+color: var(--rsa-muted);
+}
+.rsa-uf-table { margin: 0; }
+.rsa-uf-table td { padding: 7px 14px; }
+.rsa-uf-exit td { color: var(--rsa-muted); font-style: italic; }

@@ -722,7 +722,7 @@ class RSA_Analytics {
 	}
 
 	// ----------------------------------------------------------------
-	// Premium: click map data
+	// Premium: click tracking data
 	// ----------------------------------------------------------------
 
 	public static function get_click_map( string $period = '30d', string $page = '' ): array {

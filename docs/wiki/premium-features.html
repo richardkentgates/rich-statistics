@@ -42,7 +42,7 @@
     <h1>Premium Features</h1>
     <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
 
-    <h2>Click Heatmaps</h2>
+    <h2>Heatmap</h2>
     <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view loads your page in an <strong>iframe</strong> and stretches a transparent <code>&lt;canvas&gt;</code> element over it using CSS absolute positioning with <code>pointer-events: none</code>, so the canvas receives no clicks. A thermal colour gradient (blue → red) is painted onto the canvas using the recorded click coordinates. No external screenshot service, no browser extension, and no screen capture is involved — the page you see is always the live version.</p>
     <h3>What is stored</h3>
     <ul>
@@ -61,7 +61,7 @@
 
     <h2>Click Tracking &amp; Destination Capture</h2>
     <p>Non-navigational link clicks are tracked by protocol: <code>tel:</code>, <code>mailto:</code>, <code>geo:</code>, <code>sms:</code>, and file downloads. HTTP/HTTPS navigation is tracked automatically as pageviews and is not double-counted here.</p>
-    <p>The <strong>Destination</strong> column in the Click Map records the actual value passed to the protocol handler:</p>
+    <p>The <strong>Destination</strong> column in the Click Tracking view records the actual value passed to the protocol handler:</p>
     <table>
       <thead><tr><th>Protocol</th><th>Destination stored</th><th>Example</th></tr></thead>
       <tbody>
@@ -73,13 +73,6 @@
       </tbody>
     </table>
     <p>You can also configure additional element IDs and CSS classes to track in <strong>Rich Statistics → Preferences</strong>.</p>
-
-    <h2>Scroll Heatmaps</h2>
-    <p>The maximum scroll depth for each page session is recorded as a percentage. The scroll heatmap visualises the distribution of how far visitors scroll on each page.</p>
-    <ul>
-      <li>Value stored: <code>(page, scroll_pct, date)</code></li>
-      <li>No session ID stored — cannot reconstruct an individual visitor's scroll behavior</li>
-    </ul>
 
     <h2>Email Reports</h2>
     <p>Config lives in <strong>Rich Statistics → Preferences → Email Reports</strong>.</p>
