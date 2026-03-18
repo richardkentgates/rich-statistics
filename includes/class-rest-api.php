@@ -174,14 +174,30 @@ class RSA_Rest_API {
 	}
 
 	public static function get_export( WP_REST_Request $r ): WP_REST_Response {
-		$data = RSA_Analytics::export_events( $r['period'], $r['format'] );
+		$format = $r['format'];
+		$period = $r['period'];
+		$data   = RSA_Analytics::export_events( $period, $format );
 
-		if ( $r['format'] === 'csv' ) {
-			// Return as CSV download
-			return new WP_REST_Response( $data, 200, [
-				'Content-Type'        => 'text/csv',
-				'Content-Disposition' => 'attachment; filename="rsa-export.csv"',
-			] );
+		if ( 'csv' === $format ) {
+			// WP REST always JSON-encodes response bodies, so we hook in early
+			// to serve the raw CSV ourselves before the JSON encoder runs.
+			add_filter(
+				'rest_pre_serve_request',
+				static function ( $served ) use ( $data, $period ) {
+					if ( $served ) {
+						return $served;
+					}
+					$filename = 'rsa-export-' . sanitize_file_name( $period ) . '.csv';
+					header( 'Content-Type: text/csv; charset=UTF-8' );
+					header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+					header( 'Pragma: no-cache' );
+					echo $data; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw CSV
+					return true;
+				},
+				10,
+				1
+			);
+			return new WP_REST_Response( null, 200 );
 		}
 
 		return self::ok( json_decode( $data, true ) );
