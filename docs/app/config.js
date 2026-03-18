@@ -1,13 +1,22 @@
 /**
  * Rich Statistics PWA — site configuration.
  *
- * When served directly from the plugin URL this file is empty and has no
- * effect: the user fills in Site URL and username on the login screen.
- *
- * When you click "Download Web App" from your WordPress profile a
- * personalized version of this file is generated server-side with your
- * site URL, username, and a one-time install token already embedded.
- * The login screen will pre-fill those fields automatically; you only
- * need to enter your Application Password.
+ * When served from within the plugin directory (wp-content/plugins/…),
+ * the site URL is auto-detected from this file's own path so the user
+ * never has to type it in.  When served from GitHub Pages the field is
+ * left blank and the user fills it in manually.
  */
-window.RSA_CONFIG = window.RSA_CONFIG || {};
+( function () {
+	window.RSA_CONFIG = window.RSA_CONFIG || {};
+
+	// Auto-detect: extract WordPress site URL from this script's src path.
+	// Works for root installs (yoursite.com) and subdirectory installs
+	// (yoursite.com/blog) as well as both subdomain and subdirectory multisite.
+	var s = document.currentScript;
+	if ( s && s.src ) {
+		var idx = s.src.indexOf( '/wp-content/' );
+		if ( idx !== -1 ) {
+			window.RSA_CONFIG.autoSiteUrl = s.src.substring( 0, idx );
+		}
+	}
+}() );
