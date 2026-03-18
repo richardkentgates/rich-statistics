@@ -104,7 +104,22 @@ class RSA_Rest_API {
 			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
 			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/user-flow',      [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'      ], 'permission_callback' => $auth, 'args' => $read_args ] );
+		$flow_args = array_merge( $read_args, [
+			'entry_source' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'focus_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'min_sessions' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
+			'steps'        => [ 'type' => 'integer', 'default' => 4,  'minimum' => 2, 'maximum' => 5 ],
+		] );
+		register_rest_route( self::NS, '/user-flow',         [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'         ], 'permission_callback' => $auth, 'args' => $flow_args ] );
+		register_rest_route( self::NS, '/user-flow/journey', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_journey' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+			'from_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'to_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'min_count' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
+			'limit'     => [ 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 250 ],
+			'sort'      => [ 'type' => 'string',  'default' => 'count', 'sanitize_callback' => 'sanitize_text_field' ],
+			'sort_dir'  => [ 'type' => 'string',  'default' => 'desc',  'sanitize_callback' => 'sanitize_text_field' ],
+		] ) ] );
+		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
 		// Ingest endpoint — public (no auth), nonce verified inside
@@ -271,8 +286,37 @@ class RSA_Rest_API {
 	}
 
 	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response {
-		$data = RSA_Analytics::get_path_flow( $r['period'] );
-		return self::ok( $data );
+		$filters = [
+			'entry_source' => (string) ( $r['entry_source'] ?? '' ),
+			'focus_page'   => (string) ( $r['focus_page']   ?? '' ),
+			'min_sessions' => (int)    ( $r['min_sessions'] ?? 1  ),
+			'steps'        => (int)    ( $r['steps']        ?? 4  ),
+			'date_from'    => (string) ( $r['date_from']    ?? '' ),
+			'date_to'      => (string) ( $r['date_to']      ?? '' ),
+		];
+		return self::ok( RSA_Analytics::get_path_flow( $r['period'], $filters ) );
+	}
+
+	public static function get_user_flow_journey( WP_REST_Request $r ): WP_REST_Response {
+		$filters = [
+			'from_page' => (string) ( $r['from_page'] ?? '' ),
+			'to_page'   => (string) ( $r['to_page']   ?? '' ),
+			'min_count' => (int)    ( $r['min_count'] ?? 1  ),
+			'limit'     => (int)    ( $r['limit']     ?? 50 ),
+			'sort'      => (string) ( $r['sort']      ?? 'count' ),
+			'sort_dir'  => (string) ( $r['sort_dir']  ?? 'desc'  ),
+			'date_from' => (string) ( $r['date_from'] ?? '' ),
+			'date_to'   => (string) ( $r['date_to']   ?? '' ),
+		];
+		return self::ok( [ 'rows' => RSA_Analytics::get_user_flow( $r['period'], $filters ) ] );
+	}
+
+	public static function get_user_flow_sources( WP_REST_Request $r ): WP_REST_Response {
+		$filters = [
+			'date_from' => (string) ( $r['date_from'] ?? '' ),
+			'date_to'   => (string) ( $r['date_to']   ?? '' ),
+		];
+		return self::ok( [ 'sources' => RSA_Analytics::get_entry_sources( $r['period'], $filters ) ] );
 	}
 
 	// ----------------------------------------------------------------

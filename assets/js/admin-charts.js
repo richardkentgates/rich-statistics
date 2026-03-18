@@ -535,6 +535,28 @@
 	/* </fs_premium_only> */
 
 	// ----------------------------------------------------------------
+	// View: Campaigns
+	// ----------------------------------------------------------------
+
+	function initCampaigns( data ) {
+		var el = canvasEl( 'rsa-chart-campaigns' );
+		if ( ! el || ! data || ! data.length ) { return; }
+
+		var top = data.slice( 0, 15 );
+		new Chart( el, makeBar(
+			top.map( function ( c ) { return c.campaign || c.source || '(unknown)'; } ),
+			[ {
+				label           : 'Sessions',
+				data            : values( top, 'sessions' ),
+				backgroundColor : paletteFor( top.length ),
+				borderRadius    : 4,
+				borderSkipped   : false,
+			} ],
+			{ horizontal: true }
+		) );
+	}
+
+	// ----------------------------------------------------------------
 	// Router: pick init function based on view key
 	// ----------------------------------------------------------------
 
@@ -547,6 +569,7 @@
 			case 'pages':     initPages( data );     break;
 			case 'audience':  initAudience( data );  break;
 			case 'referrers': initReferrers( data ); break;
+			case 'campaigns': initCampaigns( data ); break;
 			case 'behavior':  initBehavior( data );  break;
 			case 'user-flow':
 				initPathExplorer( data.path_flow );
