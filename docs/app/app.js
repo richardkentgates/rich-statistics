@@ -90,6 +90,22 @@
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
+
+		// When the app is served from a WP site (/wp-content/…), config.js sets
+		// autoSiteUrl.  Auto-select the matching stored site so the user lands
+		// directly on the right dashboard without any manual site selection.
+		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+		if ( autoUrl ) {
+			var normalised = autoUrl.replace( /\/$/, '' );
+			var match = state.sites.find( function ( s ) {
+				return s.siteUrl.replace( /\/$/, '' ) === normalised;
+			} );
+			if ( match ) {
+				state.activeId = match.id;
+				localStorage.setItem( 'rsa_active', match.id );
+			}
+		}
+
 		syncActiveState();
 	}
 
@@ -215,6 +231,54 @@
 
 		var sel = document.getElementById( 'rsa-period-select' );
 		sel.value = state.period;
+
+		checkPluginVersion();
+	}
+
+	// -----------------------------------------------------------------------
+	// Plugin version sync
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Fetches /wp-json/rsa/v1/info (public endpoint) to:
+	 *   1. Populate the version badge in the nav header.
+	 *   2. Detect plugin updates: if the version has changed since the last visit,
+	 *      clear all SW caches and reload so the browser fetches the updated app
+	 *      files from the WP server instead of serving stale cached assets.
+	 *
+	 * This is the only mechanism needed — the SW uses network-first for all
+	 * requests so users online always get fresh files anyway; this handles the
+	 * edge case where cached assets would be served after an update.
+	 */
+	function checkPluginVersion() {
+		if ( ! state.siteUrl ) return;
+
+		var versionKey = 'rsa_pv_' + state.activeId;
+		fetch( state.siteUrl + '/wp-json/rsa/v1/info', { headers: { 'Accept': 'application/json' } } )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( json ) {
+				if ( ! json || ! json.data ) return;
+				var info = json.data;
+
+				var badge = document.getElementById( 'rsa-plugin-version' );
+				if ( badge ) badge.textContent = 'v' + info.version;
+
+				var stored = localStorage.getItem( versionKey );
+				if ( stored && stored !== info.version ) {
+					// Plugin was updated — clear SW caches so next render gets fresh files.
+					localStorage.setItem( versionKey, info.version );
+					if ( 'caches' in window ) {
+						caches.keys().then( function ( keys ) {
+							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
+						} ).then( function () { window.location.reload( true ); } );
+					} else {
+						window.location.reload( true );
+					}
+					return;
+				}
+				localStorage.setItem( versionKey, info.version );
+			} )
+			.catch( function () {} ); // Silent — version check is best-effort
 	}
 
 	// -----------------------------------------------------------------------
@@ -326,6 +390,15 @@
 		if ( otpErr    ) { otpErr.textContent = ''; }
 		if ( addErr    ) { addErr.textContent = ''; }
 		if ( verifyBtn ) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Code'; }
+
+		// When served from a WP site, pre-fill the URL so the user doesn't have
+		// to type it in.  No fallback: if autoSiteUrl is not set, leave blank.
+		if ( ! prefill ) {
+			var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+			if ( autoUrl && urlField ) {
+				urlField.value = autoUrl;
+			}
+		}
 
 		state._otpVerified = null;
 

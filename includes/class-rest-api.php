@@ -122,6 +122,9 @@ class RSA_Rest_API {
 		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
+		// Plugin info — public, no auth required (version badge + version sync for the PWA)
+		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
+
 		// Ingest endpoint — public (no auth), nonce verified inside
 		register_rest_route( self::NS, '/track', [
 			'methods'             => 'POST',
@@ -178,6 +181,19 @@ class RSA_Rest_API {
 			);
 		}
 		return true;
+	}
+
+	// ----------------------------------------------------------------
+	// Plugin info (public)
+	// ----------------------------------------------------------------
+
+	public static function get_info(): WP_REST_Response {
+		return self::ok( [
+			'version'   => RSA_VERSION,
+			'app_url'   => plugins_url( 'docs/app/', RSA_FILE ),
+			'site_name' => get_bloginfo( 'name' ),
+			'site_url'  => get_site_url(),
+		] );
 	}
 
 	// ----------------------------------------------------------------

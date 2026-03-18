@@ -2,11 +2,17 @@
  * Rich Statistics — Service Worker
  *
  * Strategy:
- *  • App shell (HTML/CSS/JS)  → Cache-first (serve cached, refresh in background)
+ *  • App shell (HTML/CSS/JS)  → Network-first (fresh files every load; cache only for offline fallback)
  *  • API calls to wp-json/    → Network-first (cache result for offline fallback)
+ *
+ * Cache key is scoped to this WP install’s hostname so different installs never
+ * share a cache.  Version invalidation is handled at runtime by app.js
+ * (checkPluginVersion), which clears all caches and reloads when the plugin
+ * version on the server changes.  No hardcoded version number is needed here.
  */
 
-const CACHE_VERSION = 'rsa-v15';
+// One cache per WP install origin — never share between sites.
+var CACHE_NAME = 'rsa-' + self.location.hostname.replace( /[^a-z0-9]/gi, '-' );
 
 const SHELL_ASSETS = [
 	'./index.html',
@@ -22,7 +28,7 @@ const SHELL_ASSETS = [
 // -------------------------------------------------------------------------
 self.addEventListener( 'install', function ( event ) {
 	event.waitUntil(
-		caches.open( CACHE_VERSION ).then( function ( cache ) {
+		caches.open( CACHE_NAME ).then( function ( cache ) {
 			return cache.addAll( SHELL_ASSETS );
 		} )
 	);
@@ -33,11 +39,12 @@ self.addEventListener( 'install', function ( event ) {
 // Activate: purge old versioned caches
 // -------------------------------------------------------------------------
 self.addEventListener( 'activate', function ( event ) {
+	// Purge any caches from old naming schemes (e.g. 'rsa-v15') on SW update.
 	event.waitUntil(
 		caches.keys().then( function ( keys ) {
 			return Promise.all(
 				keys
-					.filter( function ( key ) { return key !== CACHE_VERSION; } )
+					.filter( function ( key ) { return key !== CACHE_NAME; } )
 					.map( function ( key ) { return caches.delete( key ); } )
 			);
 		} )
@@ -78,7 +85,7 @@ self.addEventListener( 'fetch', function ( event ) {
 // Strategy helpers
 // -------------------------------------------------------------------------
 function cacheFirstWithRefresh( request ) {
-	return caches.open( CACHE_VERSION ).then( function ( cache ) {
+	return caches.open( CACHE_NAME ).then( function ( cache ) {
 		return cache.match( request ).then( function ( cached ) {
 			// Kick off a background refresh regardless
 			const networkFetch = fetch( request ).then( function ( response ) {
@@ -94,7 +101,7 @@ function cacheFirstWithRefresh( request ) {
 }
 
 function networkFirstWithCache( request ) {
-	return caches.open( CACHE_VERSION ).then( function ( cache ) {
+	return caches.open( CACHE_NAME ).then( function ( cache ) {
 		return fetch( request ).then( function ( response ) {
 			if ( response && response.status === 200 ) {
 				cache.put( request, response.clone() );
