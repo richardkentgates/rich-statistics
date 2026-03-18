@@ -155,7 +155,7 @@ class RSA_Pwa_Download {
 			wp_die( esc_html__( 'The ZipArchive PHP extension is required to generate the download. Please ask your host to enable it.', 'rich-statistics' ) );
 		}
 
-		$webapp_dir = RSA_DIR . 'webapp/';
+		$webapp_dir = RSA_DIR . 'docs/app/';
 		$tmp_file   = wp_tempnam( 'rsa-app' );
 
 		$zip = new ZipArchive();
