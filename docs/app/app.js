@@ -641,26 +641,122 @@
 	// Pages
 	// -----------------------------------------------------------------------
 	function renderPages( container ) {
-		apiGet( 'pages', { period: state.period } ).then( function ( data ) {
+		var filters = { path: '', browser: '', os: '', sort: 'views', sort_dir: 'desc' };
+
+		function buildParams() {
+			var p = { period: state.period, limit: 100, sort: filters.sort, sort_dir: filters.sort_dir };
+			if ( filters.path )    p.path    = filters.path;
+			if ( filters.browser ) p.browser = filters.browser;
+			if ( filters.os )      p.os      = filters.os;
+			return p;
+		}
+
+		function renderResults( data ) {
+			var results = document.getElementById( 'rsa-pages-results' );
+			if ( ! results ) return;
+
+			if ( ! data.pages || ! data.pages.length ) {
+				results.innerHTML = '<p class="rsa-empty">No page data for the selected filters.</p>';
+				return;
+			}
+
+			function sortLink( field, label ) {
+				var newDir = ( filters.sort === field && filters.sort_dir === 'desc' ) ? 'asc' : 'desc';
+				var arrow  = filters.sort === field ? ( filters.sort_dir === 'desc' ? ' &#8595;' : ' &#8593;' ) : '';
+				return '<a href="#" class="rsa-sort-link" data-field="' + field + '" data-dir="' + newDir + '">' + esc( label ) + arrow + '</a>';
+			}
+
 			var rows = data.pages.map( function ( p, i ) {
-				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' +
-					esc( p.page ) + '</td><td>' + fmt( p.views ) + '</td><td>' +
-					fmtSecs( p.avg_time ) + '</td></tr>';
+				return '<tr><td>' + ( i + 1 ) + '</td>' +
+					'<td class="rsa-td-path">' + esc( p.page ) + '</td>' +
+					'<td>' + fmt( p.views ) + '</td>' +
+					'<td>' + fmtSecs( p.avg_time ) + '</td></tr>';
 			} );
-			container.innerHTML =
+
+			results.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-pages-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
-				'<thead><tr><th>#</th><th>Page</th><th>Views</th><th>Avg Time</th></tr></thead>' +
+				'<thead><tr><th>#</th><th>Page</th><th>' + sortLink( 'views', 'Views' ) + '</th>' +
+				'<th>' + sortLink( 'avg_time', 'Avg Time' ) + '</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
-			setLoading( false );
+			results.querySelectorAll( '.rsa-sort-link' ).forEach( function ( a ) {
+				a.addEventListener( 'click', function ( e ) {
+					e.preventDefault();
+					filters.sort     = this.dataset.field;
+					filters.sort_dir = this.dataset.dir;
+					reloadResults();
+				} );
+			} );
+
 			var top = data.pages.slice( 0, 10 );
 			drawBar( 'c-pages-bar',
 				top.map( function ( p ) { return truncate( p.page, 40 ); } ),
 				top.map( function ( p ) { return p.views; } ),
-				'Views',
-				true   // horizontal
+				'Views', true
 			);
+		}
+
+		function reloadResults() {
+			var results = document.getElementById( 'rsa-pages-results' );
+			if ( results ) results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+			apiGet( 'pages', buildParams() ).then( renderResults ).catch( function ( err ) { handleApiError( err, container ); } );
+		}
+
+		Promise.all( [
+			apiGet( 'filter-options', { period: state.period } ),
+			apiGet( 'pages', buildParams() ),
+		] ).then( function ( r ) {
+			var opts = r[0], data = r[1];
+
+			function optionsHtml( arr, current, placeholder ) {
+				return '<option value="">' + esc( placeholder ) + '</option>' +
+					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+			}
+
+			container.innerHTML =
+				'<div class="rsa-filter-bar">' +
+				( ( opts.pages || [] ).length    ? '<select id="rsa-f-path">'    + optionsHtml( opts.pages,    filters.path,    'All Pages'    ) + '</select>' : '' ) +
+				( ( opts.browsers || [] ).length ? '<select id="rsa-f-browser">' + optionsHtml( opts.browsers, filters.browser, 'All Browsers' ) + '</select>' : '' ) +
+				( ( opts.os || [] ).length       ? '<select id="rsa-f-os">'      + optionsHtml( opts.os,       filters.os,      'All OS'       ) + '</select>' : '' ) +
+				'<span class="rsa-sort-label">Sort:</span>' +
+				'<select id="rsa-f-sort">' +
+				'<option value="views"'    + ( filters.sort === 'views'    ? ' selected' : '' ) + '>Views</option>' +
+				'<option value="avg_time"' + ( filters.sort === 'avg_time' ? ' selected' : '' ) + '>Avg Time</option>' +
+				'</select>' +
+				'<select id="rsa-f-sort-dir">' +
+				'<option value="desc"' + ( filters.sort_dir === 'desc' ? ' selected' : '' ) + '>\u2193 Desc</option>' +
+				'<option value="asc"'  + ( filters.sort_dir === 'asc'  ? ' selected' : '' ) + '>\u2191 Asc</option>' +
+				'</select>' +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-pages-filter-btn">Filter</button>' +
+				( ( filters.path || filters.browser || filters.os ) ? '<button type="button" class="rsa-btn rsa-btn-ghost" id="rsa-pages-clear-btn">Clear</button>' : '' ) +
+				'</div>' +
+				'<div id="rsa-pages-results"></div>';
+
+			renderResults( data );
+			setLoading( false );
+
+			document.getElementById( 'rsa-pages-filter-btn' ).addEventListener( 'click', function () {
+				var pathEl    = document.getElementById( 'rsa-f-path' );
+				var brEl      = document.getElementById( 'rsa-f-browser' );
+				var osEl      = document.getElementById( 'rsa-f-os' );
+				var sortEl    = document.getElementById( 'rsa-f-sort' );
+				var sortDirEl = document.getElementById( 'rsa-f-sort-dir' );
+				filters.path     = pathEl    ? pathEl.value    : '';
+				filters.browser  = brEl      ? brEl.value      : '';
+				filters.os       = osEl      ? osEl.value      : '';
+				filters.sort     = sortEl    ? sortEl.value    : 'views';
+				filters.sort_dir = sortDirEl ? sortDirEl.value : 'desc';
+				reloadResults();
+			} );
+
+			var clearBtn = document.getElementById( 'rsa-pages-clear-btn' );
+			if ( clearBtn ) {
+				clearBtn.addEventListener( 'click', function () {
+					filters = { path: '', browser: '', os: '', sort: 'views', sort_dir: 'desc' };
+					renderPages( container );
+				} );
+			}
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
@@ -697,33 +793,97 @@
 	// -----------------------------------------------------------------------
 	// Referrers
 	// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+	// Referrers
+	// -----------------------------------------------------------------------
 	function renderReferrers( container ) {
-		apiGet( 'referrers', { period: state.period } ).then( function ( data ) {
-			var total = data.referrers.reduce( function ( s, r ) { return s + r.pageviews; }, 0 );
-			var rows = data.referrers.map( function ( r, i ) {
+		var filters = { ref_page: '' };
+
+		function buildParams() {
+			var p = { period: state.period, limit: 100 };
+			if ( filters.ref_page ) p.ref_page = filters.ref_page;
+			return p;
+		}
+
+		function renderResults( data ) {
+			var results = document.getElementById( 'rsa-ref-results' );
+			if ( ! results ) return;
+
+			var refs = data.referrers || [];
+			if ( ! refs.length ) {
+				results.innerHTML = '<p class="rsa-empty">No referral data for the selected filters.</p>';
+				return;
+			}
+
+			var total = refs.reduce( function ( s, r ) { return s + r.pageviews; }, 0 );
+			var rows  = refs.map( function ( r, i ) {
 				var share = total > 0 ? ( r.pageviews / total * 100 ).toFixed( 1 ) : 0;
 				return '<tr>' +
 					'<td>' + ( i + 1 ) + '</td>' +
 					'<td>' + esc( r.domain || '(direct)' ) + '</td>' +
 					'<td class="rsa-td-path">' + esc( r.top_page || '—' ) + '</td>' +
 					'<td>' + fmt( r.pageviews ) + '</td>' +
-					'<td>' + share + '%</td>' +
+					'<td><div class="rsa-bar-cell">' +
+					'<div class="rsa-bar-fill" style="width:' + share + '%"></div>' +
+					'<span>' + share + '%</span></div></td>' +
 					'</tr>';
 			} );
-			container.innerHTML =
+
+			results.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-ref-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
 				'<thead><tr><th>#</th><th>Referring Domain</th><th>Top Landing Page</th><th>Visits</th><th>Share</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
-			setLoading( false );
-			var top = data.referrers.slice( 0, 10 );
+			var top = refs.slice( 0, 10 );
 			drawBar( 'c-ref-bar',
 				top.map( function ( r ) { return r.domain || '(direct)'; } ),
 				top.map( function ( r ) { return r.pageviews; } ),
-				'Visits',
-				true
+				'Visits', true
 			);
+		}
+
+		function reloadResults() {
+			var results = document.getElementById( 'rsa-ref-results' );
+			if ( results ) results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+			apiGet( 'referrers', buildParams() ).then( renderResults ).catch( function ( err ) { handleApiError( err, container ); } );
+		}
+
+		Promise.all( [
+			apiGet( 'filter-options', { period: state.period } ),
+			apiGet( 'referrers', buildParams() ),
+		] ).then( function ( r ) {
+			var opts = r[0], data = r[1];
+
+			function optionsHtml( arr, current, placeholder ) {
+				return '<option value="">' + esc( placeholder ) + '</option>' +
+					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+			}
+
+			container.innerHTML =
+				'<div class="rsa-filter-bar">' +
+				( ( opts.pages || [] ).length ? '<select id="rsa-f-ref-page">' + optionsHtml( opts.pages, filters.ref_page, 'All Landing Pages' ) + '</select>' : '' ) +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-ref-filter-btn">Filter</button>' +
+				( filters.ref_page ? '<button type="button" class="rsa-btn rsa-btn-ghost" id="rsa-ref-clear-btn">Clear</button>' : '' ) +
+				'</div>' +
+				'<div id="rsa-ref-results"></div>';
+
+			renderResults( data );
+			setLoading( false );
+
+			document.getElementById( 'rsa-ref-filter-btn' ).addEventListener( 'click', function () {
+				var el = document.getElementById( 'rsa-f-ref-page' );
+				filters.ref_page = el ? el.value : '';
+				reloadResults();
+			} );
+
+			var clearBtn = document.getElementById( 'rsa-ref-clear-btn' );
+			if ( clearBtn ) {
+				clearBtn.addEventListener( 'click', function () {
+					filters = { ref_page: '' };
+					renderReferrers( container );
+				} );
+			}
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
@@ -778,11 +938,21 @@
 	// Campaigns
 	// -----------------------------------------------------------------------
 	function renderCampaigns( container ) {
-		apiGet( 'campaigns', { period: state.period } ).then( function ( data ) {
-			if ( ! data.campaigns.length ) {
-				container.innerHTML = '<p class="rsa-empty">No campaign data for this period.<br>' +
+		var filters = { medium: '' };
+
+		function buildParams() {
+			var p = { period: state.period, limit: 100 };
+			if ( filters.medium ) p.medium = filters.medium;
+			return p;
+		}
+
+		function renderResults( data ) {
+			var results = document.getElementById( 'rsa-camp-results' );
+			if ( ! results ) return;
+
+			if ( ! data.campaigns || ! data.campaigns.length ) {
+				results.innerHTML = '<p class="rsa-empty">No campaign data for this period.<br>' +
 					'Add <code>utm_source</code>, <code>utm_medium</code>, and <code>utm_campaign</code> to your links.</p>';
-				setLoading( false );
 				return;
 			}
 
@@ -792,28 +962,68 @@
 				return '<tr>' +
 					'<td>' + ( i + 1 ) + '</td>' +
 					'<td><strong>' + esc( c.campaign || '—' ) + '</strong></td>' +
-					'<td>' + esc( c.source   || '—' ) + '</td>' +
-					'<td>' + esc( c.medium   || '—' ) + '</td>' +
+					'<td>' + esc( c.source  || '—' ) + '</td>' +
+					'<td>' + esc( c.medium  || '—' ) + '</td>' +
 					'<td>' + fmt( c.sessions )  + '</td>' +
 					'<td>' + fmt( c.pageviews ) + '</td>' +
-					'<td>' + share + '%</td>' +
+					'<td><div class="rsa-bar-cell">' +
+					'<div class="rsa-bar-fill" style="width:' + share + '%"></div>' +
+					'<span>' + share + '%</span></div></td>' +
 					'</tr>';
 			} );
 
-				container.innerHTML =
+			results.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-camp-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
 				'<thead><tr><th>#</th><th>Campaign</th><th>Source</th><th>Medium</th><th>Sessions</th><th>Pageviews</th><th>Share</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
-			setLoading( false );
 			var top = data.campaigns.slice( 0, 10 );
 			drawBar( 'c-camp-bar',
-				top.map( function ( c ) { return truncate( ( c.campaign || c.source || '?' ), 36 ); } ),
+				top.map( function ( c ) { return truncate( c.campaign || c.source || '?', 36 ); } ),
 				top.map( function ( c ) { return c.sessions; } ),
-				'Sessions',
-				true
+				'Sessions', true
 			);
+		}
+
+		// Get unique mediums from existing campaigns data
+		apiGet( 'campaigns', buildParams() ).then( function ( data ) {
+			var mediums = [];
+			( data.campaigns || [] ).forEach( function ( c ) {
+				if ( c.medium && mediums.indexOf( c.medium ) === -1 ) mediums.push( c.medium );
+			} );
+
+			function optionsHtml( arr, current, placeholder ) {
+				return '<option value="">' + esc( placeholder ) + '</option>' +
+					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+			}
+
+			container.innerHTML =
+				'<div class="rsa-filter-bar">' +
+				( mediums.length ? '<select id="rsa-f-medium">' + optionsHtml( mediums, filters.medium, 'All Mediums' ) + '</select>' : '' ) +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-camp-filter-btn">Filter</button>' +
+				( filters.medium ? '<button type="button" class="rsa-btn rsa-btn-ghost" id="rsa-camp-clear-btn">Clear</button>' : '' ) +
+				'</div>' +
+				'<div id="rsa-camp-results"></div>';
+
+			renderResults( data );
+			setLoading( false );
+
+			document.getElementById( 'rsa-camp-filter-btn' ).addEventListener( 'click', function () {
+				var el = document.getElementById( 'rsa-f-medium' );
+				filters.medium = el ? el.value : '';
+				var results = document.getElementById( 'rsa-camp-results' );
+				if ( results ) results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+				apiGet( 'campaigns', buildParams() ).then( renderResults ).catch( function ( err ) { handleApiError( err, container ); } );
+			} );
+
+			var clearBtn = document.getElementById( 'rsa-camp-clear-btn' );
+			if ( clearBtn ) {
+				clearBtn.addEventListener( 'click', function () {
+					filters = { medium: '' };
+					renderCampaigns( container );
+				} );
+			}
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
@@ -1040,85 +1250,103 @@
 	// Export
 	// -----------------------------------------------------------------------
 	function renderExport( container ) {
+		var periodLabels = {
+			'7d'       : 'Last 7 days',
+			'30d'      : 'Last 30 days',
+			'90d'      : 'Last 90 days',
+			'thismonth': 'This month',
+			'lastmonth': 'Last month',
+			'custom'   : 'Custom range',
+		};
+
+		var selPeriod = state.period in periodLabels ? state.period : '30d';
+
 		container.innerHTML =
-			'<div class="rsa-chart-card">' +
+			'<div class="rsa-chart-card rsa-export-form">' +
 				'<h3>Export Data</h3>' +
-				'<table class="rsa-table" style="margin-bottom:16px">' +
-					'<tbody>' +
-						'<tr>' +
-							'<th style="width:140px;text-align:left;padding:10px 12px;font-weight:600">Data type</th>' +
-							'<td style="padding:10px 12px">Pageviews &amp; events (all tracked activity)</td>' +
-						'</tr>' +
-						'<tr>' +
-							'<th style="text-align:left;padding:10px 12px;font-weight:600">Period</th>' +
-							'<td style="padding:10px 12px" id="rsa-export-period-label"></td>' +
-						'</tr>' +
-						'<tr>' +
-							'<th style="text-align:left;padding:10px 12px;font-weight:600">Format</th>' +
-							'<td style="padding:10px 12px">CSV or JSON</td>' +
-						'</tr>' +
-					'</tbody>' +
-				'</table>' +
-				'<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+				'<div class="rsa-form-row">' +
+					'<label class="rsa-filter-label" for="rsa-exp-type">Data Type</label>' +
+					'<select id="rsa-exp-type">' +
+						'<option value="pageviews">Pageviews (events)</option>' +
+						'<option value="sessions">Sessions</option>' +
+						'<option value="clicks">Click events</option>' +
+						'<option value="referrers">Referrers (aggregated)</option>' +
+					'</select>' +
+				'</div>' +
+				'<div class="rsa-form-row">' +
+					'<label class="rsa-filter-label" for="rsa-exp-period">Date Range</label>' +
+					'<select id="rsa-exp-period">' +
+						Object.keys( periodLabels ).map( function ( k ) {
+							return '<option value="' + k + '"' + ( k === selPeriod ? ' selected' : '' ) + '>' + periodLabels[ k ] + '</option>';
+						} ).join( '' ) +
+					'</select>' +
+					'<div id="rsa-exp-custom-dates" class="rsa-custom-dates" style="display:' + ( selPeriod === 'custom' ? 'flex' : 'none' ) + '">' +
+						'<input type="date" id="rsa-exp-date-from" placeholder="From">' +
+						'<span style="color:var(--rsa-muted);font-size:13px">to</span>' +
+						'<input type="date" id="rsa-exp-date-to" placeholder="To">' +
+					'</div>' +
+				'</div>' +
+				'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">' +
 					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-export-csv">Download CSV</button>' +
 					'<button type="button" class="rsa-btn rsa-btn-ghost"  id="rsa-export-json">Download JSON</button>' +
 				'</div>' +
 				'<div id="rsa-export-status" class="rsa-field-hint" style="margin-top:10px"></div>' +
 			'</div>';
 
-		var periodLabels = {
-			'7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days',
-			'thismonth': 'This month', 'lastmonth': 'Last month',
-		};
-		var labelEl = document.getElementById( 'rsa-export-period-label' );
-		if ( labelEl ) { labelEl.textContent = periodLabels[ state.period ] || state.period; }
-
 		setLoading( false );
 
-		function doExport( format ) {
-			var status  = document.getElementById( 'rsa-export-status' );
-			var csvBtn  = document.getElementById( 'rsa-export-csv' );
-			var jsonBtn = document.getElementById( 'rsa-export-json' );
-			status.textContent = 'Preparing download\u2026';
-			if ( csvBtn )  { csvBtn.disabled  = true; }
-			if ( jsonBtn ) { jsonBtn.disabled = true; }
+		// Show/hide custom date picker
+		document.getElementById( 'rsa-exp-period' ).addEventListener( 'change', function () {
+			var customDates = document.getElementById( 'rsa-exp-custom-dates' );
+			if ( customDates ) customDates.style.display = this.value === 'custom' ? 'flex' : 'none';
+		} );
 
-			var url = state.siteUrl + '/wp-json/rsa/v1/export' +
-				'?period=' + encodeURIComponent( state.period ) +
-				'&format=' + format;
+		function doExport( format ) {
+			var status    = document.getElementById( 'rsa-export-status' );
+			var csvBtn    = document.getElementById( 'rsa-export-csv' );
+			var jsonBtn   = document.getElementById( 'rsa-export-json' );
+			var dataType  = ( document.getElementById( 'rsa-exp-type' )    || {} ).value || 'pageviews';
+			var period    = ( document.getElementById( 'rsa-exp-period' )  || {} ).value || '30d';
+			var dateFrom  = ( document.getElementById( 'rsa-exp-date-from' ) || {} ).value || '';
+			var dateTo    = ( document.getElementById( 'rsa-exp-date-to'   ) || {} ).value || '';
+
+			status.textContent = 'Preparing download\u2026';
+			if ( csvBtn )  csvBtn.disabled  = true;
+			if ( jsonBtn ) jsonBtn.disabled = true;
+
+			var qs = 'format=' + encodeURIComponent( format ) +
+				'&period=' + encodeURIComponent( period ) +
+				'&data_type=' + encodeURIComponent( dataType );
+			if ( period === 'custom' && dateFrom ) qs += '&date_from=' + encodeURIComponent( dateFrom );
+			if ( period === 'custom' && dateTo )   qs += '&date_to='   + encodeURIComponent( dateTo );
+
+			var url = state.siteUrl + '/wp-json/rsa/v1/export?' + qs;
 
 			fetch( url, {
 				headers: { 'Authorization': 'Basic ' + state.credentials },
 			} ).then( function ( res ) {
 				if ( res.status === 401 || res.status === 403 ) { throw new Error( 'auth' ); }
 				if ( ! res.ok ) { throw new Error( 'HTTP ' + res.status ); }
-				if ( format === 'csv' ) {
-					return res.blob();
-				}
-				return res.json().then( function ( json ) {
+				return format === 'csv' ? res.blob() : res.json().then( function ( json ) {
 					var payload = ( json && json.ok && json.data ) ? json.data : json;
 					return new Blob( [ JSON.stringify( payload, null, 2 ) ], { type: 'application/json' } );
 				} );
 			} ).then( function ( blob ) {
-				var a    = document.createElement( 'a' );
-				a.href   = URL.createObjectURL( blob );
-				a.download = 'rsa-export-' + state.period + '.' + format;
+				var a      = document.createElement( 'a' );
+				a.href     = URL.createObjectURL( blob );
+				a.download = 'rsa-' + dataType + '-' + period + '.' + format;
 				document.body.appendChild( a );
 				a.click();
 				document.body.removeChild( a );
 				URL.revokeObjectURL( a.href );
 				status.textContent = 'Download started.';
-				if ( csvBtn )  { csvBtn.disabled  = false; }
-				if ( jsonBtn ) { jsonBtn.disabled = false; }
+				if ( csvBtn )  csvBtn.disabled  = false;
+				if ( jsonBtn ) jsonBtn.disabled = false;
 			} ).catch( function ( err ) {
-				if ( err.message === 'auth' ) {
-					clearAllSites();
-					showLogin();
-				} else {
-					status.textContent = 'Export failed. Please try again.';
-					if ( csvBtn )  { csvBtn.disabled  = false; }
-					if ( jsonBtn ) { jsonBtn.disabled = false; }
-				}
+				if ( err.message === 'auth' ) { clearAllSites(); showLogin(); return; }
+				status.textContent = 'Export failed. Please try again.';
+				if ( csvBtn )  csvBtn.disabled  = false;
+				if ( jsonBtn ) jsonBtn.disabled = false;
 			} );
 		}
 
