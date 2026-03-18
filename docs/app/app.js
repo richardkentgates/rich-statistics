@@ -609,9 +609,8 @@
 			] ) + '<div class="rsa-chart-wrap"><canvas id="c-overview-daily"></canvas></div>';
 
 			setLoading( false );
-			drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.date; } ),
-				[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.pageviews; } ) }] );
-		} ).catch( handleApiError );
+		drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
+			[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) }] );
 	}
 
 	// -----------------------------------------------------------------------
@@ -621,7 +620,7 @@
 		apiGet( 'pages', { period: state.period } ).then( function ( data ) {
 			var rows = data.pages.map( function ( p, i ) {
 				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' +
-					esc( p.page ) + '</td><td>' + fmt( p.pageviews ) + '</td><td>' +
+					esc( p.page ) + '</td><td>' + fmt( p.views ) + '</td><td>' +
 					fmtSecs( p.avg_time ) + '</td></tr>';
 			} );
 			container.innerHTML =
@@ -634,8 +633,8 @@
 			var top = data.pages.slice( 0, 10 );
 			drawBar( 'c-pages-bar',
 				top.map( function ( p ) { return truncate( p.page, 40 ); } ),
-				top.map( function ( p ) { return p.pageviews; } ),
-				'Pageviews',
+				top.map( function ( p ) { return p.views; } ),
+				'Views',
 				true   // horizontal
 			);
 		} ).catch( handleApiError );
@@ -674,13 +673,21 @@
 	// -----------------------------------------------------------------------
 	function renderReferrers( container ) {
 		apiGet( 'referrers', { period: state.period } ).then( function ( data ) {
-			var rows = data.referrers.map( function ( r ) {
-				return '<tr><td>' + esc( r.domain || '(direct)' ) + '</td><td>' + fmt( r.pageviews ) + '</td></tr>';
+			var total = data.referrers.reduce( function ( s, r ) { return s + r.pageviews; }, 0 );
+			var rows = data.referrers.map( function ( r, i ) {
+				var share = total > 0 ? ( r.pageviews / total * 100 ).toFixed( 1 ) : 0;
+				return '<tr>' +
+					'<td>' + ( i + 1 ) + '</td>' +
+					'<td>' + esc( r.domain || '(direct)' ) + '</td>' +
+					'<td class="rsa-td-path">' + esc( r.top_page || '—' ) + '</td>' +
+					'<td>' + fmt( r.pageviews ) + '</td>' +
+					'<td>' + share + '%</td>' +
+					'</tr>';
 			} );
 			container.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-ref-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
-				'<thead><tr><th>Source</th><th>Pageviews</th></tr></thead>' +
+				'<thead><tr><th>#</th><th>Referring Domain</th><th>Top Landing Page</th><th>Visits</th><th>Share</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
 			setLoading( false );
@@ -688,7 +695,7 @@
 			drawBar( 'c-ref-bar',
 				top.map( function ( r ) { return r.domain || '(direct)'; } ),
 				top.map( function ( r ) { return r.pageviews; } ),
-				'Pageviews',
+				'Visits',
 				true
 			);
 		} ).catch( handleApiError );
@@ -699,20 +706,31 @@
 	// -----------------------------------------------------------------------
 	function renderBehavior( container ) {
 		apiGet( 'behavior', { period: state.period } ).then( function ( data ) {
+			var entryRows = data.entry_pages.map( function ( p, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.count ) + '</td></tr>';
+			} ).join( '' );
+			var exitRows = ( data.exit_pages || [] ).map( function ( p, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.count ) + '</td></tr>';
+			} ).join( '' );
 			container.innerHTML =
 				'<div class="rsa-grid-2">' +
 				'<div class="rsa-chart-card"><h3>Time on Page</h3>' +
 				'<canvas id="c-beh-time"></canvas></div>' +
-				'<div class="rsa-chart-card"><h3>Session Depth</h3>' +
+				'<div class="rsa-chart-card"><h3>Session Depth (Pages Viewed)</h3>' +
 				'<canvas id="c-beh-depth"></canvas></div>' +
 				'</div>' +
+				'<div class="rsa-grid-2">' +
 				'<div class="rsa-table-card"><h3>Top Entry Pages</h3>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
-				'<thead><tr><th>Page</th><th>Entries</th></tr></thead>' +
-				'<tbody>' + data.entry_pages.map( function ( p ) {
-					return '<tr><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.count ) + '</td></tr>';
-				} ).join( '' ) +
-				'</tbody></table></div></div>';
+				'<thead><tr><th>#</th><th>Page</th><th>Sessions</th></tr></thead>' +
+				'<tbody>' + ( entryRows || '<tr><td colspan="3">No data yet.</td></tr>' ) +
+				'</tbody></table></div></div>' +
+				'<div class="rsa-table-card"><h3>Top Exit Pages</h3>' +
+				'<div class="rsa-table-wrap"><table class="rsa-table">' +
+				'<thead><tr><th>#</th><th>Page</th><th>Sessions</th></tr></thead>' +
+				'<tbody>' + ( exitRows || '<tr><td colspan="3">No data yet.</td></tr>' ) +
+				'</tbody></table></div></div>' +
+				'</div>';
 
 			setLoading( false );
 			// Time histogram
@@ -735,28 +753,31 @@
 	// -----------------------------------------------------------------------
 	function renderCampaigns( container ) {
 		apiGet( 'campaigns', { period: state.period } ).then( function ( data ) {
-			var rows = data.campaigns.map( function ( c, i ) {
-				return '<tr>' +
-					'<td>' + ( i + 1 ) + '</td>' +
-					'<td>' + esc( c.source   || '—' ) + '</td>' +
-					'<td>' + esc( c.medium   || '—' ) + '</td>' +
-					'<td class="rsa-td-text">' + esc( c.campaign || '—' ) + '</td>' +
-					'<td>' + fmt( c.sessions )   + '</td>' +
-					'<td>' + fmt( c.pageviews )  + '</td>' +
-					'</tr>';
-			} );
-
-			if ( ! rows.length ) {
+			if ( ! data.campaigns.length ) {
 				container.innerHTML = '<p class="rsa-empty">No campaign data for this period.<br>' +
 					'Add <code>utm_source</code>, <code>utm_medium</code>, and <code>utm_campaign</code> to your links.</p>';
 				setLoading( false );
 				return;
 			}
 
-			container.innerHTML =
+			var totalSess = data.campaigns.reduce( function ( s, c ) { return s + c.sessions; }, 0 );
+			var rows = data.campaigns.map( function ( c, i ) {
+				var share = totalSess > 0 ? ( c.sessions / totalSess * 100 ).toFixed( 1 ) : 0;
+				return '<tr>' +
+					'<td>' + ( i + 1 ) + '</td>' +
+					'<td><strong>' + esc( c.campaign || '—' ) + '</strong></td>' +
+					'<td>' + esc( c.source   || '—' ) + '</td>' +
+					'<td>' + esc( c.medium   || '—' ) + '</td>' +
+					'<td>' + fmt( c.sessions )  + '</td>' +
+					'<td>' + fmt( c.pageviews ) + '</td>' +
+					'<td>' + share + '%</td>' +
+					'</tr>';
+			} );
+
+				container.innerHTML =
 				'<div class="rsa-chart-wrap"><canvas id="c-camp-bar"></canvas></div>' +
 				'<div class="rsa-table-wrap"><table class="rsa-table">' +
-				'<thead><tr><th>#</th><th>Source</th><th>Medium</th><th>Campaign</th><th>Sessions</th><th>Pageviews</th></tr></thead>' +
+				'<thead><tr><th>#</th><th>Campaign</th><th>Source</th><th>Medium</th><th>Sessions</th><th>Pageviews</th><th>Share</th></tr></thead>' +
 				'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
 
 			setLoading( false );
