@@ -6,7 +6,7 @@
  *  • API calls to wp-json/    → Network-first (cache result for offline fallback)
  */
 
-const CACHE_VERSION = 'rsa-v8';
+const CACHE_VERSION = 'rsa-v9';
 
 const SHELL_ASSETS = [
 	'./index.html',
