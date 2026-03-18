@@ -90,6 +90,22 @@
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
+
+		// When the app is served from a WP site (/wp-content/…), config.js sets
+		// autoSiteUrl.  Auto-select the matching stored site so the user lands
+		// directly on the right dashboard without any manual site selection.
+		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+		if ( autoUrl ) {
+			var normalised = autoUrl.replace( /\/$/, '' );
+			var match = state.sites.find( function ( s ) {
+				return s.siteUrl.replace( /\/$/, '' ) === normalised;
+			} );
+			if ( match ) {
+				state.activeId = match.id;
+				localStorage.setItem( 'rsa_active', match.id );
+			}
+		}
+
 		syncActiveState();
 	}
 
@@ -215,6 +231,54 @@
 
 		var sel = document.getElementById( 'rsa-period-select' );
 		sel.value = state.period;
+
+		checkPluginVersion();
+	}
+
+	// -----------------------------------------------------------------------
+	// Plugin version sync
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Fetches /wp-json/rsa/v1/info (public endpoint) to:
+	 *   1. Populate the version badge in the nav header.
+	 *   2. Detect plugin updates: if the version has changed since the last visit,
+	 *      clear all SW caches and reload so the browser fetches the updated app
+	 *      files from the WP server instead of serving stale cached assets.
+	 *
+	 * This is the only mechanism needed — the SW uses network-first for all
+	 * requests so users online always get fresh files anyway; this handles the
+	 * edge case where cached assets would be served after an update.
+	 */
+	function checkPluginVersion() {
+		if ( ! state.siteUrl ) return;
+
+		var versionKey = 'rsa_pv_' + state.activeId;
+		fetch( state.siteUrl + '/wp-json/rsa/v1/info', { headers: { 'Accept': 'application/json' } } )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( json ) {
+				if ( ! json || ! json.data ) return;
+				var info = json.data;
+
+				var badge = document.getElementById( 'rsa-plugin-version' );
+				if ( badge ) badge.textContent = 'v' + info.version;
+
+				var stored = localStorage.getItem( versionKey );
+				if ( stored && stored !== info.version ) {
+					// Plugin was updated — clear SW caches so next render gets fresh files.
+					localStorage.setItem( versionKey, info.version );
+					if ( 'caches' in window ) {
+						caches.keys().then( function ( keys ) {
+							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
+						} ).then( function () { window.location.reload( true ); } );
+					} else {
+						window.location.reload( true );
+					}
+					return;
+				}
+				localStorage.setItem( versionKey, info.version );
+			} )
+			.catch( function () {} ); // Silent — version check is best-effort
 	}
 
 	// -----------------------------------------------------------------------
@@ -326,6 +390,15 @@
 		if ( otpErr    ) { otpErr.textContent = ''; }
 		if ( addErr    ) { addErr.textContent = ''; }
 		if ( verifyBtn ) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Code'; }
+
+		// When served from a WP site, pre-fill the URL so the user doesn't have
+		// to type it in.  No fallback: if autoSiteUrl is not set, leave blank.
+		if ( ! prefill ) {
+			var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+			if ( autoUrl && urlField ) {
+				urlField.value = autoUrl;
+			}
+		}
 
 		state._otpVerified = null;
 
@@ -1496,16 +1569,97 @@
 				var ctx = canvas.getContext( '2d' );
 				if ( ! ctx ) return;
 
-				// Page silhouette background
-				ctx.fillStyle = '#f0f4f8';
+				// ── Page silhouette ──────────────────────────────────────
+				// White page body
+				ctx.fillStyle = '#ffffff';
 				ctx.fillRect( 0, 0, W, H );
 
-				// Draw subtle page-chrome lines to hint at a web page layout
+				// Top navigation bar (dark)
+				ctx.fillStyle = '#2c3e50';
+				ctx.fillRect( 0, 0, W, 60 );
+
+				// Nav logo placeholder
+				ctx.fillStyle = '#4a90b8';
+				ctx.fillRect( 20, 16, 100, 28 );
+
+				// Nav links (right side)
+				ctx.fillStyle = 'rgba(255,255,255,0.5)';
+				[ W - 220, W - 160, W - 100, W - 48 ].forEach( function ( x ) {
+					ctx.fillRect( x, 22, 44, 16 );
+				} );
+
+				// Hero section background
+				ctx.fillStyle = '#e8f0f7';
+				ctx.fillRect( 0, 60, W, 180 );
+
+				// Hero heading
+				ctx.fillStyle = '#bbc8d4';
+				ctx.fillRect( 60, 96, W - 280, 28 );
+				ctx.fillRect( 60, 134, W - 360, 20 );
+
+				// Hero CTA button
+				ctx.fillStyle = '#4a90b8';
+				ctx.beginPath();
+				ctx.roundRect( 60, 168, 140, 40, 6 );
+				ctx.fill();
+
+				// Content area — two columns
+				var col1W = Math.round( W * 0.62 );
+				var col2X = col1W + 24;
+				var col2W = W - col2X - 24;
+				var yBase = 272;
+
+				// Section heading
+				ctx.fillStyle = '#cdd5dc';
+				ctx.fillRect( 24, yBase, 220, 22 );
+				yBase += 40;
+
+				// Text paragraph lines (left column)
+				ctx.fillStyle = '#e4e9ee';
+				for ( var li = 0; li < 5; li++ ) {
+					ctx.fillRect( 24, yBase + li * 22, ( li === 4 ? col1W * 0.6 : col1W - 24 ), 14 );
+				}
+				yBase += 5 * 22 + 24;
+
+				// Image placeholder (left column)
 				ctx.fillStyle = '#dde4ec';
-				ctx.fillRect( 0, 0, W, 56 );       // nav bar
-				ctx.fillRect( 24, 80, W - 48, 20 ); // heading line
-				ctx.fillRect( 24, 112, W * 0.6, 12 );
-				ctx.fillRect( 24, 132, W * 0.45, 12 );
+				ctx.fillRect( 24, yBase, col1W - 24, 180 );
+				// Image icon
+				ctx.fillStyle = '#c0cbd6';
+				ctx.fillRect( 24 + ( col1W - 24 ) / 2 - 24, yBase + 75, 48, 30 );
+				yBase += 210;
+
+				// Another paragraph block
+				ctx.fillStyle = '#e4e9ee';
+				for ( var li2 = 0; li2 < 4; li2++ ) {
+					ctx.fillRect( 24, yBase + li2 * 22, ( li2 === 3 ? col1W * 0.4 : col1W - 24 ), 14 );
+				}
+
+				// Right sidebar
+				var sbY = 272 + 40;
+				ctx.fillStyle = '#f2f5f8';
+				ctx.beginPath();
+				if ( ctx.roundRect ) { ctx.roundRect( col2X, sbY, col2W, 160, 8 ); } else { ctx.rect( col2X, sbY, col2W, 160 ); }
+				ctx.fill();
+				ctx.fillStyle = '#dde4ec';
+				ctx.fillRect( col2X + 16, sbY + 20, col2W - 32, 14 );
+				ctx.fillRect( col2X + 16, sbY + 44, col2W - 32, 10 );
+				ctx.fillRect( col2X + 16, sbY + 62, col2W - 64, 10 );
+				ctx.fillStyle = '#4a90b8';
+				ctx.beginPath();
+				if ( ctx.roundRect ) { ctx.roundRect( col2X + 16, sbY + 88, col2W - 32, 34, 6 ); } else { ctx.rect( col2X + 16, sbY + 88, col2W - 32, 34 ); }
+				ctx.fill();
+
+				// Footer
+				ctx.fillStyle = '#2c3e50';
+				ctx.fillRect( 0, H - 80, W, 80 );
+				ctx.fillStyle = 'rgba(255,255,255,0.2)';
+				[ 24, W / 4, W / 2, W * 0.75 ].forEach( function ( x ) {
+					ctx.fillRect( x, H - 60, 80, 10 );
+					ctx.fillRect( x, H - 44, 60, 8 );
+					ctx.fillRect( x, H - 30, 70, 8 );
+				} );
+				// ── End page silhouette ────────────────────────────────
 
 				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight || 1; } ) );
 
