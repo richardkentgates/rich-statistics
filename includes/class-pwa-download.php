@@ -163,7 +163,7 @@ class RSA_Pwa_Download {
 			wp_die( esc_html__( 'Could not create the download package. Please try again.', 'rich-statistics' ) );
 		}
 
-		foreach ( [ 'index.html', 'config.js', 'app.js', 'app.css', 'sw.js', 'manifest.json' ] as $file ) {
+		foreach ( [ 'index.html', 'config.js', 'app.js', 'app.css', 'sw.js', 'manifest.json', 'chart.min.js' ] as $file ) {
 			$path = $webapp_dir . $file;
 			if ( file_exists( $path ) ) {
 				$zip->addFile( $path, 'rich-statistics-app/' . $file );
