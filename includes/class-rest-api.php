@@ -75,11 +75,17 @@ class RSA_Rest_API {
 
 		register_rest_route( self::NS, '/overview',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_overview'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/pages',     [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_pages'     ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
-			'limit' => [ 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ],
+			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
+			'browser'  => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'os'       => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'path'     => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'sort'     => [ 'type' => 'string',  'default' => 'views', 'enum' => [ 'views', 'avg_time' ] ],
+			'sort_dir' => [ 'type' => 'string',  'default' => 'desc',  'enum' => [ 'asc', 'desc' ] ],
 		] ) ] );
 		register_rest_route( self::NS, '/audience',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_audience'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/referrers', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_referrers' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
-			'limit' => [ 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ],
+			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
+			'ref_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
 		register_rest_route( self::NS, '/behavior',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_behavior'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/clicks',    [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_clicks'    ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
@@ -89,12 +95,17 @@ class RSA_Rest_API {
 			'page' => [ 'type' => 'string', 'default' => '/', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
 		register_rest_route( self::NS, '/export',    [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_export'    ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
-			'format' => [ 'type' => 'string', 'default' => 'json', 'enum' => [ 'json', 'csv' ] ],
+			'format'    => [ 'type' => 'string', 'default' => 'json',      'enum' => [ 'json', 'csv' ] ],
+			'data_type' => [ 'type' => 'string', 'default' => 'pageviews', 'enum' => [ 'pageviews', 'sessions', 'clicks', 'referrers' ] ],
+			'date_from' => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+			'date_to'   => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
 		register_rest_route( self::NS, '/campaigns', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_campaigns' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
-			'limit' => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
+			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
+			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/user-flow', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow' ], 'permission_callback' => $auth, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/user-flow',      [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'      ], 'permission_callback' => $auth, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
 		// Ingest endpoint — public (no auth), nonce verified inside
 		register_rest_route( self::NS, '/track', [
@@ -163,7 +174,14 @@ class RSA_Rest_API {
 	}
 
 	public static function get_pages( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( [ 'pages' => RSA_Analytics::get_top_pages( $r['period'], (int) $r['limit'] ) ] );
+		$filters = [
+			'browser'  => (string) ( $r['browser']  ?? '' ),
+			'os'       => (string) ( $r['os']       ?? '' ),
+			'page'     => (string) ( $r['path']     ?? '' ),
+			'sort'     => (string) ( $r['sort']     ?? 'views' ),
+			'sort_dir' => (string) ( $r['sort_dir'] ?? 'desc' ),
+		];
+		return self::ok( [ 'pages' => RSA_Analytics::get_top_pages( $r['period'], (int) $r['limit'], $filters ) ] );
 	}
 
 	public static function get_audience( WP_REST_Request $r ): WP_REST_Response {
@@ -178,7 +196,8 @@ class RSA_Rest_API {
 	}
 
 	public static function get_referrers( WP_REST_Request $r ): WP_REST_Response {
-		$rows = RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'] );
+		$filters = [ 'page' => (string) ( $r['ref_page'] ?? '' ) ];
+		$rows = RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'], $filters );
 		return self::ok( [ 'referrers' => array_map( fn( $row ) => [
 			'domain'    => $row['domain'],
 			'pageviews' => $row['visits'],
@@ -206,20 +225,26 @@ class RSA_Rest_API {
 	}
 
 	public static function get_export( WP_REST_Request $r ): WP_REST_Response {
-		$format = $r['format'];
-		$period = $r['period'];
-		$data   = RSA_Analytics::export_events( $period, $format );
+		$format    = $r['format'];
+		$period    = $r['period'];
+		$data_type = (string) ( $r['data_type'] ?? 'pageviews' );
+		$date_from = (string) ( $r['date_from'] ?? '' );
+		$date_to   = (string) ( $r['date_to']   ?? '' );
+
+		// Validate custom date formats
+		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
+		if ( $date_to   && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
+
+		$data = RSA_Analytics::export_data( $data_type, $period, $format, $date_from, $date_to );
 
 		if ( 'csv' === $format ) {
-			// WP REST always JSON-encodes response bodies, so we hook in early
-			// to serve the raw CSV ourselves before the JSON encoder runs.
 			add_filter(
 				'rest_pre_serve_request',
-				static function ( $served ) use ( $data, $period ) {
+				static function ( $served ) use ( $data, $period, $data_type ) {
 					if ( $served ) {
 						return $served;
 					}
-					$filename = 'rsa-export-' . sanitize_file_name( $period ) . '.csv';
+					$filename = 'rsa-' . sanitize_file_name( $data_type ) . '-' . sanitize_file_name( $period ) . '.csv';
 					header( 'Content-Type: text/csv; charset=UTF-8' );
 					header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 					header( 'Pragma: no-cache' );
@@ -235,8 +260,13 @@ class RSA_Rest_API {
 		return self::ok( json_decode( $data, true ) );
 	}
 
+	public static function get_filter_options( WP_REST_Request $r ): WP_REST_Response {
+		return self::ok( RSA_Analytics::get_filter_options( $r['period'] ) );
+	}
+
 	public static function get_campaigns( WP_REST_Request $r ): WP_REST_Response {
-		$rows = RSA_Analytics::get_campaigns( $r['period'], (int) $r['limit'] );
+		$filters = [ 'medium' => (string) ( $r['medium'] ?? '' ) ];
+		$rows    = RSA_Analytics::get_campaigns( $r['period'], (int) $r['limit'], $filters );
 		return self::ok( [ 'campaigns' => $rows ] );
 	}
 
