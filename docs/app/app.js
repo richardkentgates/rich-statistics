@@ -875,12 +875,12 @@
 	}
 
 	// -----------------------------------------------------------------------
-	// Heatmap (premium)
+	// Heatmap
 	// -----------------------------------------------------------------------
 	function renderHeatmap( container ) {
 		container.innerHTML =
 			'<div class="rsa-chart-card">' +
-				'<h3>Heatmap Controls</h3>' +
+				'<h3>Click Heatmap</h3>' +
 				'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
 					'<label for="rsa-hm-page" style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
 					'<input type="text" id="rsa-hm-page" placeholder="/" ' +
@@ -909,53 +909,85 @@
 					return;
 				}
 
-				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight; } ) );
-				var rows = data.slice( 0, 20 ).map( function ( p, i ) {
-					return '<tr><td>' + ( i + 1 ) + '</td><td>' + p.x.toFixed( 3 ) + '</td><td>' + p.y.toFixed( 3 ) + '</td><td>' + fmt( p.weight ) + '</td></tr>';
-				} ).join( '' );
-
 				results.innerHTML =
 					'<div class="rsa-chart-card" style="margin-top:16px">' +
-						'<h3>Click Distribution \u2014 ' + esc( pagePath ) + '</h3>' +
-						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' data point' + ( data.length !== 1 ? 's' : '' ) + ' &mdash; bubble size reflects relative click weight.</p>' +
-						'<div class="rsa-chart-wrap" style="height:300px"><canvas id="c-heatmap-scatter"></canvas></div>' +
-					'</div>' +
-					'<div class="rsa-table-card" style="margin-top:16px">' +
-						'<h3>Top Click Coordinates</h3>' +
-						'<div class="rsa-table-wrap"><table class="rsa-table">' +
-						'<thead><tr><th>#</th><th>X (left\u2192right)</th><th>Y (top\u2192bottom)</th><th>Clicks</th></tr></thead>' +
-						'<tbody>' + rows + '</tbody></table></div>' +
+						'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
+						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
+						'<div style="position:relative;width:100%;background:var(--rsa-surface);border-radius:var(--rsa-radius);overflow:hidden">' +
+							'<canvas id="c-heatmap" style="display:block;width:100%;height:auto"></canvas>' +
+						'</div>' +
+						'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
+							'<span>Low</span>' +
+							'<div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(to right,#4a90b8,#90c060,#f5c518,#e8532a)"></div>' +
+							'<span>High</span>' +
+						'</div>' +
 					'</div>';
 
-				var canvas = document.getElementById( 'c-heatmap-scatter' );
-				if ( canvas ) {
-					if ( state.charts[ 'c-heatmap-scatter' ] ) {
-						state.charts[ 'c-heatmap-scatter' ].destroy();
+				var canvas = document.getElementById( 'c-heatmap' );
+				if ( ! canvas ) return;
+
+				// Size canvas: 800 wide x 1120 tall (A4-like page silhouette)
+				var W = 800, H = 1120;
+				canvas.width  = W;
+				canvas.height = H;
+
+				var ctx = canvas.getContext( '2d' );
+
+				// Page silhouette background
+				ctx.fillStyle = '#f0f4f8';
+				ctx.fillRect( 0, 0, W, H );
+
+				// Draw subtle page-chrome lines to hint at a web page layout
+				ctx.fillStyle = '#dde4ec';
+				ctx.fillRect( 0, 0, W, 56 );       // nav bar
+				ctx.fillRect( 24, 80, W - 48, 20 ); // heading line
+				ctx.fillRect( 24, 112, W * 0.6, 12 );
+				ctx.fillRect( 24, 132, W * 0.45, 12 );
+
+				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight || 1; } ) );
+
+				// Helper: map normalised weight [0-1] to an RGBA colour
+				// blue → green → yellow → orange-red
+				function heatColour( t, alpha ) {
+					var r, g, b;
+					if ( t < 0.25 ) {
+						// blue → cyan
+						var s = t / 0.25;
+						r = 74;  g = Math.round( 144 + s * ( 192 - 144 ) );  b = Math.round( 184 + s * ( 255 - 184 ) );
+					} else if ( t < 0.5 ) {
+						// cyan → yellow-green
+						var s = ( t - 0.25 ) / 0.25;
+						r = Math.round( 74 + s * ( 144 - 74 ) );  g = Math.round( 192 + s * ( 220 - 192 ) );  b = Math.round( 255 - s * 255 );
+					} else if ( t < 0.75 ) {
+						// yellow-green → orange
+						var s = ( t - 0.5 ) / 0.25;
+						r = Math.round( 144 + s * ( 245 - 144 ) );  g = Math.round( 220 - s * ( 220 - 197 ) );  b = Math.round( s * 24 );
+					} else {
+						// orange → red
+						var s = ( t - 0.75 ) / 0.25;
+						r = Math.round( 245 - s * ( 245 - 232 ) );  g = Math.round( 197 - s * ( 197 - 83 ) );  b = Math.round( 24 + s * ( 42 - 24 ) );
 					}
-					state.charts[ 'c-heatmap-scatter' ] = new Chart( canvas, {
-						type: 'bubble',
-						data: {
-							datasets: [ {
-								label          : 'Clicks',
-								data           : data.map( function ( p ) {
-									return { x: p.x, y: p.y, r: Math.max( 3, Math.round( ( p.weight / maxW ) * 18 ) ) };
-								} ),
-								backgroundColor: '#4a90b8aa',
-								borderColor    : '#2e6f8e',
-								borderWidth    : 1,
-							} ],
-						},
-						options: {
-							responsive         : true,
-							maintainAspectRatio: false,
-							plugins: { legend: { display: false } },
-							scales: {
-								x: { min: 0, max: 1, title: { display: true, text: 'X (left \u2192 right)' } },
-								y: { min: 0, max: 1, reverse: true, title: { display: true, text: 'Y (top \u2192 bottom)' } },
-							},
-						},
-					} );
+					return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 				}
+
+				// Draw each point as a radial-gradient "blob"
+				data.forEach( function ( p ) {
+					var t    = ( p.weight || 1 ) / maxW;           // normalised 0-1
+					var px   = p.x * W;
+					var py   = p.y * H;
+					var r    = Math.max( 24, Math.round( t * 80 ) );
+
+					var grad = ctx.createRadialGradient( px, py, 0, px, py, r );
+					grad.addColorStop( 0,   heatColour( t, 0.85 ) );
+					grad.addColorStop( 0.5, heatColour( t, 0.4 ) );
+					grad.addColorStop( 1,   heatColour( t, 0 ) );
+
+					ctx.fillStyle = grad;
+					ctx.beginPath();
+					ctx.arc( px, py, r, 0, Math.PI * 2 );
+					ctx.fill();
+				} );
+
 			} ).catch( function () {
 				results.innerHTML =
 					'<div class="rsa-chart-card" style="margin-top:16px">' +
@@ -1066,17 +1098,9 @@
 			return;
 		}
 		if ( ! container ) return;
-		if ( err.message === 'HTTP 404' ) {
-			container.innerHTML =
-				'<div class="rsa-premium-notice">' +
-					'<p><strong>Premium feature</strong></p>' +
-					'<p>This view requires the Rich Statistics Premium plugin to be active on your WordPress site.</p>' +
-				'</div>';
-		} else {
-			container.innerHTML =
-				'<p class="rsa-empty">Could not load data (' + esc( err.message ) + '). ' +
-				'Check your connection and try refreshing.</p>';
-		}
+		container.innerHTML =
+			'<p class="rsa-empty">Could not load data (' + esc( err.message ) + '). ' +
+			'Check your connection and try refreshing.</p>';
 	}
 
 	// -----------------------------------------------------------------------
