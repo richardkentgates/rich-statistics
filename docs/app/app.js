@@ -44,7 +44,8 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 		loadStoredSites();
 
-		if ( state.siteUrl && state.credentials ) {
+		var nonceAuth = !! ( window.RSA_CONFIG && window.RSA_CONFIG.nonce && state.siteUrl );
+		if ( ( state.siteUrl && state.credentials ) || nonceAuth ) {
 			renderSiteSwitcher();
 			showApp();
 			renderView( state.view );
@@ -92,19 +93,31 @@
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
 
-		// When the app is served from a WP site (/wp-content/…), config.js sets
-		// autoSiteUrl.  Auto-select the matching stored site so the user lands
-		// directly on the right dashboard without any manual site selection.
+		// When the app is served from a WP site (/rs-app/), config.js sets
+		// autoSiteUrl and serve_app() injects a nonce.  Auto-register the
+		// current site with empty credentials — nonce authentication is used
+		// instead of Application Passwords for same-origin calls.
 		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
-		if ( autoUrl ) {
+		var autoNonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+		if ( autoUrl && autoNonce ) {
 			var normalised = autoUrl.replace( /\/$/, '' );
 			var match = state.sites.find( function ( s ) {
 				return s.siteUrl.replace( /\/$/, '' ) === normalised;
 			} );
-			if ( match ) {
-				state.activeId = match.id;
-				localStorage.setItem( 'rsa_active', match.id );
+			if ( ! match ) {
+				var autoSite = {
+					id         : uid(),
+					label      : ( window.RSA_CONFIG.autoLabel ) || hostname( autoUrl ),
+					siteUrl    : normalised,
+					appUrl     : window.RSA_CONFIG.appUrl || '',
+					credentials: '',
+				};
+				state.sites.unshift( autoSite );
+				localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+				match = autoSite;
 			}
+			state.activeId = match.id;
+			localStorage.setItem( 'rsa_active', match.id );
 		}
 
 		syncActiveState();
@@ -198,15 +211,13 @@
 			return { id: s.id, label: s.label, siteUrl: s.siteUrl, appUrl: s.appUrl || '' };
 		} );
 		state.sites.forEach( function ( site ) {
-			if ( ! site.credentials ) return;
-			fetch( site.siteUrl + '/wp-json/rsa/v1/user-settings', {
+			var url     = site.siteUrl + '/wp-json/rsa/v1/user-settings';
+			var headers = Object.assign( { 'Content-Type': 'application/json', 'Accept': 'application/json' }, getAuthHeaders( url ) );
+			if ( ! headers['Authorization'] && ! headers['X-WP-Nonce'] ) return;
+			fetch( url, {
 				method : 'POST',
-				headers: {
-					'Authorization': 'Basic ' + site.credentials,
-					'Content-Type' : 'application/json',
-					'Accept'       : 'application/json',
-				},
-				body: JSON.stringify( { sites: sanitized } ),
+				headers: headers,
+				body   : JSON.stringify( { sites: sanitized } ),
 			} ).catch( function () {} );
 		} );
 	}
@@ -218,11 +229,12 @@
 	 * device); sites that only exist locally are offered for sync.
 	 */
 	function syncUserSettings() {
-		if ( ! state.siteUrl || ! state.credentials ) return;
+		if ( ! state.siteUrl ) return;
+		var url     = state.siteUrl + '/wp-json/rsa/v1/user-settings';
+		var headers = Object.assign( { 'Accept': 'application/json' }, getAuthHeaders( url ) );
+		if ( ! headers['Authorization'] && ! headers['X-WP-Nonce'] ) return;
 
-		fetch( state.siteUrl + '/wp-json/rsa/v1/user-settings', {
-			headers: { 'Authorization': 'Basic ' + state.credentials, 'Accept': 'application/json' },
-		} )
+		fetch( url, { headers: headers } )
 		.then( function ( r ) { return r.ok ? r.json() : null; } )
 		.then( function ( json ) {
 			if ( ! json || ! json.data ) return;
@@ -287,6 +299,25 @@
 	// -----------------------------------------------------------------------
 	// API
 	// -----------------------------------------------------------------------
+
+	/**
+	 * Return the correct auth headers for a given absolute URL.
+	 * Same-origin auto-site uses the injected WP REST nonce (cookie auth +
+	 * nonce).
+	 * Other sites use Application Password Basic auth.
+	 */
+	function getAuthHeaders( url ) {
+		var nonce   = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+		var headers = { 'Accept': 'application/json' };
+		if ( nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
+			headers['X-WP-Nonce'] = nonce;
+		} else if ( state.credentials ) {
+			headers['Authorization'] = 'Basic ' + state.credentials;
+		}
+		return headers;
+	}
+
 	function apiGet( endpoint, params ) {
 		var url = state.siteUrl + '/wp-json/rsa/v1/' + endpoint;
 		var qs  = [];
@@ -304,10 +335,7 @@
 
 		return fetch( url, {
 			method : 'GET',
-			headers: {
-				'Authorization': 'Basic ' + state.credentials,
-				'Accept'       : 'application/json',
-			},
+			headers: getAuthHeaders( url ),
 		} ).then( function ( res ) {
 			if ( res.status === 401 || res.status === 403 ) {
 				throw new Error( 'auth' );

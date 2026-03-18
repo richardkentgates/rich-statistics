@@ -62,9 +62,12 @@ class RSA_Admin {
 		$html     = file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file
 
 		// Inject RSA_CONFIG before </head> so config.js / app.js can read it.
+		$current_user  = wp_get_current_user();
 		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
 			'autoSiteUrl' => $site_url,
 			'appUrl'      => $app_url,
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+			'autoLabel'   => get_bloginfo( 'name' ),
 		] ) . ';</script>';
 		$html = str_replace( '</head>', $config_script . '</head>', $html );
 
