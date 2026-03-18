@@ -908,19 +908,16 @@ class RSA_Analytics {
 			$range['start'], $range['end'], $bt
 		) ) ?: [];
 
-		$pages = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
-			"SELECT DISTINCT page FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page IS NOT NULL AND page != '' ORDER BY page ASC LIMIT 200",
-			$range['start'], $range['end'], $bt
-		) ) ?: [];
+		// Pages come from WordPress (published posts/pages/CPTs) so both dropdowns
+		// in the webapp and WP admin always show the same valid content — not
+		// seeded/bogus paths that may be in the DB.
+		$wp_pages = array_keys( RSA_Admin::get_trackable_pages() );
 
 		return [
 			'browsers'      => $browsers,
 			'os'            => $os,
-			'pages'         => $pages,
-			'heatmap_pages' => $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
-				"SELECT DISTINCT page FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s AND page IS NOT NULL AND page != '' ORDER BY page ASC LIMIT 200",
-				$range['start'], $range['end']
-			) ) ?: [],
+			'pages'         => $wp_pages,
+			'heatmap_pages' => $wp_pages,
 		];
 	}
 
@@ -963,31 +960,31 @@ class RSA_Analytics {
 			ARRAY_A
 		) ?: [];
 
-		$site_url = trailingslashit( get_site_url() );
+		// Cross-reference DB paths against the same set get_trackable_pages() uses:
+		// published posts/pages/CPTs enabled in preferences.  Anything NOT in that
+		// set (including seeded/bogus paths and deleted content) is 'unmatched'.
+		$live_paths = array_keys( RSA_Admin::get_trackable_pages() );
+		$live_set   = array_flip( $live_paths ); // O(1) lookups
 
-		return array_map( static function ( $row ) use ( $site_url ) {
+		$data_retention = (int) get_option( 'rsa_data_retention_days', 365 );
+
+		return array_map( static function ( $row ) use ( $live_set, $data_retention ) {
 			$path    = $row['page'];
 			$is_home = ( $path === '/' || $path === '' );
-			$post_id = $is_home ? 0 : url_to_postid( $site_url . ltrim( $path, '/' ) );
 
-			if ( $is_home ) {
+			if ( $is_home || isset( $live_set[ $path ] ) ) {
 				$status = 'live';
-			} elseif ( $post_id > 0 && get_post_status( $post_id ) === 'publish' ) {
-				$status = 'live';
-			} elseif ( $post_id > 0 ) {
-				// Post exists but is not published (draft, trash, private, etc.)
-				$status = 'unpublished';
 			} else {
-				// No post ID — could be a live archive/shop/custom endpoint or a deleted/bogus path
 				$status = 'unmatched';
 			}
 
 			return [
-				'page'    => $path,
-				'events'  => (int) $row['events'],
-				'clicks'  => (int) $row['clicks'],
-				'heatmap' => (int) $row['heatmap'],
-				'status'  => $status,
+				'page'           => $path,
+				'events'         => (int) $row['events'],
+				'clicks'         => (int) $row['clicks'],
+				'heatmap'        => (int) $row['heatmap'],
+				'status'         => $status,
+				'retention_days' => $data_retention,
 			];
 		}, $rows );
 	}

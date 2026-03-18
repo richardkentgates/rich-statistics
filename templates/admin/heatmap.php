@@ -33,7 +33,9 @@ if ( ! preg_match( '#^/#', $page_path ) ) {
 }
 
 $heatmap_data = RSA_Analytics::get_heatmap( $page_path, $period );
-$preview_url  = home_url( $page_path );
+// Add ?rsa_preview=1 so the WP admin bar is suppressed inside the iframe,
+// ensuring stored click Y-coordinates align with the visible page content.
+$preview_url  = add_query_arg( 'rsa_preview', '1', home_url( $page_path ) );
 
 RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ), $period );
 ?>

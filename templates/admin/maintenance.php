@@ -15,10 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $rows = RSA_Analytics::get_all_tracked_pages();
 
+// Data retention setting (for context note)
+$retention_days = (int) get_option( 'rsa_data_retention_days', 365 );
+
 $status_labels = [
-	'live'        => [ 'label' => __( 'Live',        'rich-statistics' ), 'class' => 'rsa-badge-green'  ],
-	'unpublished' => [ 'label' => __( 'Unpublished', 'rich-statistics' ), 'class' => 'rsa-badge-yellow' ],
-	'unmatched'   => [ 'label' => __( 'Unmatched',   'rich-statistics' ), 'class' => 'rsa-badge-gray'   ],
+	'live'      => [ 'label' => __( 'Live',      'rich-statistics' ), 'class' => 'rsa-badge-green' ],
+	'unmatched' => [ 'label' => __( 'Unmatched', 'rich-statistics' ), 'class' => 'rsa-badge-gray'  ],
 ];
 
 $nonce = wp_create_nonce( 'wp_rest' );
@@ -30,7 +32,15 @@ $nonce = wp_create_nonce( 'wp_rest' );
 		<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
 			<div>
 				<h2 style="margin:0 0 4px"><?php esc_html_e( 'Tracked Pages', 'rich-statistics' ); ?></h2>
-				<p class="rsa-field-hint" style="margin:0"><?php esc_html_e( 'All distinct page paths recorded in the database. Use Purge to delete data for paths that no longer exist or were recorded erroneously.', 'rich-statistics' ); ?></p>
+				<p class="rsa-field-hint" style="margin:0">
+					<?php
+					printf(
+						/* translators: %d = number of days */
+						esc_html__( 'All distinct page paths recorded in the database. Live = published page or post. Unmatched = deleted, never existed, or outside current keep-data setting (%d days). Purge removes all events, clicks and heatmap data for that path.', 'rich-statistics' ),
+						$retention_days
+					);
+					?>
+				</p>
 			</div>
 			<button id="rsa-purge-orphaned"
 				class="rsa-btn rsa-btn-secondary"
