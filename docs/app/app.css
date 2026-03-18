@@ -264,6 +264,39 @@ html, body {
 	color: #fff;
 }
 
+/* iOS Safari "Add to Home Screen" tip */
+#rsa-ios-tip {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	max-width: 420px;
+	width: calc(100% - 32px);
+	padding: 12px 14px;
+	background: #1e2d3d;
+	color: #e2eaf2;
+	border: 1px solid rgba(255,255,255,.15);
+	border-radius: 12px;
+	font-size: 13px;
+	line-height: 1.4;
+	box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+#rsa-ios-tip span { flex: 1; }
+#rsa-ios-tip-close {
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	color: #94a3b8;
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0 4px;
+}
+
 /* Main content area */
 .rsa-main {
 	flex: 1;

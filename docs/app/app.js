@@ -66,6 +66,7 @@
 		bindSignOut();
 		bindAddSite();
 		bindInstallPrompt();
+		showIosInstallTip();
 	} );
 
 	// -----------------------------------------------------------------------
@@ -792,6 +793,29 @@
 	}
 
 	// -----------------------------------------------------------------------
+	// iOS Safari install tip
+	// -----------------------------------------------------------------------
+	function showIosInstallTip() {
+		var ua         = navigator.userAgent || '';
+		var isIos      = /iphone|ipad|ipod/i.test( ua );
+		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|android/i.test( ua );
+		var standalone = 'standalone' in window.navigator && window.navigator.standalone;
+		if ( ! isIos || ! isSafari || standalone ) return;
+
+		var tip = document.createElement( 'div' );
+		tip.id = 'rsa-ios-tip';
+		tip.setAttribute( 'role', 'status' );
+		tip.innerHTML =
+			'<span>Tap <strong>Share</strong> ↗ then <strong>“Add to Home Screen”</strong> to install this app.</span>' +
+			'<button type="button" aria-label="Dismiss" id="rsa-ios-tip-close">×</button>';
+		document.body.appendChild( tip );
+		document.getElementById( 'rsa-ios-tip-close' ).addEventListener( 'click', function () {
+			tip.remove();
+			try { localStorage.setItem( 'rsa_ios_tip_dismissed', '1' ); } catch ( e ) {}
+		} );
+	}
+
+	// -----------------------------------------------------------------------
 	// PWA install prompt
 	// -----------------------------------------------------------------------
 	var _installPrompt = null;
@@ -1324,9 +1348,13 @@
 		var filters    = { entry_source: '', focus_page: '', min_sessions: 1, steps: 4 };
 		var activeView = 'explorer'; // 'explorer' | 'journey'
 
-		// Fetch entry source options, then render filter bar
-		apiGet( 'user-flow/sources', { period: state.period } ).then( function ( sd ) {
-			var sources = sd.sources || [];
+		// Fetch entry source options AND page list together, then render filter bar
+		Promise.all( [
+			apiGet( 'user-flow/sources', { period: state.period } ),
+			apiGet( 'filter-options',    { period: state.period } ),
+		] ).then( function ( r ) {
+			var sources = ( r[0] && r[0].sources ) || [];
+			var pages   = ( r[1] && r[1].pages   ) || [];
 
 			function srcOptions( current ) {
 				return '<option value="">All Sources</option>' +
@@ -1335,12 +1363,17 @@
 					} ).join( '' );
 			}
 
+			function pageOptions( current ) {
+				return '<option value="">All Pages</option>' +
+					pages.map( function ( v ) {
+						return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>';
+					} ).join( '' );
+			}
+
 			container.innerHTML =
 				'<div class="rsa-filter-bar">' +
 				( sources.length ? '<select id="rsa-uf-source">' + srcOptions( filters.entry_source ) + '</select>' : '' ) +
-				'<input type="text" id="rsa-uf-focus" placeholder="Focus page (optional)"' +
-					' style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--rsa-border);' +
-					'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
+				( pages.length   ? '<select id="rsa-uf-focus">'  + pageOptions( filters.focus_page   ) + '</select>' : '' ) +
 				'<label style="font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap">Min sessions' +
 					'<input type="number" id="rsa-uf-min" value="1" min="1" max="999"' +
 					' style="width:58px;padding:6px;border:1px solid var(--rsa-border);border-radius:var(--rsa-radius);' +
@@ -1364,13 +1397,13 @@
 				var minEl   = document.getElementById( 'rsa-uf-min' );
 				var stepsEl = document.getElementById( 'rsa-uf-steps' );
 				filters.entry_source = srcEl   ? srcEl.value                            : '';
-				filters.focus_page   = focusEl ? focusEl.value.trim()                   : '';
+				filters.focus_page   = focusEl ? focusEl.value                          : '';
 				filters.min_sessions = minEl   ? Math.max( 1, parseInt( minEl.value, 10 ) || 1 ) : 1;
 				filters.steps        = stepsEl ? parseInt( stepsEl.value, 10 ) || 4     : 4;
 				loadPathFlow();
 			} );
 		} ).catch( function () {
-			// Sources endpoint failed — show content area without filter bar
+			// Endpoints failed — show content area without filter bar
 			container.innerHTML = '<div id="rsa-uf-content"></div>';
 			setLoading( false );
 			loadPathFlow();
@@ -1790,14 +1823,15 @@
 
 				if ( isSameOrigin ) {
 					// Same-origin: show the real page in an iframe with a canvas overlay
+					var iframeH = 700;
 					var pageUrl = ( state.siteUrl || '' ).replace( /\/$/, '' ) + pagePath;
 					results.innerHTML =
 						'<div class="rsa-chart-card" style="margin-top:16px">' +
 							'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
 							'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
-							'<div style="position:relative;overflow:hidden;border-radius:var(--rsa-radius)">' +
+							'<div id="rsa-hm-wrapper" style="position:relative;overflow:hidden;height:' + iframeH + 'px;border-radius:var(--rsa-radius)">' +
 								'<iframe id="rsa-hm-iframe" src="' + esc( pageUrl ) + '" ' +
-									'style="display:block;width:100%;height:700px;border:none" ' +
+									'style="display:block;width:100%;height:' + iframeH + 'px;border:none" ' +
 									'scrolling="no" sandbox="allow-same-origin allow-scripts"></iframe>' +
 								'<canvas id="c-heatmap" ' +
 									'style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>' +
@@ -1805,15 +1839,15 @@
 							legend +
 						'</div>';
 
-					// Size canvas to match the rendered iframe dimensions, then draw dots
-					requestAnimationFrame( function () {
-						var canvas = document.getElementById( 'c-heatmap' );
-						if ( ! canvas ) return;
-						canvas.width  = canvas.offsetWidth  || W;
-						canvas.height = canvas.offsetHeight || 700;
+					// Size canvas buffer to match wrapper pixel dimensions (synchronous — layout is settled)
+					var canvas = document.getElementById( 'c-heatmap' );
+					if ( canvas ) {
+						var wrapper = document.getElementById( 'rsa-hm-wrapper' );
+						canvas.width  = ( wrapper ? wrapper.clientWidth : 0 ) || W;
+						canvas.height = iframeH;
 						var ctx = canvas.getContext( '2d' );
 						if ( ctx ) drawDots( ctx, data, canvas.width, canvas.height );
-					} );
+					}
 
 				} else {
 					// Fallback: canvas page silhouette (cross-origin)
