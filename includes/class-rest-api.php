@@ -125,6 +125,23 @@ class RSA_Rest_API {
 		// Plugin info — public, no auth required (version badge + version sync for the PWA)
 		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
 
+		// User settings — syncs the site list across devices (metadata only, no credentials)
+		register_rest_route( self::NS, '/user-settings', [
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_user_settings' ],
+				'permission_callback' => $auth,
+			],
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'post_user_settings' ],
+				'permission_callback' => $auth,
+				'args'                => [
+					'sites' => [ 'type' => 'array', 'required' => true ],
+				],
+			],
+		] );
+
 		// Ingest endpoint — public (no auth), nonce verified inside
 		register_rest_route( self::NS, '/track', [
 			'methods'             => 'POST',
@@ -194,6 +211,41 @@ class RSA_Rest_API {
 			'site_name' => get_bloginfo( 'name' ),
 			'site_url'  => get_site_url(),
 		] );
+	}
+
+	// ----------------------------------------------------------------
+	// User settings (site list sync — metadata only, no credentials)
+	// ----------------------------------------------------------------
+
+	public static function get_user_settings(): WP_REST_Response {
+		$user_id = get_current_user_id();
+		$sites   = get_user_meta( $user_id, 'rsa_app_sites', true );
+		return self::ok( [ 'sites' => is_array( $sites ) ? $sites : [] ] );
+	}
+
+	public static function post_user_settings( WP_REST_Request $r ): WP_REST_Response|WP_Error {
+		$user_id = get_current_user_id();
+		$raw     = $r->get_param( 'sites' );
+
+		if ( ! is_array( $raw ) ) {
+			return new WP_Error( 'invalid_data', __( 'sites must be an array.', 'rich-statistics' ), [ 'status' => 400 ] );
+		}
+
+		// Strip everything except the three safe fields we want to persist.
+		$sanitized = array_map(
+			function ( $site ) {
+				return [
+					'id'      => sanitize_text_field( (string) ( $site['id']      ?? '' ) ),
+					'label'   => sanitize_text_field( (string) ( $site['label']   ?? '' ) ),
+					'siteUrl' => esc_url_raw(          (string) ( $site['siteUrl'] ?? '' ) ),
+					'appUrl'  => esc_url_raw(          (string) ( $site['appUrl']  ?? '' ) ),
+				];
+			},
+			$raw
+		);
+
+		update_user_meta( $user_id, 'rsa_app_sites', $sanitized );
+		return self::ok( [ 'saved' => true ] );
 	}
 
 	// ----------------------------------------------------------------

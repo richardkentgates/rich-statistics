@@ -48,6 +48,7 @@
 			renderSiteSwitcher();
 			showApp();
 			renderView( state.view );
+			syncUserSettings();
 		} else {
 			showLogin();
 		}
@@ -122,6 +123,15 @@
 	}
 
 	function setActiveSite( id ) {
+		var targetSite = state.sites.find( function ( s ) { return s.id === id; } );
+		if ( targetSite && targetSite.appUrl ) {
+			var targetOrigin = '';
+			try { targetOrigin = new URL( targetSite.appUrl ).origin; } catch ( _ ) {}
+			if ( targetOrigin && targetOrigin !== window.location.origin ) {
+				window.location.href = targetSite.appUrl;
+				return;
+			}
+		}
 		state.activeId = id;
 		localStorage.setItem( 'rsa_active', id );
 		syncActiveState();
@@ -142,6 +152,7 @@
 		state.activeId = site.id;
 		localStorage.setItem( 'rsa_active', site.id );
 		syncActiveState();
+		pushSiteListToAllSites();
 		return site;
 	}
 
@@ -153,6 +164,7 @@
 			localStorage.setItem( 'rsa_active', state.activeId );
 		}
 		syncActiveState();
+		pushSiteListToAllSites();
 	}
 
 	function clearAllSites() {
@@ -171,6 +183,105 @@
 
 	function hostname( url ) {
 		try { return new URL( url ).hostname; } catch ( _ ) { return url; }
+	}
+
+	function normaliseUrl( url ) {
+		return ( url || '' ).replace( /\/$/, '' ).toLowerCase();
+	}
+
+	/**
+	 * Push the current site list (metadata only — no credentials) to every
+	 * authenticated site so each WP install acts as a sync node.
+	 */
+	function pushSiteListToAllSites() {
+		var sanitized = state.sites.map( function ( s ) {
+			return { id: s.id, label: s.label, siteUrl: s.siteUrl, appUrl: s.appUrl || '' };
+		} );
+		state.sites.forEach( function ( site ) {
+			if ( ! site.credentials ) return;
+			fetch( site.siteUrl + '/wp-json/rsa/v1/user-settings', {
+				method : 'POST',
+				headers: {
+					'Authorization': 'Basic ' + site.credentials,
+					'Content-Type' : 'application/json',
+					'Accept'       : 'application/json',
+				},
+				body: JSON.stringify( { sites: sanitized } ),
+			} ).catch( function () {} );
+		} );
+	}
+
+	/**
+	 * On app load, fetch the site list stored on the active WP site for this
+	 * user and reconcile it with the local list.  Sites that exist in the remote
+	 * list but not locally are offered as additions (they were added on another
+	 * device); sites that only exist locally are offered for sync.
+	 */
+	function syncUserSettings() {
+		if ( ! state.siteUrl || ! state.credentials ) return;
+
+		fetch( state.siteUrl + '/wp-json/rsa/v1/user-settings', {
+			headers: { 'Authorization': 'Basic ' + state.credentials, 'Accept': 'application/json' },
+		} )
+		.then( function ( r ) { return r.ok ? r.json() : null; } )
+		.then( function ( json ) {
+			if ( ! json || ! json.data ) return;
+			var remoteSites = json.data.sites || [];
+
+			// Sites in remote but missing locally (added on another device)
+			var toAdd = remoteSites.filter( function ( r ) {
+				return ! state.sites.some( function ( l ) {
+					return normaliseUrl( l.siteUrl ) === normaliseUrl( r.siteUrl );
+				} );
+			} );
+
+			// Sites local but missing in remote (not yet pushed)
+			var toSync = state.sites.filter( function ( l ) {
+				return ! remoteSites.some( function ( r ) {
+					return normaliseUrl( r.siteUrl ) === normaliseUrl( l.siteUrl );
+				} );
+			} );
+
+			if ( toAdd.length ) {
+				var addNames = toAdd.map( function ( s ) { return s.label || s.siteUrl; } ).join( '\n\u2022 ' );
+				if ( confirm( 'The following sites are linked to your account but not yet on this device:\n\n\u2022 ' + addNames + '\n\nAdd them to this device?' ) ) {
+					toAdd.forEach( function ( r ) {
+						state.sites.push( {
+							id         : r.id || uid(),
+							label      : r.label || hostname( r.siteUrl ),
+							siteUrl    : r.siteUrl,
+							appUrl     : r.appUrl || '',
+							credentials: '',
+						} );
+					} );
+					localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					renderSiteSwitcher();
+				} else if ( confirm( 'Remove these sites from your account sync?' ) ) {
+					// User declined to add them — remove from remote by pushing current local list
+					pushSiteListToAllSites();
+				}
+			}
+
+			if ( toSync.length ) {
+				var syncNames = toSync.map( function ( s ) { return s.label || s.siteUrl; } ).join( '\n\u2022 ' );
+				if ( confirm( 'The following sites are on this device but not in your account sync:\n\n\u2022 ' + syncNames + '\n\nAdd them to sync?' ) ) {
+					pushSiteListToAllSites();
+				} else {
+					// User chose not to sync — offer to remove from local
+					var removeNames = toSync.filter( function ( s ) { return s.id !== state.activeId; } );
+					if ( removeNames.length && confirm( 'Remove them from this device instead?' ) ) {
+						removeNames.forEach( function ( s ) { removeSite( s.id ); } );
+						renderSiteSwitcher();
+					}
+				}
+			}
+
+			// No mismatches — push local to keep all nodes current
+			if ( ! toAdd.length && ! toSync.length ) {
+				pushSiteListToAllSites();
+			}
+		} )
+		.catch( function () {} );
 	}
 
 	// -----------------------------------------------------------------------
@@ -262,6 +373,15 @@
 
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
+
+				// Cache the app_url on the site object so setActiveSite can navigate to it
+				if ( info.app_url ) {
+					var activeSite = state.sites.find( function ( s ) { return s.id === state.activeId; } );
+					if ( activeSite && activeSite.appUrl !== info.app_url ) {
+						activeSite.appUrl = info.app_url;
+						localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					}
+				}
 
 				var stored = localStorage.getItem( versionKey );
 				if ( stored && stored !== info.version ) {
