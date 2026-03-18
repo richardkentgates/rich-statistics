@@ -214,7 +214,7 @@ class RestApiTest extends WP_UnitTestCase {
 		global $wpdb;
 
 		// Seed a test row
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
 			[
 				'session_id'    => 'rest-api-test-session',
@@ -234,7 +234,7 @@ class RestApiTest extends WP_UnitTestCase {
 		$request->set_param( 'period', '30d' );
 		$response = static::$server->dispatch( $request );
 
-		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'rest-api-test-session' ] );
+		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'rest-api-test-session' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( 200 !== $response->get_status() ) {
 			$this->markTestSkipped( 'Clicks endpoint requires premium; skipping row-shape test.' );

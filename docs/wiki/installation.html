@@ -31,6 +31,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -44,28 +45,16 @@
     <h1>Installation</h1>
     <p>Rich Statistics requires WordPress 6.0 or higher and PHP 8.0 or higher. It works on single-site and multisite installations.</p>
 
-    <h2>Option 1 — WordPress Plugin Directory</h2>
+    <h2>Option 1 — richardkentgates.com</h2>
     <ol>
-      <li>In your WordPress admin, go to <strong>Plugins → Add New</strong>.</li>
-      <li>Search for <strong>Rich Statistics</strong>.</li>
-      <li>Click <strong>Install Now</strong>, then <strong>Activate</strong>.</li>
-    </ol>
-
-    <h2>Option 2 — WP-CLI</h2>
-    <pre><code>wp plugin install rich-statistics --activate</code></pre>
-    <p>For multisite, network-activate:</p>
-    <pre><code>wp plugin install rich-statistics --activate-network</code></pre>
-
-    <h2>Option 3 — Manual upload</h2>
-    <p>If your server cannot reach WordPress.org, you can install manually:</p>
-    <ol>
-      <li>Download the latest free release ZIP from <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org</a>.</li>
+      <li>Download the plugin ZIP from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>.</li>
       <li>In WordPress admin, go to <strong>Plugins → Add New → Upload Plugin</strong>.</li>
       <li>Upload the ZIP and activate.</li>
     </ol>
-    <div class="callout callout--warn">
-      The ZIPs published on <a href="https://github.com/richardkentgates/rich-statistics/releases" target="_blank" rel="noopener">GitHub Releases</a> are build artifacts for developers and the files submitted to Freemius and WordPress.org. They are not intended as a separate user download channel.
-    </div>
+    <div class="callout">WordPress.org listing coming soon — once approved it will also be installable via the plugin directory and WP-CLI.</div>
+
+    <h2>Option 2 — Manual upload</h2>
+    <p>Same as above — download from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a> and upload via <strong>Plugins → Add New → Upload Plugin</strong>.</p>
 
     <h2>System Requirements</h2>
     <table>
@@ -85,11 +74,11 @@
       <tbody>
         <tr><td><code>rsa_events</code></td><td>One row per accepted pageview — page path, referrer domain, browser, OS, language, timezone, viewport, time on page</td></tr>
         <tr><td><code>rsa_sessions</code></td><td>Session-level data — UTM parameters, entry page, session UUID (tab-scoped only)</td></tr>
-        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for click maps (Premium)</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for heatmap and click tracking (Premium)</td></tr>
         <tr><td><code>rsa_heatmap</code></td><td>Scroll depth and hover data for heatmaps (Premium)</td></tr>
       </tbody>
     </table>
-    <p>All tables are dropped cleanly on plugin uninstall if the <strong>Delete all data on uninstall</strong> option is checked in Data Settings.</p>
+    <p>All tables are dropped cleanly on plugin uninstall if the <strong>Remove data on uninstall</strong> option is checked in <strong>Rich Statistics → Preferences</strong>.</p>
 
     <h2>Multisite notes</h2>
     <p>When network-activated, a network admin menu item appears under <strong>Network Admin → Analytics</strong>. A network administrator can disable tracking on any sub-site from that screen. Each sub-site's data is stored with its blog ID so network-wide and per-site reports are both available.</p>
@@ -97,14 +86,14 @@
     <h2>Upgrading to Premium</h2>
     <p>There is no separate premium ZIP to install. The upgrade happens as a standard WordPress plugin update:</p>
     <ol>
-      <li>In your WordPress admin, go to <strong>Analytics → Upgrade</strong> (added by the Freemius SDK).</li>
+      <li>In your WordPress admin, go to <strong>Rich Statistics → Upgrade</strong> (added by the Freemius SDK).</li>
       <li>Click <strong>Upgrade to Premium</strong>. You are taken to a Freemius-hosted checkout page.</li>
       <li>Complete the purchase. Your license activates automatically on your site.</li>
       <li>A standard WordPress update notification appears. Click <strong>Update Now</strong>.</li>
       <li>Premium features are now active — no re-installation, no ZIP download.</li>
     </ol>
     <div class="callout">
-      <strong>License management:</strong> Go to <strong>Analytics → Account</strong> (the Freemius account menu) to view your license status, deactivate to move it to another site, or cancel. Each license covers one production site.
+      <strong>License management:</strong> Go to <strong>Rich Statistics → Account</strong> (the Freemius account menu) to view your license status, deactivate to move it to another site, or cancel. Each license covers one production site.
     </div>
 
     <div class="callout callout--warn">

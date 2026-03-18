@@ -28,6 +28,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html" aria-current="page">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -39,7 +40,7 @@
     <p>Rich Statistics uses a two-layer multi-signal scoring system to filter bots before their pageview is ever written to the database. It does this <strong>without reading any IP address</strong> and without using cookies or any persistent identifier.</p>
 
     <h2>How it works</h2>
-    <p>Every tracked pageview goes through two independent layers that each contribute a numeric score. The scores are summed and capped at 10. If the total meets or exceeds the configured <strong>Bot Score Threshold</strong> (default: 3), the request is silently discarded.</p>
+    <p>Every tracked pageview goes through two independent layers that each contribute a numeric score. The scores are summed and capped at 10. If the total meets or exceeds the configured <strong>Bot Score Threshold</strong> (default: 5), the request is silently discarded.</p>
 
     <h2>Layer 1 — JavaScript signals (client-side)</h2>
     <p>The tracker script runs checks in the browser and combines results into a compact integer bitmask that is sent with the pageview payload. The PHP ingest endpoint never sees raw browser values — only the bitmask integer.</p>
@@ -78,7 +79,7 @@
     </div>
 
     <h2>Tuning the threshold</h2>
-    <p>Navigate to <strong>Analytics → Data Settings → Bot Score Threshold</strong>. Lower values are more aggressive (may flag some edge-case legitimate traffic); higher values are more permissive. The default of <strong>3</strong> is a good starting point for most sites.</p>
+    <p>Navigate to <strong>Rich Statistics → Preferences → Bot Score Threshold</strong>. Lower values are more aggressive (may flag some edge-case legitimate traffic); higher values are more permissive. The default of <strong>5</strong> is a balanced starting point for most sites.</p>
     <p>If you notice a specific traffic source being incorrectly filtered, open a <a href="https://github.com/richardkentgates/rich-statistics/issues" target="_blank" rel="noopener">GitHub issue</a> with the User-Agent string and we'll review the signal weights.</p>
   </main>
 </div>

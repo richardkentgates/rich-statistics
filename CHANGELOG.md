@@ -7,7 +7,61 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [Unreleased]
+## [1.3.0] — 2026-03-17
+
+### Added
+- **UTM campaign tracking** — `utm_source`, `utm_medium`, and `utm_campaign` parameters are now captured
+  automatically from landing-page URLs and persisted for the browser session via `sessionStorage`. Values
+  are stored in three new columns on `rsa_events` and displayed in a new **Campaigns** admin page.
+  Existing installs are migrated automatically on activation (schema v8).
+- **Campaigns admin page** — new sub-menu page under Rich Statistics shows each source / medium /
+  campaign combination with session counts, pageview counts, and share bars. Filterable by medium.
+- **User Flow redesign** — replaced the Sankey chart with a **Path Explorer** (Miller columns): click
+  any page to drill forward step-by-step. A **drop-off funnel** bar above the columns shows how many
+  sessions reached each step and the retention percentage relative to entry. Percentages within each
+  column are relative to the selected parent page's total outbound transitions. A **Journey Table** view
+  is also available showing every page-to-page transition grouped by origin, with shared filters driving
+  both views.
+- **REST API: `/campaigns` endpoint** — `GET rsa/v1/campaigns` returns UTM campaign data for the
+  requested period, powering the PWA Campaigns view.
+- **REST API: `/user-flow` endpoint** — `GET rsa/v1/user-flow` returns step-based path flow data,
+  powering the PWA User Flow view.
+- **PWA: Campaigns view** — bar chart of top campaigns plus full source / medium / campaign table with
+  session and pageview counts. Graceful empty state with UTM setup hint.
+- **PWA: User Flow view** — per-step card layout showing entry and each subsequent path step, with
+  pages, session counts, and retention percentage. Exit rows are visually distinguished.
+- **Click Tracking rename** — the "Click Map" feature is renamed to "Click Tracking" in all
+  user-facing strings, admin menus, help tabs, and documentation.
+
+### Fixed
+- **User Flow SQL error** — `HAVING \`count\`` referenced a SELECT-level alias which MySQL rejects in a
+  HAVING clause. Replaced all three occurrences with the aggregate expression `COUNT(*)` directly.
+- **Docs: parent domain** — all marketing and documentation references updated from `richstatistics.com`
+  to `richardkentgates.com` (Plugin URI → `statistics.richardkentgates.com`).
+- **Docs: heatmap description** — removed erroneous "Scroll Heatmaps" feature card; the plugin has
+  one heatmap (click coordinates). Updated all related wording.
+
+---
+
+## [1.2.0] — 2026-03-17
+
+### Added
+- **PWA OTP pairing flow** — a "Generate App Code" button on the user profile page issues a server-side
+  HMAC-signed 6-digit code (valid 15 minutes). A new REST endpoint (`rsa/v1/verify-otp`) validates the
+  code and returns the authenticated username, removing the need to enter credentials manually in the app.
+- **Two-step app connection** — the webapp now guides users through: (1) enter site URL + App Code to
+  verify the site, then (2) enter the Application Password to complete the connection. Field pre-fill is
+  still supported for the personalized download path.
+- **GitHub Pages app hosting** — the PWA dashboard is now hosted at
+  `statistics.richardkentgates.com/app/` for direct browser installation without visiting the
+  WordPress admin. Chart.js is loaded from CDN in this hosted version.
+- **"Get the App" landing page section** — the plugin website now includes a dedicated section with
+  install instructions, "Open Web App" and "Download App ZIP" CTAs, and nav/footer links.
+
+### Fixed
+- Profile page section ordering: the **Rich Statistics App** section (with "Generate App Code") now
+  appears **before** the Application Passwords section in WordPress user profiles, so the instructions
+  read in the correct order.
 
 ---
 
@@ -15,9 +69,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - Click destination capture: the `href_value` field now records the actual protocol payload — phone number for `tel:` links, email address for `mailto:` links, SMS number for `sms:` links, coordinates for `geo:` links, and file path/URL for downloads
-- New **Destination** column in the Click Map admin table
+- New **Destination** column in the Click Tracking admin table
 - WP-CLI: `wp rich-stats clicks` command (Premium) — lists click events with Protocol, Destination, Tag, Text, and Clicks columns
-- PWA: Click Map view updated with Destination column; all REST API response shapes corrected and envelope unwrapping added to `apiGet`
+- PWA: Click Tracking view updated with Destination column; all REST API response shapes corrected and envelope unwrapping added to `apiGet`
 
 ### Fixed
 - REST API endpoints (`/pages`, `/audience`, `/referrers`, `/clicks`) now return correctly-shaped JSON matching the PWA consumer field names
@@ -72,7 +126,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/richardkentgates/rich-statistics/releases/tag/v1.0.0

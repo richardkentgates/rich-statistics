@@ -30,12 +30,12 @@
     <ul class="nav__links">
       <li><a href="#features">Features</a></li>
       <li><a href="#privacy">Privacy</a></li>
-      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#app">App</a></li>
       <li><a href="wiki/">Docs</a></li>
       <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
-    <a class="btn btn--primary nav__cta" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
-      Install Free
+    <a class="btn btn--primary nav__cta" href="https://richardkentgates.com" target="_blank" rel="noopener">
+      Get the Plugin
     </a>
   </nav>
 </header>
@@ -55,11 +55,14 @@
       IP tracking, without cookies, and without sending a single byte to a third-party server.
     </p>
     <div class="hero__actions">
-      <a class="btn btn--primary btn--lg" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
-        Download Free Plugin
+      <a class="btn btn--primary btn--lg" href="https://richardkentgates.com" target="_blank" rel="noopener">
+        Get the Plugin
       </a>
       <a class="btn btn--ghost btn--lg" href="wiki/">
         Read the Docs
+      </a>
+      <a class="btn btn--ghost btn--lg" href="#app">
+        Get the App
       </a>
     </div>
     <p class="hero__meta">WordPress 6.0+ &nbsp;&bull;&nbsp; PHP 8.0+ &nbsp;&bull;&nbsp; GPL-2.0</p>
@@ -120,15 +123,8 @@
 
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🗺️</div>
-        <h3>Click Heatmaps</h3>
-        <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. No screenshot required.</p>
-        <span class="badge badge--premium">Premium</span>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-card__icon" aria-hidden="true">🔥</div>
-        <h3>Scroll Heatmaps</h3>
-        <p>Understand how far visitors scroll on each page and which content gets the most attention.</p>
+        <h3>Heatmap</h3>
+        <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. The heatmap renders directly over a live iframe of your page — no screenshot service, no browser extension required.</p>
         <span class="badge badge--premium">Premium</span>
       </div>
 
@@ -141,7 +137,7 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🔗</div>
         <h3>Referrer &amp; UTM Tracking</h3>
-        <p>See which sites and campaigns drive traffic. Referrers are stripped to domain-only before storage so no personal data leaks in via URL.</p>
+        <p>See which sites and campaigns drive traffic. Referrers are stripped to domain-only before storage so no personal data leaks in via URL. <a href="wiki/utm-tracking.html">Learn about UTM tracking →</a></p>
       </div>
 
       <div class="feature-card">
@@ -154,7 +150,7 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">⌨️</div>
         <h3>WP-CLI Integration</h3>
-        <p>Run <code>wp rsa overview</code>, <code>wp rsa pages</code>, and <code>wp rsa prune</code> from the command line. Perfect for scripts and automated reports.</p>
+        <p>Run <code>wp rich-stats overview</code>, <code>wp rich-stats top-pages</code>, and <code>wp rich-stats purge</code> from the command line. Perfect for scripts and automated reports.</p>
       </div>
 
       <div class="feature-card">
@@ -174,6 +170,7 @@
         <h3>PWA Dashboard</h3>
         <p>Install the analytics dashboard as a Progressive Web App on any device for quick offline-capable access to your stats.</p>
         <span class="badge badge--premium">Premium</span>
+        <a class="feature-card__link" href="#app">Get the app →</a>
       </div>
 
       <div class="feature-card">
@@ -262,52 +259,61 @@
 <section class="section" id="pricing">
   <div class="container">
     <div class="section__header">
-      <h2>Simple, honest pricing</h2>
-      <p>The core plugin is free and open source forever. Premium adds power-user features for publishers who need more.</p>
+      <h2>Downloads &amp; Pricing</h2>
+      <p>Free and premium versions are available at <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>.</p>
+    </div>
+    <div style="text-align:center;padding:20px 0">
+      <a class="btn btn--primary btn--lg" href="https://richardkentgates.com" target="_blank" rel="noopener">
+        Visit richardkentgates.com
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     GET THE APP
+============================================================ -->
+<section class="section section--alt" id="app">
+  <div class="container">
+    <div class="section__header">
+      <h2>Rich Statistics App</h2>
+      <p>Access your analytics from any device — phone, tablet, or desktop. Install it as a Progressive Web App for a native-like experience with offline support.</p>
     </div>
 
-    <div class="pricing-grid">
-
-      <div class="pricing-card">
-        <div class="pricing-card__tier">Free</div>
-        <div class="pricing-card__price">$0 <span>forever</span></div>
-        <ul class="pricing-card__features">
-          <li>✓ Real-time overview dashboard</li>
-          <li>✓ Top pages &amp; referrers</li>
-          <li>✓ Audience (browser, OS, screen)</li>
-          <li>✓ Behavior (bounce, time on page)</li>
-          <li>✓ Multi-signal bot detection</li>
-          <li>✓ UTM campaign tracking</li>
-          <li>✓ Data retention controls</li>
-          <li>✓ WP-CLI integration</li>
-          <li>✓ Full REST API</li>
-          <li>✓ Multisite support</li>
-          <li>✓ GPL-2.0 open source</li>
-        </ul>
-        <a class="btn btn--outline btn--full" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
-          Download from WordPress.org
-        </a>
-      </div>
-
-      <div class="pricing-card pricing-card--featured">
-        <div class="pricing-card__badge">Most Popular</div>
-        <div class="pricing-card__tier">Premium</div>
-        <div class="pricing-card__price">$<span id="price-val">49</span> <span>/ year</span></div>
-        <ul class="pricing-card__features">
-          <li>✓ Everything in Free</li>
-          <li>✓ Click heatmaps</li>
-          <li>✓ Scroll heatmaps</li>
-          <li>✓ Weekly &amp; monthly email reports</li>
-          <li>✓ PWA analytics dashboard</li>
-          <li>✓ Priority support</li>
-          <li>✓ Early access to new features</li>
-        </ul>
-        <a class="btn btn--primary btn--full" href="https://richardkentgates.com/plugins/rich-statistics/#premium" target="_blank" rel="noopener">
-          Get Premium
-        </a>
-      </div>
-
+    <div class="app-ctas">
+      <a class="btn btn--primary btn--lg" href="app/" target="_blank" rel="noopener">
+        Open Web App
+      </a>
+      <a class="btn btn--outline btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">
+        Download App ZIP
+      </a>
     </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step__num">1</div>
+        <div class="step__body">
+          <h3>Install the plugin</h3>
+          <p>The PWA dashboard requires the Rich Statistics plugin (Premium) to be active on your WordPress site.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">2</div>
+        <div class="step__body">
+          <h3>Generate an App Code</h3>
+          <p>In WordPress, go to <strong>Users → Profile → Rich Statistics App</strong> and click <strong>Generate App Code</strong>. You'll get a 6-digit code valid for 15 minutes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">3</div>
+        <div class="step__body">
+          <h3>Open the app &amp; add your site</h3>
+          <p>Open the web app (or the PWA you installed), tap <strong>Add Your Site</strong>, enter your site URL and the 6-digit App Code, then create an Application Password to complete the connection.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="app-note">The app connects to your site's REST API using WordPress Application Passwords — no extra accounts, no new services, no data leaves your server.</p>
   </div>
 </section>
 
@@ -324,22 +330,21 @@
         <div class="step__num">1</div>
         <div class="step__body">
           <h3>Install the plugin</h3>
-          <p>Search "Rich Statistics" in your WordPress plugin directory, or install via WP-CLI:</p>
-          <pre><code>wp plugin install rich-statistics --activate</code></pre>
+          <p>Download and install the plugin from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>, then activate it in your WordPress admin.</p>
         </div>
       </div>
       <div class="step">
         <div class="step__num">2</div>
         <div class="step__body">
           <h3>Visit your dashboard</h3>
-          <p>Navigate to <strong>Analytics → Overview</strong> in your WordPress admin. The tracker begins collecting data immediately — no configuration required.</p>
+          <p>Navigate to <strong>Rich Statistics → Overview</strong> in your WordPress admin. The tracker begins collecting data immediately — no configuration required.</p>
         </div>
       </div>
       <div class="step">
         <div class="step__num">3</div>
         <div class="step__body">
           <h3>Adjust data retention (optional)</h3>
-          <p>Go to <strong>Analytics → Data Settings</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
+          <p>Go to <strong>Rich Statistics → Preferences</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
         </div>
       </div>
     </div>
@@ -357,10 +362,10 @@
     </div>
     <nav class="site-footer__links" aria-label="Footer navigation">
       <a href="wiki/">Documentation</a>
+      <a href="#app">App</a>
       <a href="wiki/privacy-compliance.html">Privacy</a>
       <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
       <a href="https://github.com/richardkentgates/rich-statistics/issues" target="_blank" rel="noopener">Issues</a>
-      <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org</a>
     </nav>
     <p class="site-footer__legal">
       Released under the <a href="https://www.gnu.org/licenses/gpl-2.0.html" target="_blank" rel="noopener">GPL-2.0 license</a>.

@@ -48,7 +48,7 @@ class RSA_Click_Tracking {
 		$x_pct = round( min( 100, max( 0, (float) ( $data['x_pct'] ?? 0 ) ) ), 2 );
 		$y_pct = round( min( 100, max( 0, (float) ( $data['y_pct'] ?? 0 ) ) ), 2 );
 
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			RSA_DB::clicks_table(),
 			[
 				'session_id'    => $session_id,

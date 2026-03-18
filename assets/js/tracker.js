@@ -165,6 +165,41 @@
 	}() );
 
 	// ----------------------------------------------------------------
+	// UTM campaign tracking — read from URL on landing, persist for session
+	// ----------------------------------------------------------------
+	var utmSource   = '';
+	var utmMedium   = '';
+	var utmCampaign = '';
+
+	( function readUtm() {
+		var UTM_KEY = 'rsa_utm';
+		var params  = new URLSearchParams( window.location.search );
+		var src     = params.get( 'utm_source' )   || '';
+		var med     = params.get( 'utm_medium' )   || '';
+		var cam     = params.get( 'utm_campaign' ) || '';
+
+		if ( src || med || cam ) {
+			// Fresh UTM params in the URL — store them for the session
+			var stored = JSON.stringify( { s: src, m: med, c: cam } );
+			try { sessionStorage.setItem( UTM_KEY, stored ); } catch ( e ) {}
+			utmSource   = src;
+			utmMedium   = med;
+			utmCampaign = cam;
+		} else {
+			// No UTM in URL — check if we already captured them for this session
+			try {
+				var raw = sessionStorage.getItem( UTM_KEY );
+				if ( raw ) {
+					var parsed = JSON.parse( raw );
+					utmSource   = parsed.s || '';
+					utmMedium   = parsed.m || '';
+					utmCampaign = parsed.c || '';
+				}
+			} catch ( e ) {}
+		}
+	}() );
+
+	// ----------------------------------------------------------------
 	// Time-on-page tracking
 	// ----------------------------------------------------------------
 	var pageStartTime = Date.now();
@@ -214,6 +249,9 @@
 			viewport_h   : viewportH,
 			time_on_page : timeOnPage,
 			bot_signals  : signals,
+			utm_source   : utmSource,
+			utm_medium   : utmMedium,
+			utm_campaign : utmCampaign,
 		};
 
 		// Use navigator.sendBeacon when available (fires reliably on page unload)

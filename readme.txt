@@ -1,14 +1,14 @@
 === Rich Statistics ===
 Contributors: richardkentgates
-Tags: analytics, privacy, statistics, heatmap, click-tracking, gdpr
+Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Privacy-first analytics for WordPress publishers. No PII, no consent banners required. OS, browser, timezone, language, time on page, referrers and more.
+Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent banners required.
 
 == Description ==
 
@@ -20,6 +20,7 @@ Privacy-first analytics for WordPress publishers. No PII, no consent banners req
 * Audience breakdown: OS, browser version, viewport, language, timezone
 * Top pages ranked by views with average time on page
 * Referrer tracking at the domain level only
+* UTM campaign tracking (utm_source, utm_medium, utm_campaign) — auto-captured from landing page URL, persisted for the session
 * Behavior analysis: time-on-page histogram, session depth, entry pages
 * Aggressive bot detection: 10 client-side signals plus server-side UA/header scoring
 * Configurable data retention (1–730 days, default 90)
@@ -30,7 +31,7 @@ Privacy-first analytics for WordPress publishers. No PII, no consent banners req
 **Premium features (via Freemius):**
 
 * Click tracking by protocol (http, tel, mailto, geo, sms) and by element ID/class
-* Heatmaps with viewport-relative thermal canvas overlay
+* Heatmap with viewport-relative thermal canvas overlay
 * Weekly and monthly email digest reports via wp_mail
 * Full REST API (9 endpoints) authenticated via WP Application Passwords
 * Progressive Web App: installable mobile analytics dashboard
@@ -41,11 +42,10 @@ Sessions are identified using a `sessionStorage` UUID — this identifier lives 
 
 == Installation ==
 
-1. In your WordPress admin go to **Plugins → Add New** and search for **Rich Statistics**
-2. Click **Install Now**, then **Activate**
-3. Navigate to **Analytics** in the admin sidebar to view your data
+1. Download the plugin ZIP from [richardkentgates.com](https://richardkentgates.com) and install via **Plugins → Add New → Upload Plugin**, then activate
+2. Navigate to **Analytics** in the admin sidebar to view your data
 
-Alternatively, install via WP-CLI:
+Alternatively, once available on WordPress.org, install via WP-CLI:
 
     wp plugin install rich-statistics --activate
 
@@ -94,14 +94,22 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 1. Overview dashboard — KPI cards, daily line chart, top pages preview
 2. Audience page — OS, browser, viewport, language, and timezone breakdowns
 3. Heatmap (Premium) — thermal canvas overlay on a live page preview
-4. Click Map (Premium) — ranked click element table with protocol breakdown
+4. Click Tracking (Premium) — ranked click element table with protocol breakdown
 5. PWA Web App (Premium) — mobile analytics dashboard
 
 == Changelog ==
 
+= 1.2.0 =
+* Added PWA OTP pairing: "Generate App Code" button on the user profile page issues a 6-digit HMAC-signed code (valid 15 min) for secure app connection without manual credential entry
+* Added `rsa/v1/verify-otp` REST endpoint that validates the code and returns the verified username
+* Added two-step app connection flow in the PWA dashboard (OTP verify → Application Password)
+* Added hosted PWA at statistics.richardkentgates.com/app/ — install directly from any browser
+* Added "Get the App" section to the plugin website landing page
+* Fixed: Rich Statistics App profile section now appears before Application Passwords (correct reading order)
+
 = 1.1.0 =
 * Added click destination capture: phone numbers, email addresses, SMS numbers, geo coordinates, and download file URLs are now recorded per click event
-* Added Destination column to Click Map admin table
+* Added Destination column to Click Tracking admin table
 * Added `wp rich-stats clicks` WP-CLI command (Premium)
 * Fixed REST API response shapes for all PWA endpoints
 * PWA service worker cache bumped to force refresh
@@ -118,6 +126,9 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+No database schema changes. Update is safe to apply without any manual action.
 
 = 1.1.0 =
 Database schema updated automatically on activation (adds href_value column to clicks table). No manual action required.

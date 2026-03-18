@@ -534,3 +534,234 @@ flex-direction: column;
 align-items: flex-start;
 }
 }
+
+/* User-flow table: inline proportion bar */
+.rsa-td-bar { min-width: 120px; }
+
+.rsa-bar-wrap {
+	position: relative;
+	height: 18px;
+	background: #f0f0f1;
+	border-radius: var(--rsa-radius);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+}
+
+.rsa-bar-wrap .rsa-bar-fill {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--rsa-accent);
+	opacity: 0.22;
+	border-radius: var(--rsa-radius);
+}
+
+.rsa-bar-label {
+	position: relative;
+	z-index: 1;
+	padding: 0 6px;
+	font-size: 12px;
+	color: var(--rsa-text);
+	white-space: nowrap;
+}
+
+/* ---- Card description (subtitle under card header h2) ---- */
+.rsa-card-desc {
+	margin: 2px 0 0;
+	font-size: 13px;
+	color: var(--rsa-muted);
+}
+
+/* ---- Path Explorer: funnel summary bar ---- */
+.rsa-funnel {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	margin-bottom: 20px;
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.rsa-funnel-step {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 14px 10px 12px;
+	border-right: 1px solid var(--rsa-border);
+	position: relative;
+	overflow: hidden;
+}
+
+.rsa-funnel-step:last-child {
+	border-right: none;
+}
+
+.rsa-funnel-step-bg {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: var(--rsa-accent);
+	opacity: 0.06;
+	transition: height 0.3s ease;
+}
+
+.rsa-funnel-step-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-funnel-step-count {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	position: relative;
+	z-index: 1;
+	line-height: 1;
+}
+
+.rsa-funnel-step-pct {
+	font-size: 12px;
+	color: var(--rsa-accent);
+	font-weight: 600;
+	margin-top: 4px;
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-funnel-step-pct.is-drop {
+	color: var(--rsa-muted);
+}
+
+/* ---- Path Explorer (Miller columns) ---- */
+.rsa-explorer {
+	display: flex;
+	gap: 0;
+	overflow-x: auto;
+	padding: 4px 0 16px;
+	min-height: 200px;
+}
+
+.rsa-explorer-col {
+	flex: 1 1 0;
+	min-width: 180px;
+	max-width: 280px;
+	border-right: 1px solid var(--rsa-border);
+}
+
+.rsa-explorer-col:last-child {
+	border-right: none;
+}
+
+.rsa-explorer-col-hdr {
+	padding: 8px 12px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--rsa-muted);
+	border-bottom: 1px solid var(--rsa-border);
+	background: #fafafa;
+}
+
+.rsa-explorer-col-list {
+	max-height: 460px;
+	overflow-y: auto;
+}
+
+.rsa-explorer-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 10px;
+	border-bottom: 1px solid rgba(195, 196, 199, 0.35);
+	overflow: hidden;
+}
+
+.rsa-explorer-item.is-clickable {
+	cursor: pointer;
+}
+
+.rsa-explorer-item.is-clickable:hover {
+	background: var(--rsa-accent-lt);
+}
+
+.rsa-explorer-item.is-selected {
+	background: var(--rsa-accent-lt);
+	border-left: 3px solid var(--rsa-accent);
+}
+
+.rsa-explorer-item.is-exit {
+	opacity: 0.55;
+}
+
+.rsa-explorer-item-bar {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--rsa-accent);
+	opacity: 0.07;
+	pointer-events: none;
+}
+
+.rsa-explorer-item-label {
+	flex: 1 1 0;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+	color: var(--rsa-text);
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-explorer-item-meta {
+	flex-shrink: 0;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	position: relative;
+	z-index: 1;
+	white-space: nowrap;
+}
+
+.rsa-explorer-item-arrow {
+	flex-shrink: 0;
+	font-size: 16px;
+	line-height: 1;
+	color: var(--rsa-muted);
+	position: relative;
+	z-index: 1;
+}
+
+/* ---- Journey Table: grouped from_page ---- */
+.rsa-table--grouped .rsa-group-first td {
+	border-top: 2px solid var(--rsa-border);
+	vertical-align: top;
+}
+
+.rsa-td-group-label {
+	font-weight: 600;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-right: 16px;
+}
+
+.rsa-group-spacer td {
+	height: 6px;
+	padding: 0;
+	border: none;
+}
