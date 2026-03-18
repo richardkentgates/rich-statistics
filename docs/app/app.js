@@ -1471,7 +1471,7 @@
 						'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
 						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
 						'<div style="position:relative;width:100%">' +
-							'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;height:auto;border-radius:var(--rsa-radius)"></canvas>' +
+							'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;border-radius:var(--rsa-radius)"></canvas>' +
 						'</div>' +
 						'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
 							'<span>Low</span>' +
@@ -1483,11 +1483,15 @@
 				var canvas = document.getElementById( 'c-heatmap' );
 				if ( ! canvas ) return;
 
-				// Set canvas display height explicitly so it's never collapsed by CSS
-				requestAnimationFrame( function () {
-					var displayW = canvas.offsetWidth || W;
-					canvas.style.height = Math.round( displayW * H / W ) + 'px';
-				} );
+				// Ensure canvas CSS height stays proportional after layout
+				( function scaleCanvas() {
+					var displayW = canvas.offsetWidth;
+					if ( displayW > 0 ) {
+						canvas.style.height = Math.round( displayW * H / W ) + 'px';
+					} else {
+						requestAnimationFrame( scaleCanvas );
+					}
+				}() );
 
 				var ctx = canvas.getContext( '2d' );
 				if ( ! ctx ) return;

@@ -143,6 +143,11 @@ html, body {
 .rsa-btn-primary {
 	background: var(--rsa-accent);
 	color: #fff;
+}
+
+/* Full-width primary buttons in login/add-site forms */
+.rsa-login-card > .rsa-btn-primary,
+.rsa-login-card > div > .rsa-btn-primary {
 	width: 100%;
 	margin-top: 6px;
 }
@@ -945,6 +950,7 @@ color: var(--rsa-muted);
 	background: var(--rsa-accent);
 	opacity: 0.08;
 	pointer-events: none;
+	z-index: 0;
 }
 .rsa-explorer-item-label {
 	position: relative;
@@ -953,6 +959,7 @@ color: var(--rsa-muted);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	color: var(--rsa-text);
+	z-index: 1;
 }
 .rsa-explorer-item-meta {
 	position: relative;
@@ -960,10 +967,12 @@ color: var(--rsa-muted);
 	color: var(--rsa-muted);
 	white-space: nowrap;
 	flex-shrink: 0;
+	z-index: 1;
 }
 .rsa-explorer-item-arrow {
 	font-size: 15px;
 	color: var(--rsa-muted);
 	flex-shrink: 0;
 	margin-left: 2px;
+	z-index: 1;
 }
