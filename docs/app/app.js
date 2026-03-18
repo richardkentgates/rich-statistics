@@ -600,20 +600,7 @@
 	// Overview
 	// -----------------------------------------------------------------------
 	function renderOverview( container ) {
-		Promise.all( [
-			apiGet( 'overview',  { period: state.period } ),
-			apiGet( 'pages',     { period: state.period, limit: 5 } ),
-			apiGet( 'referrers', { period: state.period, limit: 5 } ),
-		] ).then( function ( results ) {
-			var data = results[0], pagesData = results[1], refData = results[2];
-
-			var pageRows = ( pagesData.pages || [] ).map( function ( p, i ) {
-				return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.views ) + '</td></tr>';
-			} ).join( '' );
-			var refRows = ( refData.referrers || [] ).map( function ( r, i ) {
-				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( r.domain || '(direct)' ) + '</td><td>' + fmt( r.pageviews ) + '</td></tr>';
-			} ).join( '' );
-
+		apiGet( 'overview', { period: state.period } ).then( function ( data ) {
 			container.innerHTML =
 				tmplKpiGrid( [
 					{ label: 'Pageviews',   value: fmt( data.pageviews )    },
@@ -625,15 +612,42 @@
 				'<div class="rsa-grid-2" style="margin-top:20px">' +
 					'<div class="rsa-table-card"><h3>Top Pages</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
 					'<thead><tr><th>#</th><th>Page</th><th>Views</th></tr></thead>' +
-					'<tbody>' + ( pageRows || '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody></table></div></div>' +
+					'<tbody id="rsa-ov-pages-body"><tr><td colspan="3" class="rsa-field-hint">Loading\u2026</td></tr></tbody>' +
+					'</table></div></div>' +
 					'<div class="rsa-table-card"><h3>Top Referrers</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
 					'<thead><tr><th>#</th><th>Domain</th><th>Visits</th></tr></thead>' +
-					'<tbody>' + ( refRows  || '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody></table></div></div>' +
+					'<tbody id="rsa-ov-ref-body"><tr><td colspan="3" class="rsa-field-hint">Loading\u2026</td></tr></tbody>' +
+					'</table></div></div>' +
 				'</div>';
 
 			setLoading( false );
 			drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
 				[ { label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) } ] );
+
+			// Load tables independently so a slow/failing endpoint doesn't hide everything
+			apiGet( 'pages', { period: state.period, limit: 5 } ).then( function ( pd ) {
+				var tbody = document.getElementById( 'rsa-ov-pages-body' );
+				if ( ! tbody ) return;
+				var rows = ( pd.pages || [] ).map( function ( p, i ) {
+					return '<tr><td>' + ( i + 1 ) + '</td><td class="rsa-td-path">' + esc( p.page ) + '</td><td>' + fmt( p.views ) + '</td></tr>';
+				} );
+				tbody.innerHTML = rows.length ? rows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>';
+			} ).catch( function () {
+				var tbody = document.getElementById( 'rsa-ov-pages-body' );
+				if ( tbody ) tbody.innerHTML = '<tr><td colspan="3">Could not load.</td></tr>';
+			} );
+
+			apiGet( 'referrers', { period: state.period, limit: 5 } ).then( function ( rd ) {
+				var tbody = document.getElementById( 'rsa-ov-ref-body' );
+				if ( ! tbody ) return;
+				var rows = ( rd.referrers || [] ).map( function ( r, i ) {
+					return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( r.domain || '(direct)' ) + '</td><td>' + fmt( r.pageviews ) + '</td></tr>';
+				} );
+				tbody.innerHTML = rows.length ? rows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>';
+			} ).catch( function () {
+				var tbody = document.getElementById( 'rsa-ov-ref-body' );
+				if ( tbody ) tbody.innerHTML = '<tr><td colspan="3">Could not load.</td></tr>';
+			} );
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
@@ -1031,57 +1045,353 @@
 	// User Flow
 	// -----------------------------------------------------------------------
 	function renderUserFlow( container ) {
-		apiGet( 'user-flow', { period: state.period } ).then( function ( data ) {
-			var steps = data.steps;
+		var filters    = { entry_source: '', focus_page: '', min_sessions: 1, steps: 4 };
+		var activeView = 'explorer'; // 'explorer' | 'journey'
+
+		// Fetch entry source options, then render filter bar
+		apiGet( 'user-flow/sources', { period: state.period } ).then( function ( sd ) {
+			var sources = sd.sources || [];
+
+			function srcOptions( current ) {
+				return '<option value="">All Sources</option>' +
+					sources.map( function ( v ) {
+						return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>';
+					} ).join( '' );
+			}
+
+			container.innerHTML =
+				'<div class="rsa-filter-bar">' +
+				( sources.length ? '<select id="rsa-uf-source">' + srcOptions( filters.entry_source ) + '</select>' : '' ) +
+				'<input type="text" id="rsa-uf-focus" placeholder="Focus page (optional)"' +
+					' style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--rsa-border);' +
+					'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
+				'<label style="font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap">Min sessions' +
+					'<input type="number" id="rsa-uf-min" value="1" min="1" max="999"' +
+					' style="width:58px;padding:6px;border:1px solid var(--rsa-border);border-radius:var(--rsa-radius);' +
+					'font-size:13px;color:var(--rsa-text);background:var(--rsa-surface);margin-left:4px"></label>' +
+				'<select id="rsa-uf-steps">' +
+					'<option value="2">2 steps</option>' +
+					'<option value="3">3 steps</option>' +
+					'<option value="4" selected>4 steps</option>' +
+					'<option value="5">5 steps</option>' +
+				'</select>' +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-uf-filter-btn">Filter</button>' +
+				'</div>' +
+				'<div id="rsa-uf-content"></div>';
+
+			setLoading( false );
+			loadPathFlow();
+
+			document.getElementById( 'rsa-uf-filter-btn' ).addEventListener( 'click', function () {
+				var srcEl   = document.getElementById( 'rsa-uf-source' );
+				var focusEl = document.getElementById( 'rsa-uf-focus' );
+				var minEl   = document.getElementById( 'rsa-uf-min' );
+				var stepsEl = document.getElementById( 'rsa-uf-steps' );
+				filters.entry_source = srcEl   ? srcEl.value                            : '';
+				filters.focus_page   = focusEl ? focusEl.value.trim()                   : '';
+				filters.min_sessions = minEl   ? Math.max( 1, parseInt( minEl.value, 10 ) || 1 ) : 1;
+				filters.steps        = stepsEl ? parseInt( stepsEl.value, 10 ) || 4     : 4;
+				loadPathFlow();
+			} );
+		} ).catch( function () {
+			// Sources endpoint failed — show content area without filter bar
+			container.innerHTML = '<div id="rsa-uf-content"></div>';
+			setLoading( false );
+			loadPathFlow();
+		} );
+
+		function loadPathFlow() {
+			var content = document.getElementById( 'rsa-uf-content' );
+			if ( ! content ) { return; }
+			content.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+
+			var params = { period: state.period, steps: filters.steps, min_sessions: filters.min_sessions };
+			if ( filters.entry_source ) { params.entry_source = filters.entry_source; }
+			if ( filters.focus_page   ) { params.focus_page   = filters.focus_page; }
+
+			apiGet( 'user-flow', params ).then( function ( data ) {
+				var contentEl = document.getElementById( 'rsa-uf-content' );
+				if ( contentEl ) { renderUFContent( contentEl, data ); }
+			} ).catch( function ( err ) {
+				var contentEl = document.getElementById( 'rsa-uf-content' );
+				if ( contentEl ) { handleApiError( err, contentEl ); }
+			} );
+		}
+
+		function renderUFContent( content, data ) {
+			var steps    = data.steps || {};
 			var stepNums = Object.keys( steps ).map( Number ).sort( function ( a, b ) { return a - b; } );
 
 			if ( ! stepNums.length ) {
-				container.innerHTML = '<p class="rsa-empty">No path data for this period.</p>';
-				setLoading( false );
+				content.innerHTML = '<p class="rsa-empty">No path data for the selected filters.</p>';
 				return;
 			}
 
-			var total = data.total_sessions || 0;
-			var exits = data.links ? data.links.reduce( function ( s, l ) { return s + ( l.to === '(exit)' ? l.count : 0 ); }, 0 ) : 0;
-			var exitRate = total > 0 ? ( exits / total * 100 ).toFixed( 1 ) : '—';
-			var entryPgs = stepNums.length > 0 ? ( steps[ stepNums[0] ] || [] ).filter( function ( n ) { return n.page !== '(exit)'; } ).length : 0;
-			var kpiHtml = total > 0 ?
+			var total    = data.total_sessions || 0;
+			var exits    = ( data.links || [] ).reduce( function ( s, l ) { return s + ( l.to === '(exit)' ? l.count : 0 ); }, 0 );
+			var exitRate = total > 0 ? ( exits / total * 100 ).toFixed( 1 ) : '\u2014';
+			var entryPgs = ( steps[ stepNums[0] ] || [] ).filter( function ( n ) { return n.page !== '(exit)'; } ).length;
+
+			content.innerHTML =
 				'<div class="rsa-kpi-grid" style="margin-bottom:16px">' +
-				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( total ) + '</div><div class="rsa-kpi-label">Sessions Tracked</div></div>' +
-				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( entryPgs ) + '</div><div class="rsa-kpi-label">Entry Pages</div></div>' +
-				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + stepNums.length + '</div><div class="rsa-kpi-label">Steps in Flow</div></div>' +
-				'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + exitRate + '%</div><div class="rsa-kpi-label">Exit Rate</div></div>' +
-				'</div>' : '';
-			var html  = '';
+					'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( total )    + '</div><div class="rsa-kpi-label">Sessions Tracked</div></div>' +
+					'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + fmt( entryPgs ) + '</div><div class="rsa-kpi-label">Entry Pages</div></div>' +
+					'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + stepNums.length + '</div><div class="rsa-kpi-label">Steps in Flow</div></div>' +
+					'<div class="rsa-kpi-card"><div class="rsa-kpi-value">' + exitRate + '%'  + '</div><div class="rsa-kpi-label">Exit Rate</div></div>' +
+				'</div>' +
+				'<div class="rsa-view-toggle">' +
+					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-uf-btn-explorer">Path Explorer</button>' +
+					'<button type="button" class="rsa-btn rsa-btn-ghost"   id="rsa-uf-btn-journey">Journey Table</button>' +
+				'</div>' +
+				'<div id="rsa-uf-view" style="margin-top:12px"></div>';
 
-			stepNums.forEach( function ( sn ) {
-				var nodes = steps[ sn ];
-				var label = sn === 1 ? 'Entry' : 'Step ' + sn;
-				var stepTotal = nodes.reduce( function ( s, n ) { return s + ( n.page === '(exit)' ? 0 : n.sessions ); }, 0 );
-				var retainedPct = total > 0 ? ( stepTotal / total * 100 ).toFixed( 1 ) : '0.0';
-
-				html += '<div class="rsa-uf-step">' +
-					'<div class="rsa-uf-step-hd">' +
-						'<span class="rsa-uf-step-label">' + label + '</span>' +
-						( total ? '<span class="rsa-uf-step-pct">' + retainedPct + '% retained</span>' : '' ) +
-					'</div>' +
-					'<table class="rsa-table rsa-uf-table">' +
-					'<thead><tr><th>Page</th><th>Sessions</th></tr></thead><tbody>';
-
-				nodes.forEach( function ( n ) {
-					var isExit = n.page === '(exit)';
-					html += '<tr' + ( isExit ? ' class="rsa-uf-exit"' : '' ) + '>' +
-						'<td class="rsa-td-path">' + esc( n.page ) + '</td>' +
-						'<td>' + fmt( n.sessions ) + '</td>' +
-						'</tr>';
-				} );
-
-				html += '</tbody></table></div>';
+			document.getElementById( 'rsa-uf-btn-explorer' ).addEventListener( 'click', function () {
+				activeView = 'explorer';
+				showView( data );
+			} );
+			document.getElementById( 'rsa-uf-btn-journey' ).addEventListener( 'click', function () {
+				activeView = 'journey';
+				showView( data );
 			} );
 
-			container.innerHTML = kpiHtml + '<div class="rsa-uf-wrap">' + html + '</div>';
-			setLoading( false );
-		} ).catch( function ( err ) { handleApiError( err, container ); } );
+			showView( data );
+		}
+
+		function showView( pathData ) {
+			var view = document.getElementById( 'rsa-uf-view' );
+			if ( ! view ) { return; }
+
+			var bE = document.getElementById( 'rsa-uf-btn-explorer' );
+			var bJ = document.getElementById( 'rsa-uf-btn-journey' );
+			if ( bE ) { bE.className = 'rsa-btn ' + ( activeView === 'explorer' ? 'rsa-btn-primary' : 'rsa-btn-ghost' ); }
+			if ( bJ ) { bJ.className = 'rsa-btn ' + ( activeView === 'journey'  ? 'rsa-btn-primary' : 'rsa-btn-ghost' ); }
+
+			if ( activeView === 'explorer' ) {
+				view.innerHTML = '<div id="rsa-flow-chart"></div>';
+				initPathExplorer( pathData );
+			} else {
+				view.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+				apiGet( 'user-flow/journey', { period: state.period, limit: 100 } ).then( function ( jd ) {
+					if ( ! jd.rows || ! jd.rows.length ) {
+						view.innerHTML = '<p class="rsa-empty">No journey data for this period.</p>';
+						return;
+					}
+					var rows = jd.rows.map( function ( r ) {
+						return '<tr>' +
+							'<td class="rsa-td-path">' + esc( r.from_page ) + '</td>' +
+							'<td class="rsa-td-path">' + esc( r.to_page ) + '</td>' +
+							'<td>' + fmt( r.count ) + '</td>' +
+							'</tr>';
+					} );
+					view.innerHTML =
+						'<div class="rsa-table-wrap"><table class="rsa-table">' +
+						'<thead><tr><th>From Page</th><th>To Page</th><th>Transitions</th></tr></thead>' +
+						'<tbody>' + rows.join( '' ) + '</tbody></table></div>';
+				} ).catch( function () {
+					view.innerHTML = '<p class="rsa-empty">Could not load journey data.</p>';
+				} );
+			}
+		}
+
+		// Path Explorer — ported from admin-charts.js initPathExplorer()
+		function initPathExplorer( pathData ) {
+			var flowContainer = document.getElementById( 'rsa-flow-chart' );
+			if ( ! flowContainer ) { return; }
+
+			var steps    = ( pathData && pathData.steps ) ? pathData.steps : {};
+			var links    = ( pathData && pathData.links  ) ? pathData.links  : [];
+			var stepNums = Object.keys( steps ).map( Number ).sort( function ( a, b ) { return a - b; } );
+			if ( ! stepNums.length ) {
+				flowContainer.innerHTML = '<p class="rsa-empty">No flow data available.</p>';
+				return;
+			}
+
+			// Build transition map  linkMap[step][fromPage] = [{to,count}...]
+			var linkMap = {};
+			links.forEach( function ( l ) {
+				if ( ! linkMap[ l.step ] ) { linkMap[ l.step ] = {}; }
+				if ( ! linkMap[ l.step ][ l.from ] ) { linkMap[ l.step ][ l.from ] = []; }
+				linkMap[ l.step ][ l.from ].push( { to: l.to, count: l.count } );
+			} );
+			Object.keys( linkMap ).forEach( function ( sn ) {
+				Object.keys( linkMap[ sn ] ).forEach( function ( pg ) {
+					linkMap[ sn ][ pg ].sort( function ( a, b ) { return b.count - a.count; } );
+				} );
+			} );
+
+			var numCols  = stepNums.length;
+			var selected = new Array( numCols ).fill( null );
+			var colEls   = [];
+
+			// Funnel summary bar
+			var stepTotals = stepNums.map( function ( sn ) {
+				var arr = steps[ sn ] || [];
+				return { step: sn, total: arr.reduce( function ( s, p ) { return s + p.sessions; }, 0 ) };
+			} );
+
+			flowContainer.innerHTML = '';
+
+			if ( stepTotals.length >= 2 ) {
+				var maxTot = stepTotals[0].total || 1;
+				var funnel = document.createElement( 'div' );
+				funnel.className = 'rsa-funnel';
+
+				stepTotals.forEach( function ( st, idx ) {
+					var heightPct = Math.round( st.total / maxTot * 100 );
+					var dropPct   = idx === 0 ? 100 : Math.round( st.total / maxTot * 100 );
+
+					var step = document.createElement( 'div' );
+					step.className = 'rsa-funnel-step';
+
+					var bg = document.createElement( 'div' );
+					bg.className    = 'rsa-funnel-step-bg';
+					bg.style.height = heightPct + '%';
+					step.appendChild( bg );
+
+					var lbl = document.createElement( 'div' );
+					lbl.className   = 'rsa-funnel-step-label';
+					lbl.textContent = idx === 0 ? 'Entry' : ( 'Step ' + ( idx + 1 ) );
+					step.appendChild( lbl );
+
+					var cnt = document.createElement( 'div' );
+					cnt.className   = 'rsa-funnel-step-count';
+					cnt.textContent = st.total.toLocaleString();
+					step.appendChild( cnt );
+
+					var pctEl = document.createElement( 'div' );
+					pctEl.className   = 'rsa-funnel-step-pct' + ( dropPct < 50 ? ' is-drop' : '' );
+					pctEl.textContent = idx === 0 ? '100%' : ( dropPct + '% of entry' );
+					step.appendChild( pctEl );
+
+					funnel.appendChild( step );
+				} );
+
+				flowContainer.appendChild( funnel );
+			}
+
+			// Explorer columns
+			var explorer = document.createElement( 'div' );
+			explorer.className = 'rsa-explorer';
+			flowContainer.appendChild( explorer );
+
+			for ( var i = 0; i < numCols; i++ ) {
+				var col = document.createElement( 'div' );
+				col.className = 'rsa-explorer-col';
+
+				var hdr = document.createElement( 'div' );
+				hdr.className   = 'rsa-explorer-col-hdr';
+				hdr.textContent = i === 0 ? 'Entry Page' : ( 'Step ' + ( i + 1 ) );
+				col.appendChild( hdr );
+
+				var list = document.createElement( 'div' );
+				list.className = 'rsa-explorer-col-list';
+				col.appendChild( list );
+
+				explorer.appendChild( col );
+				colEls.push( list );
+			}
+
+			function renderCol( colIdx, pageList, colTotal ) {
+				var listEl = colEls[ colIdx ];
+				listEl.innerHTML = '';
+
+				if ( ! pageList || ! pageList.length ) {
+					for ( var j = colIdx + 1; j < numCols; j++ ) {
+						colEls[ j ].innerHTML = '';
+						selected[ j ] = null;
+					}
+					return;
+				}
+
+				pageList.forEach( function ( pg ) {
+					var isExit   = pg.page === '(exit)';
+					var isActive = selected[ colIdx ] === pg.page;
+					var pct      = colTotal > 0 ? Math.round( pg.count / colTotal * 100 ) : 0;
+					var hasNext  = ! isExit && colIdx + 1 < numCols;
+
+					var item = document.createElement( 'div' );
+					item.className = 'rsa-explorer-item' +
+						( isActive ? ' is-selected' : '' ) +
+						( isExit   ? ' is-exit'     : '' ) +
+						( hasNext  ? ' is-clickable' : '' );
+
+					var bar = document.createElement( 'div' );
+					bar.className  = 'rsa-explorer-item-bar';
+					bar.style.width = pct + '%';
+					item.appendChild( bar );
+
+					var lbl = document.createElement( 'span' );
+					lbl.className   = 'rsa-explorer-item-label';
+					lbl.textContent = pg.page;
+					item.appendChild( lbl );
+
+					var meta = document.createElement( 'span' );
+					meta.className   = 'rsa-explorer-item-meta';
+					meta.textContent = pg.count.toLocaleString() + '\u00a0(' + pct + '%)';
+					item.appendChild( meta );
+
+					if ( hasNext ) {
+						var arrow = document.createElement( 'span' );
+						arrow.className   = 'rsa-explorer-item-arrow';
+						arrow.textContent = '\u203a';
+						item.appendChild( arrow );
+
+						item.addEventListener( 'click', ( function ( page, ci, pages, tot ) {
+							return function () {
+								selected[ ci ] = page;
+								renderCol( ci, pages, tot );
+								cascade( ci );
+							};
+						}( pg.page, colIdx, pageList, colTotal ) ) );
+					}
+
+					listEl.appendChild( item );
+				} );
+			}
+
+			function cascade( fromColIdx ) {
+				for ( var c = fromColIdx; c < numCols - 1; c++ ) {
+					var selPage = selected[ c ];
+					if ( ! selPage ) {
+						for ( var cc = c + 1; cc < numCols; cc++ ) {
+							colEls[ cc ].innerHTML = '';
+							selected[ cc ] = null;
+						}
+						break;
+					}
+					var sn       = stepNums[ c ];
+					var outLinks = linkMap[ sn ] && linkMap[ sn ][ selPage ];
+					if ( outLinks && outLinks.length ) {
+						var nTot   = outLinks.reduce( function ( s, l ) { return s + l.count; }, 0 );
+						var nPages = outLinks.map( function ( l ) { return { page: l.to, count: l.count }; } );
+						var topNext = null;
+						for ( var k = 0; k < nPages.length; k++ ) {
+							if ( nPages[ k ].page !== '(exit)' ) { topNext = nPages[ k ].page; break; }
+						}
+						selected[ c + 1 ] = topNext;
+						renderCol( c + 1, nPages, nTot );
+					} else {
+						for ( var cd = c + 1; cd < numCols; cd++ ) {
+							colEls[ cd ].innerHTML = '';
+							selected[ cd ] = null;
+						}
+						break;
+					}
+				}
+			}
+
+			// Populate first column and cascade
+			var step1     = steps[ stepNums[0] ] || [];
+			var step1Tot  = step1.reduce( function ( s, p ) { return s + p.sessions; }, 0 );
+			var col0Pages = step1.map( function ( p ) { return { page: p.page, count: p.sessions }; } );
+			var topEntry  = null;
+			for ( var ei = 0; ei < col0Pages.length; ei++ ) {
+				if ( col0Pages[ ei ].page !== '(exit)' ) { topEntry = col0Pages[ ei ].page; break; }
+			}
+			selected[ 0 ] = topEntry;
+			renderCol( 0, col0Pages, step1Tot );
+			cascade( 0 );
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -1173,7 +1483,14 @@
 				var canvas = document.getElementById( 'c-heatmap' );
 				if ( ! canvas ) return;
 
+				// Set canvas display height explicitly so it's never collapsed by CSS
+				requestAnimationFrame( function () {
+					var displayW = canvas.offsetWidth || W;
+					canvas.style.height = Math.round( displayW * H / W ) + 'px';
+				} );
+
 				var ctx = canvas.getContext( '2d' );
+				if ( ! ctx ) return;
 
 				// Page silhouette background
 				ctx.fillStyle = '#f0f4f8';
@@ -1191,42 +1508,45 @@
 				// Helper: map normalised weight [0-1] to an RGBA colour
 				// blue → green → yellow → orange-red
 				function heatColour( t, alpha ) {
-					var r, g, b;
+					var seg, r, g, b;
 					if ( t < 0.25 ) {
 						// blue → cyan
-						var s = t / 0.25;
-						r = 74;  g = Math.round( 144 + s * ( 192 - 144 ) );  b = Math.round( 184 + s * ( 255 - 184 ) );
+						seg = t / 0.25;
+						r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
 					} else if ( t < 0.5 ) {
 						// cyan → yellow-green
-						var s = ( t - 0.25 ) / 0.25;
-						r = Math.round( 74 + s * ( 144 - 74 ) );  g = Math.round( 192 + s * ( 220 - 192 ) );  b = Math.round( 255 - s * 255 );
+						seg = ( t - 0.25 ) / 0.25;
+						r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
 					} else if ( t < 0.75 ) {
 						// yellow-green → orange
-						var s = ( t - 0.5 ) / 0.25;
-						r = Math.round( 144 + s * ( 245 - 144 ) );  g = Math.round( 220 - s * ( 220 - 197 ) );  b = Math.round( s * 24 );
+						seg = ( t - 0.5 ) / 0.25;
+						r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
 					} else {
 						// orange → red
-						var s = ( t - 0.75 ) / 0.25;
-						r = Math.round( 245 - s * ( 245 - 232 ) );  g = Math.round( 197 - s * ( 197 - 83 ) );  b = Math.round( 24 + s * ( 42 - 24 ) );
+						seg = ( t - 0.75 ) / 0.25;
+						r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
 					}
 					return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 				}
 
 				// Draw each point as a radial-gradient "blob"
+				// p.x and p.y are percentages (0-100) from the API
 				data.forEach( function ( p ) {
 					var t    = ( p.weight || 1 ) / maxW;           // normalised 0-1
-					var px   = p.x * W;
-					var py   = p.y * H;
-					var r    = Math.max( 24, Math.round( t * 80 ) );
+					var px   = ( p.x / 100 ) * W;                  // convert % to canvas pixels
+					var py   = ( p.y / 100 ) * H;
+					var brad = Math.max( 24, Math.round( t * 80 ) );
 
-					var grad = ctx.createRadialGradient( px, py, 0, px, py, r );
+					if ( isNaN( px ) || isNaN( py ) ) return;
+
+					var grad = ctx.createRadialGradient( px, py, 0, px, py, brad );
 					grad.addColorStop( 0,   heatColour( t, 0.85 ) );
 					grad.addColorStop( 0.5, heatColour( t, 0.4 ) );
 					grad.addColorStop( 1,   heatColour( t, 0 ) );
 
 					ctx.fillStyle = grad;
 					ctx.beginPath();
-					ctx.arc( px, py, r, 0, Math.PI * 2 );
+					ctx.arc( px, py, brad, 0, Math.PI * 2 );
 					ctx.fill();
 				} );
 

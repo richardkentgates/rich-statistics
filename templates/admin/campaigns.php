@@ -49,6 +49,15 @@ $base = admin_url( 'admin.php' );
 	<?php endif; ?>
 </form>
 
+<!-- Chart -->
+<?php if ( $rows ) : ?>
+<div class="rsa-card rsa-card-full">
+	<div class="rsa-chart-wrap rsa-chart-wrap--bar">
+		<canvas id="rsa-chart-campaigns" height="80"></canvas>
+	</div>
+</div>
+<?php endif; ?>
+
 <!-- Table -->
 <div class="rsa-card rsa-card-full">
 	<?php if ( $rows ) :
