@@ -6,7 +6,7 @@
  *  • API calls to wp-json/    → Network-first (cache result for offline fallback)
  */
 
-const CACHE_VERSION = 'rsa-v6';
+const CACHE_VERSION = 'rsa-v7';
 
 const SHELL_ASSETS = [
 	'./index.html',
@@ -68,10 +68,9 @@ self.addEventListener( 'fetch', function ( event ) {
 	} );
 
 	if ( isShellAsset ) {
-		event.respondWith( cacheFirstWithRefresh( event.request ) );
+		event.respondWith( networkFirstWithCache( event.request ) );
 		return;
 	}
-
 	// Everything else: network only
 } );
 
