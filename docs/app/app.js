@@ -611,7 +611,7 @@
 			setLoading( false );
 			drawLine( 'c-overview-daily', data.daily.map( function ( d ) { return d.day; } ),
 				[{ label: 'Pageviews', data: data.daily.map( function ( d ) { return d.views; } ) }] );
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -638,7 +638,7 @@
 				'Views',
 				true   // horizontal
 			);
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -666,7 +666,7 @@
 			drawDoughnut( 'c-aud-vp',   kvLabels( data.by_viewport ), kvValues( data.by_viewport ) );
 			drawDoughnut( 'c-aud-lang', kvLabels( data.by_language ), kvValues( data.by_language ) );
 			drawBar( 'c-aud-tz', kvLabels( data.by_timezone ), kvValues( data.by_timezone ), 'Sessions', true );
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -699,7 +699,7 @@
 				'Visits',
 				true
 			);
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -746,7 +746,7 @@
 				data.session_depth.map( function ( b ) { return b.bucket; } ),
 				data.session_depth.map( function ( b ) { return b.count; } )
 			);
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -789,7 +789,7 @@
 				'Sessions',
 				true
 			);
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -835,7 +835,7 @@
 
 			container.innerHTML = '<div class="rsa-uf-wrap">' + html + '</div>';
 			setLoading( false );
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -871,7 +871,7 @@
 				'Clicks',
 				true
 			);
-		} ).catch( handleApiError );
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
@@ -1058,13 +1058,25 @@
 	// -----------------------------------------------------------------------
 	// Error handler
 	// -----------------------------------------------------------------------
-	function handleApiError( err ) {
+	function handleApiError( err, container ) {
 		setLoading( false );
 		if ( err.message === 'auth' ) {
 			clearAllSites();
 			showLogin();
+			return;
 		}
-		// Offline — show stale content via service worker cache (already painted)
+		if ( ! container ) return;
+		if ( err.message === 'HTTP 404' ) {
+			container.innerHTML =
+				'<div class="rsa-premium-notice">' +
+					'<p><strong>Premium feature</strong></p>' +
+					'<p>This view requires the Rich Statistics Premium plugin to be active on your WordPress site.</p>' +
+				'</div>';
+		} else {
+			container.innerHTML =
+				'<p class="rsa-empty">Could not load data (' + esc( err.message ) + '). ' +
+				'Check your connection and try refreshing.</p>';
+		}
 	}
 
 	// -----------------------------------------------------------------------
