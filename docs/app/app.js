@@ -523,6 +523,8 @@
 			campaigns  : 'Campaigns',
 			'user-flow': 'User Flow',
 			clicks     : 'Click Tracking',
+			heatmap    : 'Heatmap',
+			export     : 'Export',
 		};
 		document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -584,6 +586,8 @@
 			case 'campaigns' : renderCampaigns( container );  break;
 			case 'user-flow' : renderUserFlow( container );   break;
 			case 'clicks'    : renderClicks( container );     break;
+			case 'heatmap'   : renderHeatmap( container );    break;
+			case 'export'    : renderExport( container );     break;
 			default: setLoading( false );
 		}
 	}
@@ -846,6 +850,135 @@
 				true
 			);
 		} ).catch( handleApiError );
+	}
+
+	// -----------------------------------------------------------------------
+	// Heatmap (premium)
+	// -----------------------------------------------------------------------
+	function renderHeatmap( container ) {
+		container.innerHTML =
+			'<div class="rsa-field">' +
+				'<label for="rsa-hm-page">Page URL path</label>' +
+				'<input type="text" id="rsa-hm-page" placeholder="/" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--rsa-border);border-radius:var(--rsa-radius);font-size:14px;color:var(--rsa-text);background:var(--rsa-surface);margin-bottom:8px">' +
+			'</div>' +
+			'<div class="rsa-field-row" style="margin-top:0">' +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load">Load Heatmap</button>' +
+			'</div>' +
+			'<div id="rsa-hm-results" style="margin-top:20px"></div>';
+
+		setLoading( false );
+
+		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
+			var pagePath = ( document.getElementById( 'rsa-hm-page' ).value || '/' ).trim() || '/';
+			var results  = document.getElementById( 'rsa-hm-results' );
+			results.innerHTML = '<p class="rsa-field-hint">Loading\u2026</p>';
+
+			apiGet( 'heatmap', { period: state.period, page: pagePath } ).then( function ( data ) {
+				if ( ! data || ! data.length ) {
+					results.innerHTML = '<p class="rsa-empty">No click data for this page and period.</p>';
+					return;
+				}
+
+				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight; } ) );
+				var rows = data.slice( 0, 20 ).map( function ( p ) {
+					return '<tr><td>' + p.x.toFixed( 3 ) + '</td><td>' + p.y.toFixed( 3 ) + '</td><td>' + fmt( p.weight ) + '</td></tr>';
+				} ).join( '' );
+
+				results.innerHTML =
+					'<div class="rsa-chart-wrap" style="height:320px"><canvas id="c-heatmap-scatter"></canvas></div>' +
+					'<div class="rsa-table-wrap" style="margin-top:16px"><table class="rsa-table">' +
+					'<thead><tr><th>X (relative)</th><th>Y (relative)</th><th>Clicks</th></tr></thead>' +
+					'<tbody>' + rows + '</tbody></table></div>';
+
+				var canvas = document.getElementById( 'c-heatmap-scatter' );
+				if ( canvas ) {
+					state.charts[ 'c-heatmap-scatter' ] = new Chart( canvas, {
+						type: 'bubble',
+						data: {
+							datasets: [ {
+								label          : 'Clicks',
+								data           : data.map( function ( p ) {
+									return { x: p.x, y: p.y, r: Math.max( 3, Math.round( ( p.weight / maxW ) * 18 ) ) };
+								} ),
+								backgroundColor: '#6366f1aa',
+								borderColor    : '#6366f1',
+								borderWidth    : 1,
+							} ],
+						},
+						options: {
+							responsive         : true,
+							maintainAspectRatio: false,
+							plugins: { legend: { display: false } },
+							scales: {
+								x: { min: 0, max: 1, title: { display: true, text: 'X (left\u2192right)' } },
+								y: { min: 0, max: 1, reverse: true, title: { display: true, text: 'Y (top\u2192bottom)' } },
+							},
+						},
+					} );
+				}
+			} ).catch( function () {
+				results.innerHTML = '<p class="rsa-empty">Could not load heatmap data. Please try again.</p>';
+			} );
+		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// Export
+	// -----------------------------------------------------------------------
+	function renderExport( container ) {
+		container.innerHTML =
+			'<p class="rsa-field-hint" style="margin-bottom:16px">' +
+				'Export all tracked events for the selected period. The download will begin immediately in your browser.' +
+			'</p>' +
+			'<div class="rsa-field-row" style="margin-top:0">' +
+				'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-export-json">Download JSON</button>' +
+				'<button type="button" class="rsa-btn rsa-btn-ghost"  id="rsa-export-csv">Download CSV</button>' +
+			'</div>' +
+			'<div id="rsa-export-status" class="rsa-field-hint" style="margin-top:12px"></div>';
+
+		setLoading( false );
+
+		function doExport( format ) {
+			var status = document.getElementById( 'rsa-export-status' );
+			status.textContent = 'Preparing download\u2026';
+
+			var url = state.siteUrl + '/wp-json/rsa/v1/export' +
+				'?period=' + encodeURIComponent( state.period ) +
+				'&format=' + format;
+
+			fetch( url, {
+				headers: { 'Authorization': 'Basic ' + state.credentials },
+			} ).then( function ( res ) {
+				if ( res.status === 401 || res.status === 403 ) { throw new Error( 'auth' ); }
+				if ( ! res.ok ) { throw new Error( 'HTTP ' + res.status ); }
+				if ( format === 'csv' ) {
+					return res.blob();
+				}
+				return res.json().then( function ( json ) {
+					var payload = ( json && json.ok && json.data ) ? json.data : json;
+					return new Blob( [ JSON.stringify( payload, null, 2 ) ], { type: 'application/json' } );
+				} );
+			} ).then( function ( blob ) {
+				var a    = document.createElement( 'a' );
+				a.href   = URL.createObjectURL( blob );
+				a.download = 'rsa-export-' + state.period + '.' + format;
+				document.body.appendChild( a );
+				a.click();
+				document.body.removeChild( a );
+				URL.revokeObjectURL( a.href );
+				status.textContent = 'Download started.';
+			} ).catch( function ( err ) {
+				if ( err.message === 'auth' ) {
+					clearAllSites();
+					showLogin();
+				} else {
+					status.textContent = 'Export failed. Please try again.';
+				}
+			} );
+		}
+
+		document.getElementById( 'rsa-export-json' ).addEventListener( 'click', function () { doExport( 'json' ); } );
+		document.getElementById( 'rsa-export-csv'  ).addEventListener( 'click', function () { doExport( 'csv' ); } );
 	}
 
 	// -----------------------------------------------------------------------
