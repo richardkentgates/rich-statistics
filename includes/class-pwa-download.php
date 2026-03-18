@@ -1,21 +1,27 @@
 <?php
 /**
- * [PREMIUM] PWA download handlers.
+ * [PREMIUM] PWA download handlers and OTP-based site-pairing.
  *
- * Two download actions:
+ * Download actions:
+ *   rsa_download_pwa  – Generic app ZIP. Download once, install once on any
+ *                       device. No site data baked in.
  *
- *   rsa_download_pwa  – Generic app ZIP.  Download once, install once on any
- *                       device.  No site data baked in.
- *
- *   rsa_site_config   – Per-site .rsasite JSON file.  Import this into an
- *                       already-installed app to add the site without
- *                       creating a second PWA instance on the device.
+ * OTP site-pairing (replaces .rsasite file):
+ *   rsa_generate_otp  – AJAX: admin generates a 6-digit, single-use code
+ *                       (15 min TTL). User types the code into the app to
+ *                       add the site — no file download or import required.
+ *   POST /rsa/v1/verify-otp – public REST endpoint that exchanges the OTP
+ *                       for site URL + username so the app can proceed to
+ *                       the Application Password step.
  *
  * Security properties:
- *   • Both endpoints require manage_options + a valid WP nonce (~24 h TTL).
- *   • siteToken in the .rsasite file is per-user, HMAC-signed, single-use,
- *     and expires in 30 days.  Verification via POST /wp-json/rsa/v1/verify-install
- *     uses hash_equals() to prevent timing side-channels.
+ *   • rsa_generate_otp requires manage_options + a valid WP nonce (~24 h TTL).
+ *   • OTPs are stored hashed (SHA-256) as transients; the plain code is never
+ *     persisted. Transients auto-expire after 15 minutes.
+ *   • verify-otp applies per-IP rate-limiting (max 5 wrong attempts / 5 min)
+ *     to prevent brute-force of the 6-digit code space.
+ *   • Successful verification consumes the OTP (single-use) and resets the
+ *     fail counter for that IP.
  *   • The generic ZIP contains no credentials, no site URL, and no token.
  *
  * @fs_premium_only
@@ -25,8 +31,51 @@ defined( 'ABSPATH' ) || exit;
 class RSA_Pwa_Download {
 
 	public static function init(): void {
-		add_action( 'wp_ajax_rsa_download_pwa', [ __CLASS__, 'handle_download'    ] );
-		add_action( 'wp_ajax_rsa_site_config',  [ __CLASS__, 'handle_site_config' ] );
+		add_action( 'wp_ajax_rsa_download_pwa',  [ __CLASS__, 'handle_download'      ] );
+		add_action( 'wp_ajax_rsa_generate_otp',  [ __CLASS__, 'handle_generate_otp'  ] );
+	}
+
+	// ----------------------------------------------------------------
+	// OTP site-pairing (replaces .rsasite file)
+	// ----------------------------------------------------------------
+
+	/**
+	 * AJAX handler — generates a 6-digit OTP for the current admin user.
+	 * Returns JSON: { otp: "482391", expires_in: 900 }.
+	 */
+	public static function handle_generate_otp(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You do not have permission.', 'rich-statistics' ), 403 );
+		}
+		check_ajax_referer( 'rsa_generate_otp' );
+
+		$otp = self::generate_otp( get_current_user_id() );
+		wp_send_json_success( [ 'otp' => $otp, 'expires_in' => 15 * MINUTE_IN_SECONDS ] );
+	}
+
+	/**
+	 * Generate a cryptographically-random 6-digit OTP and store its hash
+	 * as a transient that auto-expires after 15 minutes.
+	 *
+	 * @return string 6-digit zero-padded code (plain, never stored).
+	 */
+	public static function generate_otp( int $user_id ): string {
+		$otp      = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
+		$user     = get_userdata( $user_id );
+		$site_url = rtrim( get_site_url(), '/' );
+
+		set_transient(
+			'rsa_otp_' . hash( 'sha256', $otp ),
+			[
+				'user_id'    => $user_id,
+				'username'   => $user ? $user->user_login : '',
+				'site_label' => (string) ( wp_parse_url( $site_url, PHP_URL_HOST ) ?? '' ),
+				'site_url'   => $site_url,
+			],
+			15 * MINUTE_IN_SECONDS
+		);
+
+		return $otp;
 	}
 
 	// ----------------------------------------------------------------
@@ -79,7 +128,7 @@ class RSA_Pwa_Download {
 	}
 
 	// ----------------------------------------------------------------
-	// Token helpers
+	// Token helpers (retained for any existing .rsasite installs)
 	// ----------------------------------------------------------------
 
 	private static function issue_token( int $user_id, string $site_url ): string {

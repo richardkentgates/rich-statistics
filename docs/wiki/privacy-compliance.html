@@ -28,6 +28,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -104,8 +105,8 @@ grep -rn "wp_remote_get\|wp_remote_post\|file_get_contents" includes/class-track
     <h2>Data deletion</h2>
     <p>To delete all collected analytics data:</p>
     <ul>
-      <li><strong>Selective pruning:</strong> Use <code>wp rsa prune --days=0</code> to delete all rows immediately while keeping the plugin active.</li>
-      <li><strong>Full removal:</strong> Enable <strong>Delete all data on uninstall</strong> in Data Settings and then deactivate and delete the plugin. All four database tables and all <code>rsa_*</code> options will be removed.</li>
+      <li><strong>Selective pruning:</strong> Use <code>wp rich-stats purge --older-than=0</code> to delete all event rows immediately while keeping the plugin active.</li>
+      <li><strong>Full removal:</strong> Enable <strong>Remove data on uninstall</strong> in <strong>Rich Statistics → Preferences</strong> and then deactivate and delete the plugin. All four database tables and all <code>rsa_*</code> options will be removed.</li>
     </ul>
   </main>
 </div>

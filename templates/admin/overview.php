@@ -9,7 +9,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) );
 }
 
-$period  = sanitize_text_field( $_GET['period'] ?? '30d' );
+$period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) {
 	$period = '30d';
@@ -17,8 +17,8 @@ if ( ! in_array( $period, $allowed, true ) ) {
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
-	$date_from = sanitize_text_field( $_GET['date_from'] ?? '' );
-	$date_to   = sanitize_text_field( $_GET['date_to']   ?? '' );
+	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }

@@ -29,7 +29,10 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Audience breakdown | OS, browser, viewport, language, timezone |
 | Top pages | Ranked by views with average time on page |
 | Referrer tracking | Domain-level only, no full URLs |
-| Behavior analysis | Time-on-page histogram, session depth |
+| UTM campaign tracking | Capture `utm_source`, `utm_medium`, `utm_campaign` from landing URLs; attributed to the full session |
+| Campaigns view | Admin page showing each source/medium/campaign combination with sessions and pageviews |
+| User Flow | Path Explorer (Miller columns) with drop-off funnel — step-by-step page navigation across sessions |
+| Behavior analysis | Time-on-page histogram, session depth, entry pages |
 | Bot filtering | 10-signal client-side scoring + server-side UA/header checks |
 | Data retention | Configurable 1–730 days (default 90) |
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
@@ -42,7 +45,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Feature | Description |
 |---|---|
 | Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click |
-| Heatmaps | Viewport-relative thermal overlay on any page URL |
+| Heatmap | Viewport-relative thermal overlay on any page URL |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
 
@@ -58,12 +61,14 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 
 ## Installation
 
-### From Freemius (recommended)
+### From richardkentgates.com (recommended)
 
-1. Purchase or download the free version from [Freemius](https://freemius.com)
+1. Download the plugin from [richardkentgates.com](https://richardkentgates.com)
 2. Upload the ZIP via **WordPress → Plugins → Add New → Upload Plugin**
 3. Activate the plugin
-4. Navigate to **Rich Stats** in the admin sidebar
+4. Navigate to **Analytics** in the admin sidebar
+
+> WordPress.org listing coming soon — it will be available there as well once approved.
 
 ### Manual / Development
 
@@ -96,7 +101,7 @@ composer install
 
 ## Configuration
 
-After activation, navigate to **Rich Stats → Data** in the WordPress admin to configure:
+After activation, navigate to **Rich Statistics → Preferences** in the WordPress admin to configure:
 
 - **Data retention** — how many days of data to keep (1–730)
 - **Bot score threshold** — sensitivity of bot detection (1–10)
@@ -178,10 +183,12 @@ All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismo
 A progressive web app is included at `wp-content/plugins/rich-statistics/webapp/`.
 
 1. Navigate to **Users → Your Profile** in WordPress
-2. Scroll to **Application Passwords** — create a new password
-3. Click the **Open / Install Web App** button (visible to admin users with Premium)
-4. Enter your site URL + username + the Application Password
-5. Install to your home screen via your browser's "Add to Home Screen" prompt
+2. Scroll to the **Rich Statistics App** section and click **Generate App Code**
+3. Open or install the web app (use the **Download App** button or visit `statistics.richardkentgates.com/app/`)
+4. Tap **Add Site**, enter your site URL, and enter the App Code when prompted
+5. Create an **Application Password** in the section below on the profile page
+6. Enter the username and Application Password in the app to complete the connection
+7. Install to your home screen via your browser’s “Add to Home Screen” prompt
 
 ---
 

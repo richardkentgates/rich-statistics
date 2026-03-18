@@ -28,6 +28,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -41,8 +42,8 @@
     <h1>Premium Features</h1>
     <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
 
-    <h2>Click Heatmaps</h2>
-    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The heatmap overlay is rendered on top of a live screenshot of your page using the CSS <code>pointer-events: none</code> overlay technique — no external screenshot service required.</p>
+    <h2>Heatmap</h2>
+    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view loads your page in an <strong>iframe</strong> and stretches a transparent <code>&lt;canvas&gt;</code> element over it using CSS absolute positioning with <code>pointer-events: none</code>, so the canvas receives no clicks. A thermal colour gradient (blue → red) is painted onto the canvas using the recorded click coordinates. No external screenshot service, no browser extension, and no screen capture is involved — the page you see is always the live version.</p>
     <h3>What is stored</h3>
     <ul>
       <li>Page path</li>
@@ -60,7 +61,7 @@
 
     <h2>Click Tracking &amp; Destination Capture</h2>
     <p>Non-navigational link clicks are tracked by protocol: <code>tel:</code>, <code>mailto:</code>, <code>geo:</code>, <code>sms:</code>, and file downloads. HTTP/HTTPS navigation is tracked automatically as pageviews and is not double-counted here.</p>
-    <p>The <strong>Destination</strong> column in the Click Map records the actual value passed to the protocol handler:</p>
+    <p>The <strong>Destination</strong> column in the Click Tracking view records the actual value passed to the protocol handler:</p>
     <table>
       <thead><tr><th>Protocol</th><th>Destination stored</th><th>Example</th></tr></thead>
       <tbody>
@@ -71,23 +72,16 @@
         <tr><td>download</td><td>File path or URL</td><td><code>/files/brochure.pdf</code></td></tr>
       </tbody>
     </table>
-    <p>You can also configure additional element IDs and CSS classes to track in <strong>Analytics → Preferences</strong>.</p>
-
-    <h2>Scroll Heatmaps</h2>
-    <p>The maximum scroll depth for each page session is recorded as a percentage. The scroll heatmap visualises the distribution of how far visitors scroll on each page.</p>
-    <ul>
-      <li>Value stored: <code>(page, scroll_pct, date)</code></li>
-      <li>No session ID stored — cannot reconstruct an individual visitor's scroll behavior</li>
-    </ul>
+    <p>You can also configure additional element IDs and CSS classes to track in <strong>Rich Statistics → Preferences</strong>.</p>
 
     <h2>Email Reports</h2>
-    <p>Config lives in <strong>Analytics → Data Settings → Email Reports</strong>.</p>
+    <p>Config lives in <strong>Rich Statistics → Preferences → Email Reports</strong>.</p>
     <table>
       <thead><tr><th>Setting</th><th>Options</th><th>Default</th></tr></thead>
       <tbody>
         <tr><td>Enabled</td><td>On / Off</td><td>Off</td></tr>
-        <tr><td>Frequency</td><td>Weekly (Mondays) / Monthly (1st)</td><td>Weekly</td></tr>
-        <tr><td>Recipient</td><td>Any email address</td><td>Admin email</td></tr>
+        <tr><td>Frequency</td><td>Daily (midnight) / Weekly (Mondays) / Monthly (1st)</td><td>Weekly</td></tr>
+        <tr><td>Recipients</td><td>Comma-separated email addresses</td><td>Admin email</td></tr>
       </tbody>
     </table>
     <p>Reports include: period-over-period comparison, top 10 pages, top 5 referrers, and summary stats (pageviews, sessions, bounce rate, avg time on page). Reports are sent via <code>wp_mail()</code> — no third-party email service.</p>
@@ -98,13 +92,22 @@
       <li>Works on Chrome (desktop + Android) and Safari (iOS 16.4+)</li>
       <li>Updates in real time via the REST API</li>
       <li>Works offline: shows the most recently loaded data</li>
-      <li>Install prompt appears at the bottom of the Analytics dashboard when the browser supports it</li>
+      <li>Hosted at <a href="https://statistics.richardkentgates.com/app/" target="_blank" rel="noopener">statistics.richardkentgates.com/app/</a> — install directly from any browser without visiting WordPress admin</li>
     </ul>
+
+    <h3>Connecting the app to your site</h3>
+    <ol>
+      <li>In WordPress, go to <strong>Users &rarr; Profile &rarr; Rich Statistics App</strong> and click <strong>Generate App Code</strong>. A 6-digit code appears — it is valid for 15 minutes.</li>
+      <li>Open the app and tap <strong>Add Your Site</strong>. Enter your site URL and the 6-digit App Code, then tap <strong>Verify Code</strong>.</li>
+      <li>Once verified, the app shows your username. Go back to your WordPress profile and create a new <strong>Application Password</strong> (Users &rarr; Profile &rarr; Application Passwords), copy it, and paste it into the app.</li>
+      <li>Tap <strong>Connect</strong>. Your site is added and data starts loading immediately.</li>
+    </ol>
+    <p>You can add multiple sites and switch between them using the site switcher in the app's navigation bar.</p>
 
     <h2>How upgrading works</h2>
     <p>There is no separate premium ZIP to download or reinstall. The upgrade is a standard WordPress plugin update delivered through Freemius:</p>
     <ol>
-      <li>In your WordPress admin, navigate to <strong>Analytics → Upgrade</strong>.</li>
+      <li>In your WordPress admin, navigate to <strong>Rich Statistics → Upgrade</strong>.</li>
       <li>Click <strong>Upgrade to Premium</strong>. You are taken to a Freemius-hosted payment page.</li>
       <li>Complete the purchase. Freemius activates your license silently on your site in the background.</li>
       <li>WordPress shows a normal <strong>Update Available</strong> notification for Rich Statistics. Click <strong>Update Now</strong>.</li>
@@ -114,8 +117,8 @@
     <h2>Moving your license</h2>
     <p>Each license covers one production site. To move it:</p>
     <ol>
-      <li>On the original site, go to <strong>Analytics → Account</strong> and click <strong>Deactivate License</strong>.</li>
-      <li>On the new site (with the free version installed), go to <strong>Analytics → Account</strong> and click <strong>Activate License</strong>.</li>
+      <li>On the original site, go to <strong>Rich Statistics → Account</strong> and click <strong>Deactivate License</strong>.</li>
+      <li>On the new site (with the free version installed), go to <strong>Rich Statistics → Account</strong> and click <strong>Activate License</strong>.</li>
     </ol>
 
     <div class="callout">

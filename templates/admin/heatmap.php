@@ -23,11 +23,11 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 	return;
 }
 
-$period  = sanitize_text_field( $_GET['period'] ?? '30d' );
+$period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display filter only
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
 
-$page_path = sanitize_text_field( $_GET['hm_page'] ?? '/' );
+$page_path = sanitize_text_field( wp_unslash( $_GET['hm_page'] ?? '/' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display filter only
 if ( ! preg_match( '#^/#', $page_path ) ) {
 	$page_path = '/';
 }

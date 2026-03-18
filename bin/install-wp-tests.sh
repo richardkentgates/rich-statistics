@@ -23,9 +23,17 @@ WP_CORE_DIR=${WP_CORE_DIR:-/tmp/wordpress}
 
 download() {
     if [ "$(which curl)" ]; then
-        curl -s "$1" > "$2"
+        if [ "$2" = "-" ]; then
+            curl -s "$1"
+        else
+            curl -s "$1" > "$2"
+        fi
     elif [ "$(which wget)" ]; then
-        wget -nv -O "$2" "$1"
+        if [ "$2" = "-" ]; then
+            wget -nv -O - "$1"
+        else
+            wget -nv -O "$2" "$1"
+        fi
     fi
 }
 
@@ -80,6 +88,12 @@ install_test_suite() {
     svn_co_with_fallback "tests/phpunit/includes" "$WP_TESTS_DIR/includes"
     svn_co_with_fallback "tests/phpunit/data"     "$WP_TESTS_DIR/data"
 
+    # Always create a src/ symlink so ABSPATH works whether the config uses
+    # dirname(__FILE__).'/src/' (old format) or the actual WP_CORE_DIR path.
+    if [ ! -e "${WP_TESTS_DIR}/src" ]; then
+        ln -s "${WP_CORE_DIR}" "${WP_TESTS_DIR}/src"
+    fi
+
     if [ ! -f "$WP_TESTS_DIR"/wp-tests-config.php ]; then
         download "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php" \
             "$WP_TESTS_DIR"/wp-tests-config.php || \
@@ -105,9 +119,9 @@ with open(fname) as fh:
 if 'parseTestMethodAnnotations' in code:
     code = re.sub(
         r'(\$annotations\s*=\s*)\\PHPUnit\\Util\\Test::parseTestMethodAnnotations\(\s*static::class,\s*\$this->getName\(\s*false\s*\)\s*\)',
-        r'\1( method_exists( \\PHPUnit\\Util\\Test::class, \'parseTestMethodAnnotations\' ) '
+        r'\1( method_exists( \\PHPUnit\\Util\\Test::class, "parseTestMethodAnnotations" ) '
         r'? \\PHPUnit\\Util\\Test::parseTestMethodAnnotations( static::class, $this->getName( false ) ) '
-        r': array( \'class\' => array(), \'method\' => array() ) )',
+        r': array( "class" => array(), "method" => array() ) )',
         code)
     with open(fname, 'w') as fh:
         fh.write(code)

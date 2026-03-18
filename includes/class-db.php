@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 class RSA_DB {
 
 	// Schema version stored per-site
-	const SCHEMA_VERSION = 7;
+	const SCHEMA_VERSION = 8;
 	const OPTION_KEY     = 'rsa_db_version';
 
 	// ----------------------------------------------------------------
@@ -79,11 +79,15 @@ class RSA_DB {
 			viewport_h    SMALLINT UNSIGNED   DEFAULT NULL,
 			time_on_page  SMALLINT UNSIGNED   DEFAULT NULL,
 			bot_score     TINYINT UNSIGNED    DEFAULT 0,
+			utm_source    VARCHAR(100)        DEFAULT NULL,
+			utm_medium    VARCHAR(100)        DEFAULT NULL,
+			utm_campaign  VARCHAR(255)        DEFAULT NULL,
 			created_at    DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY session_id  (session_id),
 			KEY page        (page(191)),
-			KEY created_at  (created_at)
+			KEY created_at  (created_at),
+			KEY utm_campaign (utm_campaign(191))
 		) $charset;";
 
 		$sessions = "CREATE TABLE " . self::sessions_table() . " (
@@ -161,24 +165,56 @@ class RSA_DB {
 
 	public static function maybe_upgrade(): void {
 		global $wpdb;
-		$ct = self::clicks_table();
 
 		// v6: add matched_rule column if missing
-		$col = $wpdb->get_results( $wpdb->prepare(
+		$col = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
 			'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
-			DB_NAME, $ct, 'matched_rule'
+			DB_NAME, $wpdb->prefix . 'rsa_clicks', 'matched_rule'
 		) );
 		if ( empty( $col ) ) {
-			$wpdb->query( "ALTER TABLE `{$ct}` ADD COLUMN matched_rule VARCHAR(255) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_clicks` ADD COLUMN matched_rule VARCHAR(255) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
 		}
 
 		// v7: add href_value column if missing
-		$col2 = $wpdb->get_results( $wpdb->prepare(
+		$col2 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
 			'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
-			DB_NAME, $ct, 'href_value'
+			DB_NAME, $wpdb->prefix . 'rsa_clicks', 'href_value'
 		) );
 		if ( empty( $col2 ) ) {
-			$wpdb->query( "ALTER TABLE `{$ct}` ADD COLUMN href_value VARCHAR(512) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_clicks` ADD COLUMN href_value VARCHAR(512) DEFAULT NULL AFTER href_protocol" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		// v8: add UTM columns to rsa_events if missing
+		$col3 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_source'
+			)
+		);
+		if ( empty( $col3 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_source VARCHAR(100) DEFAULT NULL AFTER bot_score" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		$col4 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_medium'
+			)
+		);
+		if ( empty( $col4 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_medium VARCHAR(100) DEFAULT NULL AFTER utm_source" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
+		}
+
+		$col5 = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema check
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+				DB_NAME, $wpdb->prefix . 'rsa_events', 'utm_campaign'
+			)
+		);
+		if ( empty( $col5 ) ) {
+			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_campaign VARCHAR(255) DEFAULT NULL AFTER utm_medium" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
 		}
 	}
 
@@ -231,19 +267,13 @@ class RSA_DB {
 		global $wpdb;
 
 		// Drop tables
-		$tables = [
-			self::events_table(),
-			self::sessions_table(),
-			self::clicks_table(),
-			self::heatmap_table(),
-		];
-
-		foreach ( $tables as $table ) {
-			$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		}
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_events`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_sessions`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_clicks`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
 
 		// Remove all plugin options
-		$wpdb->query(
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'rsa_%'"
 		);
 	}
@@ -259,24 +289,26 @@ class RSA_DB {
 		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
 
-		$tables = [
-			self::events_table(),
-			self::sessions_table(),
-			self::clicks_table(),
-		];
+		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
+			"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000", $cutoff
+		) );
+		$deleted += (int) $result;
 
-		foreach ( $tables as $table ) {
-			$result = $wpdb->query(
-				$wpdb->prepare( "DELETE FROM `{$table}` WHERE created_at < %s LIMIT 5000", $cutoff ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			);
-			$deleted += (int) $result;
-		}
+		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
+			"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000", $cutoff
+		) );
+		$deleted += (int) $result;
+
+		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
+			"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000", $cutoff
+		) );
+		$deleted += (int) $result;
 
 		// Prune heatmap date buckets older than the retention window
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
-		$result = $wpdb->query(
-			$wpdb->prepare( "DELETE FROM `" . self::heatmap_table() . "` WHERE date_bucket < %s LIMIT 5000", $cutoff_date ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		);
+		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
+			"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000", $cutoff_date
+		) );
 		$deleted += (int) $result;
 
 		return $deleted;
@@ -293,13 +325,9 @@ class RSA_DB {
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 
 		// Pull yesterday's clicks
-		$rows = $wpdb->get_results(
+		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- nightly maintenance cron; caching a batch aggregation step is inappropriate
 			$wpdb->prepare(
-				"SELECT page, x_pct, y_pct
-				 FROM `" . self::clicks_table() . "`
-				 WHERE DATE(created_at) = %s
-				   AND x_pct IS NOT NULL
-				   AND y_pct IS NOT NULL",
+				"SELECT page, x_pct, y_pct FROM `{$wpdb->prefix}rsa_clicks` WHERE DATE(created_at) = %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL",
 				$yesterday
 			),
 			ARRAY_A
@@ -318,15 +346,13 @@ class RSA_DB {
 			$buckets[ $key ] = ( $buckets[ $key ] ?? 0 ) + 1;
 		}
 
-		$heatmap_table = self::heatmap_table();
-
 		foreach ( $buckets as $key => $weight ) {
 			[ $page, $x, $y ] = explode( '|', $key, 3 );
-			$wpdb->query(
+			$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- nightly aggregation cron
 				$wpdb->prepare(
-					"INSERT INTO `{$heatmap_table}` (page, x_pct, y_pct, weight, date_bucket)
+					"INSERT INTO `{$wpdb->prefix}rsa_heatmap` (page, x_pct, y_pct, weight, date_bucket)
 					 VALUES (%s, %f, %f, %d, %s)
-					 ON DUPLICATE KEY UPDATE weight = weight + VALUES(weight)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					 ON DUPLICATE KEY UPDATE weight = weight + VALUES(weight)",
 					$page,
 					(float) $x,
 					(float) $y,

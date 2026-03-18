@@ -118,7 +118,7 @@ class RSA_Woocommerce {
 			? '/' . ltrim( wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), PHP_URL_PATH ), '/' )
 			: '/';
 
-		$wpdb->insert(
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			RSA_DB::clicks_table(),
 			[
 				'session_id'    => self::session_id(),
@@ -138,7 +138,7 @@ class RSA_Woocommerce {
 	 * sets.  If unavailable (e.g. server-side order hook) returns a placeholder.
 	 */
 	private static function session_id(): string {
-		$sid = sanitize_text_field( $_COOKIE['rsa_sid'] ?? '' );
+		$sid = sanitize_text_field( wp_unslash( $_COOKIE['rsa_sid'] ?? '' ) );
 		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
 			return $sid;
 		}

@@ -19,8 +19,8 @@ class DbTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		global $wpdb;
 		// Clean up test data (tables remain; WordPress test suite handles teardown)
-		$wpdb->query( "DELETE FROM {$wpdb->prefix}rsa_events" );
-		$wpdb->query( "DELETE FROM {$wpdb->prefix}rsa_sessions" );
+		$wpdb->query( "DELETE FROM {$wpdb->prefix}rsa_events" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( "DELETE FROM {$wpdb->prefix}rsa_sessions" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		parent::tearDown();
 	}
 
@@ -31,28 +31,28 @@ class DbTest extends WP_UnitTestCase {
 	public function test_events_table_exists(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_events';
-		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_sessions_table_exists(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_sessions';
-		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_clicks_table_exists(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_clicks';
-		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_heatmap_table_exists(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_heatmap';
-		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
@@ -105,7 +105,7 @@ class DbTest extends WP_UnitTestCase {
 	public function test_clicks_table_has_href_value_column(): void {
 		global $wpdb;
 		$table   = $wpdb->prefix . 'rsa_clicks';
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_clicks`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$this->assertContains( 'href_value', $columns, "Expected href_value column in {$table}" );
 	}
 }

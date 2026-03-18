@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -102,7 +102,7 @@ jobs:
         id: run_integration
         run: |
           vendor/bin/phpunit --configuration phpunit.integration.xml --no-coverage \
-            --testsuite integration --verbose 2>&1 | tee /tmp/phpunit-integration.txt
+            --testsuite integration 2>&1 | tee /tmp/phpunit-integration.txt
           exit ${PIPESTATUS[0]}
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib

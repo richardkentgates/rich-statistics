@@ -15,6 +15,11 @@ CHANGELOG.md     export-ignore
 build.sh         export-ignore
 docs/            export-ignore
 
+# Tell GitHub Linguist not to count vendor/generated/test code in language stats
+vendor/          linguist-vendored
+tests/           linguist-vendored
+docs/            linguist-documentation
+
 # Normalize line endings
 *.php            text eol=lf
 *.js             text eol=lf

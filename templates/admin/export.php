@@ -31,7 +31,8 @@ RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 				<td>
 					<?php
 					$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-					$period  = in_array( $_GET['period'] ?? '30d', $allowed, true ) ? sanitize_text_field( $_GET['period'] ?? '30d' ) : '30d';
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- export form display; GET param populates pre-selected period only
+				$period  = in_array( $_GET['period'] ?? '30d', $allowed, true ) ? sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ) : '30d';
 					$labels  = [
 						'7d'        => __( 'Last 7 days',  'rich-statistics' ),
 						'30d'       => __( 'Last 30 days', 'rich-statistics' ),
@@ -47,9 +48,9 @@ RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 						<?php endforeach; ?>
 					</select>
 					<span id="rsa-custom-dates" style="display:<?php echo $period === 'custom' ? '' : 'none'; ?>;margin-left:8px;">
-						<input type="date" name="date_from" value="<?php echo esc_attr( sanitize_text_field( $_GET['date_from'] ?? '' ) ); ?>">
-						<span style="margin:0 4px"><?php esc_html_e( 'to', 'rich-statistics' ); ?></span>
-						<input type="date" name="date_to" value="<?php echo esc_attr( sanitize_text_field( $_GET['date_to'] ?? '' ) ); ?>">
+					<input type="date" name="date_from" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
+					<span style="margin:0 4px"><?php esc_html_e( 'to', 'rich-statistics' ); ?></span>
+					<input type="date" name="date_to" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
 					</span>
 				</td>
 			</tr>

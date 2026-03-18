@@ -11,6 +11,7 @@
 .distignore
 .gitattributes
 .gitignore
+.gitkeep
 composer.json
 composer.lock
 phpunit.xml

@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.ValidatedSanitizedInput -- test bootstrap, not a web-facing file
 /**
  * PHPUnit bootstrap — Rich Statistics test suite.
  *
@@ -127,13 +128,13 @@ if ( ! function_exists( 'get_option' ) ) {
 	function get_option( string $option, $default = false ): mixed { return $default; }
 }
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
-	function wp_strip_all_tags( string $s ): string { return strip_tags( $s ); }
+	function wp_strip_all_tags( string $s ): string { return strip_tags( $s ); } // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- this IS the WP polyfill stub
 }
 if ( ! function_exists( 'wp_parse_url' ) ) {
-	function wp_parse_url( string $url, int $component = -1 ): mixed { return parse_url( $url, $component ); }
+	function wp_parse_url( string $url, int $component = -1 ): mixed { return parse_url( $url, $component ); } // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- this IS the WP polyfill stub
 }
 if ( ! function_exists( 'sanitize_text_field' ) ) {
-	function sanitize_text_field( string $s ): string { return trim( strip_tags( $s ) ); }
+	function sanitize_text_field( string $s ): string { return trim( wp_strip_all_tags( $s ) ); }
 }
 if ( ! function_exists( 'absint' ) ) {
 	function absint( mixed $n ): int { return abs( (int) $n ); }

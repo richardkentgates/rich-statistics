@@ -223,6 +223,31 @@ pre code { background: none; padding: 0; }
 .feature-card__icon { font-size: 1.75rem; margin-bottom: 0.75rem; display: block; }
 .feature-card h3 { font-size: 1rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.5rem; }
 .feature-card p  { font-size: 0.9375rem; color: var(--gray-500); margin-bottom: 0.75rem; }
+.feature-card__link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--blue-600);
+  text-decoration: none;
+}
+.feature-card__link:hover { text-decoration: underline; }
+
+/* ---- App section ---- */
+.app-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+.app-note {
+  max-width: 620px;
+  margin: 2rem auto 0;
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--gray-500);
+}
 
 /* ---- Badges ---- */
 .badge {

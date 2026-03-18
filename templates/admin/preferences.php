@@ -5,7 +5,7 @@
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
 
-$saved = isset( $_GET['saved'] ) && $_GET['saved'] === '1';
+$saved = isset( $_GET['saved'] ) && $_GET['saved'] === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only success flag after POST redirect
 RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 ?>
 

@@ -271,206 +271,229 @@
 	}
 
 	// ----------------------------------------------------------------
-	// Journey flow: N-step Sankey — Step 1 | Step 2 | Step 3 | …
-	// Each column = an actual chronological step in visitor sessions.
-	// Sessions that end before reaching the next step show an "(exit)" node.
+	// ----------------------------------------------------------------
+	// View: User Flow — Path Explorer (Miller columns)
 	// ----------------------------------------------------------------
 
-	function initFlowChart( pathData ) {
+	function initPathExplorer( pathData ) {
 		var container = document.getElementById( 'rsa-flow-chart' );
 		if ( ! container ) { return; }
 
-		var steps = ( pathData && pathData.steps ) ? pathData.steps : {};
-		var links = ( pathData && pathData.links  ) ? pathData.links  : [];
+		var steps    = ( pathData && pathData.steps ) ? pathData.steps : {};
+		var links    = ( pathData && pathData.links  ) ? pathData.links  : [];
 		var stepNums = Object.keys( steps ).map( Number ).sort( function ( a, b ) { return a - b; } );
 		if ( ! stepNums.length ) { return; }
 
-		var svgNS  = 'http://www.w3.org/2000/svg';
-		var W      = 960;
-		var nodeW  = 12;
-		var GAP    = 8;
-		var BAND_H = 400;
-		var HEAD   = 28;
-		var labelW = 185;
-		var font   = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-		var EXIT_COLOR = '#a0a5ae';
-
-		var numCols = stepNums.length;
-
-		// x position for column c (0-based index)
-		function colX( c ) {
-			if ( numCols === 1 ) { return Math.round( ( W - nodeW ) / 2 ); }
-			// Left col starts at labelW, right col ends at W - labelW - nodeW
-			var left  = labelW;
-			var right = W - labelW - nodeW;
-			return Math.round( left + c * ( right - left ) / ( numCols - 1 ) );
-		}
-
-		// Build node layout for one column
-		function buildNodes( pageList ) {
-			var total  = pageList.reduce( function ( s, p ) { return s + p.sessions; }, 0 );
-			var usable = BAND_H - GAP * Math.max( 0, pageList.length - 1 );
-			var nodes  = {};
-			var y      = HEAD;
-			pageList.forEach( function ( p ) {
-				var h = Math.max( 14, Math.round( usable * p.sessions / Math.max( total, 1 ) ) );
-				nodes[ p.page ] = { y: y, h: h, offIn: 0, offOut: 0, sessions: p.sessions };
-				y += h + GAP;
+		// Build transition map: linkMap[stepNum][fromPage] = [{to, count}, ...] sorted desc
+		var linkMap = {};
+		links.forEach( function ( l ) {
+			if ( ! linkMap[ l.step ] ) { linkMap[ l.step ] = {}; }
+			if ( ! linkMap[ l.step ][ l.from ] ) { linkMap[ l.step ][ l.from ] = []; }
+			linkMap[ l.step ][ l.from ].push( { to: l.to, count: l.count } );
+		} );
+		Object.keys( linkMap ).forEach( function ( sn ) {
+			Object.keys( linkMap[ sn ] ).forEach( function ( pg ) {
+				linkMap[ sn ][ pg ].sort( function ( a, b ) { return b.count - a.count; } );
 			} );
-			return nodes;
-		}
+		} );
 
-		// Columns: node maps indexed by step number
-		var colNodes = {};
+		var numCols  = stepNums.length;
+		var selected = new Array( numCols ).fill( null );
+		var colEls   = [];
+
+		// ------ Funnel summary bar ----------------------------------------
+		// Compute per-step totals: step 1 = sum of sessions; subsequent steps
+		// = sum of the "to" counts reachable from the selected path (we use the
+		// raw step session totals as a drop-off funnel, similar to GA funnel).
+		var stepTotals = [];
 		stepNums.forEach( function ( sn ) {
-			colNodes[ sn ] = buildNodes( steps[ sn ] );
+			var arr = steps[ sn ] || [];
+			var tot = arr.reduce( function ( s, p ) { return s + p.sessions; }, 0 );
+			stepTotals.push( { step: sn, total: tot } );
 		} );
 
-		// SVG height = tallest column bottom + padding
-		var svgH = HEAD + 16;
-		stepNums.forEach( function ( sn ) {
-			var pages = steps[ sn ];
-			if ( ! pages || ! pages.length ) { return; }
-			var last = colNodes[ sn ][ pages[ pages.length - 1 ].page ];
-			if ( last ) { svgH = Math.max( svgH, last.y + last.h + 16 ); }
-		} );
+		container.innerHTML = '';
+		container.className = '';
 
-		var svg = document.createElementNS( svgNS, 'svg' );
-		svg.setAttribute( 'viewBox', '0 0 ' + W + ' ' + svgH );
-		svg.setAttribute( 'width', '100%' );
-		svg.style.display   = 'block';
-		svg.style.maxHeight = '560px';
+		// Render funnel if we have at least 2 steps
+		if ( stepTotals.length >= 2 ) {
+			var maxTot   = stepTotals[ 0 ].total || 1;
+			var funnel   = document.createElement( 'div' );
+			funnel.className = 'rsa-funnel';
 
-		// ---- Column headers --------------------------------------------
-		stepNums.forEach( function ( sn, ci ) {
-			var x   = colX( ci );
-			var mid = x + nodeW / 2;
-			var t   = document.createElementNS( svgNS, 'text' );
-			t.setAttribute( 'x',           String( mid ) );
-			t.setAttribute( 'y',           '15' );
-			t.setAttribute( 'text-anchor', 'middle' );
-			t.setAttribute( 'font-size',   '10' );
-			t.setAttribute( 'font-family', font );
-			t.setAttribute( 'fill',        '#a0a5ae' );
-			t.setAttribute( 'font-weight', '600' );
-			t.textContent = ( 'STEP ' + sn ).toUpperCase();
-			svg.appendChild( t );
-		} );
+			stepTotals.forEach( function ( st, idx ) {
+				var heightPct = Math.round( st.total / maxTot * 100 );
+				var dropPct   = idx === 0
+					? 100
+					: ( maxTot > 0 ? Math.round( st.total / maxTot * 100 ) : 0 );
 
-		// ---- Ribbon helper ---------------------------------------------
-		function ribbon( sn, dn, fromPage, toPage, sFromTot, sTotTo, count, colorIdx ) {
-			var snNode = sn[ fromPage ];
-			var dnNode = dn[ toPage ];
-			if ( ! snNode || ! dnNode ) { return; }
-			var fh  = Math.max( 2, Math.round( snNode.h * count / Math.max( snNode.sessions, 1 ) ) );
-			var th  = Math.max( 2, Math.round( dnNode.h * count / Math.max( dnNode.sessions, 1 ) ) );
-			var y1t = snNode.y + snNode.offOut;
-			var y2t = dnNode.y + dnNode.offIn;
-			snNode.offOut += fh;
-			dnNode.offIn  += th;
-			var y1b  = y1t + fh;
-			var y2b  = y2t + th;
-			var x1r  = snNode.x + nodeW;
-			var x2l  = dnNode.x;
-			var cpx  = ( x2l - x1r ) * 0.45;
-			var p    = document.createElementNS( svgNS, 'path' );
-			var isExit = ( toPage === '(exit)' );
-			p.setAttribute( 'd',
-				'M '  + x1r + ' ' + y1t +
-				' C ' + ( x1r + cpx ) + ' ' + y1t + ' ' + ( x2l - cpx ) + ' ' + y2t + ' ' + x2l + ' ' + y2t +
-				' L ' + x2l + ' ' + y2b +
-				' C ' + ( x2l - cpx ) + ' ' + y2b + ' ' + ( x1r + cpx ) + ' ' + y1b + ' ' + x1r + ' ' + y1b +
-				' Z'
-			);
-			p.setAttribute( 'fill',         isExit ? EXIT_COLOR : PALETTE[ colorIdx % PALETTE.length ] );
-			p.setAttribute( 'fill-opacity', isExit ? '0.18' : '0.28' );
-			svg.appendChild( p );
+				var step = document.createElement( 'div' );
+				step.className = 'rsa-funnel-step';
+
+				var bg = document.createElement( 'div' );
+				bg.className  = 'rsa-funnel-step-bg';
+				bg.style.height = heightPct + '%';
+				step.appendChild( bg );
+
+				var lbl = document.createElement( 'div' );
+				lbl.className   = 'rsa-funnel-step-label';
+				lbl.textContent = idx === 0 ? 'Entry' : ( 'Step ' + ( idx + 1 ) );
+				step.appendChild( lbl );
+
+				var cnt = document.createElement( 'div' );
+				cnt.className   = 'rsa-funnel-step-count';
+				cnt.textContent = st.total.toLocaleString();
+				step.appendChild( cnt );
+
+				var pctEl = document.createElement( 'div' );
+				pctEl.className   = 'rsa-funnel-step-pct' + ( dropPct < 50 ? ' is-drop' : '' );
+				pctEl.textContent = idx === 0 ? '100%' : ( dropPct + '% of entry' );
+				step.appendChild( pctEl );
+
+				funnel.appendChild( step );
+			} );
+
+			container.appendChild( funnel );
 		}
 
-		// Store x on each node map after positions are computed
-		stepNums.forEach( function ( sn, ci ) {
-			var nx = colX( ci );
-			Object.keys( colNodes[ sn ] ).forEach( function ( page ) {
-				colNodes[ sn ][ page ].x = nx;
-			} );
-		} );
+		// ------ Explorer columns ------------------------------------------
+		var explorer = document.createElement( 'div' );
+		explorer.className = 'rsa-explorer';
+		container.appendChild( explorer );
 
-		// ---- Draw ribbons (links) ---------------------------------------
-		links.forEach( function ( l, idx ) {
-			var fromSn = l.step;
-			var toSn   = l.step + 1;
-			// "(exit)" links go to a phantom node just to the right of the from column
-			var snNodes = colNodes[ fromSn ];
-			var dnNodes;
-			if ( l.to === '(exit)' ) {
-				// Create a temporary exit node if needed
-				var exitKey = '(exit)';
-				if ( ! colNodes[ fromSn + '_exit' ] ) {
-					colNodes[ fromSn + '_exit' ] = {};
-				}
-				dnNodes = colNodes[ fromSn + '_exit' ];
-				if ( ! dnNodes[ exitKey ] ) {
-					var snNode = snNodes[ l.from ];
-					var exitX  = colX( stepNums.indexOf( fromSn ) ) + nodeW + 40;
-					dnNodes[ exitKey ] = { x: exitX, y: snNode ? snNode.y : HEAD, h: 20, offIn: 0, offOut: 0, sessions: l.count };
-				}
-			} else {
-				dnNodes = colNodes[ toSn ];
-			}
-			if ( snNodes && dnNodes ) {
-				ribbon( snNodes, dnNodes, l.from, l.to, 1, 1, l.count, idx );
-			}
-		} );
+		// Remap colEls to use the inner explorer div
+		// (colEls will be populated below)
 
-		// ---- Node rectangles + labels ----------------------------------
-		function drawNode( page, node, nx, anchor, color ) {
-			var rect = document.createElementNS( svgNS, 'rect' );
-			rect.setAttribute( 'x',      nx );
-			rect.setAttribute( 'y',      node.y );
-			rect.setAttribute( 'width',  nodeW );
-			rect.setAttribute( 'height', node.h );
-			rect.setAttribute( 'fill',   color );
-			rect.setAttribute( 'rx',     '2' );
-			svg.appendChild( rect );
+		// Build skeleton
+		var explorerContainer = explorer;
 
-			var MAX_L = 28;
-			var lbl   = page.length > MAX_L ? '\u2026' + page.slice( -( MAX_L - 1 ) ) : page;
-			var tx    = anchor === 'end' ? nx - 6 : nx + nodeW + 6;
-			var text  = document.createElementNS( svgNS, 'text' );
-			text.setAttribute( 'x',           tx );
-			text.setAttribute( 'y',           node.y + node.h / 2 + 4 );
-			text.setAttribute( 'text-anchor', anchor );
-			text.setAttribute( 'font-size',   '11' );
-			text.setAttribute( 'font-family', font );
-			text.setAttribute( 'fill',        page === '(exit)' ? '#a0a5ae' : '#646970' );
-			text.textContent = lbl;
-			svg.appendChild( text );
+		for ( var i = 0; i < numCols; i++ ) {
+			var col = document.createElement( 'div' );
+			col.className = 'rsa-explorer-col';
+
+			var hdr = document.createElement( 'div' );
+			hdr.className   = 'rsa-explorer-col-hdr';
+			hdr.textContent = i === 0 ? 'Entry Page' : ( 'Step ' + ( i + 1 ) );
+			col.appendChild( hdr );
+
+			var list = document.createElement( 'div' );
+			list.className = 'rsa-explorer-col-list';
+			col.appendChild( list );
+
+			explorerContainer.appendChild( col );
+			colEls.push( list );
 		}
 
-		stepNums.forEach( function ( sn, ci ) {
-			var nx     = colX( ci );
-			var anchor = ci === numCols - 1 ? 'end' : 'start';
-			// All middle columns use start, last column uses end only when it's alone on the right edge
-			// Actually: first col labels go to right of node, last col labels go to right too (unless only col)
-			// We always put labels to the right, except the leftmost might be tighter.
-			// Simplest: labels always to the right of node (start), fits our standard layout.
-			anchor = 'start';
-			( steps[ sn ] || [] ).forEach( function ( pg, pidx ) {
-				var node  = colNodes[ sn ][ pg.page ];
-				if ( ! node ) { return; }
-				node.x = nx;
-				var color = pg.page === '(exit)' ? EXIT_COLOR : PALETTE[ pidx % PALETTE.length ];
-				drawNode( pg.page, node, nx, 'start', color );
-			} );
-		} );
+		function renderCol( colIdx, pageList, colTotal ) {
+			var list = colEls[ colIdx ];
+			list.innerHTML = '';
 
-		container.appendChild( svg );
+			if ( ! pageList || ! pageList.length ) {
+				for ( var j = colIdx + 1; j < numCols; j++ ) {
+					colEls[ j ].innerHTML = '';
+					selected[ j ] = null;
+				}
+				return;
+			}
+
+			pageList.forEach( function ( pg ) {
+				var isExit   = pg.page === '(exit)';
+				var isActive = selected[ colIdx ] === pg.page;
+				var pct      = colTotal > 0 ? Math.round( pg.count / colTotal * 100 ) : 0;
+				var hasNext  = ! isExit && colIdx + 1 < numCols;
+
+				var item = document.createElement( 'div' );
+				item.className = 'rsa-explorer-item'
+					+ ( isActive ? ' is-selected' : '' )
+					+ ( isExit   ? ' is-exit'     : '' )
+					+ ( hasNext  ? ' is-clickable' : '' );
+
+				var bar = document.createElement( 'div' );
+				bar.className  = 'rsa-explorer-item-bar';
+				bar.style.width = pct + '%';
+				item.appendChild( bar );
+
+				var lbl = document.createElement( 'span' );
+				lbl.className   = 'rsa-explorer-item-label';
+				lbl.textContent = pg.page;
+				item.appendChild( lbl );
+
+				var meta = document.createElement( 'span' );
+				meta.className   = 'rsa-explorer-item-meta';
+				meta.textContent = pg.count.toLocaleString() + '\u00a0(' + pct + '%)';
+				item.appendChild( meta );
+
+				if ( hasNext ) {
+					var arr = document.createElement( 'span' );
+					arr.className   = 'rsa-explorer-item-arrow';
+					arr.textContent = '\u203a';
+					item.appendChild( arr );
+
+					item.addEventListener( 'click', ( function ( page, ci, pages, tot ) {
+						return function () {
+							selected[ ci ] = page;
+							renderCol( ci, pages, tot );
+							cascade( ci );
+						};
+					}( pg.page, colIdx, pageList, colTotal ) ) );
+				}
+
+				list.appendChild( item );
+			} );
+		}
+
+		// Cascade: starting from colIdx, auto-select top non-exit page and
+		// populate every column to the right until there is no more data.
+		function cascade( fromColIdx ) {
+			for ( var c = fromColIdx; c < numCols - 1; c++ ) {
+				var selPage = selected[ c ];
+				if ( ! selPage ) {
+					for ( var cc = c + 1; cc < numCols; cc++ ) {
+						colEls[ cc ].innerHTML = '';
+						selected[ cc ] = null;
+					}
+					break;
+				}
+				var sn       = stepNums[ c ];
+				var outLinks = linkMap[ sn ] && linkMap[ sn ][ selPage ];
+				if ( outLinks && outLinks.length ) {
+					var nTot   = outLinks.reduce( function ( s, l ) { return s + l.count; }, 0 );
+					var nPages = outLinks.map( function ( l ) { return { page: l.to, count: l.count }; } );
+					// Auto-select the top non-exit page in the next column
+					var topNext = null;
+					for ( var k = 0; k < nPages.length; k++ ) {
+						if ( nPages[ k ].page !== '(exit)' ) { topNext = nPages[ k ].page; break; }
+					}
+					selected[ c + 1 ] = topNext;
+					renderCol( c + 1, nPages, nTot );
+				} else {
+					for ( var cd = c + 1; cd < numCols; cd++ ) {
+						colEls[ cd ].innerHTML = '';
+						selected[ cd ] = null;
+					}
+					break;
+				}
+			}
+		}
+
+		// Populate column 0, pre-select top entry page, then cascade all columns
+		var step1     = steps[ stepNums[ 0 ] ] || [];
+		var step1Tot  = step1.reduce( function ( s, p ) { return s + p.sessions; }, 0 );
+		var col0Pages = step1.map( function ( p ) { return { page: p.page, count: p.sessions }; } );
+
+		var topEntry = null;
+		for ( var ei = 0; ei < col0Pages.length; ei++ ) {
+			if ( col0Pages[ ei ].page !== '(exit)' ) { topEntry = col0Pages[ ei ].page; break; }
+		}
+		selected[ 0 ] = topEntry;
+		renderCol( 0, col0Pages, step1Tot );
+		cascade( 0 );
 	}
 
 	/* <fs_premium_only> */
 
 	// ----------------------------------------------------------------
-	// View: Click Map
+	// View: Click Tracking
 	// ----------------------------------------------------------------
 
 	function initClickMap( data ) {
@@ -517,7 +540,7 @@
 			case 'referrers': initReferrers( data ); break;
 			case 'behavior':  initBehavior( data );  break;
 			case 'user-flow':
-				initFlowChart( data.path_flow );
+				initPathExplorer( data.path_flow );
 				break;
 			/* <fs_premium_only> */
 			case 'click-map': initClickMap( data );  break;

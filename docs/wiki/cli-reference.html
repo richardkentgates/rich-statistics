@@ -28,6 +28,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html" aria-current="page">WP-CLI Reference</a></li>
     </ul>
@@ -36,20 +37,20 @@
   </nav>
   <main class="wiki-content">
     <h1>WP-CLI Reference</h1>
-    <p>All Rich Statistics commands are grouped under the <code>rsa</code> top-level command. Run <code>wp help rsa</code> at any time to see this list in your terminal.</p>
+    <p>All Rich Statistics commands are grouped under the <code>rich-stats</code> top-level command. Run <code>wp help rich-stats</code> at any time to see this list in your terminal.</p>
 
-    <h2>wp rsa overview</h2>
+    <h2>wp rich-stats overview</h2>
     <p>Print a traffic summary for the given period to stdout.</p>
-    <pre><code>wp rsa overview [--period=&lt;period&gt;] [--format=&lt;format&gt;]</code></pre>
+    <pre><code>wp rich-stats overview [--period=&lt;period&gt;] [--format=&lt;format&gt;]</code></pre>
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Values</th></tr></thead>
       <tbody>
-        <tr><td><code>--period</code></td><td><code>7d</code></td><td><code>today</code>, <code>yesterday</code>, <code>7d</code>, <code>30d</code>, <code>90d</code></td></tr>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td><code>today</code>, <code>yesterday</code>, <code>7d</code>, <code>30d</code>, <code>90d</code>, <code>thismonth</code>, <code>lastmonth</code></td></tr>
         <tr><td><code>--format</code></td><td><code>table</code></td><td><code>table</code>, <code>json</code>, <code>csv</code>, <code>yaml</code></td></tr>
       </tbody>
     </table>
     <p>Example:</p>
-    <pre><code>$ wp rsa overview --period=30d --format=json
+    <pre><code>$ wp rich-stats overview --period=30d --format=json
 {
   "pageviews": 41200,
   "sessions": 27800,
@@ -57,69 +58,120 @@
   "avg_time_on_page": "1m 28s"
 }</code></pre>
 
-    <h2>wp rsa pages</h2>
-    <p>List top pages by pageview count.</p>
-    <pre><code>wp rsa pages [--period=&lt;period&gt;] [--count=&lt;count&gt;] [--format=&lt;format&gt;]</code></pre>
+    <h2>wp rich-stats top-pages</h2>
+    <p>List top pages by view count.</p>
+    <pre><code>wp rich-stats top-pages [--period=&lt;period&gt;] [--limit=&lt;n&gt;]</code></pre>
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>--period</code></td><td><code>7d</code></td><td>Time range</td></tr>
-        <tr><td><code>--count</code></td><td><code>10</code></td><td>Number of rows to return</td></tr>
-        <tr><td><code>--format</code></td><td><code>table</code></td><td>Output format</td></tr>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>--limit</code></td><td><code>10</code></td><td>Number of rows to return</td></tr>
       </tbody>
     </table>
     <p>Example:</p>
-    <pre><code>$ wp rsa pages --period=30d --count=5
-+----------------------------------+--------+----------+
-| page                             | views  | sessions |
-+----------------------------------+--------+----------+
-| /blog/privacy-analytics/         | 3210   | 2150     |
-| /about/                          | 1840   | 1610     |
-+----------------------------------+--------+----------+</code></pre>
+    <pre><code>$ wp rich-stats top-pages --period=30d --limit=5
++---+---------------------------+-------+----------+
+| # | Page                      | Views | Avg Time |
++---+---------------------------+-------+----------+
+| 1 | /blog/privacy-analytics/  | 3,210 | 1m 42s   |
+| 2 | /about/                   | 1,840 | 0m 58s   |
++---+---------------------------+-------+----------+</code></pre>
 
-    <h2>wp rsa referrers</h2>
-    <p>List top traffic sources.</p>
-    <pre><code>wp rsa referrers [--period=&lt;period&gt;] [--count=&lt;count&gt;] [--format=&lt;format&gt;]</code></pre>
-
-    <h2>wp rsa prune</h2>
-    <p>Manually run the data pruning job. Deletes rows older than the configured retention period.</p>
-    <pre><code>wp rsa prune [--days=&lt;days&gt;] [--dry-run]</code></pre>
+    <h2>wp rich-stats audience</h2>
+    <p>Show audience breakdown by OS, browser, and language.</p>
+    <pre><code>wp rich-stats audience [--period=&lt;period&gt;]</code></pre>
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>--days</code></td><td>rsa_retention_days option</td><td>Override retention period for this run</td></tr>
-        <tr><td><code>--dry-run</code></td><td>false</td><td>Report what would be deleted without deleting</td></tr>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range</td></tr>
       </tbody>
     </table>
     <p>Example:</p>
-    <pre><code>$ wp rsa prune --dry-run
-Would delete 4,821 rows older than 90 days.
+    <pre><code>$ wp rich-stats audience --period=7d
 
-$ wp rsa prune
-Pruned 4,821 rows. (0.34s)</code></pre>
+OS
++----------+-------+
+| Label    | Count |
++----------+-------+
+| Windows  | 8,412 |
+| macOS    | 5,230 |
++----------+-------+
 
-    <h2>wp rsa export</h2>
-    <p>Export raw pageview data to a CSV file.</p>
-    <pre><code>wp rsa export [--period=&lt;period&gt;] [--output=&lt;file&gt;]</code></pre>
+Browser
++----------+-------+
+| Label    | Count |
++----------+-------+
+| Chrome   | 9,104 |
+| Firefox  | 2,381 |
++----------+-------+</code></pre>
+
+    <h2>wp rich-stats purge</h2>
+    <p>Delete event records older than the configured retention period. Useful for manual housekeeping or testing.</p>
+    <pre><code>wp rich-stats purge [--older-than=&lt;days&gt;] [--dry-run]</code></pre>
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range to export</td></tr>
-        <tr><td><code>--output</code></td><td><code>rsa-export-{date}.csv</code></td><td>Destination file path</td></tr>
+        <tr><td><code>--older-than</code></td><td>site retention setting</td><td>Override retention period (days) for this run</td></tr>
+        <tr><td><code>--dry-run</code></td><td>false</td><td>Report count without deleting anything</td></tr>
       </tbody>
     </table>
     <p>Example:</p>
-    <pre><code>$ wp rsa export --period=90d --output=/tmp/analytics-q1.csv
-Exported 38,420 rows to /tmp/analytics-q1.csv</code></pre>
+    <pre><code>$ wp rich-stats purge --older-than=90 --dry-run
+Dry run — no data will be deleted.
+Would delete approximately 4,821 event rows.
+
+$ wp rich-stats purge --older-than=90
+Success: Pruned 4821 records.</code></pre>
+
+    <h2>wp rich-stats export</h2>
+    <p>Export raw event data to JSON or CSV.</p>
+    <pre><code>wp rich-stats export [--period=&lt;period&gt;] [--format=&lt;format&gt;] [--output=&lt;file&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--period</code></td><td><code>90d</code></td><td>Time range to export</td></tr>
+        <tr><td><code>--format</code></td><td><code>json</code></td><td><code>json</code> or <code>csv</code></td></tr>
+        <tr><td><code>--output</code></td><td>stdout</td><td>File path to write output; omit to print to terminal</td></tr>
+      </tbody>
+    </table>
+    <p>Example:</p>
+    <pre><code>$ wp rich-stats export --period=90d --format=csv --output=/tmp/analytics-q1.csv
+Exporting (90d, csv)…
+Success: Written to /tmp/analytics-q1.csv</code></pre>
 
     <div class="callout">
-      Exported CSVs contain <strong>no IP addresses</strong> because no IP addresses are stored. The export contains: timestamp, page path, session UUID, referrer domain, browser, OS, screen resolution, and UTM fields.
+      Exported data contains <strong>no IP addresses</strong> — none are stored. Each row includes: timestamp, page path, session UUID, referrer domain, browser, OS, screen resolution, and UTM fields (utm_source, utm_medium, utm_campaign).
     </div>
 
-    <h2>wp rsa version</h2>
-    <p>Print the plugin version.</p>
-    <pre><code>$ wp rsa version
-Rich Statistics 1.1.0</code></pre>
+    <h2>wp rich-stats email-test</h2>
+    <p>Send a test digest email to verify delivery and formatting.</p>
+    <pre><code>wp rich-stats email-test [--recipient=&lt;email&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--recipient</code></td><td>site admin email</td><td>Override recipient address for this test</td></tr>
+      </tbody>
+    </table>
+    <p>Example:</p>
+    <pre><code>$ wp rich-stats email-test --recipient=dev@example.com</code></pre>
+
+    <h2>wp rich-stats status</h2>
+    <p>Print plugin version, tier, and current configuration at a glance.</p>
+    <pre><code>$ wp rich-stats status
+Rich Statistics Status
+
++----------------------+-----------------------+
+| Setting              | Value                 |
++----------------------+-----------------------+
+| Version              | 1.2.0                 |
+| Tier                 | Free                  |
+| Retention (days)     | 90                    |
+| Bot threshold        | 3                     |
+| Email digest enabled | No                    |
+| Email frequency      | weekly                |
+| Next maintenance     | 2025-08-01 03:00 UTC  |
+| Next digest          | not scheduled         |
++----------------------+-----------------------+</code></pre>
 
     <h2>wp rich-stats clicks <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h2>
     <p>List click events grouped by protocol and element. Shows the actual destination value for each click type.</p>

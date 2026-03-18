@@ -31,6 +31,7 @@
     <strong class="wiki-sidebar__label">Reference</strong>
     <ul>
       <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
       <li><a href="rest-api.html">REST API</a></li>
       <li><a href="cli-reference.html">WP-CLI Reference</a></li>
     </ul>
@@ -42,10 +43,10 @@
   </nav>
   <main class="wiki-content">
     <h1>Configuration</h1>
-    <p>All settings live under <strong>Analytics → Data Settings</strong> in your WordPress admin. No <code>wp-config.php</code> edits are needed.</p>
+    <p>All settings live under <strong>Rich Statistics → Preferences</strong> in your WordPress admin. No <code>wp-config.php</code> edits are needed.</p>
 
     <h2>Data Retention</h2>
-    <p>Controls how long raw pageview and heatmap rows are kept in the database. Older rows are pruned automatically by a daily WP-Cron job.</p>
+    <p>Controls how long raw event rows are kept in the database. Older rows are pruned automatically by a daily WP-Cron job (minimum 1 day, maximum 730).</p>
     <table>
       <thead><tr><th>Option value</th><th>Behavior</th></tr></thead>
       <tbody>
@@ -53,40 +54,42 @@
         <tr><td><code>90</code></td><td>Keep the last 90 days (default)</td></tr>
         <tr><td><code>180</code></td><td>Keep the last 6 months</td></tr>
         <tr><td><code>365</code></td><td>Keep the last year</td></tr>
-        <tr><td><code>0</code></td><td>Keep forever (pruning disabled)</td></tr>
       </tbody>
     </table>
-    <p>You can also trigger pruning immediately from the WP-CLI: <code>wp rsa prune</code>.</p>
+    <p>You can also trigger pruning immediately from the WP-CLI: <code>wp rich-stats purge</code>.</p>
 
     <h2>Bot Score Threshold</h2>
-    <p>Requests with a bot score equal to or above this value are silently discarded and not recorded. The score range is 0–10.</p>
+    <p>Requests with a bot score equal to or above this value are silently discarded and not recorded. The score range is 1–10; higher values mean less aggressive filtering. Default is <strong>5</strong>.</p>
     <table>
       <thead><tr><th>Threshold</th><th>Effect</th></tr></thead>
       <tbody>
-        <tr><td><code>3</code> (default)</td><td>Balanced — catches most bots with minimal false positives</td></tr>
-        <tr><td><code>2</code></td><td>More aggressive — may catch headless browsers that try to mimic real users</td></tr>
-        <tr><td><code>5</code></td><td>Lenient — only filters obvious bots; use when you notice legitimate traffic being blocked</td></tr>
-        <tr><td><code>10</code></td><td>Only filters self-announced crawlers (Googlebot, etc.)</td></tr>
+        <tr><td><code>2</code>–<code>3</code></td><td>Aggressive — may filter headless browsers mimicking real users</td></tr>
+        <tr><td><code>5</code> (default)</td><td>Balanced — catches most bots with minimal false positives</td></tr>
+        <tr><td><code>8</code>–<code>10</code></td><td>Lenient — only filters obvious or self-announced crawlers (Googlebot, etc.)</td></tr>
       </tbody>
     </table>
 
-    <h2>Excluded roles</h2>
-    <p>By default, visits from logged-in users with the <code>manage_options</code> capability (admins) are not tracked. You can extend exclusions to editors, authors, or any role via the <strong>Excluded Roles</strong> checkbox list in Data Settings.</p>
-
-    <h2>Network-level disable</h2>
-    <p>On multisite, a network administrator can disable tracking for any sub-site from <strong>Network Admin → Analytics → Sites</strong>. This sets a network option that the tracker respects before any JavaScript is enqueued — no data is collected from disabled sites.</p>
+    <h2>Network-level disable (multisite)</h2>
+    <p>On multisite, a network administrator can disable tracking across all sub-sites at once from <strong>Network Admin → Rich Statistics</strong>. This sets a network-wide option that the tracker checks before enqueuing any JavaScript — no data is collected from any site while this is active.</p>
 
     <h2>Available wp_options keys</h2>
     <table>
       <thead><tr><th>Option key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>rsa_retention_days</code></td><td>int</td><td><code>90</code></td><td>Days to keep data (0 = forever)</td></tr>
-        <tr><td><code>rsa_bot_score_threshold</code></td><td>int</td><td><code>3</code></td><td>Minimum bot score to reject</td></tr>
-        <tr><td><code>rsa_excluded_roles</code></td><td>array</td><td><code>['administrator']</code></td><td>Roles whose visits are not tracked</td></tr>
-        <tr><td><code>rsa_email_report_enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable scheduled email reports (Premium)</td></tr>
-        <tr><td><code>rsa_email_report_frequency</code></td><td>string</td><td><code>'weekly'</code></td><td><code>weekly</code> or <code>monthly</code></td></tr>
-        <tr><td><code>rsa_email_report_recipient</code></td><td>string</td><td>admin email</td><td>Recipient address for reports</td></tr>
-        <tr><td><code>rsa_delete_on_uninstall</code></td><td>bool</td><td><code>false</code></td><td>Drop tables and options on uninstall</td></tr>
+        <tr><td><code>rsa_retention_days</code></td><td>int</td><td><code>90</code></td><td>Days to keep event data (1–730)</td></tr>
+        <tr><td><code>rsa_bot_score_threshold</code></td><td>int</td><td><code>5</code></td><td>Bot score at or above which events are discarded (1–10)</td></tr>
+        <tr><td><code>rsa_enabled_post_types</code></td><td>array</td><td><code>[]</code></td><td>Custom post type slugs to include in page filter dropdowns</td></tr>
+        <tr><td><code>rsa_track_protocol_tel</code></td><td>bool</td><td><code>true</code></td><td>Track <code>tel:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_mailto</code></td><td>bool</td><td><code>true</code></td><td>Track <code>mailto:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_geo</code></td><td>bool</td><td><code>true</code></td><td>Track <code>geo:</code> map link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_sms</code></td><td>bool</td><td><code>true</code></td><td>Track <code>sms:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_download</code></td><td>bool</td><td><code>true</code></td><td>Track file download clicks</td></tr>
+        <tr><td><code>rsa_click_track_ids</code></td><td>string</td><td><code>''</code></td><td>Comma-separated element IDs to track as clicks</td></tr>
+        <tr><td><code>rsa_click_track_classes</code></td><td>string</td><td><code>''</code></td><td>Comma-separated CSS classes to track as clicks</td></tr>
+        <tr><td><code>rsa_email_digest_enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable scheduled analytics digest emails</td></tr>
+        <tr><td><code>rsa_email_digest_frequency</code></td><td>string</td><td><code>'weekly'</code></td><td><code>daily</code>, <code>weekly</code>, or <code>monthly</code></td></tr>
+        <tr><td><code>rsa_email_digest_recipients</code></td><td>string</td><td>admin email</td><td>Comma-separated recipient addresses for digest emails</td></tr>
+        <tr><td><code>rsa_remove_data_on_uninstall</code></td><td>bool</td><td><code>false</code></td><td>Drop all tables and options when the plugin is deleted</td></tr>
       </tbody>
     </table>
 
