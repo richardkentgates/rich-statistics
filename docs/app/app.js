@@ -940,8 +940,8 @@
 								data           : data.map( function ( p ) {
 									return { x: p.x, y: p.y, r: Math.max( 3, Math.round( ( p.weight / maxW ) * 18 ) ) };
 								} ),
-								backgroundColor: '#6366f1aa',
-								borderColor    : '#6366f1',
+								backgroundColor: '#4a90b8aa',
+								borderColor    : '#2e6f8e',
 								borderWidth    : 1,
 							} ],
 						},
@@ -1071,9 +1071,18 @@
 	// Chart helpers (thin wrappers around Chart.js 4.x)
 	// -----------------------------------------------------------------------
 	var PALETTE = [
-		'#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6',
-		'#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16',
-		'#64748b','#a78bfa',
+		'#4a90b8',  // primary calm blue
+		'#6aaed6',  // lighter blue
+		'#8ec6e0',  // soft sky
+		'#2e6f8e',  // deeper slate-blue
+		'#a8c8d8',  // pale steel
+		'#3a7fa0',  // mid blue
+		'#b5d5e5',  // lightest
+		'#537b8e',  // blue-grey
+		'#7ba8be',  // muted teal-blue
+		'#c5dce8',  // near-white blue
+		'#1d5570',  // dark anchor
+		'#92b8cc',  // grey-blue
 	];
 
 	function resolveCanvas( id ) {
