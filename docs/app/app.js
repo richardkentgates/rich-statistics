@@ -65,6 +65,7 @@
 		bindMenuToggle();
 		bindSignOut();
 		bindAddSite();
+		bindInstallPrompt();
 	} );
 
 	// -----------------------------------------------------------------------
@@ -787,6 +788,41 @@
 		// Close nav when clicking outside of it on mobile
 		document.getElementById( 'rsa-main' ).addEventListener( 'click', function () {
 			if ( state.navOpen ) closeNav();
+		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// PWA install prompt
+	// -----------------------------------------------------------------------
+	var _installPrompt = null;
+
+	function bindInstallPrompt() {
+		// Chrome / Edge / Samsung Internet fire this before showing the mini-infobar
+		window.addEventListener( 'beforeinstallprompt', function ( e ) {
+			e.preventDefault();
+			_installPrompt = e;
+			var btn = document.getElementById( 'rsa-install-btn' );
+			if ( btn ) btn.hidden = false;
+		} );
+
+		// Hide button once installed
+		window.addEventListener( 'appinstalled', function () {
+			_installPrompt = null;
+			var btn = document.getElementById( 'rsa-install-btn' );
+			if ( btn ) btn.hidden = true;
+		} );
+
+		var btn = document.getElementById( 'rsa-install-btn' );
+		if ( ! btn ) return;
+		btn.addEventListener( 'click', function () {
+			if ( ! _installPrompt ) return;
+			_installPrompt.prompt();
+			_installPrompt.userChoice.then( function ( outcome ) {
+				_installPrompt = null;
+				if ( outcome.outcome === 'accepted' ) {
+					btn.hidden = true;
+				}
+			} );
 		} );
 	}
 

@@ -25,14 +25,17 @@ class RSA_Admin {
 		add_action( 'init',              [ __CLASS__, 'register_app_rewrite' ] );
 		add_filter( 'query_vars',        [ __CLASS__, 'add_app_query_var' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
+		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
 	}
 
 	public static function register_app_rewrite(): void {
-		add_rewrite_rule( '^rs-app/?$', 'index.php?rsa_app=1', 'top' );
+		add_rewrite_rule( '^rs-app/?$',              'index.php?rsa_app=1',      'top' );
+		add_rewrite_rule( '^rs-app/manifest\.json$', 'index.php?rsa_manifest=1', 'top' );
 	}
 
 	public static function add_app_query_var( array $vars ): array {
 		$vars[] = 'rsa_app';
+		$vars[] = 'rsa_manifest';
 		return $vars;
 	}
 
@@ -88,11 +91,46 @@ class RSA_Admin {
 		// Manifest and icons
 		$html = str_replace(
 			[ 'href="manifest.json"', 'href="icons/icon-192.png"', 'href="icons/icon-64.png"', 'src="icons/icon-192.png"', 'src="icons/icon-64.png"' ],
-			[ 'href="' . esc_url( $assets_url . 'manifest.json' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"' ],
+			[ 'href="' . esc_url( home_url( 'rs-app/manifest.json' ) ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"' ],
 			$html
 		);
 
 		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitised HTML from our own plugin file
+		exit;
+	}
+
+	/**
+	 * Serve the PWA manifest dynamically so start_url and scope match /rs-app/.
+	 */
+	public static function serve_manifest(): void {
+		if ( ! get_query_var( 'rsa_manifest' ) ) {
+			return;
+		}
+
+		$app_url    = trailingslashit( home_url( 'rs-app' ) );
+		$assets_url = RSA_URL . 'docs/app/';
+
+		$manifest = [
+			'name'             => get_bloginfo( 'name' ) . ' — Statistics',
+			'short_name'       => 'Rich Stats',
+			'description'      => 'Privacy-first analytics for your WordPress site.',
+			'start_url'        => $app_url,
+			'scope'            => $app_url,
+			'display'          => 'standalone',
+			'orientation'      => 'any',
+			'theme_color'      => '#2e6f8e',
+			'background_color' => '#f0f6fa',
+			'icons'            => [
+				[ 'src' => $assets_url . 'icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+				[ 'src' => $assets_url . 'icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+			],
+			'categories'       => [ 'productivity', 'utilities' ],
+			'lang'             => 'en',
+		];
+
+		nocache_headers();
+		header( 'Content-Type: application/manifest+json; charset=UTF-8' );
+		echo wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		exit;
 	}
 

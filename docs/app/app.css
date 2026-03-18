@@ -242,6 +242,28 @@ html, body {
 .rsa-signout-btn { color: #94a3b8; }
 .rsa-signout-btn:hover { color: #fff; }
 
+.rsa-install-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	margin-bottom: 6px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255,255,255,.18);
+	border-radius: var(--rsa-radius);
+	background: rgba(255,255,255,.06);
+	color: #e2eaf2;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background .15s, border-color .15s;
+}
+.rsa-install-btn:hover {
+	background: rgba(255,255,255,.13);
+	border-color: rgba(255,255,255,.35);
+	color: #fff;
+}
+
 /* Main content area */
 .rsa-main {
 	flex: 1;
