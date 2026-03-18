@@ -119,9 +119,9 @@ with open(fname) as fh:
 if 'parseTestMethodAnnotations' in code:
     code = re.sub(
         r'(\$annotations\s*=\s*)\\PHPUnit\\Util\\Test::parseTestMethodAnnotations\(\s*static::class,\s*\$this->getName\(\s*false\s*\)\s*\)',
-        r'\1( method_exists( \\PHPUnit\\Util\\Test::class, \'parseTestMethodAnnotations\' ) '
+        r'\1( method_exists( \\PHPUnit\\Util\\Test::class, "parseTestMethodAnnotations" ) '
         r'? \\PHPUnit\\Util\\Test::parseTestMethodAnnotations( static::class, $this->getName( false ) ) '
-        r': array( \'class\' => array(), \'method\' => array() ) )',
+        r': array( "class" => array(), "method" => array() ) )',
         code)
     with open(fname, 'w') as fh:
         fh.write(code)
