@@ -17,8 +17,8 @@
 
 <!-- Platform -->
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
-[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb)
-[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb)
+[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb)
+[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
 
 <!-- Activity -->
 [![Last commit](https://img.shields.io/github/last-commit/richardkentgates/rich-statistics/main)](https://github.com/richardkentgates/rich-statistics/commits/main)
@@ -85,14 +85,15 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 
 ## Installation
 
-### From richardkentgates.com (recommended)
+### From WordPress.org (recommended)
 
-1. Download the plugin from [richardkentgates.com](https://richardkentgates.com)
-2. Upload the ZIP via **WordPress → Plugins → Add New → Upload Plugin**
-3. Activate the plugin
-4. Navigate to **Analytics** in the admin sidebar
+```bash
+wp plugin install rich-statistics --activate
+```
 
-> WordPress.org listing coming soon — it will be available there as well once approved.
+Or search for **Rich Statistics** in your WordPress admin under **Plugins → Add New**, then activate.
+
+1. Once activated, navigate to **Analytics** in the admin sidebar
 
 ### Manual / Development
 
@@ -114,11 +115,8 @@ bash build.sh
 git clone https://github.com/richardkentgates/rich-statistics.git
 cd rich-statistics
 
-# Install PHP dev dependencies
+# Install PHP dev dependencies (Freemius SDK is already committed to vendor/freemius/)
 composer install
-
-# Download Freemius SDK (required for premium features in production)
-# The plugin loads a fallback stub in development when freemius/ is absent
 ```
 
 ---
@@ -156,7 +154,7 @@ For detailed compliance information, see the [Privacy section of our documentati
 wp rich-stats overview --period=30d
 
 # Top pages
-wp rich-stats top-pages --period=7d --count=20
+wp rich-stats top-pages --period=7d --limit=20
 
 # Audience breakdown
 wp rich-stats audience --period=30d
@@ -166,7 +164,7 @@ wp rich-stats export --period=90d > export.csv
 
 # Purge old data (dry run first)
 wp rich-stats purge --dry-run
-wp rich-stats purge --days=90
+wp rich-stats purge --older-than=90
 
 # Send test digest email
 wp rich-stats email-test --recipient=you@example.com
@@ -189,14 +187,19 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/overview` | KPIs + daily sparkline |
-| GET | `/pages` | Top pages ranked by views |
+| GET | `/pages` | Top pages ranked by views (filters: `browser`, `os`, `path`, `sort`, `sort_dir`) |
 | GET | `/audience` | OS/browser/viewport/language/timezone breakdowns |
 | GET | `/referrers` | Top referrer domains |
 | GET | `/behavior` | Time histogram, session depth, entry pages |
+| GET | `/campaigns` | UTM source/medium/campaign breakdown with session + pageview counts |
+| GET | `/user-flow` | Step-based path flow data (Miller columns) |
 | GET | `/clicks` | Click element totals (premium) |
-| GET | `/heatmap` | Heatmap coordinates for a page (premium) |
-| GET | `/export` | CSV download of raw event data |
-| POST | `/track` | Ingest endpoint (used by the PWA) |
+| GET | `/heatmap` | Heatmap coordinates for a page (premium; supports `date_from`/`date_to`) |
+| GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
+| GET | `/info` | Plugin version + site info (public — no auth required) |
+| POST | `/track` | Ingest endpoint (used by the tracker on every page load) |
+| POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
+| GET/POST | `/user-settings` | Sync app site list across devices |
 
 All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismonth`, `lastmonth`.
 
@@ -208,7 +211,7 @@ A progressive web app is included at `wp-content/plugins/rich-statistics/webapp/
 
 1. Navigate to **Users → Your Profile** in WordPress
 2. Scroll to the **Rich Statistics App** section and click **Generate App Code**
-3. Open or install the web app (use the **Download App** button or visit `statistics.richardkentgates.com/app/`)
+3. Open or install the web app (use the **Download App** button or visit `rs-app.richardkentgates.com`)
 4. Tap **Add Site**, enter your site URL, and enter the App Code when prompted
 5. Create an **Application Password** in the section below on the profile page
 6. Enter the username and Application Password in the app to complete the connection
@@ -221,8 +224,8 @@ dashboard as the PWA in a lightweight WebKitGTK window — no Electron, no bundl
 
 | Architecture | Download |
 |---|---|
-| x86_64 (Intel/AMD) | [rich-statistics-linux-amd64.deb](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb) |
-| ARM64 (Raspberry Pi / Apple Silicon VM) | [rich-statistics-linux-arm64.deb](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb) |
+| x86_64 (Intel/AMD) | [rich-statistics-linux-amd64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) |
+| ARM64 (Raspberry Pi / Apple Silicon VM) | [rich-statistics-linux-arm64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb) |
 
 **Install (Debian / Ubuntu / Raspberry Pi OS):**
 ```bash

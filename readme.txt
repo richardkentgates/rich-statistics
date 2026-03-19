@@ -21,20 +21,23 @@ Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent
 * Top pages ranked by views with average time on page
 * Referrer tracking at the domain level only
 * UTM campaign tracking (utm_source, utm_medium, utm_campaign) — auto-captured from landing page URL, persisted for the session
+* Campaigns view: source / medium / campaign breakdown with session and pageview counts
+* User Flow: Path Explorer (Miller columns) with drop-off funnel
 * Behavior analysis: time-on-page histogram, session depth, entry pages
 * Aggressive bot detection: 10 client-side signals plus server-side UA/header scoring
 * Configurable data retention (1–730 days, default 90)
-* WP-CLI support: overview, top-pages, audience, export, prune, version
+* Email digest reports (daily/weekly/monthly) via wp_mail — no third-party email service
+* WP-CLI support: overview, top-pages, audience, export, purge, status
 * Full Multisite support with per-site tables and network admin panel
 * All third-party dependencies bundled locally — no CDN calls at runtime
 
 **Premium features (via Freemius):**
 
-* Click tracking by protocol (http, tel, mailto, geo, sms) and by element ID/class
-* Heatmap with viewport-relative thermal canvas overlay
-* Weekly and monthly email digest reports via wp_mail
-* Full REST API (9 endpoints) authenticated via WP Application Passwords
+* Click tracking by protocol (tel, mailto, geo, sms) and by element ID/class — with destination capture (phone number, email, coordinates, file URL)
+* Heatmap with viewport-relative thermal canvas overlay and hotspot tooltips
+* Full REST API (14 endpoints) authenticated via WP Application Passwords
 * Progressive Web App: installable mobile analytics dashboard
+* Linux native desktop app (x86_64 and ARM64) built with Tauri
 
 **Privacy by design:**
 
@@ -42,12 +45,12 @@ Sessions are identified using a `sessionStorage` UUID — this identifier lives 
 
 == Installation ==
 
-1. Download the plugin ZIP from [richardkentgates.com](https://richardkentgates.com) and install via **Plugins → Add New → Upload Plugin**, then activate
-2. Navigate to **Analytics** in the admin sidebar to view your data
-
-Alternatively, once available on WordPress.org, install via WP-CLI:
+1. Search for **Rich Statistics** in your WordPress admin under **Plugins → Add New**, or install via WP-CLI:
 
     wp plugin install rich-statistics --activate
+
+2. Activate the plugin
+3. Navigate to **Analytics** in the admin sidebar to view your data
 
 To upgrade to Premium, go to **Analytics → Upgrade** inside WordPress. The upgrade is delivered as a standard WordPress plugin update — no ZIP file required.
 
@@ -79,11 +82,11 @@ All data is stored in your WordPress database in four tables: `wp_rsa_events`, `
 
 = Can I export my data? =
 
-Yes. Go to **Analytics → Data Settings** and click **Export to CSV**, or use WP-CLI: `wp rsa export --period=90d`
+Yes. Go to **Analytics → Data Settings** and click **Export to CSV**, or use WP-CLI: `wp rich-stats export --period=90d`
 
 = How do I delete all data? =
 
-Go to **Analytics → Data Settings**, enable **Remove all data on uninstall**, then delete the plugin. Alternatively run `wp rsa prune --days=0` to remove all rows immediately.
+Go to **Analytics → Data Settings**, enable **Remove all data on uninstall**, then delete the plugin. Alternatively run `wp rich-stats purge --older-than=0` to remove all rows immediately.
 
 = What is the Premium plan? =
 
@@ -107,11 +110,22 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 * Fixed mobile hamburger menu not opening (click was bubbling to main content and re-closing the nav)
 * Fixed heatmap too tall on desktop (now height-capped to fit within the viewport)
 
+= 1.4.0 =
+* Admin heatmap redesigned as self-contained dark canvas — replaced iframe approach. Scroll-depth guides, fold marker, radial heat dots, side panel with top-clicked elements, and hotspot tooltips
+* Custom date range selector added to heatmap, export, and all period selectors
+* Heatmap REST API now accepts date_from and date_to parameters
+
+= 1.3.0 =
+* Added UTM campaign tracking (utm_source, utm_medium, utm_campaign) — auto-captured and attributed to full session
+* Added Campaigns admin page with source/medium/campaign breakdown and session/pageview counts
+* Replaced Sankey User Flow with Path Explorer: Miller columns, drop-off funnel, Journey Table
+* Added REST API endpoints: /campaigns, /user-flow, /user-flow/journey
+
 = 1.2.0 =
 * Added PWA OTP pairing: "Generate App Code" button on the user profile page issues a 6-digit HMAC-signed code (valid 15 min) for secure app connection without manual credential entry
 * Added `rsa/v1/verify-otp` REST endpoint that validates the code and returns the verified username
 * Added two-step app connection flow in the PWA dashboard (OTP verify → Application Password)
-* Added hosted PWA at statistics.richardkentgates.com/app/ — install directly from any browser
+* Added hosted PWA at rs-app.richardkentgates.com — install directly from any browser without visiting the WordPress admin
 * Added "Get the App" section to the plugin website landing page
 * Fixed: Rich Statistics App profile section now appears before Application Passwords (correct reading order)
 
