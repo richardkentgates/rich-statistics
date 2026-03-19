@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [1.4.0] — 2026-06-17
+## [1.4.0] — 2026-03-18
 
 ### Added
 - **Admin heatmap redesign** — replaced the iframe + thermal-overlay approach with a self-contained
@@ -157,7 +157,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.0.0...v1.0.1

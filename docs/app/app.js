@@ -528,38 +528,17 @@
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
-				// In Tauri: route to the matching bundled version folder.
-				// Never navigate away to the hosted web app.
+				// In Tauri: route to the matching bundled version folder (local, no external URLs).
 				if ( isTauri() ) {
 					tauriNavigateToVersion( info.version );
 					localStorage.setItem( versionKey, info.version );
 					return;
 				}
 
-				// Cache the app_url on the site object so setActiveSite can navigate to it
-				if ( info.app_url ) {
-					var activeSite = state.sites.find( function ( s ) { return s.id === state.activeId; } );
-					if ( activeSite && activeSite.appUrl !== info.app_url ) {
-						activeSite.appUrl = info.app_url;
-						localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
-					}
-				}
-
+				// Browser: clear SW caches and reload if the plugin version changed.
 				var stored = localStorage.getItem( versionKey );
 				if ( stored && stored !== info.version ) {
 					localStorage.setItem( versionKey, info.version );
-
-					// If running from an external versioned URL, redirect to the new
-					// version folder — no cache clearing needed because each version
-					// folder is immutably cached by the service worker.
-					var vab = getVersionedAppBase();
-					if ( vab && vab.current !== info.version ) {
-						window.location.href = vab.base + info.version + '/';
-						return;
-					}
-
-					// Running from /rs-app/ or the unversioned /app/ URL —
-					// clear SW caches and reload to pick up fresh plugin-served files.
 					if ( 'caches' in window ) {
 						caches.keys().then( function ( keys ) {
 							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
@@ -1030,6 +1009,9 @@
 		if ( ! btn ) return;
 		btn.href   = url;
 		btn.hidden = false;
+
+		var label = document.getElementById( 'rsa-linux-label' );
+		if ( label ) label.hidden = false;
 	}
 
 	function toggleNav() {
