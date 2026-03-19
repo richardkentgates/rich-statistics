@@ -61,7 +61,15 @@ if [ ! -d "${TMPDIR}/repo/docs/app" ]; then
 fi
 
 # ── Sync to the deploy directory ─────────────────────────────────────────────
-rsync -a --delete "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
+# Root-level files (app.js, app.css, index.html, etc.): sync with --delete so
+# stale files are removed.
+rsync -a --delete \
+    --exclude='[0-9]*.[0-9]*.[0-9]*/' \
+    "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
+
+# Versioned snapshot subdirectories: additive-only — never delete old versions
+# so WP sites running older plugin versions can still load their matching app.
+rsync -a "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 
 # ── Record the deployed version ──────────────────────────────────────────────
 echo "${LATEST}" > "${VERSION_FILE}"
