@@ -753,9 +753,9 @@ class RSA_Analytics {
 	// Premium: heatmap data for a page + date range
 	// ----------------------------------------------------------------
 
-	public static function get_heatmap( string $page, string $period = '30d' ): array {
+	public static function get_heatmap( string $page, string $period = '30d', string $date_from = '', string $date_to = '' ): array {
 		global $wpdb;
-		$range = self::period_range( $period );
+		$range = self::period_range( $period, $date_from, $date_to );
 
 		// Query raw clicks directly so data is always current (no nightly aggregation lag).
 		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
@@ -768,11 +768,48 @@ class RSA_Analytics {
 			ARRAY_A
 		);
 
-		return array_map( fn( $r ) => [
-			'x'      => (float) $r['x_pct'],
-			'y'      => (float) $r['y_pct'],
-			'weight' => (int)   $r['weight'],
-		], $rows );
+		// Element breakdown per coordinate bucket — used for hotspot hover tooltips.
+		$elem_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT ROUND(x_pct / 2) * 2 AS xb, ROUND(y_pct / 2) * 2 AS yb,
+				        element_tag, MAX(element_text) AS element_text, MAX(href_value) AS href_value,
+				        COUNT(*) AS cnt
+				 FROM `{$wpdb->prefix}rsa_clicks`
+				 WHERE page = %s AND created_at BETWEEN %s AND %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL
+				 GROUP BY xb, yb, element_tag, element_id, element_class, href_protocol, matched_rule
+				 ORDER BY cnt DESC",
+				$page,
+				$range['start'],
+				$range['end']
+			),
+			ARRAY_A
+		);
+
+		$elem_map = [];
+		foreach ( $elem_rows as $er ) {
+			$key = $er['xb'] . ':' . $er['yb'];
+			if ( ! isset( $elem_map[ $key ] ) ) {
+				$elem_map[ $key ] = [];
+			}
+			if ( count( $elem_map[ $key ] ) < 5 ) {
+				$elem_map[ $key ][] = [
+					'tag'   => $er['element_tag']  ?: null,
+					'text'  => $er['element_text'] ?: ( $er['href_value'] ?: null ),
+					'href'  => $er['href_value']   ?: null,
+					'count' => (int) $er['cnt'],
+				];
+			}
+		}
+
+		return array_map( function ( $r ) use ( $elem_map ) {
+			$key = $r['x_pct'] . ':' . $r['y_pct'];
+			return [
+				'x'        => (float) $r['x_pct'],
+				'y'        => (float) $r['y_pct'],
+				'weight'   => (int)   $r['weight'],
+				'elements' => $elem_map[ $key ] ?? [],
+			];
+		}, $rows );
 	}
 
 	// ----------------------------------------------------------------
@@ -908,15 +945,20 @@ class RSA_Analytics {
 			$range['start'], $range['end'], $bt
 		) ) ?: [];
 
-		$pages = $wpdb->get_col( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
-			"SELECT DISTINCT page FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND page IS NOT NULL AND page != '' ORDER BY page ASC LIMIT 200",
-			$range['start'], $range['end'], $bt
-		) ) ?: [];
+		// Pages: all public WordPress content — published + non-trash.
+		// Returned as {value, label} objects so the webapp, REST consumers,
+		// and WP admin templates all render human-readable titles from one source.
+		$trackable = RSA_Admin::get_trackable_pages();
+		$wp_pages  = [];
+		foreach ( $trackable as $path => $title ) {
+			$wp_pages[] = [ 'value' => $path, 'label' => $title ];
+		}
 
 		return [
-			'browsers' => $browsers,
-			'os'       => $os,
-			'pages'    => $pages,
+			'browsers'      => $browsers,
+			'os'            => $os,
+			'pages'         => $wp_pages,
+			'heatmap_pages' => $wp_pages,
 		];
 	}
 
@@ -931,5 +973,59 @@ class RSA_Analytics {
 			self::$bot_threshold = (int) get_option( 'rsa_bot_score_threshold', 3 );
 		}
 		return self::$bot_threshold;
+	}
+
+	// ----------------------------------------------------------------
+	// Maintenance: all tracked paths with live / deleted status
+	// ----------------------------------------------------------------
+
+	public static function get_all_tracked_pages(): array {
+		global $wpdb;
+
+		// Union of distinct page paths across all three tables, with per-table counts
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance query
+			"SELECT page,
+				SUM(ev) AS events,
+				SUM(cl) AS clicks,
+				SUM(hm) AS heatmap
+			FROM (
+				SELECT page, COUNT(*) AS ev, 0 AS cl, 0 AS hm FROM `{$wpdb->prefix}rsa_events` WHERE page != '' AND page IS NOT NULL GROUP BY page
+				UNION ALL
+				SELECT page, 0, COUNT(*), 0 FROM `{$wpdb->prefix}rsa_clicks` WHERE page != '' AND page IS NOT NULL GROUP BY page
+				UNION ALL
+				SELECT page, 0, 0, SUM(weight) FROM `{$wpdb->prefix}rsa_heatmap` WHERE page != '' AND page IS NOT NULL GROUP BY page
+			) sub
+			GROUP BY page
+			ORDER BY events DESC
+			LIMIT 500",
+			ARRAY_A
+		) ?: [];
+
+		// Cross-reference DB paths against all non-trash WP content (any post type,
+		// any non-trash status).  Anything NOT in that set is 'unmatched'.
+		$live_paths = array_keys( RSA_Admin::get_trackable_pages() );
+		$live_set   = array_flip( $live_paths ); // O(1) lookups
+
+		$data_retention = (int) get_option( 'rsa_retention_days', 90 );
+
+		return array_map( static function ( $row ) use ( $live_set, $data_retention ) {
+			$path    = $row['page'];
+			$is_home = ( $path === '/' || $path === '' );
+
+			if ( $is_home || isset( $live_set[ $path ] ) ) {
+				$status = 'live';
+			} else {
+				$status = 'unmatched';
+			}
+
+			return [
+				'page'           => $path,
+				'events'         => (int) $row['events'],
+				'clicks'         => (int) $row['clicks'],
+				'heatmap'        => (int) $row['heatmap'],
+				'status'         => $status,
+				'retention_days' => $data_retention,
+			];
+		}, $rows );
 	}
 }

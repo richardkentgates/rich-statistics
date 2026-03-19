@@ -31,6 +31,8 @@
 		siteUrl     : '',        // computed from active site
 		credentials : '',        // computed: base64(user:app_pass)
 		period      : '30d',
+		dateFrom    : '',        // custom range start (YYYY-MM-DD)
+		dateTo      : '',        // custom range end   (YYYY-MM-DD)
 		view        : 'overview',
 		charts      : {},        // keyed by canvas id
 		cache       : {},        // keyed by endpoint+period
@@ -44,10 +46,12 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 		loadStoredSites();
 
-		if ( state.siteUrl && state.credentials ) {
+		var nonceAuth = !! ( window.RSA_CONFIG && window.RSA_CONFIG.nonce && state.siteUrl );
+		if ( ( state.siteUrl && state.credentials ) || nonceAuth ) {
 			renderSiteSwitcher();
 			showApp();
 			renderView( state.view );
+			syncUserSettings();
 		} else {
 			showLogin();
 		}
@@ -63,6 +67,9 @@
 		bindMenuToggle();
 		bindSignOut();
 		bindAddSite();
+		bindInstallPrompt();
+		bindDesktopDownload();
+		showIosInstallTip();
 	} );
 
 	// -----------------------------------------------------------------------
@@ -89,21 +96,35 @@
 
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
-		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
+		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
+		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
+		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
 
-		// When the app is served from a WP site (/wp-content/…), config.js sets
-		// autoSiteUrl.  Auto-select the matching stored site so the user lands
-		// directly on the right dashboard without any manual site selection.
+		// When the app is served from a WP site (/rs-app/), config.js sets
+		// autoSiteUrl and serve_app() injects a nonce.  Auto-register the
+		// current site with empty credentials — nonce authentication is used
+		// instead of Application Passwords for same-origin calls.
 		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
-		if ( autoUrl ) {
+		var autoNonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+		if ( autoUrl && autoNonce ) {
 			var normalised = autoUrl.replace( /\/$/, '' );
 			var match = state.sites.find( function ( s ) {
 				return s.siteUrl.replace( /\/$/, '' ) === normalised;
 			} );
-			if ( match ) {
-				state.activeId = match.id;
-				localStorage.setItem( 'rsa_active', match.id );
+			if ( ! match ) {
+				var autoSite = {
+					id         : uid(),
+					label      : ( window.RSA_CONFIG.autoLabel ) || hostname( autoUrl ),
+					siteUrl    : normalised,
+					appUrl     : window.RSA_CONFIG.appUrl || '',
+					credentials: '',
+				};
+				state.sites.unshift( autoSite );
+				localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+				match = autoSite;
 			}
+			state.activeId = match.id;
+			localStorage.setItem( 'rsa_active', match.id );
 		}
 
 		syncActiveState();
@@ -122,6 +143,17 @@
 	}
 
 	function setActiveSite( id ) {
+		var targetSite = state.sites.find( function ( s ) { return s.id === id; } );
+		// In the Tauri desktop app never navigate away to the hosted web app —
+		// version routing is handled locally by checkPluginVersion / tauriNavigateToVersion.
+		if ( ! isTauri() && targetSite && targetSite.appUrl ) {
+			var targetOrigin = '';
+			try { targetOrigin = new URL( targetSite.appUrl ).origin; } catch ( _ ) {}
+			if ( targetOrigin && targetOrigin !== window.location.origin ) {
+				window.location.href = targetSite.appUrl;
+				return;
+			}
+		}
 		state.activeId = id;
 		localStorage.setItem( 'rsa_active', id );
 		syncActiveState();
@@ -142,6 +174,7 @@
 		state.activeId = site.id;
 		localStorage.setItem( 'rsa_active', site.id );
 		syncActiveState();
+		pushSiteListToAllSites();
 		return site;
 	}
 
@@ -153,6 +186,7 @@
 			localStorage.setItem( 'rsa_active', state.activeId );
 		}
 		syncActiveState();
+		pushSiteListToAllSites();
 	}
 
 	function clearAllSites() {
@@ -173,10 +207,131 @@
 		try { return new URL( url ).hostname; } catch ( _ ) { return url; }
 	}
 
+	function normaliseUrl( url ) {
+		return ( url || '' ).replace( /\/$/, '' ).toLowerCase();
+	}
+
+	/**
+	 * Push the current site list (metadata only — no credentials) to every
+	 * authenticated site so each WP install acts as a sync node.
+	 */
+	function pushSiteListToAllSites() {
+		var sanitized = state.sites.map( function ( s ) {
+			return { id: s.id, label: s.label, siteUrl: s.siteUrl, appUrl: s.appUrl || '' };
+		} );
+		state.sites.forEach( function ( site ) {
+			var url     = site.siteUrl + '/wp-json/rsa/v1/user-settings';
+			var headers = Object.assign( { 'Content-Type': 'application/json', 'Accept': 'application/json' }, getAuthHeaders( url ) );
+			if ( ! headers['Authorization'] && ! headers['X-WP-Nonce'] ) return;
+			fetch( url, {
+				method : 'POST',
+				headers: headers,
+				body   : JSON.stringify( { sites: sanitized } ),
+			} ).catch( function () {} );
+		} );
+	}
+
+	/**
+	 * On app load, fetch the site list stored on the active WP site for this
+	 * user and reconcile it with the local list.  Sites that exist in the remote
+	 * list but not locally are offered as additions (they were added on another
+	 * device); sites that only exist locally are offered for sync.
+	 */
+	function syncUserSettings() {
+		if ( ! state.siteUrl ) return;
+		var url     = state.siteUrl + '/wp-json/rsa/v1/user-settings';
+		var headers = Object.assign( { 'Accept': 'application/json' }, getAuthHeaders( url ) );
+		if ( ! headers['Authorization'] && ! headers['X-WP-Nonce'] ) return;
+
+		fetch( url, { headers: headers } )
+		.then( function ( r ) { return r.ok ? r.json() : null; } )
+		.then( function ( json ) {
+			if ( ! json || ! json.data ) return;
+			var remoteSites = json.data.sites || [];
+
+			// Sites in remote but missing locally (added on another device)
+			var toAdd = remoteSites.filter( function ( r ) {
+				return ! state.sites.some( function ( l ) {
+					return normaliseUrl( l.siteUrl ) === normaliseUrl( r.siteUrl );
+				} );
+			} );
+
+			// Sites local but missing in remote (not yet pushed)
+			var toSync = state.sites.filter( function ( l ) {
+				return ! remoteSites.some( function ( r ) {
+					return normaliseUrl( r.siteUrl ) === normaliseUrl( l.siteUrl );
+				} );
+			} );
+
+			if ( toAdd.length ) {
+				var addNames = toAdd.map( function ( s ) { return s.label || s.siteUrl; } ).join( '\n\u2022 ' );
+				if ( confirm( 'The following sites are linked to your account but not yet on this device:\n\n\u2022 ' + addNames + '\n\nAdd them to this device?' ) ) {
+					toAdd.forEach( function ( r ) {
+						state.sites.push( {
+							id         : r.id || uid(),
+							label      : r.label || hostname( r.siteUrl ),
+							siteUrl    : r.siteUrl,
+							appUrl     : r.appUrl || '',
+							credentials: '',
+						} );
+					} );
+					localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					renderSiteSwitcher();
+				} else if ( confirm( 'Remove these sites from your account sync?' ) ) {
+					// User declined to add them — remove from remote by pushing current local list
+					pushSiteListToAllSites();
+				}
+			}
+
+			if ( toSync.length ) {
+				var syncNames = toSync.map( function ( s ) { return s.label || s.siteUrl; } ).join( '\n\u2022 ' );
+				if ( confirm( 'The following sites are on this device but not in your account sync:\n\n\u2022 ' + syncNames + '\n\nAdd them to sync?' ) ) {
+					pushSiteListToAllSites();
+				} else {
+					// User chose not to sync — offer to remove from local
+					var removeNames = toSync.filter( function ( s ) { return s.id !== state.activeId; } );
+					if ( removeNames.length && confirm( 'Remove them from this device instead?' ) ) {
+						removeNames.forEach( function ( s ) { removeSite( s.id ); } );
+						renderSiteSwitcher();
+					}
+				}
+			}
+
+			// No mismatches — push local to keep all nodes current
+			if ( ! toAdd.length && ! toSync.length ) {
+				pushSiteListToAllSites();
+			}
+		} )
+		.catch( function () {} );
+	}
+
 	// -----------------------------------------------------------------------
 	// API
 	// -----------------------------------------------------------------------
+
+	/**
+	 * Return the correct auth headers for a given absolute URL.
+	 * Same-origin auto-site uses the injected WP REST nonce (cookie auth +
+	 * nonce).
+	 * Other sites use Application Password Basic auth.
+	 */
+	function getAuthHeaders( url ) {
+		var nonce   = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+		var headers = { 'Accept': 'application/json' };
+		if ( nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
+			headers['X-WP-Nonce'] = nonce;
+		} else if ( state.credentials ) {
+			headers['Authorization'] = 'Basic ' + state.credentials;
+		}
+		return headers;
+	}
+
 	function apiGet( endpoint, params ) {
+		// Inject custom date range into every request when active
+		if ( params && state.period === 'custom' && state.dateFrom && state.dateTo ) {
+			params = Object.assign( {}, params, { date_from: state.dateFrom, date_to: state.dateTo } );
+		}
 		var url = state.siteUrl + '/wp-json/rsa/v1/' + endpoint;
 		var qs  = [];
 		if ( params ) {
@@ -193,12 +348,28 @@
 
 		return fetch( url, {
 			method : 'GET',
-			headers: {
-				'Authorization': 'Basic ' + state.credentials,
-				'Accept'       : 'application/json',
-			},
+			headers: getAuthHeaders( url ),
 		} ).then( function ( res ) {
 			if ( res.status === 401 || res.status === 403 ) {
+				// If using nonce auth and we get a 403, the nonce may have expired.
+				// Fetch a fresh nonce from WP and retry once.
+				var nonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
+				var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
+				if ( res.status === 403 && nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
+					return fetch( autoUrl + '/wp-json/', { headers: { 'Accept': 'application/json' } } )
+						.then( function ( r ) { return r.ok ? r.json() : null; } )
+						.then( function ( json ) {
+							if ( json && json.nonce ) {
+								window.RSA_CONFIG.nonce = json.nonce;
+							}
+							return fetch( url, { method: 'GET', headers: getAuthHeaders( url ) } );
+						} )
+						.then( function ( r2 ) {
+							if ( r2.status === 401 || r2.status === 403 ) throw new Error( 'auth' );
+							if ( ! r2.ok ) throw new Error( 'HTTP ' + r2.status );
+							return r2.json();
+						} );
+				}
 				throw new Error( 'auth' );
 			}
 			if ( ! res.ok ) {
@@ -250,6 +421,100 @@
 	 * requests so users online always get fresh files anyway; this handles the
 	 * edge case where cached assets would be served after an update.
 	 */
+	/**
+	 * Return the base URL of the versioned app folder on the external host, or
+	 * null if not running from an external versioned URL.
+	 *
+	 * External versioned URLs look like:
+	 *   https://statistics.richardkentgates.com/app/1.3.0/
+	 * The pattern is: <origin><anything>/app/<semver>/
+	 */
+	function getVersionedAppBase() {
+		var href = window.location.href;
+		var m = href.match( /^(https?:\/\/[^/]+(?:\/[^/]+)*\/app\/)([0-9]+\.[0-9]+\.[0-9]+)\// );
+		if ( m ) return { base: m[1], current: m[2] };
+		return null;
+	}
+
+	/**
+	 * Returns true when running inside the native Tauri desktop window.
+	 * Tauri 2 exposes __TAURI_INTERNALS__ on the window object.
+	 */
+	function isTauri() {
+		return !! ( window.__TAURI_INTERNALS__ || window.__TAURI__ );
+	}
+
+	/**
+	 * Returns the current semver extracted from the Tauri local URL, e.g.
+	 * http://tauri.localhost/1.4.1/  →  "1.4.1", or null if at root.
+	 */
+	function getTauriCurrentVersion() {
+		var m = window.location.pathname.match( /^\/([0-9]+\.[0-9]+\.[0-9]+)\// );
+		return m ? m[1] : null;
+	}
+
+	/**
+	 * Navigate to a bundled versioned folder in the Tauri local server.
+	 * Falls back to the latest bundled version if the requested one isn't found,
+	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 */
+	function tauriNavigateToVersion( pluginVersion ) {
+		var current = getTauriCurrentVersion();
+		if ( current === pluginVersion ) return; // Already on correct version
+
+		fetch( '/versions.json' )
+			.then( function ( r ) { return r.ok ? r.json() : []; } )
+			.then( function ( bundled ) {
+				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
+					// Exact match — navigate to that versioned folder
+					window.location.href = '/' + pluginVersion + '/';
+				} else {
+					// Plugin is newer than all bundled versions — show update banner
+					showDesktopUpdateBanner( pluginVersion, bundled );
+					// Navigate to the highest bundled version we do have
+					var latest = bundled.slice().sort( function ( a, b ) {
+						var pa = a.split( '.' ).map( Number );
+						var pb = b.split( '.' ).map( Number );
+						for ( var i = 0; i < 3; i++ ) {
+							if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
+						}
+						return 0;
+					} )[ 0 ];
+					if ( latest && current !== latest ) {
+						window.location.href = '/' + latest + '/';
+					}
+				}
+			} )
+			.catch( function () {} );
+	}
+
+	/**
+	 * Show a dismissible banner inside the Tauri window when the installed
+	 * plugin is newer than the desktop app bundle.
+	 */
+	function showDesktopUpdateBanner( pluginVersion, bundled ) {
+		if ( document.getElementById( 'rsa-desktop-update-banner' ) ) return;
+		var latest  = bundled.slice().sort( function ( a, b ) {
+			var pa = a.split( '.' ).map( Number );
+			var pb = b.split( '.' ).map( Number );
+			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
+			return 0;
+		} )[ 0 ] || '?';
+		var dlUrl = 'https://github.com/richardkentgates/rich-statistics/releases/latest';
+		var banner = document.createElement( 'div' );
+		banner.id = 'rsa-desktop-update-banner';
+		banner.innerHTML =
+			'<span class="rsa-desktop-update-icon">&#9888;</span>' +
+			'<span>Plugin v' + pluginVersion + ' requires a newer desktop app ' +
+			'(you have bundles up to v' + latest + '). Some features may not work until you update.</span>' +
+			'<a href="' + dlUrl + '" target="_blank" rel="noopener">Download update</a>' +
+			'<button id="rsa-desktop-update-dismiss" aria-label="Dismiss">&times;</button>';
+		document.body.insertBefore( banner, document.body.firstChild );
+		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
+			banner.remove();
+		} );
+	}
+
 	function checkPluginVersion() {
 		if ( ! state.siteUrl ) return;
 
@@ -263,10 +528,38 @@
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
+				// In Tauri: route to the matching bundled version folder.
+				// Never navigate away to the hosted web app.
+				if ( isTauri() ) {
+					tauriNavigateToVersion( info.version );
+					localStorage.setItem( versionKey, info.version );
+					return;
+				}
+
+				// Cache the app_url on the site object so setActiveSite can navigate to it
+				if ( info.app_url ) {
+					var activeSite = state.sites.find( function ( s ) { return s.id === state.activeId; } );
+					if ( activeSite && activeSite.appUrl !== info.app_url ) {
+						activeSite.appUrl = info.app_url;
+						localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					}
+				}
+
 				var stored = localStorage.getItem( versionKey );
 				if ( stored && stored !== info.version ) {
-					// Plugin was updated — clear SW caches so next render gets fresh files.
 					localStorage.setItem( versionKey, info.version );
+
+					// If running from an external versioned URL, redirect to the new
+					// version folder — no cache clearing needed because each version
+					// folder is immutably cached by the service worker.
+					var vab = getVersionedAppBase();
+					if ( vab && vab.current !== info.version ) {
+						window.location.href = vab.base + info.version + '/';
+						return;
+					}
+
+					// Running from /rs-app/ or the unversioned /app/ URL —
+					// clear SW caches and reload to pick up fresh plugin-served files.
 					if ( 'caches' in window ) {
 						caches.keys().then( function ( keys ) {
 							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
@@ -605,22 +898,138 @@
 	}
 
 	function bindPeriodSelect() {
-		document.getElementById( 'rsa-period-select' ).addEventListener( 'change', function () {
+		var periodSel     = document.getElementById( 'rsa-period-select' );
+		var customDates   = document.getElementById( 'rsa-custom-dates' );
+		var dateFromInput = document.getElementById( 'rsa-date-from' );
+		var dateToInput   = document.getElementById( 'rsa-date-to' );
+
+		function applyCustomDates() {
+			if ( dateFromInput && dateToInput && dateFromInput.value && dateToInput.value ) {
+				state.dateFrom = dateFromInput.value;
+				state.dateTo   = dateToInput.value;
+				localStorage.setItem( 'rsa_date_from', state.dateFrom );
+				localStorage.setItem( 'rsa_date_to',   state.dateTo );
+				state.cache = {};
+				renderView( state.view );
+			}
+		}
+
+		periodSel.addEventListener( 'change', function () {
 			state.period = this.value;
 			localStorage.setItem( 'rsa_period', state.period );
-			state.cache = {};  // invalidate on period change
-			renderView( state.view );
+			state.cache = {};
+			if ( customDates ) customDates.hidden = ( state.period !== 'custom' );
+			if ( state.period !== 'custom' ) {
+				state.dateFrom = '';
+				state.dateTo   = '';
+				renderView( state.view );
+			}
 		} );
+
+		if ( dateFromInput ) dateFromInput.addEventListener( 'change', applyCustomDates );
+		if ( dateToInput   ) dateToInput.addEventListener(   'change', applyCustomDates );
+
+		// Init on load
+		if ( customDates ) customDates.hidden = ( state.period !== 'custom' );
+		if ( state.period === 'custom' ) {
+			if ( dateFromInput && state.dateFrom ) dateFromInput.value = state.dateFrom;
+			if ( dateToInput   && state.dateTo   ) dateToInput.value   = state.dateTo;
+		}
 	}
 
 	function bindMenuToggle() {
-		document.getElementById( 'rsa-menu-toggle' ).addEventListener( 'click', function () {
+		document.getElementById( 'rsa-menu-toggle' ).addEventListener( 'click', function ( e ) {
+			e.stopPropagation(); // prevent click bubbling to rsa-main which would re-close the nav
 			toggleNav();
 		} );
 		// Close nav when clicking outside of it on mobile
 		document.getElementById( 'rsa-main' ).addEventListener( 'click', function () {
 			if ( state.navOpen ) closeNav();
 		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// iOS Safari install tip
+	// -----------------------------------------------------------------------
+	function showIosInstallTip() {
+		var ua         = navigator.userAgent || '';
+		var isIos      = /iphone|ipad|ipod/i.test( ua );
+		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|android/i.test( ua );
+		var standalone = 'standalone' in window.navigator && window.navigator.standalone;
+		if ( ! isIos || ! isSafari || standalone ) return;
+
+		var tip = document.createElement( 'div' );
+		tip.id = 'rsa-ios-tip';
+		tip.setAttribute( 'role', 'status' );
+		tip.innerHTML =
+			'<span>Tap <strong>Share</strong> ↗ then <strong>“Add to Home Screen”</strong> to install this app.</span>' +
+			'<button type="button" aria-label="Dismiss" id="rsa-ios-tip-close">×</button>';
+		document.body.appendChild( tip );
+		document.getElementById( 'rsa-ios-tip-close' ).addEventListener( 'click', function () {
+			tip.remove();
+			try { localStorage.setItem( 'rsa_ios_tip_dismissed', '1' ); } catch ( e ) {}
+		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// PWA install prompt
+	// -----------------------------------------------------------------------
+	var _installPrompt = null;
+
+	function bindInstallPrompt() {
+		function allInstallBtns() {
+			return Array.prototype.slice.call( document.querySelectorAll( '.rsa-install-btn' ) );
+		}
+
+		// Chrome / Edge / Samsung Internet fire this before showing the mini-infobar
+		window.addEventListener( 'beforeinstallprompt', function ( e ) {
+			e.preventDefault();
+			_installPrompt = e;
+			allInstallBtns().forEach( function ( btn ) { btn.hidden = false; } );
+		} );
+
+		// Hide buttons once installed
+		window.addEventListener( 'appinstalled', function () {
+			_installPrompt = null;
+			allInstallBtns().forEach( function ( btn ) { btn.hidden = true; } );
+		} );
+
+		// Click handler — works for any .rsa-install-btn present now or later
+		document.addEventListener( 'click', function ( e ) {
+			var btn = e.target.closest( '.rsa-install-btn' );
+			if ( ! btn || ! _installPrompt ) return;
+			_installPrompt.prompt();
+			_installPrompt.userChoice.then( function ( outcome ) {
+				_installPrompt = null;
+				if ( outcome.outcome === 'accepted' ) {
+					allInstallBtns().forEach( function ( b ) { b.hidden = true; } );
+				}
+			} );
+		} );
+	}
+
+	/**
+	 * Show a "Desktop App" download link in the nav footer when the user is on
+	 * Linux and has NOT already installed the Tauri desktop app.
+	 * ARM64 is detected from the User-Agent string; x86_64 is the default.
+	 */
+	function bindDesktopDownload() {
+		// Already running inside the desktop app — no need to offer a download.
+		if ( isTauri() ) return;
+
+		var ua = ( navigator.userAgent || '' ).toLowerCase();
+		var platform = ( navigator.platform || '' ).toLowerCase();
+		var isLinux = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
+		if ( ! isLinux ) return;
+
+		var arch = ( ua.indexOf( 'aarch64' ) !== -1 || ua.indexOf( 'arm64' ) !== -1 ) ? 'arm64' : 'amd64';
+		var base = 'https://rs-app.richardkentgates.com/desktop';
+		var url  = base + '/rich-statistics-linux-' + arch + '.deb';
+
+		var btn = document.getElementById( 'rsa-desktop-btn' );
+		if ( ! btn ) return;
+		btn.href   = url;
+		btn.hidden = false;
 	}
 
 	function toggleNav() {
@@ -798,7 +1207,11 @@
 
 			function optionsHtml( arr, current, placeholder ) {
 				return '<option value="">' + esc( placeholder ) + '</option>' +
-					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+					arr.map( function ( v ) {
+						var val = ( v && typeof v === 'object' ) ? v.value : v;
+						var lbl = ( v && typeof v === 'object' ) ? v.label : v;
+						return '<option value="' + esc( val ) + '"' + ( val === current ? ' selected' : '' ) + '>' + esc( lbl ) + '</option>';
+					} ).join( '' );
 			}
 
 			container.innerHTML =
@@ -944,7 +1357,11 @@
 
 			function optionsHtml( arr, current, placeholder ) {
 				return '<option value="">' + esc( placeholder ) + '</option>' +
-					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+					arr.map( function ( v ) {
+						var val = ( v && typeof v === 'object' ) ? v.value : v;
+						var lbl = ( v && typeof v === 'object' ) ? v.label : v;
+						return '<option value="' + esc( val ) + '"' + ( val === current ? ' selected' : '' ) + '>' + esc( lbl ) + '</option>';
+					} ).join( '' );
 			}
 
 			container.innerHTML =
@@ -1082,7 +1499,11 @@
 
 			function optionsHtml( arr, current, placeholder ) {
 				return '<option value="">' + esc( placeholder ) + '</option>' +
-					arr.map( function ( v ) { return '<option value="' + esc( v ) + '"' + ( v === current ? ' selected' : '' ) + '>' + esc( v ) + '</option>'; } ).join( '' );
+					arr.map( function ( v ) {
+						var val = ( v && typeof v === 'object' ) ? v.value : v;
+						var lbl = ( v && typeof v === 'object' ) ? v.label : v;
+						return '<option value="' + esc( val ) + '"' + ( val === current ? ' selected' : '' ) + '>' + esc( lbl ) + '</option>';
+					} ).join( '' );
 			}
 
 			container.innerHTML =
@@ -1121,9 +1542,13 @@
 		var filters    = { entry_source: '', focus_page: '', min_sessions: 1, steps: 4 };
 		var activeView = 'explorer'; // 'explorer' | 'journey'
 
-		// Fetch entry source options, then render filter bar
-		apiGet( 'user-flow/sources', { period: state.period } ).then( function ( sd ) {
-			var sources = sd.sources || [];
+		// Fetch entry source options AND page list together, then render filter bar
+		Promise.all( [
+			apiGet( 'user-flow/sources', { period: state.period } ),
+			apiGet( 'filter-options',    { period: state.period } ),
+		] ).then( function ( r ) {
+			var sources = ( r[0] && r[0].sources ) || [];
+			var pages   = ( r[1] && r[1].pages   ) || [];
 
 			function srcOptions( current ) {
 				return '<option value="">All Sources</option>' +
@@ -1132,12 +1557,19 @@
 					} ).join( '' );
 			}
 
+			function pageOptions( current ) {
+				return '<option value="">All Pages</option>' +
+					pages.map( function ( v ) {
+						var val = ( v && typeof v === 'object' ) ? v.value : v;
+						var lbl = ( v && typeof v === 'object' ) ? v.label : v;
+						return '<option value="' + esc( val ) + '"' + ( val === current ? ' selected' : '' ) + '>' + esc( lbl ) + '</option>';
+					} ).join( '' );
+			}
+
 			container.innerHTML =
 				'<div class="rsa-filter-bar">' +
 				( sources.length ? '<select id="rsa-uf-source">' + srcOptions( filters.entry_source ) + '</select>' : '' ) +
-				'<input type="text" id="rsa-uf-focus" placeholder="Focus page (optional)"' +
-					' style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--rsa-border);' +
-					'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
+				( pages.length   ? '<select id="rsa-uf-focus">'  + pageOptions( filters.focus_page   ) + '</select>' : '' ) +
 				'<label style="font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap">Min sessions' +
 					'<input type="number" id="rsa-uf-min" value="1" min="1" max="999"' +
 					' style="width:58px;padding:6px;border:1px solid var(--rsa-border);border-radius:var(--rsa-radius);' +
@@ -1161,13 +1593,13 @@
 				var minEl   = document.getElementById( 'rsa-uf-min' );
 				var stepsEl = document.getElementById( 'rsa-uf-steps' );
 				filters.entry_source = srcEl   ? srcEl.value                            : '';
-				filters.focus_page   = focusEl ? focusEl.value.trim()                   : '';
+				filters.focus_page   = focusEl ? focusEl.value                          : '';
 				filters.min_sessions = minEl   ? Math.max( 1, parseInt( minEl.value, 10 ) || 1 ) : 1;
 				filters.steps        = stepsEl ? parseInt( stepsEl.value, 10 ) || 4     : 4;
 				loadPathFlow();
 			} );
 		} ).catch( function () {
-			// Sources endpoint failed — show content area without filter bar
+			// Endpoints failed — show content area without filter bar
 			container.innerHTML = '<div id="rsa-uf-content"></div>';
 			setLoading( false );
 			loadPathFlow();
@@ -1511,202 +1943,238 @@
 			'<div class="rsa-chart-card">' +
 				'<h3>Click Heatmap</h3>' +
 				'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-					'<label for="rsa-hm-page" style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
-					'<input type="text" id="rsa-hm-page" placeholder="/" ' +
-						'style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
+					'<label style="font-size:13px;font-weight:600;flex-shrink:0">Page:</label>' +
+					'<select id="rsa-hm-page" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--rsa-border);' +
 						'border-radius:var(--rsa-radius);font-size:13px;color:var(--rsa-text);background:var(--rsa-surface)">' +
-					'<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-hm-load" style="flex-shrink:0">Reload</button>' +
+						'<option value="/">Loading\u2026</option>' +
+					'</select>' +
 				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:8px">Enter a page path (e.g. <code>/about/</code>). Click data is aggregated nightly for the selected period.</p>' +
 			'</div>' +
 			'<div id="rsa-hm-results"></div>';
 
-		function loadHeatmap() {
-			var pagePath = ( document.getElementById( 'rsa-hm-page' ).value || '/' ).trim() || '/';
-			var results  = document.getElementById( 'rsa-hm-results' );
-			results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+		// Map normalised weight [0-1] to an RGBA colour: blue → cyan → green → yellow → red
+		function heatColour( t, alpha ) {
+			var seg, r, g, b;
+			if ( t < 0.25 ) {
+				seg = t / 0.25;
+				r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
+			} else if ( t < 0.5 ) {
+				seg = ( t - 0.25 ) / 0.25;
+				r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
+			} else if ( t < 0.75 ) {
+				seg = ( t - 0.5 ) / 0.25;
+				r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
+			} else {
+				seg = ( t - 0.75 ) / 0.25;
+				r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
+			}
+			return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+		}
 
-			apiGet( 'heatmap', { period: state.period, page: pagePath } ).then( function ( data ) {
-				if ( ! data || ! data.length ) {
-					results.innerHTML =
-						'<div class="rsa-chart-card" style="margin-top:16px">' +
-							'<p class="rsa-empty">No heatmap data for <code>' + esc( pagePath ) + '</code> in this period.<br>' +
-							'Data is aggregated nightly from click events.</p>' +
-						'</div>';
-					return;
-				}
+		// Draw the heatmap on a dark canvas with depth guides
+		function drawCanvas( canvas, heatData ) {
+			var W   = canvas.width;
+			var H   = canvas.height;
+			var ctx = canvas.getContext( '2d' );
+			if ( ! ctx ) return;
 
-				// Size canvas: 800 wide x 1120 tall (A4-like page silhouette)
-				var W = 800, H = 1120;
+			// Dark background
+			ctx.fillStyle = '#111c2b';
+			ctx.fillRect( 0, 0, W, H );
 
-				results.innerHTML =
-					'<div class="rsa-chart-card" style="margin-top:16px">' +
-						'<h3>Click Heatmap \u2014 ' + esc( pagePath ) + '</h3>' +
-						'<p class="rsa-field-hint" style="margin-bottom:12px">' + fmt( data.length ) + ' click point' + ( data.length !== 1 ? 's' : '' ) + ' \u2014 warmer colours indicate more clicks.</p>' +
-						'<div style="position:relative;width:100%">' +
-							'<canvas id="c-heatmap" width="' + W + '" height="' + H + '" style="display:block;width:100%;border-radius:var(--rsa-radius)"></canvas>' +
-						'</div>' +
-						'<div id="rsa-hm-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--rsa-muted)">' +
-							'<span>Low</span>' +
-							'<div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(to right,#4a90b8,#90c060,#f5c518,#e8532a)"></div>' +
-							'<span>High</span>' +
-						'</div>' +
-					'</div>';
+			// Subtle horizontal bands at 25% scroll-depth intervals
+			ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+			ctx.lineWidth = 1;
+			[ 0.25, 0.5, 0.75 ].forEach( function ( pct ) {
+				var y = Math.round( pct * H ) + 0.5;
+				ctx.beginPath(); ctx.moveTo( 0, y ); ctx.lineTo( W, y ); ctx.stroke();
+			} );
 
-				var canvas = document.getElementById( 'c-heatmap' );
-				if ( ! canvas ) return;
+			// Fold line at ~30% — typical above-the-fold boundary
+			ctx.save();
+			ctx.strokeStyle = 'rgba(74,144,184,0.4)';
+			ctx.lineWidth = 1;
+			ctx.setLineDash( [ 6, 4 ] );
+			var foldY = Math.round( 0.3 * H ) + 0.5;
+			ctx.beginPath(); ctx.moveTo( 0, foldY ); ctx.lineTo( W, foldY ); ctx.stroke();
+			ctx.restore();
+			ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+			ctx.fillStyle = 'rgba(74,144,184,0.65)';
+			ctx.fillText( 'above fold', 6, foldY - 4 );
 
-				// Ensure canvas CSS height stays proportional after layout
-				( function scaleCanvas() {
-					var displayW = canvas.offsetWidth;
-					if ( displayW > 0 ) {
-						canvas.style.height = Math.round( displayW * H / W ) + 'px';
-					} else {
-						requestAnimationFrame( scaleCanvas );
-					}
-				}() );
+			// Y-axis depth labels (right edge)
+			ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+			ctx.fillStyle = 'rgba(255,255,255,0.22)';
+			ctx.textAlign = 'right';
+			[ [ 0, '0%' ], [ 0.25, '25%' ], [ 0.5, '50%' ], [ 0.75, '75%' ], [ 1, '100%' ] ].forEach( function ( pair ) {
+				var yPos = Math.round( pair[0] * H );
+				ctx.fillText( pair[1], W - 4, Math.max( 11, yPos + ( pair[0] === 1 ? -3 : 11 ) ) );
+			} );
+			ctx.textAlign = 'left';
 
-				var ctx = canvas.getContext( '2d' );
-				if ( ! ctx ) return;
-
-				// ── Page silhouette ──────────────────────────────────────
-				// White page body
-				ctx.fillStyle = '#ffffff';
-				ctx.fillRect( 0, 0, W, H );
-
-				// Top navigation bar (dark)
-				ctx.fillStyle = '#2c3e50';
-				ctx.fillRect( 0, 0, W, 60 );
-
-				// Nav logo placeholder
-				ctx.fillStyle = '#4a90b8';
-				ctx.fillRect( 20, 16, 100, 28 );
-
-				// Nav links (right side)
-				ctx.fillStyle = 'rgba(255,255,255,0.5)';
-				[ W - 220, W - 160, W - 100, W - 48 ].forEach( function ( x ) {
-					ctx.fillRect( x, 22, 44, 16 );
-				} );
-
-				// Hero section background
-				ctx.fillStyle = '#e8f0f7';
-				ctx.fillRect( 0, 60, W, 180 );
-
-				// Hero heading
-				ctx.fillStyle = '#bbc8d4';
-				ctx.fillRect( 60, 96, W - 280, 28 );
-				ctx.fillRect( 60, 134, W - 360, 20 );
-
-				// Hero CTA button
-				ctx.fillStyle = '#4a90b8';
-				ctx.beginPath();
-				ctx.roundRect( 60, 168, 140, 40, 6 );
-				ctx.fill();
-
-				// Content area — two columns
-				var col1W = Math.round( W * 0.62 );
-				var col2X = col1W + 24;
-				var col2W = W - col2X - 24;
-				var yBase = 272;
-
-				// Section heading
-				ctx.fillStyle = '#cdd5dc';
-				ctx.fillRect( 24, yBase, 220, 22 );
-				yBase += 40;
-
-				// Text paragraph lines (left column)
-				ctx.fillStyle = '#e4e9ee';
-				for ( var li = 0; li < 5; li++ ) {
-					ctx.fillRect( 24, yBase + li * 22, ( li === 4 ? col1W * 0.6 : col1W - 24 ), 14 );
-				}
-				yBase += 5 * 22 + 24;
-
-				// Image placeholder (left column)
-				ctx.fillStyle = '#dde4ec';
-				ctx.fillRect( 24, yBase, col1W - 24, 180 );
-				// Image icon
-				ctx.fillStyle = '#c0cbd6';
-				ctx.fillRect( 24 + ( col1W - 24 ) / 2 - 24, yBase + 75, 48, 30 );
-				yBase += 210;
-
-				// Another paragraph block
-				ctx.fillStyle = '#e4e9ee';
-				for ( var li2 = 0; li2 < 4; li2++ ) {
-					ctx.fillRect( 24, yBase + li2 * 22, ( li2 === 3 ? col1W * 0.4 : col1W - 24 ), 14 );
-				}
-
-				// Right sidebar
-				var sbY = 272 + 40;
-				ctx.fillStyle = '#f2f5f8';
-				ctx.beginPath();
-				if ( ctx.roundRect ) { ctx.roundRect( col2X, sbY, col2W, 160, 8 ); } else { ctx.rect( col2X, sbY, col2W, 160 ); }
-				ctx.fill();
-				ctx.fillStyle = '#dde4ec';
-				ctx.fillRect( col2X + 16, sbY + 20, col2W - 32, 14 );
-				ctx.fillRect( col2X + 16, sbY + 44, col2W - 32, 10 );
-				ctx.fillRect( col2X + 16, sbY + 62, col2W - 64, 10 );
-				ctx.fillStyle = '#4a90b8';
-				ctx.beginPath();
-				if ( ctx.roundRect ) { ctx.roundRect( col2X + 16, sbY + 88, col2W - 32, 34, 6 ); } else { ctx.rect( col2X + 16, sbY + 88, col2W - 32, 34 ); }
-				ctx.fill();
-
-				// Footer
-				ctx.fillStyle = '#2c3e50';
-				ctx.fillRect( 0, H - 80, W, 80 );
-				ctx.fillStyle = 'rgba(255,255,255,0.2)';
-				[ 24, W / 4, W / 2, W * 0.75 ].forEach( function ( x ) {
-					ctx.fillRect( x, H - 60, 80, 10 );
-					ctx.fillRect( x, H - 44, 60, 8 );
-					ctx.fillRect( x, H - 30, 70, 8 );
-				} );
-				// ── End page silhouette ────────────────────────────────
-
-				var maxW = Math.max.apply( null, data.map( function ( p ) { return p.weight || 1; } ) );
-
-				// Helper: map normalised weight [0-1] to an RGBA colour
-				// blue → green → yellow → orange-red
-				function heatColour( t, alpha ) {
-					var seg, r, g, b;
-					if ( t < 0.25 ) {
-						// blue → cyan
-						seg = t / 0.25;
-						r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
-					} else if ( t < 0.5 ) {
-						// cyan → yellow-green
-						seg = ( t - 0.25 ) / 0.25;
-						r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
-					} else if ( t < 0.75 ) {
-						// yellow-green → orange
-						seg = ( t - 0.5 ) / 0.25;
-						r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
-					} else {
-						// orange → red
-						seg = ( t - 0.75 ) / 0.25;
-						r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
-					}
-					return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-				}
-
-				// Draw each point as a radial-gradient "blob"
-				// p.x and p.y are percentages (0-100) from the API
-				data.forEach( function ( p ) {
-					var t    = ( p.weight || 1 ) / maxW;           // normalised 0-1
-					var px   = ( p.x / 100 ) * W;                  // convert % to canvas pixels
+			// Heat dots
+			if ( heatData.length ) {
+				var maxW = Math.max.apply( null, heatData.map( function ( p ) { return p.weight || 1; } ) );
+				heatData.forEach( function ( p ) {
+					var t    = ( p.weight || 1 ) / maxW;
+					var px   = ( p.x / 100 ) * W;
 					var py   = ( p.y / 100 ) * H;
-					var brad = Math.max( 24, Math.round( t * 80 ) );
-
+					var brad = Math.max( 18, Math.round( t * 64 ) );
 					if ( isNaN( px ) || isNaN( py ) ) return;
-
 					var grad = ctx.createRadialGradient( px, py, 0, px, py, brad );
-					grad.addColorStop( 0,   heatColour( t, 0.85 ) );
-					grad.addColorStop( 0.5, heatColour( t, 0.4 ) );
+					grad.addColorStop( 0,   heatColour( t, 0.92 ) );
+					grad.addColorStop( 0.5, heatColour( t, 0.45 ) );
 					grad.addColorStop( 1,   heatColour( t, 0 ) );
-
 					ctx.fillStyle = grad;
 					ctx.beginPath();
 					ctx.arc( px, py, brad, 0, Math.PI * 2 );
 					ctx.fill();
 				} );
+			}
+		}
+
+		// Build tooltip HTML for a hovered hotspot dot
+		function buildTip( dot ) {
+			var head = '<div class="rsa-hm-tip-head">' +
+				fmt( dot.weight ) + ' click' + ( dot.weight !== 1 ? 's' : '' ) +
+				' · (' + Math.round( dot.x ) + '%, ' + Math.round( dot.y ) + '%)' +
+			'</div>';
+			if ( ! dot.elements || ! dot.elements.length ) return head;
+			var rows = dot.elements.map( function ( e ) {
+				var label = ( e.text || '' ).trim();
+				if ( ! label ) label = '\u2014';
+				if ( label.length > 34 ) label = label.slice( 0, 34 ) + '\u2026';
+				var tag = e.tag ? ' <span class="rsa-hm-tag">&lt;' + esc( e.tag ) + '&gt;</span>' : '';
+				return '<tr><td>' + esc( label ) + tag + '</td><td>' + fmt( e.count ) + '</td></tr>';
+			} ).join( '' );
+			return head + '<table class="rsa-hm-tip-tbl"><tbody>' + rows + '</tbody></table>';
+		}
+
+		// Bind canvas mousemove → nearest dot → tooltip
+		function bindHotspotTooltip( canvas, data ) {
+			var hasDotData = data.some( function ( d ) { return d.elements && d.elements.length; } );
+			var tipEl = document.getElementById( 'rsa-hm-tip' );
+			if ( ! tipEl ) return;
+			// Always show weight even if no element breakdown
+			canvas.style.cursor = 'crosshair';
+			canvas.addEventListener( 'mousemove', function ( ev ) {
+				var rect     = canvas.getBoundingClientRect();
+				var mx       = ( ( ev.clientX - rect.left ) / rect.width  ) * 100;
+				var my       = ( ( ev.clientY - rect.top  ) / rect.height ) * 100;
+				// Wrap relative positioning for tooltip placement
+				var wrapRect = canvas.parentElement.getBoundingClientRect();
+
+				var best = null, bestDist = Infinity;
+				data.forEach( function ( d ) {
+					var dx = d.x - mx;
+					// Compensate for aspect ratio so hit test feels circular on screen
+					var dy = ( d.y - my ) * ( 540 / 756 );
+					var dist = Math.sqrt( dx * dx + dy * dy );
+					if ( dist < bestDist ) { bestDist = dist; best = d; }
+				} );
+
+				if ( best && bestDist < 5.5 ) {
+					tipEl.innerHTML = buildTip( best );
+					var tipW = 224;
+					var tipH = tipEl.offsetHeight || 100;
+					var tx   = ev.clientX - wrapRect.left + 6;
+					var ty   = ev.clientY - wrapRect.top  + 6;
+					if ( tx + tipW > wrapRect.width  - 4 ) { tx = ev.clientX - wrapRect.left - tipW - 6; }
+					if ( ty + tipH > wrapRect.height - 4 ) { ty = ev.clientY - wrapRect.top  - tipH - 6; }
+					tipEl.style.left = Math.max( 2, tx ) + 'px';
+					tipEl.style.top  = Math.max( 2, ty ) + 'px';
+					tipEl.hidden = false;
+				} else {
+					tipEl.hidden = true;
+				}
+			} );
+			canvas.addEventListener( 'mouseleave', function () { tipEl.hidden = true; } );
+		}
+
+		// Build the click-element table from /clicks data
+		function clickTable( clicks ) {
+			if ( ! clicks || ! clicks.length ) {
+				return '<p class="rsa-empty" style="margin:0;font-size:13px">No element click data for this page.</p>';
+			}
+			var maxCount = clicks[0].count || 1;
+			var rows = clicks.slice( 0, 25 ).map( function ( c ) {
+				var label = ( c.element_text || '' ).trim();
+				if ( ! label && c.href_value ) label = c.href_value;
+				if ( ! label ) label = '\u2014';
+				if ( label.length > 42 ) label = label.slice( 0, 42 ) + '\u2026';
+				var tag   = c.element_tag ? '<span class="rsa-hm-tag">&lt;' + esc( c.element_tag ) + '&gt;</span>' : '';
+				var bar   = Math.round( ( ( c.count || 0 ) / maxCount ) * 100 );
+				return '<tr>' +
+					'<td class="rsa-hm-label">' + esc( label ) + tag + '</td>' +
+					'<td class="rsa-hm-bar-cell">' +
+						'<div class="rsa-hm-bar-bg"><div class="rsa-hm-bar-fill" style="width:' + bar + '%"></div></div>' +
+					'</td>' +
+					'<td class="rsa-hm-count">' + fmt( c.count || 0 ) + '</td>' +
+				'</tr>';
+			} ).join( '' );
+			return '<table class="rsa-hm-table">' +
+				'<thead><tr>' +
+					'<th>Element</th>' +
+					'<th></th>' +
+					'<th>Clicks</th>' +
+				'</tr></thead>' +
+				'<tbody>' + rows + '</tbody>' +
+			'</table>';
+		}
+
+		function loadHeatmap() {
+			var sel      = document.getElementById( 'rsa-hm-page' );
+			var pagePath = sel ? ( sel.value || '/' ) : '/';
+			var results  = document.getElementById( 'rsa-hm-results' );
+			results.innerHTML = '<p class="rsa-field-hint" style="padding:16px 0">Loading\u2026</p>';
+
+			Promise.all( [
+				apiGet( 'heatmap', { period: state.period, page: pagePath } ),
+				apiGet( 'clicks',  { period: state.period, page: pagePath } ),
+			] ).then( function ( responses ) {
+				var heatData = responses[0] || [];
+				var clicks   = ( ( responses[1] || {} ).clicks ) || [];
+
+				if ( ! heatData.length && ! clicks.length ) {
+					results.innerHTML =
+						'<div class="rsa-chart-card" style="margin-top:16px">' +
+							'<p class="rsa-empty">No click data for <code>' + esc( pagePath ) + '</code> in this period.</p>' +
+						'</div>';
+					return;
+				}
+
+				var totalClicks = heatData.reduce( function ( s, p ) { return s + ( p.weight || 0 ); }, 0 );
+				var legend =
+					'<div class="rsa-hm-legend">' +
+						'<span>Low</span>' +
+						'<div class="rsa-hm-legend-bar"></div>' +
+						'<span>High</span>' +
+					'</div>';
+
+				results.innerHTML =
+					'<div class="rsa-chart-card rsa-hm-card" style="margin-top:16px">' +
+						'<div class="rsa-hm-head">' +
+							'<span class="rsa-hm-path">' + esc( pagePath ) + '</span>' +
+							'<span class="rsa-hm-meta">' + fmt( totalClicks ) + ' interaction' + ( totalClicks !== 1 ? 's' : '' ) + '</span>' +
+						'</div>' +
+						'<div class="rsa-hm-body">' +
+							'<div class="rsa-hm-canvas-wrap">' +
+								'<canvas id="c-heatmap" width="540" height="756" style="display:block;width:100%;border-radius:var(--rsa-radius)"></canvas>' +
+								'<div id="rsa-hm-tip" class="rsa-hm-tip" hidden></div>' +
+								legend +
+							'</div>' +
+							'<div class="rsa-hm-table-wrap">' +
+								'<p class="rsa-hm-table-title">Top Clicked Elements</p>' +
+								clickTable( clicks ) +
+							'</div>' +
+						'</div>' +
+					'</div>';
+
+				var canvas = document.getElementById( 'c-heatmap' );
+				if ( canvas ) {
+					drawCanvas( canvas, heatData );
+					bindHotspotTooltip( canvas, heatData );
+				}
 
 			} ).catch( function () {
 				results.innerHTML =
@@ -1716,12 +2184,30 @@
 			} );
 		}
 
-		setLoading( false );
-		document.getElementById( 'rsa-hm-load' ).addEventListener( 'click', function () {
+		// Populate page dropdown from filter-options (heatmap_pages = pages with actual click data), then auto-load
+		apiGet( 'filter-options', { period: state.period } ).then( function ( opts ) {
+			var pages = ( opts && opts.heatmap_pages && opts.heatmap_pages.length ) ? opts.heatmap_pages
+				: ( opts && opts.pages && opts.pages.length ) ? opts.pages : [ '/' ];
+			var sel   = document.getElementById( 'rsa-hm-page' );
+			if ( sel ) {
+				sel.innerHTML = pages.map( function ( p ) {
+					var val = ( p && typeof p === 'object' ) ? p.value : p;
+					var lbl = ( p && typeof p === 'object' ) ? p.label : p;
+					return '<option value="' + esc( val ) + '">' + esc( lbl ) + '</option>';
+				} ).join( '' );
+				sel.addEventListener( 'change', loadHeatmap );
+			}
+			setLoading( false );
+			loadHeatmap();
+		} ).catch( function () {
+			var sel = document.getElementById( 'rsa-hm-page' );
+			if ( sel ) {
+				sel.innerHTML = '<option value="/">/</option>';
+				sel.addEventListener( 'change', loadHeatmap );
+			}
+			setLoading( false );
 			loadHeatmap();
 		} );
-		// Auto-load the root path on open
-		loadHeatmap();
 	}
 
 	// -----------------------------------------------------------------------
@@ -1821,7 +2307,7 @@
 				if ( csvBtn )  csvBtn.disabled  = false;
 				if ( jsonBtn ) jsonBtn.disabled = false;
 			} ).catch( function ( err ) {
-				if ( err.message === 'auth' ) { clearAllSites(); showLogin(); return; }
+				if ( err.message === 'auth' ) { showLogin(); return; }
 				status.textContent = 'Export failed. Please try again.';
 				if ( csvBtn )  csvBtn.disabled  = false;
 				if ( jsonBtn ) jsonBtn.disabled = false;
@@ -1838,7 +2324,9 @@
 	function handleApiError( err, container ) {
 		setLoading( false );
 		if ( err.message === 'auth' ) {
-			clearAllSites();
+			// Show the login screen so the user can re-authenticate, but keep
+			// saved sites intact — a stale nonce or transient 401 must not
+			// permanently destroy the stored site list.
 			showLogin();
 			return;
 		}

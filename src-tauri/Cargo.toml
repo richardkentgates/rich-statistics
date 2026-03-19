@@ -1,0 +1,18 @@
+[package]
+name = "rich-statistics"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+
+[profile.release]
+opt-level   = "s"
+strip       = true
