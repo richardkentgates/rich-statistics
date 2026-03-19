@@ -31,7 +31,7 @@ if ( function_exists( 'rs_fs' ) ) {
 	define( 'RSA_ASSETS_URL',  RSA_URL . 'assets/' );
 	define( 'RSA_MIN_WP',      '6.0' );
 	define( 'RSA_MIN_PHP',     '8.0' );
-	define( 'RSA_APP_URL',     'https://rs-app.richardkentgates.com/' . RSA_VERSION . '/' );
+define( 'RSA_APP_URL',     'https://rs-app.richardkentgates.com/app/' );
 
 	/**
 	 * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
