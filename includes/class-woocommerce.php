@@ -8,6 +8,10 @@ defined( 'ABSPATH' ) || exit;
 class RSA_Woocommerce {
 
 	public static function init(): void {
+		if ( ! get_option( 'rsa_woocommerce_enabled', 1 ) ) {
+			return;
+		}
+
 		// Product page view — fires after WC product is set up on single-product pages
 		add_action( 'woocommerce_before_single_product', [ __CLASS__, 'track_product_view' ] );
 
@@ -105,32 +109,43 @@ class RSA_Woocommerce {
 	}
 
 	// ----------------------------------------------------------------
-	// Internal: store a WC event in the rsa_events-compatible structure
-	// We reuse the events table, storing context as the page path and
-	// the event type as the referrer_domain field is not relevant here,
-	// so we log it as a dedicated click record instead.
+	// Internal: insert a WooCommerce event into rsa_wc_events
 	// ----------------------------------------------------------------
 
 	private static function insert_event( string $event_type, array $meta ): void {
 		global $wpdb;
 
-		$page = isset( $_SERVER['REQUEST_URI'] )
-			? '/' . ltrim( wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), PHP_URL_PATH ), '/' )
-			: '/';
+		$data    = [
+			'session_id' => self::session_id(),
+			'event_type' => $event_type,
+			'created_at' => current_time( 'mysql' ),
+		];
+		$formats = [ '%s', '%s', '%s' ];
 
-		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			RSA_DB::clicks_table(),
-			[
-				'session_id'    => self::session_id(),
-				'page'          => substr( $page, 0, 512 ),
-				'element_tag'   => $event_type,
-				'element_text'  => substr( wp_json_encode( $meta ), 0, 255 ),
-				'href_protocol' => $event_type,
-				'matched_rule'  => 'woocommerce',
-				'created_at'    => current_time( 'mysql' ),
-			],
-			[ '%s', '%s', '%s', '%s', '%s', '%s', '%s' ]
-		);
+		if ( isset( $meta['product_id'] ) ) {
+			$data['product_id'] = (int) $meta['product_id'];
+			$formats[]          = '%d';
+		}
+		if ( isset( $meta['product_name'] ) ) {
+			$data['product_name'] = substr( $meta['product_name'], 0, 255 );
+			$formats[]            = '%s';
+		}
+		if ( isset( $meta['product_sku'] ) ) {
+			$data['product_sku'] = substr( $meta['product_sku'], 0, 100 );
+			$formats[]           = '%s';
+		}
+		if ( isset( $meta['quantity'] ) ) {
+			$data['quantity'] = (int) $meta['quantity'];
+			$formats[]        = '%d';
+		}
+		if ( isset( $meta['total'] ) ) {
+			$data['order_total']    = round( (float) $meta['total'], 2 );
+			$data['order_currency'] = isset( $meta['currency'] ) ? substr( $meta['currency'], 0, 8 ) : '';
+			$formats[]              = '%f';
+			$formats[]              = '%s';
+		}
+
+		$wpdb->insert( RSA_DB::wc_events_table(), $data, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- commerce event insert
 	}
 
 	/**

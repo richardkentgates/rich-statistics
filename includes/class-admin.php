@@ -220,6 +220,9 @@ class RSA_Admin {
 			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
+		if ( class_exists( 'WooCommerce' ) && get_option( 'rsa_woocommerce_enabled', 1 ) ) {
+			$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
+		}
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
 			: '';
@@ -361,6 +364,9 @@ class RSA_Admin {
 			$page = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) );
 			return [ 'view' => 'click-map', 'data' => RSA_Analytics::get_click_map( $period, $page ), 'period' => $period ];
 		}
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-woocommerce' ) ) {
+			return [ 'view' => 'woocommerce', 'data' => RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] ), 'period' => $period ];
+		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		// Default: overview
@@ -383,6 +389,7 @@ class RSA_Admin {
 	public static function page_preferences():      void { self::render( 'preferences' ); }
 	public static function page_maintenance():       void { self::render( 'maintenance' ); }
 	public static function page_export():           void { self::render( 'export' ); }
+	public static function page_woocommerce():      void { self::render( 'woocommerce' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
 	private static function render( string $template ): void {
@@ -527,6 +534,7 @@ class RSA_Admin {
 			'rsa_email_digest_enabled'     => 'absint',
 			'rsa_email_digest_frequency'   => 'sanitize_text_field',
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
+			'rsa_woocommerce_enabled'      => 'absint',
 		];
 
 		foreach ( $fields as $key => $sanitizer ) {

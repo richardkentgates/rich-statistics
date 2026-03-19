@@ -979,6 +979,102 @@ class RSA_Analytics {
 	// Maintenance: all tracked paths with live / deleted status
 	// ----------------------------------------------------------------
 
+	// ----------------------------------------------------------------
+	// WooCommerce: product views, add-to-cart events, orders, revenue
+	// ----------------------------------------------------------------
+
+	public static function get_woocommerce( string $period = '30d', array $filters = [] ): array {
+		global $wpdb;
+
+		$empty = [
+			'top_products_viewed' => [],
+			'top_products_cart'   => [],
+			'orders_count'        => 0,
+			'revenue_total'       => 0.0,
+			'revenue_by_day'      => [],
+			'funnel'              => [ 'views' => 0, 'cart' => 0, 'orders' => 0 ],
+		];
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return $empty;
+		}
+
+		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
+		$table = RSA_DB::wc_events_table();
+
+		// Funnel counts
+		$funnel_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT event_type, COUNT(*) AS cnt FROM `{$table}` WHERE created_at BETWEEN %s AND %s GROUP BY event_type",
+				$range['start'], $range['end']
+			),
+			ARRAY_A
+		);
+
+		$funnel = [ 'views' => 0, 'cart' => 0, 'orders' => 0 ];
+		foreach ( (array) $funnel_rows as $row ) {
+			if ( $row['event_type'] === 'wc_product_view' )   { $funnel['views']  = (int) $row['cnt']; }
+			if ( $row['event_type'] === 'wc_add_to_cart' )    { $funnel['cart']   = (int) $row['cnt']; }
+			if ( $row['event_type'] === 'wc_order_complete' ) { $funnel['orders'] = (int) $row['cnt']; }
+		}
+
+		// Top products by views
+		$top_viewed = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT product_id, product_name, COUNT(*) AS views
+				 FROM `{$table}` WHERE event_type = 'wc_product_view' AND created_at BETWEEN %s AND %s
+				 GROUP BY product_id, product_name ORDER BY views DESC LIMIT 10",
+				$range['start'], $range['end']
+			),
+			ARRAY_A
+		);
+
+		// Top products by add-to-cart
+		$top_cart = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT product_id, product_name, SUM(quantity) AS total_qty, COUNT(*) AS events
+				 FROM `{$table}` WHERE event_type = 'wc_add_to_cart' AND created_at BETWEEN %s AND %s
+				 GROUP BY product_id, product_name ORDER BY events DESC LIMIT 10",
+				$range['start'], $range['end']
+			),
+			ARRAY_A
+		);
+
+		// Order count and total revenue
+		$orders_row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT COUNT(*) AS cnt, SUM(order_total) AS revenue
+				 FROM `{$table}` WHERE event_type = 'wc_order_complete' AND created_at BETWEEN %s AND %s",
+				$range['start'], $range['end']
+			),
+			ARRAY_A
+		);
+
+		// Revenue by day for chart
+		$revenue_days = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS day, SUM(order_total) AS revenue
+				 FROM `{$table}` WHERE event_type = 'wc_order_complete' AND created_at BETWEEN %s AND %s
+				 GROUP BY day ORDER BY day ASC",
+				$range['start'], $range['end']
+			),
+			ARRAY_A
+		);
+
+		return [
+			'top_products_viewed' => (array) $top_viewed,
+			'top_products_cart'   => (array) $top_cart,
+			'orders_count'        => (int) ( $orders_row['cnt'] ?? 0 ),
+			'revenue_total'       => round( (float) ( $orders_row['revenue'] ?? 0 ), 2 ),
+			'revenue_by_day'      => (array) $revenue_days,
+			'funnel'              => $funnel,
+		];
+	}
+
+	// ----------------------------------------------------------------
+	// Maintenance: all tracked paths with live / deleted status
+	// ----------------------------------------------------------------
+
 	public static function get_all_tracked_pages(): array {
 		global $wpdb;
 
