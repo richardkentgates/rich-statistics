@@ -3,20 +3,26 @@
 > Privacy-first analytics for WordPress publishers — no PII, no consent banners required.
 
 <!-- Status -->
-[![Version](https://img.shields.io/badge/version-1.4.2-brightgreen)](CHANGELOG.md)
-[![Build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
+[![CI](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 
 <!-- Stack -->
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org)
+[![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)](https://dev.mysql.com)
 [![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](src-tauri/)
+[![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Top language](https://img.shields.io/github/languages/top/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
 
 <!-- Platform -->
-[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://rs-app.richardkentgates.com)
-[![Linux amd64](https://img.shields.io/badge/Linux-amd64-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb)
-[![Linux arm64](https://img.shields.io/badge/Linux-arm64-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb)
+[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
+[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb)
+[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb)
+
+<!-- Activity -->
+[![Last commit](https://img.shields.io/github/last-commit/richardkentgates/rich-statistics/main)](https://github.com/richardkentgates/rich-statistics/commits/main)
+[![Release date](https://img.shields.io/github/release-date/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/releases/latest)
 
 <!-- Privacy / Compliance -->
 [![No cookies](https://img.shields.io/badge/cookies-none-success)](https://statistics.richardkentgates.com)
