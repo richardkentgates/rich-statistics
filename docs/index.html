@@ -18,8 +18,6 @@
 </head>
 <body>
 
-<a class="skip-link" href="#main-content">Skip to main content</a>
-
 <!-- ============================================================
      NAVIGATION
 ============================================================ -->
@@ -135,7 +133,7 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">👥</div>
         <h3>Audience Insights</h3>
-        <p>Browser, operating system, screen resolution, and language breakdowns — derived from request headers, never from fingerprinting.</p>
+        <p>Browser, operating system, screen resolution, and viewport breakdowns — derived from the browser environment and request headers, never from fingerprinting.</p>
       </div>
 
       <div class="feature-card">
@@ -231,13 +229,13 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🌍</div>
         <h3>Multilingual &amp; i18n Ready</h3>
-        <p>The plugin is fully translatable — every admin string uses WordPress i18n functions and ships with a <code>.pot</code> file. The tracker records <code>navigator.language</code> so the Audience view shows a language breakdown of your visitors.</p>
+        <p>Every admin string uses WordPress i18n functions and the plugin ships a <code>.pot</code> template file for translators. Custom translations load from <code>wp-content/languages/plugins/</code> and contributions are welcome via GlotPress on WordPress.org.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">♿</div>
         <h3>Accessible Admin</h3>
-        <p>The dashboard is built on WordPress core UI patterns — keyboard-navigable, screen reader compatible, and requires no cookie consent banners. Every analytics page includes a contextual Help tab so you never need to leave the admin to understand the numbers.</p>
+        <p>The dashboard is built on WordPress core UI patterns — keyboard-navigable and screen reader compatible. Every analytics page includes a contextual Help tab explaining what the data means, so you never need to leave the admin.</p>
       </div>
 
     </div>
@@ -275,25 +273,17 @@
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          Bot detection
-        </h3>
-        <p>The bot scoring pipeline checks browser and request characteristics to protect data quality. The bitmask sent from the browser contains only a pass/fail score per signal — never raw capability values. <strong>REMOTE_ADDR is never read or passed</strong> at any point in the detection chain.</p>
-      </div>
-
-      <div class="privacy-block">
-        <h3>
-          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           No IP addresses, ever
         </h3>
-        <p>IP addresses are never read, stored, logged, or passed to any processing function. <code>REMOTE_ADDR</code> is not accessed anywhere in the plugin codebase — not even for the bot detection pipeline. You can verify this yourself: <code>grep -rn "REMOTE_ADDR" includes/ assets/</code> will return zero matches.</p>
+        <p>IP addresses are never read, stored, or passed to any function — including the bot detection pipeline. The bot scorer works from a browser-side bitmask (pass/fail scores only, never raw values) plus two request headers; <code>REMOTE_ADDR</code> is not accessed anywhere. Run <code>grep -rn "REMOTE_ADDR" includes/ assets/</code> on the source — zero matches.</p>
       </div>
 
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          No cookies
+          No cookies or persistent identifiers
         </h3>
-        <p>The plugin sets no cookies — no tracking cookies, no session cookies, no preference cookies. <code>setcookie()</code> and <code>$_COOKIE</code> are not used anywhere in the plugin. Visitor state within a single tab is held in <code>sessionStorage</code>, which the browser clears automatically when the tab closes.</p>
+        <p>The plugin sets no cookies and writes nothing to <code>localStorage</code>. There is no browser fingerprinting and no device ID generation. <code>setcookie()</code> and <code>$_COOKIE</code> are not used anywhere. Visitor state within a tab uses <code>sessionStorage</code> only — the browser clears it when the tab closes. The only value that carries across page loads is an optional UTM attribution, also in <code>sessionStorage</code>.</p>
       </div>
 
       <div class="privacy-block">
@@ -328,14 +318,6 @@
         <p>The tracker runs entirely within your WordPress site. No script is loaded from an external domain, no beacon is sent to a third party, and no data leaves your server. This also means no ad-network leakage and no exposure from a CDN compromise.</p>
       </div>
 
-      <div class="privacy-block">
-        <h3>
-          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          No persistent identifiers
-        </h3>
-        <p>There are no cookies, no <code>localStorage</code> writes, no browser fingerprinting, and no device ID generation. Between page loads the only thing that persists is an optional UTM value stored in <code>sessionStorage</code> — which also clears when the tab closes.</p>
-      </div>
-
     </div>
 
     <div class="privacy-audit-note">
@@ -362,23 +344,15 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           No consent popup required
         </h3>
-        <p>Because no PII is collected and no tracking cookies are set, most sites do not need a cookie consent banner for Rich Statistics. Visitors who have Do Not Track or Global Privacy Control enabled are excluded from tracking automatically — no configuration required.</p>
+        <p>Because Rich Statistics collects no PII and sets no cookies, most sites do not need a consent banner for analytics at all. Do Not Track and Global Privacy Control are honoured automatically — no configuration required.</p>
       </div>
 
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          WordPress admin accessibility standards
+          Keyboard-navigable, screen-reader compatible
         </h3>
-        <p>The admin dashboard is built on WordPress core UI components (<code>WP_List_Table</code>, <code>form-table</code>, standard notices) and follows WordPress accessibility guidelines. Every control is keyboard-navigable and compatible with screen readers.</p>
-      </div>
-
-      <div class="privacy-block">
-        <h3>
-          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          Contextual Help tabs on every page
-        </h3>
-        <p>Every analytics page in the WordPress admin has a built-in Help tab (top-right corner of the screen) explaining what the data means and how it is calculated. No need to leave the admin to understand the numbers.</p>
+        <p>The dashboard uses WordPress core UI components (<code>WP_List_Table</code>, <code>form-table</code>, standard notices) following WordPress accessibility guidelines. Every control is keyboard-navigable and screen reader compatible. Each analytics page has a built-in Help tab explaining the data — no need to leave the admin.</p>
       </div>
 
       <div class="privacy-block">
@@ -421,7 +395,7 @@
 
       <div class="privacy-block">
         <h3>Timezone-aware reporting</h3>
-        <p>The tracker records each visitor's local timezone via <code>Intl.DateTimeFormat().resolvedOptions().timeZone</code>. Reporting in the WordPress admin uses the site's configured timezone so daily charts always reflect your local time, not UTC.</p>
+        <p>The tracker records each visitor's declared timezone. Reporting in the WordPress admin uses your site's configured timezone so daily charts always show your local time, not UTC.</p>
       </div>
 
     </div>
