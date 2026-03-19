@@ -193,6 +193,18 @@ jobs:
           CI: true
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
+      - name: Patch .desktop in .deb
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          dpkg-deb -R "${DEB}" /tmp/deb-root
+          DESKTOP=$(find /tmp/deb-root -name "*.desktop" | head -1)
+          if [ -n "${DESKTOP}" ]; then
+            sed -i 's/^Exec=.*/Exec=env WEBKIT_DISABLE_COMPOSITING_MODE=1 rich-statistics/' "${DESKTOP}"
+            sed -i 's/^Categories=.*/Categories=Network;/' "${DESKTOP}"
+          fi
+          dpkg-deb -b /tmp/deb-root "${DEB}"
+          rm -rf /tmp/deb-root
+
       - name: Push .deb to app server
         env:
           SSH_KEY: ${{ secrets.APP_SERVER_SSH_KEY }}
