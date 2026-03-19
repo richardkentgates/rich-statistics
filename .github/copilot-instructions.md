@@ -40,7 +40,7 @@ desktop app (Tauri/.deb) that connect to the plugin via the WordPress REST API.
 | `includes/class-heatmap.php` | Premium heatmap aggregation (nightly cron) + display |
 | `includes/class-email.php` | Scheduled HTML digest emails |
 | `includes/class-pwa-download.php` | Serves PWA ZIP download; OTP generation for app auth |
-| `includes/class-woocommerce.php` | WooCommerce order/product path rewrites |
+| `includes/class-woocommerce.php` | WooCommerce analytics: event recording (product views, add-to-cart, orders), WC path normalisation, dashboard data queries |
 | `cli/class-cli.php` | WP-CLI command group: `wp rich-stats *` |
 | `assets/js/tracker.js` | Frontend tracker (bot signals, UTM, session, Beacon API) |
 | `assets/js/admin-charts.js` | Admin dashboard Chart.js wrappers |

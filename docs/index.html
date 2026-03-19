@@ -19,11 +19,13 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
 <!-- ============================================================
      NAVIGATION
 ============================================================ -->
 <header class="site-header">
-  <nav class="nav container">
+  <nav class="nav container" aria-label="Main navigation">
     <a class="nav__logo" href="#">
       <img src="rs-logo.png" alt="" width="28" height="28" />
       Rich Statistics
@@ -31,6 +33,7 @@
     <ul class="nav__links">
       <li><a href="#features">Features</a></li>
       <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#accessibility">Accessibility</a></li>
       <li><a href="#app">App</a></li>
       <li><a href="wiki/">Docs</a></li>
       <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
@@ -101,6 +104,7 @@
 <!-- ============================================================
      FEATURES
 ============================================================ -->
+<main id="main-content">
 <section class="section" id="features">
   <div class="container">
     <div class="section__header">
@@ -225,6 +229,18 @@
         <p>Every analytics view supports arbitrary from/to date selection alongside the preset 7-day, 30-day, 90-day, this-month, and last-month periods.</p>
       </div>
 
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🌍</div>
+        <h3>Multilingual &amp; i18n Ready</h3>
+        <p>The plugin is fully translatable — every admin string uses WordPress i18n functions and ships with a <code>.pot</code> file. The tracker records <code>navigator.language</code> so the Audience view shows a language breakdown of your visitors.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">♿</div>
+        <h3>Accessible Admin</h3>
+        <p>The dashboard is built on WordPress core UI patterns — keyboard-navigable, screen reader compatible, and requires no cookie consent banners. Every analytics page includes a contextual Help tab so you never need to leave the admin to understand the numbers.</p>
+      </div>
+
     </div>
   </div>
 </section>
@@ -324,6 +340,88 @@
 </section>
 
 <!-- ============================================================
+     ACCESSIBILITY
+============================================================ -->
+<section class="section" id="accessibility">
+  <div class="container">
+    <div class="section__header">
+      <h2>Accessibility-first design</h2>
+      <p>The plugin introduces nothing that degrades the experience for visitors or site administrators. No popups, no overlays, no forced consent dialogs.</p>
+    </div>
+    <div class="privacy-grid">
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No consent popup required
+        </h3>
+        <p>Because no PII is collected and no tracking cookies are set, most sites do not need a cookie consent banner for Rich Statistics. Visitors who have Do Not Track or Global Privacy Control enabled are excluded from tracking automatically — no configuration required.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          WordPress admin accessibility standards
+        </h3>
+        <p>The admin dashboard is built on WordPress core UI components (<code>WP_List_Table</code>, <code>form-table</code>, standard notices) and follows WordPress accessibility guidelines. Every control is keyboard-navigable and compatible with screen readers.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Contextual Help tabs on every page
+        </h3>
+        <p>Every analytics page in the WordPress admin has a built-in Help tab (top-right corner of the screen) explaining what the data means and how it is calculated. No need to leave the admin to understand the numbers.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Zero front-end DOM changes
+        </h3>
+        <p>The tracker JavaScript is completely silent and invisible. It adds no elements to your page — no banners, no overlays, no notification bars. Your theme's layout and your visitors' browsing experience are completely unaffected.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     LANGUAGE
+============================================================ -->
+<section class="section section--alt" id="language">
+  <div class="container">
+    <div class="section__header">
+      <h2>Multilingual &amp; international-ready</h2>
+      <p>Built for sites that serve a global audience — with first-class translation support, per-visitor language reporting, and timezone-aware dashboards.</p>
+    </div>
+    <div class="privacy-grid">
+
+      <div class="privacy-block">
+        <h3>Fully translatable (i18n)</h3>
+        <p>Every string in the admin uses WordPress i18n functions and the plugin ships a <code>rich-statistics.pot</code> template file. Translations can be contributed via GlotPress on WordPress.org or loaded from your own <code>.mo</code> files placed in <code>wp-content/languages/plugins/</code>.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>Visitor language breakdown</h3>
+        <p>The tracker captures <code>navigator.language</code> — the browser's declared language preference — on every pageview. The Audience view groups your visitors by language code so you can see which locales your content serves most.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>RTL layout support</h3>
+        <p>The admin dashboard stylesheets respect WordPress's RTL mode. The layout flips correctly for right-to-left locales (Arabic, Hebrew, Persian, etc.) without any extra configuration.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>Timezone-aware reporting</h3>
+        <p>The tracker records each visitor's local timezone via <code>Intl.DateTimeFormat().resolvedOptions().timeZone</code>. Reporting in the WordPress admin uses the site's configured timezone so daily charts always reflect your local time, not UTC.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
      PRICING
 ============================================================ -->
 <section class="section" id="pricing">
@@ -350,21 +448,21 @@
     </div>
     <div class="steps">
       <div class="step">
-        <div class="step__num">1</div>
+        <div class="step__num" aria-hidden="true">1</div>
         <div class="step__body">
           <h3>Install the plugin</h3>
           <p>Download the plugin from <a href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">GitHub releases</a> and install it via your WordPress admin, then activate it.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step__num">2</div>
+        <div class="step__num" aria-hidden="true">2</div>
         <div class="step__body">
           <h3>Visit your dashboard</h3>
           <p>Navigate to <strong>Rich Statistics &rarr; Overview</strong> in your WordPress admin. The tracker begins collecting data immediately &mdash; no configuration required.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step__num">3</div>
+        <div class="step__num" aria-hidden="true">3</div>
         <div class="step__body">
           <h3>Adjust data retention (optional)</h3>
           <p>Go to <strong>Rich Statistics &rarr; Preferences</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
@@ -388,10 +486,10 @@
       <a class="btn btn--primary btn--lg" href="app/" target="_blank" rel="noopener">
         Open Web App
       </a>
-      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb" rel="noopener">
+      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb" rel="noopener" aria-label="Download Linux Desktop app for x86_64">
         &#8595; Linux Desktop (x86_64)
       </a>
-      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb" rel="noopener">
+      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb" rel="noopener" aria-label="Download Linux Desktop app for ARM64">
         &#8595; Linux Desktop (ARM64)
       </a>
     </div>
@@ -421,21 +519,21 @@ sudo apt install ./rich-statistics-linux-arm64.deb</code></pre>
 
     <div class="steps">
       <div class="step">
-        <div class="step__num">1</div>
+        <div class="step__num" aria-hidden="true">1</div>
         <div class="step__body">
           <h3>Install the plugin</h3>
           <p>The PWA and desktop app are free. To connect them to your site, you need the Rich Statistics plugin with the Premium plan active — this enables the REST API they use to fetch your analytics.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step__num">2</div>
+        <div class="step__num" aria-hidden="true">2</div>
         <div class="step__body">
           <h3>Generate an App Code</h3>
           <p>In WordPress, go to <strong>Users → Profile → Rich Statistics App</strong> and click <strong>Generate App Code</strong>. You'll get a 6-digit code valid for 15 minutes.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step__num">3</div>
+        <div class="step__num" aria-hidden="true">3</div>
         <div class="step__body">
           <h3>Open the app &amp; add your site</h3>
           <p>Open the web app (or the PWA you installed), tap <strong>Add Your Site</strong>, enter your site URL and the 6-digit App Code, then create an Application Password to complete the connection.</p>
@@ -446,6 +544,8 @@ sudo apt install ./rich-statistics-linux-arm64.deb</code></pre>
     <p class="app-note">The app connects to your site's REST API using WordPress Application Passwords — no extra accounts, no new services, no data leaves your server.</p>
   </div>
 </section>
+
+</main>
 
 <!-- ============================================================
      FOOTER
