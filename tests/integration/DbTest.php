@@ -94,8 +94,8 @@ class DbTest extends WP_UnitTestCase {
 	// Schema version
 	// ----------------------------------------------------------------
 
-	public function test_schema_version_is_seven(): void {
-		$this->assertSame( 7, RSA_DB::SCHEMA_VERSION );
+	public function test_schema_version_is_nine(): void {
+		$this->assertSame( 9, RSA_DB::SCHEMA_VERSION );
 	}
 
 	// ----------------------------------------------------------------
