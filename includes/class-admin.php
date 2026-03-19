@@ -220,12 +220,16 @@ class RSA_Admin {
 			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
-		if ( class_exists( 'WooCommerce' ) && get_option( 'rsa_woocommerce_enabled', 1 ) ) {
-			$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
-		}
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
 			: '';
+		if ( class_exists( 'WooCommerce' ) ) {
+			if ( $is_premium && get_option( 'rsa_woocommerce_enabled', 1 ) ) {
+				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
+			} else {
+				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			}
+		}
 		if ( $is_premium ) {
 			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'manage_options' ];

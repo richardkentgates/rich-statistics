@@ -116,6 +116,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 		'RSA_Heatmap',
 		'RSA_Rest_API',
 		'RSA_Pwa_Download',
+		'RSA_Woocommerce',
 	];
 	foreach ( $rsa_premium as $class ) {
 		$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( [ 'RSA_', '_' ], [ '', '-' ], $class ) ) . '.php';
@@ -169,9 +170,11 @@ function rsa_init() {
 	RSA_Admin::init();
 	RSA_Email::init();
 
-	// WooCommerce integration (free feature — no premium gate)
-	if ( class_exists( 'WooCommerce' ) ) {
-		RSA_Woocommerce::init();
+	// WooCommerce integration (premium feature — gated via Freemius)
+	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
+		if ( class_exists( 'WooCommerce' ) ) {
+			RSA_Woocommerce::init();
+		}
 	}
 
 	// Boot premium
