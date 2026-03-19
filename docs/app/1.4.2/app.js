@@ -1030,6 +1030,9 @@
 		if ( ! btn ) return;
 		btn.href   = url;
 		btn.hidden = false;
+
+		var label = document.getElementById( 'rsa-linux-label' );
+		if ( label ) label.hidden = false;
 	}
 
 	function toggleNav() {
