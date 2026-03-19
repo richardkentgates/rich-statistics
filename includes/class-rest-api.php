@@ -24,6 +24,36 @@ class RSA_Rest_API {
 	public static function init(): void {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
 		add_action( 'rest_api_init', [ __CLASS__, 'add_cors_headers' ] );
+
+		// When the PWA is served on the same origin as the WP site, the browser
+		// sends session cookies with every fetch().  WP's cookie-nonce check
+		// (priority 100) sets a WP_Error when those cookies carry no nonce —
+		// even when a valid Authorization: Basic (Application Password) header
+		// is also present.  We run at priority 200 (after the cookie check) and
+		// clear that error when an Authorization header is present, allowing
+		// Application Password auth to succeed.
+		add_filter( 'rest_authentication_errors', [ __CLASS__, 'remove_cookie_auth' ], 200 );
+	}
+
+	/**
+	 * Clear cookie-auth errors for rsa/v1 requests that carry an Authorization
+	 * header so Application Password authentication is not blocked.
+	 */
+	public static function remove_cookie_auth( $result ) {
+		if ( ! is_wp_error( $result ) ) {
+			return $result;
+		}
+		$route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( strpos( $route, '/rsa/v1/' ) === false ) {
+			return $result;
+		}
+		// Only clear the error if the client is actually providing credentials
+		// via an Authorization header (Application Password).
+		$has_auth = ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) || ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		if ( $has_auth ) {
+			return null;
+		}
+		return $result;
 	}
 
 	/**
@@ -122,8 +152,34 @@ class RSA_Rest_API {
 		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 
+		register_rest_route( self::NS, '/purge-page', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'purge_page' ],
+			'permission_callback' => $auth,
+			'args'                => [
+				'page' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
+			],
+		] );
+
 		// Plugin info — public, no auth required (version badge + version sync for the PWA)
 		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
+
+		// User settings — syncs the site list across devices (metadata only, no credentials)
+		register_rest_route( self::NS, '/user-settings', [
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_user_settings' ],
+				'permission_callback' => $auth,
+			],
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'post_user_settings' ],
+				'permission_callback' => $auth,
+				'args'                => [
+					'sites' => [ 'type' => 'array', 'required' => true ],
+				],
+			],
+		] );
 
 		// Ingest endpoint — public (no auth), nonce verified inside
 		register_rest_route( self::NS, '/track', [
@@ -190,10 +246,45 @@ class RSA_Rest_API {
 	public static function get_info(): WP_REST_Response {
 		return self::ok( [
 			'version'   => RSA_VERSION,
-			'app_url'   => plugins_url( 'docs/app/', RSA_FILE ),
+			'app_url'   => RSA_APP_URL,
 			'site_name' => get_bloginfo( 'name' ),
 			'site_url'  => get_site_url(),
 		] );
+	}
+
+	// ----------------------------------------------------------------
+	// User settings (site list sync — metadata only, no credentials)
+	// ----------------------------------------------------------------
+
+	public static function get_user_settings(): WP_REST_Response {
+		$user_id = get_current_user_id();
+		$sites   = get_user_meta( $user_id, 'rsa_app_sites', true );
+		return self::ok( [ 'sites' => is_array( $sites ) ? $sites : [] ] );
+	}
+
+	public static function post_user_settings( WP_REST_Request $r ): WP_REST_Response|WP_Error {
+		$user_id = get_current_user_id();
+		$raw     = $r->get_param( 'sites' );
+
+		if ( ! is_array( $raw ) ) {
+			return new WP_Error( 'invalid_data', __( 'sites must be an array.', 'rich-statistics' ), [ 'status' => 400 ] );
+		}
+
+		// Strip everything except the three safe fields we want to persist.
+		$sanitized = array_map(
+			function ( $site ) {
+				return [
+					'id'      => sanitize_text_field( (string) ( $site['id']      ?? '' ) ),
+					'label'   => sanitize_text_field( (string) ( $site['label']   ?? '' ) ),
+					'siteUrl' => esc_url_raw(          (string) ( $site['siteUrl'] ?? '' ) ),
+					'appUrl'  => esc_url_raw(          (string) ( $site['appUrl']  ?? '' ) ),
+				];
+			},
+			$raw
+		);
+
+		update_user_meta( $user_id, 'rsa_app_sites', $sanitized );
+		return self::ok( [ 'saved' => true ] );
 	}
 
 	// ----------------------------------------------------------------
@@ -252,7 +343,11 @@ class RSA_Rest_API {
 	}
 
 	public static function get_heatmap( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ?: '/', $r['period'] ) );
+		$date_from = (string) ( $r['date_from'] ?? '' );
+		$date_to   = (string) ( $r['date_to']   ?? '' );
+		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
+		if ( $date_to   && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
+		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ?: '/', $r['period'], $date_from, $date_to ) );
 	}
 
 	public static function get_export( WP_REST_Request $r ): WP_REST_Response {
@@ -293,6 +388,12 @@ class RSA_Rest_API {
 
 	public static function get_filter_options( WP_REST_Request $r ): WP_REST_Response {
 		return self::ok( RSA_Analytics::get_filter_options( $r['period'] ) );
+	}
+
+	public static function purge_page( WP_REST_Request $r ): WP_REST_Response {
+		$page    = $r->get_param( 'page' );
+		$deleted = RSA_DB::purge_page_data( $page );
+		return self::ok( [ 'deleted' => $deleted, 'page' => $page ] );
 	}
 
 	public static function get_campaigns( WP_REST_Request $r ): WP_REST_Response {

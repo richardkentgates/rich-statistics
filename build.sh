@@ -152,3 +152,26 @@ cd "$SCRIPT_DIR"
 
 ZIP_SIZE=$(du -sh "${BUILD_DIR}/${ZIP_NAME}" | cut -f1)
 info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
+
+# -----------------------------------------------------------------------
+# Publish versioned app snapshot to docs/app/{version}/
+# -----------------------------------------------------------------------
+# Each version gets its own immutable folder on the GitHub Pages site
+# (statistics.richardkentgates.com/app/1.x.x/).  The service worker
+# caches it forever and app.js redirects there automatically on plugin
+# update — no cache clearing, no sign-out.
+APP_SRC="docs/app"
+APP_VERSIONED="docs/app/${VERSION}"
+
+if [ -d "$APP_VERSIONED" ]; then
+    warn "Versioned app folder already exists: ${APP_VERSIONED} — skipping."
+else
+    info "Publishing versioned app snapshot: ${APP_VERSIONED}/"
+    mkdir -p "$APP_VERSIONED"
+    for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${APP_VERSIONED}/${f}"
+    done
+    [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${APP_VERSIONED}/icons"
+    info "Versioned snapshot ready: ${APP_VERSIONED}/"
+    info "Commit and push docs/ to publish to GitHub Pages."
+fi

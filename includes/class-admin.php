@@ -20,6 +20,127 @@ class RSA_Admin {
 		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
+
+		// Serve the PWA at yoursite.com/rs-app/
+		add_action( 'init',              [ __CLASS__, 'register_app_rewrite' ] );
+		add_filter( 'query_vars',        [ __CLASS__, 'add_app_query_var' ] );
+		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
+		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
+
+		}
+
+	public static function register_app_rewrite(): void {
+		add_rewrite_rule( '^rs-app/?$',              'index.php?rsa_app=1',      'top' );
+		add_rewrite_rule( '^rs-app/manifest\.json$', 'index.php?rsa_manifest=1', 'top' );
+	}
+
+	public static function add_app_query_var( array $vars ): array {
+		$vars[] = 'rsa_app';
+		$vars[] = 'rsa_manifest';
+		return $vars;
+	}
+
+	/**
+	 * Output the PWA shell when visiting /rs-app/.
+	 * Injects RSA_CONFIG with the site URL and replaces relative asset
+	 * references with absolute plugin URLs so the JS/CSS/SW load correctly.
+	 */
+	public static function serve_app(): void {
+		if ( ! get_query_var( 'rsa_app' ) ) {
+			return;
+		}
+
+		// Require WP login — without a valid session the injected nonce is for
+		// user 0 and all REST calls will fail with 401.
+		if ( ! is_user_logged_in() ) {
+			wp_redirect( wp_login_url( home_url( 'rs-app/' ) ) );
+			exit;
+		}
+
+		// Premium gate — must have an active premium licence
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			wp_die( esc_html__( 'The Rich Statistics App requires a premium licence.', 'rich-statistics' ), 403 );
+		}
+
+		$assets_url = RSA_URL . 'docs/app/';
+		$site_url   = get_site_url();
+		$app_url    = trailingslashit( home_url( 'rs-app' ) );
+
+		nocache_headers();
+		header( 'Content-Type: text/html; charset=UTF-8' );
+
+		$template = RSA_DIR . 'docs/app/index.html';
+		$html     = file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file
+
+		// Inject RSA_CONFIG before </head> so config.js / app.js can read it.
+		$current_user  = wp_get_current_user();
+		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
+			'autoSiteUrl' => $site_url,
+			'appUrl'      => $app_url,
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+			'autoLabel'   => get_bloginfo( 'name' ),
+		] ) . ';</script>';
+		$html = str_replace( '</head>', $config_script . '</head>', $html );
+
+		// Rewrite relative asset src/href to absolute plugin URLs.
+		// Append ?v=RSA_VERSION so browsers fetch fresh assets after each plugin update.
+		$v    = rawurlencode( RSA_VERSION );
+		$html = str_replace(
+			[ 'href="app.css"', 'src="./chart.min.js"', 'src="config.js"', 'src="app.js"', "register( 'sw.js' )" ],
+			[
+				'href="' . esc_url( $assets_url . 'app.css?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'chart.min.js?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'config.js?v=' . $v ) . '"',
+				'src="'  . esc_url( $assets_url . 'app.js?v=' . $v ) . '"',
+				"register( '" . esc_url( $assets_url . 'sw.js?v=' . $v ) . "' )",
+			],
+			$html
+		);
+
+		// Manifest and icons
+		$html = str_replace(
+			[ 'href="manifest.json"', 'href="icons/icon-192.png"', 'href="icons/icon-64.png"', 'src="icons/icon-192.png"', 'src="icons/icon-64.png"' ],
+			[ 'href="' . esc_url( home_url( 'rs-app/manifest.json' ) ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"' ],
+			$html
+		);
+
+		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitised HTML from our own plugin file
+		exit;
+	}
+
+	/**
+	 * Serve the PWA manifest dynamically so start_url and scope match /rs-app/.
+	 */
+	public static function serve_manifest(): void {
+		if ( ! get_query_var( 'rsa_manifest' ) ) {
+			return;
+		}
+
+		$app_url    = trailingslashit( home_url( 'rs-app' ) );
+		$assets_url = RSA_URL . 'docs/app/';
+
+		$manifest = [
+			'name'             => get_bloginfo( 'name' ) . ' — Statistics',
+			'short_name'       => 'Rich Stats',
+			'description'      => 'Privacy-first analytics for your WordPress site.',
+			'start_url'        => $app_url,
+			'scope'            => $app_url,
+			'display'          => 'standalone',
+			'orientation'      => 'any',
+			'theme_color'      => '#2e6f8e',
+			'background_color' => '#f0f6fa',
+			'icons'            => [
+				[ 'src' => $assets_url . 'icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+				[ 'src' => $assets_url . 'icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+			],
+			'categories'       => [ 'productivity', 'utilities' ],
+			'lang'             => 'en',
+		];
+
+		nocache_headers();
+		header( 'Content-Type: application/manifest+json; charset=UTF-8' );
+		echo wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		exit;
 	}
 
 	/**
@@ -111,8 +232,9 @@ class RSA_Admin {
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
-		$pages['preferences'] = [ 'title' => __( 'Preferences', 'rich-statistics' ), 'label' => __( 'Preferences', 'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['export']      = [ 'title' => __( 'Export',      'rich-statistics' ), 'label' => __( 'Export',      'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['export']       = [ 'title' => __( 'Export',        'rich-statistics' ), 'label' => __( 'Export',        'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
 
@@ -256,6 +378,7 @@ class RSA_Admin {
 	public static function page_click_map():      void { self::render( 'click-map' ); }
 	public static function page_heatmap():        void { self::render( 'heatmap' ); }
 	public static function page_preferences():      void { self::render( 'preferences' ); }
+	public static function page_maintenance():       void { self::render( 'maintenance' ); }
 	public static function page_export():           void { self::render( 'export' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
@@ -267,29 +390,44 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Page dropdown helper — WordPress-native list for page filters
+	// Page dropdown helper — all public WordPress content
 	// ----------------------------------------------------------------
 
 	public static function get_trackable_pages(): array {
-		$enabled_cpts = get_option( 'rsa_enabled_post_types', [] );
-		$post_types   = array_merge( [ 'page', 'post' ], is_array( $enabled_cpts ) ? $enabled_cpts : [] );
+		// All public post types, all non-trash statuses — same source used
+		// for purge eligibility checks so the two stay in sync automatically.
+		$post_types = array_diff(
+			array_keys( get_post_types( [ 'public' => true ] ) ),
+			[ 'attachment' ]
+		);
 
 		$posts = get_posts( [
-			'post_type'      => array_unique( $post_types ),
-			'post_status'    => 'publish',
-			'numberposts'    => 500,
-			'orderby'        => 'post_type',
-			'order'          => 'ASC',
+			'post_type'     => $post_types,
+			'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
+			'numberposts'   => -1,
+			'no_found_rows' => true,
+			'orderby'       => 'post_title',
+			'order'         => 'ASC',
 		] );
 
-		$pages = [];
+		// Home is always pinned first.
+		$pages = [ '/' => __( 'Home', 'rich-statistics' ) ];
+
 		foreach ( $posts as $post ) {
 			$url  = get_permalink( $post );
+			if ( ! $url ) { continue; }
 			$path = wp_make_link_relative( $url );
-			$pages[ $path ] = get_the_title( $post ) . ' (' . $path . ')';
+			// Skip query-string-only URLs (e.g. ?p=123 for un-slugged drafts).
+			if ( ! $path || $path[0] !== '/' || strpos( $path, '?' ) !== false ) { continue; }
+			if ( $path === '/' ) { continue; } // home already added
+			$pages[ $path ] = get_the_title( $post );
 		}
+
+		// Keep home pinned at top; sort the rest alphabetically by path.
+		$home = [ '/' => $pages['/'] ];
+		unset( $pages['/'] );
 		ksort( $pages );
-		return $pages;
+		return $home + $pages;
 	}
 
 	// ----------------------------------------------------------------
@@ -460,10 +598,7 @@ class RSA_Admin {
 			return;
 		}
 
-		$download_url = wp_nonce_url(
-			admin_url( 'admin-ajax.php?action=rsa_download_pwa' ),
-			'rsa_download_pwa'
-		);
+		$app_url = RSA_APP_URL;
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
@@ -471,10 +606,12 @@ class RSA_Admin {
 				<button type="button" id="rsa-generate-otp-btn" class="button button-primary">
 					<?php esc_html_e( 'Generate App Code', 'rich-statistics' ); ?>
 				</button>
-				<a href="<?php echo esc_url( $download_url ); ?>"
+				<a href="<?php echo esc_url( $app_url ); ?>"
 				   class="button"
+				   target="_blank"
+				   rel="noopener"
 				   style="margin-left:8px;">
-					<?php esc_html_e( 'Download App', 'rich-statistics' ); ?>
+					<?php esc_html_e( 'Open App', 'rich-statistics' ); ?>
 				</a>
 
 				<div id="rsa-otp-display" style="display:none;margin-top:14px;" aria-live="polite" aria-atomic="true">
@@ -499,7 +636,7 @@ class RSA_Admin {
 				</div>
 
 				<p class="description" style="margin-top:10px;">
-					<?php esc_html_e( 'First time? Use “Download App” to install the app on any device. Then click “Generate App Code”, tap “Add Site” in the app, enter this site’s URL and the code, then create an Application Password in the section below to complete the connection.', 'rich-statistics' ); ?>
+					<?php esc_html_e( 'Click "Open App" to launch the Stats App. On first visit, click "Generate App Code", tap "Add Site" in the app, enter this site\'s URL and the code, then create an Application Password in the section below to complete the connection.', 'rich-statistics' ); ?>
 				</p>
 			</td>
 		</tr>
@@ -695,8 +832,9 @@ class RSA_Admin {
 				'title'   => __( 'Heatmap (Premium)', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'Heatmap (Premium)', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'The heatmap shows where visitors click on a page using a thermal colour overlay (blue = cold → red = hot). Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient.', 'rich-statistics' ) . '</p>',
+					'<p>' . esc_html__( 'The heatmap displays a dark canvas showing scroll-depth guide lines and click-hotspot dots for any tracked page. Dot colour ranges from cool blue (few clicks) to hot red (many clicks). Hover a dot to see which DOM elements were clicked at that position. Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'The side panel lists the top-clicked elements with a click bar chart — useful for identifying links and buttons that get the most engagement.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Use the Period selector to change the date range. Custom start/end dates are supported. Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-email-settings' => [
 				'id'      => 'rsa-email-help',

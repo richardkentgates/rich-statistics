@@ -205,23 +205,6 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 
 	<?php submit_button( __( 'Save Preferences', 'rich-statistics' ), 'primary', 'submit', true ); ?>
 
-	<!-- Data Operations -->
-	<div class="rsa-card rsa-card-full" style="margin-top:8px;">
-		<div class="rsa-card-header"><h2><?php esc_html_e( 'Data Operations', 'rich-statistics' ); ?></h2></div>
-		<p style="padding:4px 0 0;">
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=rsa_manual_purge' ), 'rsa_manual_purge' ) ); ?>"
-			   class="button"
-			   onclick="return confirm('<?php esc_attr_e( 'This will delete all records older than your retention setting. Continue?', 'rich-statistics' ); ?>')">
-				<?php esc_html_e( 'Run Pruning Now', 'rich-statistics' ); ?>
-			</a>
-			&nbsp;
-			<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-preferences', 'action' => 'rsa_export', 'format' => 'csv', '_wpnonce' => wp_create_nonce( 'rsa_export' ) ], admin_url( 'admin.php' ) ) ); ?>"
-			   class="button">
-				<?php esc_html_e( 'Export CSV (90 days)', 'rich-statistics' ); ?>
-			</a>
-		</p>
-	</div>
-
 </form>
 
 <?php RSA_Admin::page_footer(); ?>

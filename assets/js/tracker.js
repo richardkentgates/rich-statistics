@@ -408,11 +408,19 @@
 					continue;
 				}
 
-				// Viewport-relative coordinates as percentages
-				var vw = window.innerWidth  || 1;
-				var vh = window.innerHeight || 1;
+				// Document-relative coordinates as percentages.
+				// x: viewport-relative (horizontal scroll is rare).
+				// y: (scrollY + clientY) / documentHeight so below-fold clicks map correctly.
+				var vw      = window.innerWidth   || 1;
+				var vh      = window.innerHeight  || 1;
+				var scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+				var docH    = Math.max(
+					document.documentElement.scrollHeight || 0,
+					document.body.scrollHeight || 0,
+					vh
+				);
 				var xPct = Math.round( ( e.clientX / vw ) * 10000 ) / 100;
-				var yPct = Math.round( ( e.clientY / vh ) * 10000 ) / 100;
+				var yPct = Math.round( ( ( e.clientY + scrollY ) / docH ) * 10000 ) / 100;
 
 				// Truncate class list to 512 chars
 				var elClass = el.className ? String( el.className ).substring( 0, 512 ) : '';

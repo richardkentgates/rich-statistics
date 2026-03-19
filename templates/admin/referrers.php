@@ -38,7 +38,7 @@ $base    = admin_url( 'admin.php' );
 	<select name="ref_page">
 		<option value=""><?php esc_html_e( 'All landing pages', 'rich-statistics' ); ?></option>
 		<?php foreach ( $opts['pages'] as $p ) : ?>
-		<option value="<?php echo esc_attr( $p ); ?>" <?php selected( $f_page, $p ); ?>><?php echo esc_html( $p ); ?></option>
+		<option value="<?php echo esc_attr( $p['value'] ); ?>" <?php selected( $f_page, $p['value'] ); ?>><?php echo esc_html( $p['label'] ); ?></option>
 		<?php endforeach; ?>
 	</select>
 	<?php endif; ?>

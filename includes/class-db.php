@@ -257,6 +257,34 @@ class RSA_DB {
 
 	// ----------------------------------------------------------------
 	// Uninstall (called from uninstall.php)
+	/**
+	 * Purge all analytics data for one specific page path.
+	 * Removes matching rows from events, clicks, and heatmap tables.
+	 *
+	 * @param string $page Exact page path as stored (e.g. '/about/').
+	 * @return int Total rows deleted.
+	 */
+	public static function purge_page_data( string $page ): int {
+		global $wpdb;
+		$deleted  = 0;
+		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+			$wpdb->prefix . 'rsa_events',
+			[ 'page' => $page ],
+			[ '%s' ]
+		);
+		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+			$wpdb->prefix . 'rsa_clicks',
+			[ 'page' => $page ],
+			[ '%s' ]
+		);
+		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+			$wpdb->prefix . 'rsa_heatmap',
+			[ 'page' => $page ],
+			[ '%s' ]
+		);
+		return $deleted;
+	}
+
 	// ----------------------------------------------------------------
 
 	public static function maybe_remove_data(): void {
