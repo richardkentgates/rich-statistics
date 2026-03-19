@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.1] — 2026-03-18
+
+### Fixed
+- **Mobile hamburger menu** — tap on the menu icon now reliably opens the nav. A click event was bubbling up to the main content area and immediately re-closing the nav; resolved with `stopPropagation()`.
+- **Heatmap desktop height** — heatmap canvas is now height-driven on desktop (`min(calc(100vh - 210px), 560px)`) so it fits within the viewport without scrolling.
+
+---
+
 ## [1.4.0] — 2026-06-17
 
 ### Added

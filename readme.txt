@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -98,6 +98,10 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 5. PWA Web App (Premium) — mobile analytics dashboard
 
 == Changelog ==
+
+= 1.4.1 =
+* Fixed mobile hamburger menu not opening (click was bubbling to main content and re-closing the nav)
+* Fixed heatmap too tall on desktop (now height-capped to fit within the viewport)
 
 = 1.2.0 =
 * Added PWA OTP pairing: "Generate App Code" button on the user profile page issues a 6-digit HMAC-signed code (valid 15 min) for secure app connection without manual credential entry
