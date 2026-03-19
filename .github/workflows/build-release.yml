@@ -95,6 +95,31 @@ jobs:
             Download the ZIP above and upload it at:
             https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
 
+      - name: Create versioned web app snapshot
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          APP_VERSIONED="docs/app/${VERSION}"
+          if [ ! -d "$APP_VERSIONED" ]; then
+            mkdir -p "$APP_VERSIONED"
+            for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+              [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
+            done
+            [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
+          fi
+          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v=sorted(set(v+[sys.argv[1]]),key=lambda x:list(map(int,x.split('.')))); p.write_text(json.dumps(v))" "${VERSION}"
+          git add docs/app/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: add versioned web app snapshot v${VERSION} [skip ci]"
+            git push origin main
+          fi
+
   # ---------------------------------------------------------------------------
   # Ping the app server webhook to pull & deploy docs/app/ from GitHub.
   # No SSH key needed — server pulls public repo itself.
