@@ -37,6 +37,7 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 	<!-- WooCommerce Integration -->
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header"><h2><?php esc_html_e( 'WooCommerce', 'rich-statistics' ); ?></h2></div>
+		<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
 		<table class="form-table">
 			<tr>
 				<th><label for="rsa_woocommerce_enabled"><?php esc_html_e( 'Enable WooCommerce tracking', 'rich-statistics' ); ?></label></th>
@@ -50,6 +51,16 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 				</td>
 			</tr>
 		</table>
+		<?php else : ?>
+		<div style="padding:16px 0;">
+			<p><?php esc_html_e( 'Track product views, add-to-cart events, and completed orders in a dedicated analytics panel.', 'rich-statistics' ); ?></p>
+			<?php if ( function_exists( 'rs_fs' ) ) : ?>
+			<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+				<?php esc_html_e( 'Upgrade to Unlock WooCommerce Analytics', 'rich-statistics' ); ?>
+			</a>
+			<?php endif; ?>
+		</div>
+		<?php endif; ?>
 	</div>
 	<?php endif; ?>
 

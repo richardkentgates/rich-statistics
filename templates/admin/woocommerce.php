@@ -5,6 +5,23 @@
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) ); }
 
+RSA_Admin::page_header( __( 'WooCommerce', 'rich-statistics' ) );
+
+if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+	?>
+	<div class="rsa-card rsa-card-full" style="padding:24px;">
+		<p><?php esc_html_e( 'WooCommerce Analytics tracks product views, add-to-cart events, and completed orders in a dedicated dashboard without storing any customer data.', 'rich-statistics' ); ?></p>
+		<?php if ( function_exists( 'rs_fs' ) ) : ?>
+		<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+			<?php esc_html_e( 'Upgrade to Unlock WooCommerce Analytics', 'rich-statistics' ); ?>
+		</a>
+		<?php endif; ?>
+	</div>
+	<?php
+	RSA_Admin::page_footer();
+	return;
+}
+
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
@@ -18,8 +35,6 @@ if ( $period === 'custom' ) {
 }
 
 $data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
-
-RSA_Admin::page_header( __( 'WooCommerce', 'rich-statistics' ), $period );
 ?>
 
 <!-- KPI Cards -->
