@@ -848,7 +848,8 @@
 	}
 
 	function bindMenuToggle() {
-		document.getElementById( 'rsa-menu-toggle' ).addEventListener( 'click', function () {
+		document.getElementById( 'rsa-menu-toggle' ).addEventListener( 'click', function ( e ) {
+			e.stopPropagation(); // prevent click bubbling to rsa-main which would re-close the nav
 			toggleNav();
 		} );
 		// Close nav when clicking outside of it on mobile
