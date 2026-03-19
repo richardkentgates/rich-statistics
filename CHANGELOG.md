@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.3] — 2026-03-19
+
+### Added
+- **WooCommerce view in the PWA / desktop app** — new WooCommerce tab in the app shows a KPI grid (Product Views, Add to Cart, Orders, Revenue), a daily revenue bar chart, and side-by-side top-viewed-products and top-add-to-cart tables. Requires the premium WooCommerce module to be active on the site.
+- **REST API `/woocommerce` endpoint** (`rsa/v1/woocommerce`) — returns funnel counts, order count, total revenue, revenue by day, and top-product lists for the selected period. Returns `woocommerce_active: false` when WooCommerce is not installed.
+
+---
+
+## [1.4.2] — 2026-03-19
+
+### Fixed
+- **WooCommerce fatal error on activation** — `RSA_Woocommerce` class was loaded only when `is__premium_only()` but invoked under `can_use_premium_code__premium_only()`, causing a fatal "class not found" error. Added an explicit `require_once` fallback before calling `RSA_Woocommerce::init()`.
+
+---
+
 ## [1.4.1] — 2026-03-18
 
 ### Fixed
@@ -157,7 +172,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.3...HEAD
+[1.4.3]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/richardkentgates/rich-statistics/compare/v1.3.0...v1.4.0
