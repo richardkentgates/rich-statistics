@@ -131,8 +131,8 @@ jobs:
       - name: Stamp version
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          sed -i "s/\"version\": \"0\.0\.0\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
-          sed -i "s/^version = \"0\.0\.0\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
 
       - name: Add version to bundled versions.json
         run: |

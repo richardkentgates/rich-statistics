@@ -3,9 +3,8 @@
 > Privacy-first analytics for WordPress publishers — no PII, no consent banners required.
 
 <!-- Status -->
-[![Version](https://img.shields.io/badge/version-1.4.1-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.2-brightgreen)](CHANGELOG.md)
 [![Build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
-[![Tests](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 
 <!-- Stack -->
