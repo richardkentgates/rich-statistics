@@ -218,17 +218,19 @@ class RSA_Admin {
 			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'manage_options' ],
 			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'manage_options' ],
-			'campaigns' => [ 'title' => __( 'Campaigns',  'rich-statistics' ), 'label' => __( 'Campaigns',  'rich-statistics' ), 'cap' => 'manage_options' ],
 			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'manage_options' ],
-			'user-flow' => [ 'title' => __( 'User Flow', 'rich-statistics' ), 'label' => __( 'User Flow', 'rich-statistics' ), 'cap' => 'manage_options' ],
 		];
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
 			: '';
 		if ( $is_premium ) {
+			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'manage_options' ];
 		} else {
+			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
@@ -713,8 +715,8 @@ class RSA_Admin {
 			<?php if ( function_exists( 'rs_fs' ) && rs_fs()->is_not_paying() ) : ?>
 			<div class="rsa-upsell-banner">
 				<div class="rsa-upsell-banner__content">
-					<strong><?php esc_html_e( 'Unlock Click Tracking, Heatmap &amp; the Stats App', 'rich-statistics' ); ?></strong>
-					<?php esc_html_e( 'Get the full picture — see exactly where visitors click, scroll, and engage on every page.', 'rich-statistics' ); ?>
+					<strong><?php esc_html_e( 'Unlock Campaigns, User Flow, Click Tracking &amp; Heatmap', 'rich-statistics' ); ?></strong>
+					<?php esc_html_e( 'See exactly where visitors come from, where they go, what they click, and where they drop off.', 'rich-statistics' ); ?>
 				</div>
 				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
 					<?php esc_html_e( 'Upgrade Now', 'rich-statistics' ); ?>

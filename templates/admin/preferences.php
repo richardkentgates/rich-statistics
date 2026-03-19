@@ -33,18 +33,11 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		</table>
 	</div>
 
-	<!-- Click Tracking Protocols (shown always; click event recording is premium) -->
+	<!-- Click Tracking (premium only) -->
+	<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header">
 			<h2><?php esc_html_e( 'Click Tracking', 'rich-statistics' ); ?></h2>
-			<?php if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) : ?>
-				<span class="rsa-premium-badge"><?php esc_html_e( 'Premium', 'rich-statistics' ); ?></span>
-				<?php if ( function_exists( 'rs_fs' ) ) : ?>
-				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" style="font-size:12px;margin-left:6px;">
-					<small><?php esc_html_e( 'Unlock Pro', 'rich-statistics' ); ?></small>
-				</a>
-				<?php endif; ?>
-			<?php endif; ?>
 		</div>
 		<table class="form-table">
 			<?php
@@ -89,6 +82,21 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 			</tr>
 		</table>
 	</div>
+	<?php else : ?>
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header">
+			<h2><?php esc_html_e( 'Click Tracking', 'rich-statistics' ); ?></h2>
+		</div>
+		<div style="padding:16px 0;">
+			<p><?php esc_html_e( 'Record clicks on links, buttons, and elements across your site.', 'rich-statistics' ); ?></p>
+			<?php if ( function_exists( 'rs_fs' ) ) : ?>
+			<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+				<?php esc_html_e( 'Upgrade to Unlock Click Tracking', 'rich-statistics' ); ?>
+			</a>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php endif; ?>
 
 	<!-- Custom Post Types -->
 	<div class="rsa-card rsa-card-full">
