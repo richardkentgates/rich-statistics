@@ -860,16 +860,17 @@
 
 		// Update top bar title
 		var titles = {
-			overview   : 'Overview',
-			pages      : 'Top Pages',
-			audience   : 'Audience',
-			referrers  : 'Referrers',
-			behavior   : 'Behavior',
-			campaigns  : 'Campaigns',
-			'user-flow': 'User Flow',
-			clicks     : 'Click Tracking',
-			heatmap    : 'Heatmap',
-			export     : 'Export',
+			overview    : 'Overview',
+			pages       : 'Top Pages',
+			audience    : 'Audience',
+			referrers   : 'Referrers',
+			behavior    : 'Behavior',
+			campaigns   : 'Campaigns',
+			'user-flow' : 'User Flow',
+			clicks      : 'Click Tracking',
+			heatmap     : 'Heatmap',
+			export      : 'Export',
+			woocommerce : 'WooCommerce',
 		};
 		document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -1050,8 +1051,9 @@
 			case 'campaigns' : renderCampaigns( container );  break;
 			case 'user-flow' : renderUserFlow( container );   break;
 			case 'clicks'    : renderClicks( container );     break;
-			case 'heatmap'   : renderHeatmap( container );    break;
-			case 'export'    : renderExport( container );     break;
+			case 'heatmap'    : renderHeatmap( container );     break;
+			case 'export'     : renderExport( container );      break;
+			case 'woocommerce': renderWoocommerce( container ); break;
 			default: setLoading( false );
 		}
 	}
@@ -2190,6 +2192,61 @@
 			setLoading( false );
 			loadHeatmap();
 		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// WooCommerce
+	// -----------------------------------------------------------------------
+	function renderWoocommerce( container ) {
+		apiGet( 'woocommerce', { period: state.period } ).then( function ( data ) {
+			if ( ! data.woocommerce_active ) {
+				container.innerHTML = '<div class="rsa-chart-card"><p class="rsa-field-hint" style="text-align:center">WooCommerce is not active on this site.</p></div>';
+				setLoading( false );
+				return;
+			}
+
+			var funnel       = data.funnel              || { views: 0, cart: 0, orders: 0 };
+			var revenueByDay = data.revenue_by_day      || [];
+			var topViewed    = data.top_products_viewed || [];
+			var topCart      = data.top_products_cart   || [];
+			var revenue      = typeof data.revenue_total === 'number' ? data.revenue_total : 0;
+
+			var viewedRows = topViewed.map( function ( p, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( truncate( p.product_name, 40 ) ) + '</td><td>' + fmt( p.views ) + '</td></tr>';
+			} );
+			var cartRows = topCart.map( function ( p, i ) {
+				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( truncate( p.product_name, 40 ) ) + '</td><td>' + fmt( p.events ) + '</td></tr>';
+			} );
+
+			container.innerHTML =
+				tmplKpiGrid( [
+					{ label: 'Product Views', value: fmt( funnel.views )           },
+					{ label: 'Add to Cart',   value: fmt( funnel.cart )            },
+					{ label: 'Orders',        value: fmt( funnel.orders )          },
+					{ label: 'Revenue',       value: '$' + revenue.toFixed( 2 )   },
+				] ) +
+				'<div class="rsa-chart-wrap"><canvas id="c-wc-revenue"></canvas></div>' +
+				'<div class="rsa-grid-2" style="margin-top:20px">' +
+					'<div class="rsa-table-card"><h3>Top Viewed Products</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+						'<thead><tr><th>#</th><th>Product</th><th>Views</th></tr></thead>' +
+						'<tbody>' + ( viewedRows.length ? viewedRows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody>' +
+					'</table></div></div>' +
+					'<div class="rsa-table-card"><h3>Top Add-to-Cart</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+						'<thead><tr><th>#</th><th>Product</th><th>Events</th></tr></thead>' +
+						'<tbody>' + ( cartRows.length ? cartRows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody>' +
+					'</table></div></div>' +
+				'</div>';
+
+			setLoading( false );
+
+			if ( revenueByDay.length ) {
+				drawBar( 'c-wc-revenue',
+					revenueByDay.map( function ( d ) { return d.day; } ),
+					revenueByDay.map( function ( d ) { return parseFloat( d.revenue ); } ),
+					'Revenue ($)'
+				);
+			}
+		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 
 	// -----------------------------------------------------------------------
