@@ -4,15 +4,23 @@
 
 <!-- Status -->
 [![CI](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
+[![Build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
 [![Release](https://img.shields.io/github/v/release/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
+[![Open Issues](https://img.shields.io/github/issues/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/issues)
+[![Stars](https://img.shields.io/github/stars/richardkentgates/rich-statistics?style=social)](https://github.com/richardkentgates/rich-statistics/stargazers)
+[![Forks](https://img.shields.io/github/forks/richardkentgates/rich-statistics?style=social)](https://github.com/richardkentgates/rich-statistics/network/members)
 
 <!-- Stack -->
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org)
 [![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)](https://dev.mysql.com)
-[![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](src-tauri/)
+[![MariaDB](https://img.shields.io/badge/MariaDB-10.3%2B-C0765A?logo=mariadb&logoColor=white)](https://mariadb.org)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES5%20vanilla-F7DF1E?logo=javascript&logoColor=black)](assets/js/)
+[![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](webapp/)
 [![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![Composer](https://img.shields.io/badge/Composer-managed-885630?logo=composer&logoColor=white)](composer.json)
+[![PHPUnit](https://img.shields.io/badge/tested%20with-PHPUnit-366488)](tests/)
 [![Top language](https://img.shields.io/github/languages/top/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
 
 <!-- Platform -->
@@ -20,14 +28,24 @@
 [![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb)
 [![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
 
+<!-- Plugin features -->
+[![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
+[![WP-CLI](https://img.shields.io/badge/WP--CLI-supported-blue)](cli/)
+[![Freemius](https://img.shields.io/badge/premium-Freemius-FF6B35)](https://freemius.com)
+[![No runtime deps](https://img.shields.io/badge/runtime%20dependencies-none-success)](https://statistics.richardkentgates.com)
+
 <!-- Activity -->
 [![Last commit](https://img.shields.io/github/last-commit/richardkentgates/rich-statistics/main)](https://github.com/richardkentgates/rich-statistics/commits/main)
 [![Release date](https://img.shields.io/github/release-date/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/richardkentgates/rich-statistics/total)](https://github.com/richardkentgates/rich-statistics/releases)
+[![Contributors](https://img.shields.io/github/contributors/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/graphs/contributors)
+[![Repo size](https://img.shields.io/github/repo-size/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
 
 <!-- Privacy / Compliance -->
 [![No cookies](https://img.shields.io/badge/cookies-none-success)](https://statistics.richardkentgates.com)
 [![No PII](https://img.shields.io/badge/PII-none%20stored-success)](https://statistics.richardkentgates.com#privacy)
 [![GDPR friendly](https://img.shields.io/badge/GDPR-no%20consent%20banner-success)](https://statistics.richardkentgates.com#privacy)
+[![CCPA](https://img.shields.io/badge/CCPA-compliant-success)](https://statistics.richardkentgates.com#privacy)
 [![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://statistics.richardkentgates.com)
 [![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1%20AA-blueviolet)](https://statistics.richardkentgates.com)
 
