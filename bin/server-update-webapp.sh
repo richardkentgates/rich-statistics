@@ -13,10 +13,8 @@ set -euo pipefail
 
 DEPLOY_DIR="/var/www/rs-app"
 VERSION_FILE="${DEPLOY_DIR}/.deployed-version"
-REPO="richardkentgates/rich-statistics"
-# Use the tags API — any pushed tag is visible immediately,
-# unlike releases/latest which only counts formally published GitHub Releases.
-API_URL="https://api.github.com/repos/${REPO}/tags"
+REPO="https://github.com/richardkentgates/rich-statistics.git"
+API_URL="https://api.github.com/repos/richardkentgates/rich-statistics/tags"
 LOG_TAG="rsa-app-update"
 
 log() { logger -t "${LOG_TAG}" "$*" || true; echo "$(date -u +%FT%TZ)  $*"; }
@@ -39,27 +37,30 @@ fi
 
 log "Updating from ${CURRENT} to ${LATEST} …"
 
-# ── Download source tarball (public, no authentication required) ──────────────
-TARBALL="$(mktemp /tmp/rsa-XXXXXX.tar.gz)"
+# ── Sparse-clone just docs/app/ at the exact tag ─────────────────────────────
+# Public repo — no credentials needed.
 TMPDIR="$(mktemp -d /tmp/rsa-extract-XXXXXX)"
-# GitHub strips the leading 'v' from the tag in the archive directory name.
-DIR_NAME="rich-statistics-${LATEST#v}"
-
-cleanup() { rm -rf "${TMPDIR}" "${TARBALL}"; }
+cleanup() { rm -rf "${TMPDIR}"; }
 trap cleanup EXIT
 
-curl -sfL \
-    "https://github.com/${REPO}/archive/refs/tags/${LATEST}.tar.gz" \
-    -o "${TARBALL}"
+git clone \
+    --depth 1 \
+    --filter=blob:none \
+    --sparse \
+    --branch "${LATEST}" \
+    "${REPO}" \
+    "${TMPDIR}/repo" \
+    --quiet
 
-# ── Extract only docs/app/ ────────────────────────────────────────────────────
-tar -xzf "${TARBALL}" -C "${TMPDIR}" "${DIR_NAME}/docs/app/" 2>/dev/null || {
-    log "ERROR: docs/app/ not found in tarball for ${LATEST} — aborting."
+git -C "${TMPDIR}/repo" sparse-checkout set docs/app
+
+if [ ! -d "${TMPDIR}/repo/docs/app" ]; then
+    log "ERROR: docs/app/ not found in repo at tag ${LATEST} — aborting."
     exit 1
-}
+fi
 
 # ── Sync to the deploy directory ─────────────────────────────────────────────
-rsync -a --delete "${TMPDIR}/${DIR_NAME}/docs/app/" "${DEPLOY_DIR}/"
+rsync -a --delete "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 
 # ── Record the deployed version ──────────────────────────────────────────────
 echo "${LATEST}" > "${VERSION_FILE}"
