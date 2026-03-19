@@ -7,6 +7,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.0] — 2026-06-17
+
+### Added
+- **Admin heatmap redesign** — replaced the iframe + thermal-overlay approach with a self-contained
+  dark canvas (`#111c2b`). The canvas draws scroll-depth guide lines, a fold marker at ~30 % height,
+  and radial-gradient heat dots that scale with click weight. A side panel lists the top-clicked DOM
+  elements with a horizontal bar chart. No external page preview required; the heatmap renders
+  entirely within the WordPress admin.
+- **Hotspot tooltips** — hovering a heat dot in the admin heatmap (or the PWA heatmap) now shows a
+  tooltip listing the DOM elements clicked at that coordinate cluster, with individual click counts.
+  Tooltip position uses smart edge-detection: it flips to the opposite side when near the canvas edge.
+- **Custom date range** — all period selectors (admin heatmap, PWA views, export) now support a
+  "Custom range…" option. Selecting it reveals a from/to date picker; the chosen range is persisted
+  in `localStorage` and automatically injected into every API request while active.
+- **Heatmap REST API: custom date range** — `GET rsa/v1/heatmap` now accepts `date_from` and `date_to`
+  query parameters alongside `period=custom`, matching all other endpoints.
+
+### Fixed
+- **Admin bar suppression cleanup** — removed the legacy `maybe_hide_preview_bar()` method and
+  `?rsa_preview` query-var filter that were left over from the old iframe heatmap preview.
+
+---
+
 ## [1.3.0] — 2026-03-17
 
 ### Added

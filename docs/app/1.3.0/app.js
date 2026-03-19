@@ -31,8 +31,6 @@
 		siteUrl     : '',        // computed from active site
 		credentials : '',        // computed: base64(user:app_pass)
 		period      : '30d',
-		dateFrom    : '',        // custom range start (YYYY-MM-DD)
-		dateTo      : '',        // custom range end   (YYYY-MM-DD)
 		view        : 'overview',
 		charts      : {},        // keyed by canvas id
 		cache       : {},        // keyed by endpoint+period
@@ -95,9 +93,7 @@
 
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
-		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
-		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
-		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
+		state.period   = localStorage.getItem( 'rsa_period' ) || '30d';
 
 		// When the app is served from a WP site (/rs-app/), config.js sets
 		// autoSiteUrl and serve_app() injects a nonce.  Auto-register the
@@ -325,10 +321,6 @@
 	}
 
 	function apiGet( endpoint, params ) {
-		// Inject custom date range into every request when active
-		if ( params && state.period === 'custom' && state.dateFrom && state.dateTo ) {
-			params = Object.assign( {}, params, { date_from: state.dateFrom, date_to: state.dateTo } );
-		}
 		var url = state.siteUrl + '/wp-json/rsa/v1/' + endpoint;
 		var qs  = [];
 		if ( params ) {
@@ -808,43 +800,12 @@
 	}
 
 	function bindPeriodSelect() {
-		var periodSel     = document.getElementById( 'rsa-period-select' );
-		var customDates   = document.getElementById( 'rsa-custom-dates' );
-		var dateFromInput = document.getElementById( 'rsa-date-from' );
-		var dateToInput   = document.getElementById( 'rsa-date-to' );
-
-		function applyCustomDates() {
-			if ( dateFromInput && dateToInput && dateFromInput.value && dateToInput.value ) {
-				state.dateFrom = dateFromInput.value;
-				state.dateTo   = dateToInput.value;
-				localStorage.setItem( 'rsa_date_from', state.dateFrom );
-				localStorage.setItem( 'rsa_date_to',   state.dateTo );
-				state.cache = {};
-				renderView( state.view );
-			}
-		}
-
-		periodSel.addEventListener( 'change', function () {
+		document.getElementById( 'rsa-period-select' ).addEventListener( 'change', function () {
 			state.period = this.value;
 			localStorage.setItem( 'rsa_period', state.period );
-			state.cache = {};
-			if ( customDates ) customDates.hidden = ( state.period !== 'custom' );
-			if ( state.period !== 'custom' ) {
-				state.dateFrom = '';
-				state.dateTo   = '';
-				renderView( state.view );
-			}
+			state.cache = {};  // invalidate on period change
+			renderView( state.view );
 		} );
-
-		if ( dateFromInput ) dateFromInput.addEventListener( 'change', applyCustomDates );
-		if ( dateToInput   ) dateToInput.addEventListener(   'change', applyCustomDates );
-
-		// Init on load
-		if ( customDates ) customDates.hidden = ( state.period !== 'custom' );
-		if ( state.period === 'custom' ) {
-			if ( dateFromInput && state.dateFrom ) dateFromInput.value = state.dateFrom;
-			if ( dateToInput   && state.dateTo   ) dateToInput.value   = state.dateTo;
-		}
 	}
 
 	function bindMenuToggle() {
@@ -1960,14 +1921,10 @@
 
 				if ( best && bestDist < 5.5 ) {
 					tipEl.innerHTML = buildTip( best );
-					var tipW = 224;
-					var tipH = tipEl.offsetHeight || 100;
-					var tx   = ev.clientX - wrapRect.left + 6;
-					var ty   = ev.clientY - wrapRect.top  + 6;
-					if ( tx + tipW > wrapRect.width  - 4 ) { tx = ev.clientX - wrapRect.left - tipW - 6; }
-					if ( ty + tipH > wrapRect.height - 4 ) { ty = ev.clientY - wrapRect.top  - tipH - 6; }
-					tipEl.style.left = Math.max( 2, tx ) + 'px';
-					tipEl.style.top  = Math.max( 2, ty ) + 'px';
+					var tx = Math.min( ev.clientX - wrapRect.left + 14, wrapRect.width - 230 );
+					var ty = Math.max( ev.clientY - wrapRect.top  - 10, 4 );
+					tipEl.style.left = tx + 'px';
+					tipEl.style.top  = ty + 'px';
 					tipEl.hidden = false;
 				} else {
 					tipEl.hidden = true;

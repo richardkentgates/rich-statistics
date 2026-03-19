@@ -1,140 +1,215 @@
 /* <fs_premium_only> */
 
 /**
- * Rich Statistics — Heatmap Canvas Overlay
+ * Rich Statistics — Admin Heatmap Renderer
  *
- * Reads window.RSA_HEATMAP (array of {x, y, weight} objects injected by PHP)
- * and renders a radial-gradient heatmap on a canvas sitting above the iframe preview.
- *
- * No dependencies.
+ * Reads window.RSA_HEATMAP ({x,y,weight,elements}[]) and window.RSA_CLICKS
+ * injected by the PHP template and renders a dark canvas heatmap with:
+ *   - scroll-depth guide lines + fold marker
+ *   - radial-gradient heat dots
+ *   - hotspot hover tooltip showing element breakdown
+ *   - side-by-side click-element table
  */
+/* global window, document */
 
 ( function () {
-	'use strict';
+'use strict';
 
-	var data = window.RSA_HEATMAP;
-	if ( ! Array.isArray( data ) || data.length === 0 ) {
-		return;
-	}
+var heatData  = window.RSA_HEATMAP || [];
+var clicks    = window.RSA_CLICKS  || [];
+var canvas    = document.getElementById( 'rsa-heatmap-canvas' );
+var container = document.getElementById( 'rsa-heatmap-container' );
+var tipEl     = document.getElementById( 'rsa-hm-admin-tip' );
+var tableWrap = document.getElementById( 'rsa-hm-admin-table' );
 
-	var canvas    = document.getElementById( 'rsa-heatmap-canvas' );
-	var container = document.getElementById( 'rsa-heatmap-container' );
+if ( ! canvas || ! container ) { return; }
 
-	if ( ! canvas || ! container ) {
-		return;
-	}
+// ── colour helper ─────────────────────────────────────────────────────
+function heatColour( t, alpha ) {
+var seg, r, g, b;
+if ( t < 0.25 ) {
+seg = t / 0.25;
+r = 74;  g = Math.round( 144 + seg * ( 192 - 144 ) );  b = Math.round( 184 + seg * ( 255 - 184 ) );
+} else if ( t < 0.5 ) {
+seg = ( t - 0.25 ) / 0.25;
+r = Math.round( 74 + seg * ( 144 - 74 ) );  g = Math.round( 192 + seg * ( 220 - 192 ) );  b = Math.round( 255 - seg * 255 );
+} else if ( t < 0.75 ) {
+seg = ( t - 0.5 ) / 0.25;
+r = Math.round( 144 + seg * ( 245 - 144 ) );  g = Math.round( 220 - seg * ( 220 - 197 ) );  b = Math.round( seg * 24 );
+} else {
+seg = ( t - 0.75 ) / 0.25;
+r = Math.round( 245 - seg * ( 245 - 232 ) );  g = Math.round( 197 - seg * ( 197 - 83 ) );  b = Math.round( 24 + seg * ( 42 - 24 ) );
+}
+return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
 
-	var ctx;
-	var maxWeight;
+// ── draw dark canvas ──────────────────────────────────────────────────
+function drawCanvas() {
+var W = container.offsetWidth || 480;
+var H = Math.round( W * ( 756 / 540 ) );
+canvas.width  = W;
+canvas.height = H;
+canvas.style.height = H + 'px';
 
-	function init() {
-		ctx = canvas.getContext( '2d' );
-		resize();
-		render();
-		window.addEventListener( 'resize', function () {
-			resize();
-			render();
-		} );
-	}
+var ctx = canvas.getContext( '2d' );
 
-	function resize() {
-		var rect    = container.getBoundingClientRect();
-		canvas.width  = rect.width  || container.offsetWidth;
-		canvas.height = rect.height || container.offsetHeight;
-	}
+ctx.fillStyle = '#111c2b';
+ctx.fillRect( 0, 0, W, H );
 
-	function render() {
-		var w = canvas.width;
-		var h = canvas.height;
+// Horizontal grid lines at 25 % depth intervals
+ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+ctx.lineWidth = 1;
+[ 0.25, 0.5, 0.75 ].forEach( function ( pct ) {
+var y = Math.round( pct * H ) + 0.5;
+ctx.beginPath(); ctx.moveTo( 0, y ); ctx.lineTo( W, y ); ctx.stroke();
+} );
 
-		ctx.clearRect( 0, 0, w, h );
+// Fold line at ~30 %
+ctx.save();
+ctx.strokeStyle = 'rgba(74,144,184,0.4)';
+ctx.lineWidth = 1;
+ctx.setLineDash( [ 6, 4 ] );
+var foldY = Math.round( 0.3 * H ) + 0.5;
+ctx.beginPath(); ctx.moveTo( 0, foldY ); ctx.lineTo( W, foldY ); ctx.stroke();
+ctx.restore();
+ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+ctx.fillStyle = 'rgba(74,144,184,0.65)';
+ctx.fillText( 'above fold', 6, foldY - 4 );
 
-		// Find max weight for normalisation
-		maxWeight = 0;
-		data.forEach( function ( p ) {
-			if ( p.weight > maxWeight ) { maxWeight = p.weight; }
-		} );
+// Y-axis depth labels
+ctx.fillStyle = 'rgba(255,255,255,0.22)';
+ctx.textAlign = 'right';
+[ [ 0, '0%' ], [ 0.25, '25%' ], [ 0.5, '50%' ], [ 0.75, '75%' ], [ 1, '100%' ] ].forEach( function ( pair ) {
+var yPos = Math.round( pair[0] * H );
+ctx.fillText( pair[1], W - 4, Math.max( 11, yPos + ( pair[0] === 1 ? -3 : 11 ) ) );
+} );
+ctx.textAlign = 'left';
 
-		if ( maxWeight === 0 ) { return; }
+// Heat dots
+if ( heatData.length ) {
+var maxW = Math.max.apply( null, heatData.map( function ( p ) { return p.weight || 1; } ) );
+heatData.forEach( function ( p ) {
+var t    = ( p.weight || 1 ) / maxW;
+var px   = ( p.x / 100 ) * W;
+var py   = ( p.y / 100 ) * H;
+var brad = Math.max( 18, Math.round( t * 64 ) );
+if ( isNaN( px ) || isNaN( py ) ) { return; }
+var grad = ctx.createRadialGradient( px, py, 0, px, py, brad );
+grad.addColorStop( 0,   heatColour( t, 0.92 ) );
+grad.addColorStop( 0.5, heatColour( t, 0.45 ) );
+grad.addColorStop( 1,   heatColour( t, 0 ) );
+ctx.fillStyle = grad;
+ctx.beginPath();
+ctx.arc( px, py, brad, 0, Math.PI * 2 );
+ctx.fill();
+} );
+}
+}
 
-		// Radius scales with smallest dimension, minimum 30px
-		var radius = Math.max( 30, Math.min( w, h ) * 0.04 );
+// ── tooltip ───────────────────────────────────────────────────────────
+function esc( s ) {
+return String( s )
+.replace( /&/g, '&amp;' )
+.replace( /</g, '&lt;'  )
+.replace( />/g, '&gt;'  )
+.replace( /"/g, '&quot;' );
+}
 
-		// Draw all points onto an offscreen canvas first, then colorise
-		var offscreen = document.createElement( 'canvas' );
-		offscreen.width  = w;
-		offscreen.height = h;
-		var off = offscreen.getContext( '2d' );
+function fmt( n ) {
+return Number( n ).toLocaleString();
+}
 
-		data.forEach( function ( point ) {
-			var px = ( point.x / 100 ) * w;
-			var py = ( point.y / 100 ) * h;
-			var alpha = Math.min( 1, point.weight / maxWeight );
+function buildTip( dot ) {
+var head = '<div class="rsa-hm-tip-head">' +
+fmt( dot.weight ) + ' click' + ( dot.weight !== 1 ? 's' : '' ) +
+' &middot; (' + Math.round( dot.x ) + '%, ' + Math.round( dot.y ) + '%)' +
+'</div>';
+if ( ! dot.elements || ! dot.elements.length ) { return head; }
+var rows = dot.elements.map( function ( e ) {
+var label = ( e.text || '' ).trim() || '\u2014';
+if ( label.length > 34 ) { label = label.slice( 0, 34 ) + '\u2026'; }
+var tag = e.tag ? ' <span class="rsa-hm-tag">&lt;' + esc( e.tag ) + '&gt;</span>' : '';
+return '<tr><td>' + esc( label ) + tag + '</td><td>' + fmt( e.count ) + '</td></tr>';
+} ).join( '' );
+return head + '<table class="rsa-hm-tip-tbl"><tbody>' + rows + '</tbody></table>';
+}
 
-			var grad = off.createRadialGradient( px, py, 0, px, py, radius );
-			grad.addColorStop( 0,   'rgba(0,0,0,' + alpha + ')' );
-			grad.addColorStop( 1,   'rgba(0,0,0,0)' );
+function bindTooltip() {
+if ( ! tipEl ) { return; }
+canvas.style.cursor = 'crosshair';
+canvas.addEventListener( 'mousemove', function ( ev ) {
+var rect     = canvas.getBoundingClientRect();
+var mx       = ( ( ev.clientX - rect.left ) / rect.width  ) * 100;
+var my       = ( ( ev.clientY - rect.top  ) / rect.height ) * 100;
+var wrapRect = container.getBoundingClientRect();
 
-			off.beginPath();
-			off.arc( px, py, radius, 0, Math.PI * 2 );
-			off.fillStyle = grad;
-			off.fill();
-		} );
+var best = null, bestDist = Infinity;
+heatData.forEach( function ( d ) {
+var dx = d.x - mx;
+var dy = ( d.y - my ) * ( 540 / 756 );
+var dist = Math.sqrt( dx * dx + dy * dy );
+if ( dist < bestDist ) { bestDist = dist; best = d; }
+} );
 
-		// Colorise: map grayscale intensity → thermal colour
-		ctx.drawImage( offscreen, 0, 0 );
-		var imageData = ctx.getImageData( 0, 0, w, h );
-		var pixels    = imageData.data;
+if ( best && bestDist < 5.5 ) {
+tipEl.innerHTML = buildTip( best );
+var tipW = 224;
+var tipH = tipEl.offsetHeight || 100;
+var tx   = ev.clientX - wrapRect.left + 6;
+var ty   = ev.clientY - wrapRect.top  + 6;
+if ( tx + tipW > wrapRect.width  - 4 ) { tx = ev.clientX - wrapRect.left - tipW - 6; }
+if ( ty + tipH > wrapRect.height - 4 ) { ty = ev.clientY - wrapRect.top  - tipH - 6; }
+tipEl.style.left = Math.max( 2, tx ) + 'px';
+tipEl.style.top  = Math.max( 2, ty ) + 'px';
+tipEl.hidden = false;
+} else {
+tipEl.hidden = true;
+}
+} );
+canvas.addEventListener( 'mouseleave', function () { tipEl.hidden = true; } );
+}
 
-		for ( var i = 0; i < pixels.length; i += 4 ) {
-			var intensity = pixels[ i + 3 ] / 255; // alpha channel = heat
-			if ( intensity === 0 ) { continue; }
+// ── click-element table ───────────────────────────────────────────────
+function renderClickTable() {
+if ( ! tableWrap ) { return; }
+if ( ! clicks.length ) {
+tableWrap.innerHTML = '<p style="color:#666;font-size:13px">No element click data for this page.</p>';
+return;
+}
+var maxC = clicks[0].clicks || 1;
+var rows = clicks.slice( 0, 25 ).map( function ( c ) {
+var label = ( c.text || '' ).trim();
+if ( ! label && c.href_value ) { label = c.href_value; }
+if ( ! label ) { label = '\u2014'; }
+if ( label.length > 42 ) { label = label.slice( 0, 42 ) + '\u2026'; }
+var tag = c.tag ? '<span class="rsa-hm-tag">&lt;' + esc( c.tag ) + '&gt;</span>' : '';
+var bar = Math.round( ( ( c.clicks || 0 ) / maxC ) * 100 );
+return '<tr>' +
+'<td class="rsa-hm-label">' + esc( label ) + tag + '</td>' +
+'<td class="rsa-hm-bar-cell"><div class="rsa-hm-bar-bg"><div class="rsa-hm-bar-fill" style="width:' + bar + '%"></div></div></td>' +
+'<td class="rsa-hm-count">' + fmt( c.clicks || 0 ) + '</td>' +
+'</tr>';
+} ).join( '' );
+tableWrap.innerHTML =
+'<p class="rsa-hm-admin-table-title">Top Clicked Elements</p>' +
+'<table class="rsa-hm-table">' +
+'<thead><tr><th>Element</th><th></th><th>Clicks</th></tr></thead>' +
+'<tbody>' + rows + '</tbody>' +
+'</table>';
+}
 
-			var rgb = thermalColor( intensity );
-			pixels[ i ]     = rgb[0];
-			pixels[ i + 1 ] = rgb[1];
-			pixels[ i + 2 ] = rgb[2];
-			pixels[ i + 3 ] = Math.round( intensity * 200 ); // max 78% opacity
-		}
+function init() {
+drawCanvas();
+bindTooltip();
+renderClickTable();
+window.addEventListener( 'resize', drawCanvas );
+}
 
-		ctx.putImageData( imageData, 0, 0 );
-	}
-
-	/**
-	 * Map 0–1 intensity to a thermal colour (blue → cyan → green → yellow → red).
-	 * Returns [r, g, b].
-	 */
-	function thermalColor( t ) {
-		// Colour stops: [t, r, g, b]
-		var stops = [
-			[ 0.00, 0,   0,   255 ],
-			[ 0.25, 0,   255, 255 ],
-			[ 0.50, 0,   255, 0   ],
-			[ 0.75, 255, 255, 0   ],
-			[ 1.00, 255, 0,   0   ],
-		];
-
-		for ( var i = 0; i < stops.length - 1; i++ ) {
-			var lo = stops[ i ];
-			var hi = stops[ i + 1 ];
-			if ( t >= lo[0] && t <= hi[0] ) {
-				var f = ( t - lo[0] ) / ( hi[0] - lo[0] );
-				return [
-					Math.round( lo[1] + ( hi[1] - lo[1] ) * f ),
-					Math.round( lo[2] + ( hi[2] - lo[2] ) * f ),
-					Math.round( lo[3] + ( hi[3] - lo[3] ) * f ),
-				];
-			}
-		}
-		return [ 255, 0, 0 ];
-	}
-
-	// Wait for DOM ready
-	if ( document.readyState === 'loading' ) {
-		document.addEventListener( 'DOMContentLoaded', init );
-	} else {
-		init();
-	}
+if ( document.readyState === 'loading' ) {
+document.addEventListener( 'DOMContentLoaded', init );
+} else {
+init();
+}
 
 }() );
 

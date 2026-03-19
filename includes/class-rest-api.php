@@ -246,7 +246,7 @@ class RSA_Rest_API {
 	public static function get_info(): WP_REST_Response {
 		return self::ok( [
 			'version'   => RSA_VERSION,
-			'app_url'   => trailingslashit( home_url( 'rs-app' ) ),
+			'app_url'   => RSA_APP_URL,
 			'site_name' => get_bloginfo( 'name' ),
 			'site_url'  => get_site_url(),
 		] );
@@ -343,7 +343,11 @@ class RSA_Rest_API {
 	}
 
 	public static function get_heatmap( WP_REST_Request $r ): WP_REST_Response {
-		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ?: '/', $r['period'] ) );
+		$date_from = (string) ( $r['date_from'] ?? '' );
+		$date_to   = (string) ( $r['date_to']   ?? '' );
+		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
+		if ( $date_to   && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
+		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ?: '/', $r['period'], $date_from, $date_to ) );
 	}
 
 	public static function get_export( WP_REST_Request $r ): WP_REST_Response {

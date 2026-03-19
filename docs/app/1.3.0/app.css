@@ -374,25 +374,6 @@ html, body {
 
 .rsa-period-select:focus { border-color: var(--rsa-accent); }
 
-.rsa-custom-dates {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	margin-left: 6px;
-}
-.rsa-date-input {
-	border: 1px solid var(--rsa-border);
-	border-radius: var(--rsa-radius);
-	padding: 4px 8px;
-	font-size: 12px;
-	background: var(--rsa-surface);
-	color: var(--rsa-text);
-	outline: none;
-	width: 130px;
-}
-.rsa-date-input:focus { border-color: var(--rsa-accent); }
-.rsa-custom-dates-sep { font-size: 12px; color: var(--rsa-muted); }
-
 /* =========================================================================
    Loading overlay
    ========================================================================= */

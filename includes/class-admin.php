@@ -27,23 +27,7 @@ class RSA_Admin {
 		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
 
-// Suppress admin bar in heatmap iframe preview.
-			// Called directly (not via add_action) so the filter is registered at plugins_loaded
-			// time, before _wp_admin_bar_init fires at init priority 40.
-			self::maybe_hide_preview_bar();
 		}
-
-		/**
-		 * Hide the WP admin bar when the page is loaded inside the heatmap iframe preview.
-		 * Must be called before init fires so the show_admin_bar filter is in place
-		 * before _wp_admin_bar_init() evaluates it at init priority 40.
-	 */
-	public static function maybe_hide_preview_bar(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display flag only, no state change
-		if ( ! empty( $_GET['rsa_preview'] ) ) {
-			add_filter( 'show_admin_bar', '__return_false' );
-		}
-	}
 
 	public static function register_app_rewrite(): void {
 		add_rewrite_rule( '^rs-app/?$',              'index.php?rsa_app=1',      'top' );
@@ -406,29 +390,44 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Page dropdown helper — WordPress-native list for page filters
+	// Page dropdown helper — all public WordPress content
 	// ----------------------------------------------------------------
 
 	public static function get_trackable_pages(): array {
-		$enabled_cpts = get_option( 'rsa_enabled_post_types', [] );
-		$post_types   = array_merge( [ 'page', 'post' ], is_array( $enabled_cpts ) ? $enabled_cpts : [] );
+		// All public post types, all non-trash statuses — same source used
+		// for purge eligibility checks so the two stay in sync automatically.
+		$post_types = array_diff(
+			array_keys( get_post_types( [ 'public' => true ] ) ),
+			[ 'attachment' ]
+		);
 
 		$posts = get_posts( [
-			'post_type'      => array_unique( $post_types ),
-			'post_status'    => 'publish',
-			'numberposts'    => 500,
-			'orderby'        => 'post_type',
-			'order'          => 'ASC',
+			'post_type'     => $post_types,
+			'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
+			'numberposts'   => -1,
+			'no_found_rows' => true,
+			'orderby'       => 'post_title',
+			'order'         => 'ASC',
 		] );
 
-		$pages = [];
+		// Home is always pinned first.
+		$pages = [ '/' => __( 'Home', 'rich-statistics' ) ];
+
 		foreach ( $posts as $post ) {
 			$url  = get_permalink( $post );
+			if ( ! $url ) { continue; }
 			$path = wp_make_link_relative( $url );
-			$pages[ $path ] = get_the_title( $post ) . ' (' . $path . ')';
+			// Skip query-string-only URLs (e.g. ?p=123 for un-slugged drafts).
+			if ( ! $path || $path[0] !== '/' || strpos( $path, '?' ) !== false ) { continue; }
+			if ( $path === '/' ) { continue; } // home already added
+			$pages[ $path ] = get_the_title( $post );
 		}
+
+		// Keep home pinned at top; sort the rest alphabetically by path.
+		$home = [ '/' => $pages['/'] ];
+		unset( $pages['/'] );
 		ksort( $pages );
-		return $pages;
+		return $home + $pages;
 	}
 
 	// ----------------------------------------------------------------
@@ -599,7 +598,7 @@ class RSA_Admin {
 			return;
 		}
 
-		$app_url = trailingslashit( home_url( 'rs-app' ) );
+		$app_url = RSA_APP_URL;
 		?>
 		<tr class="rsa-webapp-row">
 			<th scope="row"><?php esc_html_e( 'Rich Statistics App', 'rich-statistics' ); ?></th>
@@ -833,8 +832,9 @@ class RSA_Admin {
 				'title'   => __( 'Heatmap (Premium)', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'Heatmap (Premium)', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'The heatmap shows where visitors click on a page using a thermal colour overlay (blue = cold → red = hot). Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient.', 'rich-statistics' ) . '</p>',
+					'<p>' . esc_html__( 'The heatmap displays a dark canvas showing scroll-depth guide lines and click-hotspot dots for any tracked page. Dot colour ranges from cool blue (few clicks) to hot red (many clicks). Hover a dot to see which DOM elements were clicked at that position. Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'The side panel lists the top-clicked elements with a click bar chart — useful for identifying links and buttons that get the most engagement.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Use the Period selector to change the date range. Custom start/end dates are supported. Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-email-settings' => [
 				'id'      => 'rsa-email-help',

@@ -1,33 +1,207 @@
 /* <fs_premium_only> */
 
-/* ==========================================================================
-   Rich Statistics — Heatmap Admin CSS  (Premium)
-   ========================================================================== */
+/* ── Admin heatmap page layout ─────────────────────────────────────────── */
 
-.rsa-heatmap-container {
-	position     : relative;
-	width        : 100%;
-	background   : #f8fafc;
-	overflow     : hidden;
-	border-radius: 0 0 10px 10px;
+.rsa-hm-admin-body {
+display: flex;
+gap: 20px;
+align-items: flex-start;
 }
 
-.rsa-heatmap-iframe {
-	display        : block;
-	width          : 100%;
-	height         : 80vh;
-	border         : none;
-	background     : #fff;
-	pointer-events : none;
+.rsa-hm-admin-canvas-wrap {
+flex: 0 0 52%;
+min-width: 0;
+position: relative;
 }
 
-.rsa-heatmap-canvas {
-	position       : absolute;
-	top            : 0;
-	left           : 0;
-	width          : 100% !important;
-	height         : 100% !important;
-	pointer-events : none;
+.rsa-hm-admin-head {
+display: flex;
+justify-content: space-between;
+margin-bottom: 14px;
+flex-wrap: wrap;
+gap: 6px;
+}
+
+.rsa-hm-admin-path {
+font-size: 13px;
+font-weight: 600;
+font-family: monospace;
+}
+
+.rsa-hm-admin-meta {
+font-size: 12px;
+color: #888;
+}
+
+.rsa-hm-admin-table-title {
+font-size: 12px;
+font-weight: 600;
+color: #888;
+text-transform: uppercase;
+letter-spacing: 0.04em;
+margin: 0 0 10px;
+}
+
+#rsa-heatmap-canvas {
+display: block;
+width: 100%;
+height: auto;
+border-radius: 4px;
+}
+
+.rsa-hm-admin-table-wrap {
+flex: 1;
+min-width: 0;
+max-height: 520px;
+overflow-y: auto;
+}
+
+@media ( max-width: 900px ) {
+.rsa-hm-admin-body {
+flex-direction: column;
+}
+.rsa-hm-admin-canvas-wrap {
+flex: none;
+width: 100%;
+}
+}
+
+/* ── Legend ─────────────────────────────────────────────────────────────── */
+
+.rsa-hm-legend {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-top: 8px;
+font-size: 11px;
+color: #888;
+}
+
+.rsa-hm-legend-bar {
+flex: 1;
+height: 6px;
+border-radius: 3px;
+background: linear-gradient( to right, #4a90b8, #90c060, #f5c518, #e8532a );
+}
+
+/* ── Hotspot tooltip ────────────────────────────────────────────────────── */
+
+.rsa-hm-tip {
+position: absolute;
+z-index: 20;
+background: #1a2636;
+border: 1px solid rgba( 74, 144, 184, 0.4 );
+border-radius: 6px;
+padding: 8px 10px;
+pointer-events: none;
+min-width: 150px;
+max-width: 220px;
+box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.45 );
+}
+
+.rsa-hm-tip-head {
+font-size: 11px;
+font-weight: 600;
+color: rgba( 74, 144, 184, 0.9 );
+margin-bottom: 6px;
+}
+
+.rsa-hm-tip-tbl {
+width: 100%;
+border-collapse: collapse;
+font-size: 11px;
+color: #c8d8e8;
+}
+
+.rsa-hm-tip-tbl td {
+padding: 2px 0;
+vertical-align: top;
+}
+
+.rsa-hm-tip-tbl td:last-child {
+text-align: right;
+padding-left: 10px;
+white-space: nowrap;
+color: rgba( 255, 255, 255, 0.5 );
+}
+
+/* ── Click-element table ────────────────────────────────────────────────── */
+
+.rsa-hm-table {
+width: 100%;
+border-collapse: collapse;
+font-size: 12px;
+}
+
+.rsa-hm-table thead th {
+font-size: 11px;
+font-weight: 600;
+color: #888;
+text-align: left;
+padding: 0 4px 6px;
+border-bottom: 1px solid #e2e8f0;
+}
+
+.rsa-hm-table thead th:last-child {
+text-align: right;
+}
+
+.rsa-hm-table tbody td {
+padding: 6px 4px;
+border-bottom: 1px solid #e2e8f0;
+vertical-align: middle;
+}
+
+.rsa-hm-table tbody tr:last-child td {
+border-bottom: none;
+}
+
+.rsa-hm-label {
+max-width: 0;
+width: 56%;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.rsa-hm-tag {
+display: inline-block;
+margin-left: 5px;
+padding: 1px 5px;
+font-size: 10px;
+font-family: monospace;
+background: #f1f5f9;
+border: 1px solid #e2e8f0;
+border-radius: 3px;
+color: #888;
+vertical-align: middle;
+}
+
+.rsa-hm-bar-cell {
+width: 36%;
+min-width: 48px;
+padding: 6px 8px;
+}
+
+.rsa-hm-bar-bg {
+height: 6px;
+background: #f1f5f9;
+border-radius: 3px;
+overflow: hidden;
+}
+
+.rsa-hm-bar-fill {
+height: 100%;
+background: #4a90b8;
+border-radius: 3px;
+min-width: 2px;
+}
+
+.rsa-hm-count {
+text-align: right;
+white-space: nowrap;
+color: #888;
+font-size: 12px;
 }
 
 /* </fs_premium_only> */

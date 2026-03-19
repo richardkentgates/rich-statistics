@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
@@ -24,13 +24,14 @@ if ( function_exists( 'rs_fs' ) ) {
 	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
-	define( 'RSA_VERSION',     '1.3.0' );
+	define( 'RSA_VERSION',     '1.4.0' );
 	define( 'RSA_FILE',        __FILE__ );
 	define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
 	define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );
 	define( 'RSA_ASSETS_URL',  RSA_URL . 'assets/' );
 	define( 'RSA_MIN_WP',      '6.0' );
 	define( 'RSA_MIN_PHP',     '8.0' );
+	define( 'RSA_APP_URL',     'https://rs-app.richardkentgates.com/' . RSA_VERSION . '/' );
 
 	/**
 	 * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE

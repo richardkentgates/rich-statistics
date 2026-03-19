@@ -2,12 +2,16 @@
 
 > Privacy-first analytics for WordPress publishers — no PII, no consent banners required.
 
+[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen)](CHANGELOG.md)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress)](https://wordpress.org)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 [![Tests](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
+[![PWA](https://img.shields.io/badge/PWA-enabled-5A0FC8?logo=pwa)](https://rs-app.richardkentgates.com)
+[![No cookies](https://img.shields.io/badge/cookies-none-success)](https://statistics.richardkentgates.com)
+[![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://statistics.richardkentgates.com)
 
-**Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com)
+**Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com) &nbsp;|&nbsp; **Web App:** [rs-app.richardkentgates.com](https://rs-app.richardkentgates.com)
 
 ---
 
