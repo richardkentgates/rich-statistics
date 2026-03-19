@@ -173,6 +173,9 @@ function rsa_init() {
 	// WooCommerce integration (premium feature — gated via Freemius)
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 		if ( class_exists( 'WooCommerce' ) ) {
+			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
+				require_once RSA_DIR . 'includes/class-woocommerce.php';
+			}
 			RSA_Woocommerce::init();
 		}
 	}
