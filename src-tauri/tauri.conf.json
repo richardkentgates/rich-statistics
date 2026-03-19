@@ -22,7 +22,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "TAURI_UPDATER_PUBKEY",
+      "pubkey": "RWTV9nu6y2OaqllTAcE1lc8GXDPE+DDenggNLbPQwpMrSkGsPmMQTnjj",
       "endpoints": [
         "https://rs-app.richardkentgates.com/desktop/update.json"
       ],
