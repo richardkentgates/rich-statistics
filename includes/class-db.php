@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 class RSA_DB {
 
 	// Schema version stored per-site
-	const SCHEMA_VERSION = 8;
+	const SCHEMA_VERSION = 9;
 	const OPTION_KEY     = 'rsa_db_version';
 
 	// ----------------------------------------------------------------
@@ -27,7 +27,8 @@ class RSA_DB {
 	public static function events_table(): string   { return self::table( 'events' ); }
 	public static function sessions_table(): string { return self::table( 'sessions' ); }
 	public static function clicks_table(): string   { return self::table( 'clicks' ); }
-	public static function heatmap_table(): string  { return self::table( 'heatmap' ); }
+	public static function heatmap_table(): string    { return self::table( 'heatmap' ); }
+	public static function wc_events_table(): string  { return self::table( 'wc_events' ); }
 
 	// ----------------------------------------------------------------
 	// Activation
@@ -139,11 +140,29 @@ class RSA_DB {
 			KEY page_date (page(191), date_bucket)
 		) $charset;";
 
+		$wc_events = "CREATE TABLE " . self::wc_events_table() . " (
+			id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			session_id      VARCHAR(36)         NOT NULL,
+			event_type      VARCHAR(32)         NOT NULL,
+			product_id      BIGINT(20) UNSIGNED DEFAULT NULL,
+			product_name    VARCHAR(255)        DEFAULT NULL,
+			product_sku     VARCHAR(100)        DEFAULT NULL,
+			quantity        SMALLINT UNSIGNED   DEFAULT NULL,
+			order_total     DECIMAL(12,2)       DEFAULT NULL,
+			order_currency  VARCHAR(8)          DEFAULT NULL,
+			created_at      DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY session_id  (session_id),
+			KEY event_type  (event_type),
+			KEY created_at  (created_at)
+		) $charset;";
+
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $events );
 		dbDelta( $sessions );
 		dbDelta( $clicks );
 		dbDelta( $heatmap );
+		dbDelta( $wc_events );
 
 		update_option( self::OPTION_KEY, self::SCHEMA_VERSION, false );
 
@@ -216,6 +235,27 @@ class RSA_DB {
 		if ( empty( $col5 ) ) {
 			$wpdb->query( "ALTER TABLE `{$wpdb->prefix}rsa_events` ADD COLUMN utm_campaign VARCHAR(255) DEFAULT NULL AFTER utm_medium" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time schema migration
 		}
+
+		// v9: create rsa_wc_events table if missing (new installs get it via install())
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		$charset   = $wpdb->get_charset_collate();
+		$wc_events = "CREATE TABLE " . self::wc_events_table() . " (
+			id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			session_id      VARCHAR(36)         NOT NULL,
+			event_type      VARCHAR(32)         NOT NULL,
+			product_id      BIGINT(20) UNSIGNED DEFAULT NULL,
+			product_name    VARCHAR(255)        DEFAULT NULL,
+			product_sku     VARCHAR(100)        DEFAULT NULL,
+			quantity        SMALLINT UNSIGNED   DEFAULT NULL,
+			order_total     DECIMAL(12,2)       DEFAULT NULL,
+			order_currency  VARCHAR(8)          DEFAULT NULL,
+			created_at      DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY session_id  (session_id),
+			KEY event_type  (event_type),
+			KEY created_at  (created_at)
+		) $charset;";
+		dbDelta( $wc_events );
 	}
 
 	// ----------------------------------------------------------------
@@ -238,6 +278,7 @@ class RSA_DB {
 			'rsa_email_digest_frequency'   => 'weekly',
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
 			'rsa_email_digest_next'        => '',
+			'rsa_woocommerce_enabled'      => 1,
 		];
 
 		foreach ( $defaults as $key => $value ) {
@@ -299,6 +340,7 @@ class RSA_DB {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_sessions`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_clicks`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
 
 		// Remove all plugin options
 		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
@@ -336,6 +378,11 @@ class RSA_DB {
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
 		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
 			"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000", $cutoff_date
+		) );
+		$deleted += (int) $result;
+
+		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
+			"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000", $cutoff
 		) );
 		$deleted += (int) $result;
 

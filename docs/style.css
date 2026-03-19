@@ -107,6 +107,7 @@ pre code { background: none; padding: 0; }
   text-decoration: none;
 }
 .nav__logo:hover { text-decoration: none; }
+.nav__logo img { width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0; }
 .nav__links {
   display: flex;
   list-style: none;

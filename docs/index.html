@@ -10,6 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="rs-favicon.png" />
+  <link rel="apple-touch-icon" href="rs-logo.png" />
+  <meta property="og:title" content="Rich Statistics — Privacy-First Analytics for WordPress" />
+  <meta property="og:description" content="Deep insight into traffic, audience, and behavior — no IP tracking, no cookies, no third-party data leaks." />
+  <meta property="og:image" content="rs-logo.png" />
+  <meta property="og:type" content="website" />
 </head>
 <body>
 
@@ -19,12 +25,7 @@
 <header class="site-header">
   <nav class="nav container">
     <a class="nav__logo" href="#">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <rect width="28" height="28" rx="6" fill="#2563eb"/>
-        <rect x="5" y="14" width="4" height="9" rx="1" fill="white"/>
-        <rect x="12" y="9" width="4" height="14" rx="1" fill="white"/>
-        <rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/>
-      </svg>
+      <img src="rs-logo.png" alt="" width="28" height="28" />
       Rich Statistics
     </a>
     <ul class="nav__links">
@@ -176,6 +177,51 @@
         <div class="feature-card__icon" aria-hidden="true">🔥</div>
         <h3>Data Retention Control</h3>
         <p>Set automatic data pruning (30, 90, 180, 365 days) so your database never grows unbounded. Or disable pruning and keep everything forever.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🛤️</div>
+        <h3>User Flow &amp; Path Explorer</h3>
+        <p>Miller-column navigator drills through every step visitors take across your site. Each column shows where sessions went next, with drop-off counts at each transition.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🖱️</div>
+        <h3>Click Tracking</h3>
+        <p>Define CSS selector rules (by element ID, class, or link protocol) to capture every click. Each event records the element, coordinate, and matched rule — visualised in the Click Map.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">⏱️</div>
+        <h3>Behavior Analysis</h3>
+        <p>Time-on-page histogram, session depth distribution, and entry page breakdown — all filterable by browser, operating system, and custom date range.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">📥</div>
+        <h3>CSV Export</h3>
+        <p>Download raw events, sessions, or click data as CSV for any date range. Pipe it into Excel, R, or any analysis tool without API rate limits.</p>
+        <span class="badge badge--premium">Premium</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🧹</div>
+        <h3>Data Maintenance</h3>
+        <p>View every tracked page path across your site. Purge data for deleted, renamed, or test pages individually — without touching anything else.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🛒</div>
+        <h3>WooCommerce Analytics</h3>
+        <p>Automatically tracks product views, add-to-cart events (standard and AJAX), and completed orders. Surfaces a conversion funnel, top products, and revenue-over-time chart in a dedicated dashboard panel.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">📅</div>
+        <h3>Custom Date Ranges</h3>
+        <p>Every analytics view supports arbitrary from/to date selection alongside the preset 7-day, 30-day, 90-day, this-month, and last-month periods.</p>
       </div>
 
     </div>
