@@ -729,6 +729,15 @@ html, body {
 
 	.rsa-chart-wrap { height: 280px; }
 
+	/* Heatmap — cap height so the full canvas fits on screen without scrolling */
+	.rsa-hm-canvas-wrap { flex: 0 0 auto; }
+	#c-heatmap {
+		width: auto !important;
+		height: min( calc(100vh - 210px), 560px ) !important;
+		aspect-ratio: 540 / 756;
+	}
+	.rsa-hm-table-wrap { max-height: min( calc(100vh - 210px), 560px ); }
+
 	.rsa-grid-2 { grid-template-columns: 1fr 1fr; }
 
 	.rsa-chart-card canvas { height: 200px !important; }
