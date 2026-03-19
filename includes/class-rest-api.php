@@ -57,8 +57,18 @@ class RSA_Rest_API {
 	}
 
 	/**
-	 * Add CORS headers for rsa/v1 routes so the PWA (served from a different
-	 * origin) can reach the REST API.  Handles the OPTIONS preflight too.
+	 * Add CORS headers for rsa/v1 routes so the PWA / desktop app (served from
+	 * a different origin, including tauri://localhost) can reach the REST API.
+	 *
+	 * WordPress's own REST server calls esc_url_raw() on the Origin header, which
+	 * strips custom schemes like tauri:// and writes an empty
+	 * Access-Control-Allow-Origin header — AFTER rest_api_init runs.  We handle
+	 * two cases separately:
+	 *
+	 *   OPTIONS preflight  – respond immediately (before WP's serve_request runs).
+	 *   All other methods  – register a rest_pre_serve_request filter that fires
+	 *                        after WP sets its (broken) ACAO header so we can
+	 *                        override it with the correct value.
 	 */
 	public static function add_cors_headers(): void {
 		// Only act on our own namespace.
@@ -67,24 +77,44 @@ class RSA_Rest_API {
 			return;
 		}
 
-		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
-
-		if ( $origin ) {
-			header( 'Access-Control-Allow-Origin: ' . $origin );
-		} else {
-			header( 'Access-Control-Allow-Origin: *' );
-		}
-		header( 'Access-Control-Allow-Credentials: true' );
-		header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
-		header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
-		header( 'Vary: Origin' );
-
-		// Respond immediately to preflight requests.
+		// OPTIONS preflight: answer immediately so WP's serve_request never runs.
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
+			$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			header( 'Access-Control-Allow-Origin: ' . ( $origin ?: '*' ) );
+			header( 'Access-Control-Allow-Credentials: true' );
+			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
+			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Max-Age: 86400' );
+			header( 'Vary: Origin' );
 			status_header( 204 );
 			exit;
 		}
+
+		// For all other methods: fix ACAO after WP's serve_request overwrites it.
+		add_filter( 'rest_pre_serve_request', [ __CLASS__, 'fix_cors_origin' ], 999, 4 );
+	}
+
+	/**
+	 * Re-apply Access-Control-Allow-Origin after WordPress's REST server has
+	 * overwritten it with an empty string (because tauri:// fails esc_url_raw).
+	 * Runs as a rest_pre_serve_request filter at priority 999, after WP's own
+	 * CORS code, but before the response body is output.
+	 *
+	 * @param bool|null        $served  Whether the request has already been served.
+	 * @param WP_REST_Response $result  The response object.
+	 * @param WP_REST_Request  $request The request object.
+	 * @param WP_REST_Server   $server  The REST server instance.
+	 * @return bool|null Unchanged $served value.
+	 */
+	public static function fix_cors_origin( $served, $result, $request, $server ) {
+		if ( strpos( $request->get_route(), '/' . self::NS ) !== 0 ) {
+			return $served;
+		}
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		header( 'Access-Control-Allow-Origin: ' . ( $origin ?: '*' ) );
+		header( 'Access-Control-Allow-Credentials: true' );
+		header( 'Vary: Origin' );
+		return $served;
 	}
 
 	// ----------------------------------------------------------------
