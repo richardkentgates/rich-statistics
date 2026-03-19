@@ -173,16 +173,23 @@ EOF
         working-directory: src-tauri
         env:
           CI: true
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Stage artifact
         run: |
           DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
           cp "${DEB}" "rich-statistics-linux-${{ matrix.arch }}.deb"
+          # Copy detached signature produced by tauri-plugin-updater signing
+          SIG=$(ls src-tauri/target/release/bundle/deb/*.deb.sig 2>/dev/null | head -1)
+          [ -n "${SIG}" ] && cp "${SIG}" "rich-statistics-linux-${{ matrix.arch }}.deb.sig" || true
 
       - name: Upload .deb to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: rich-statistics-linux-${{ matrix.arch }}.deb
+          files: |
+            rich-statistics-linux-${{ matrix.arch }}.deb
+            rich-statistics-linux-${{ matrix.arch }}.deb.sig
 
   ping-deploy:
     name: Trigger web app update
