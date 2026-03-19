@@ -284,11 +284,10 @@ pre code { background: none; padding: 0; }
 }
 .desktop-install__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 @media (max-width: 680px) {
-  .desktop-install__grid { grid-template-columns: 1fr; }
   .desktop-install { padding: 20px 18px; }
 }
 .desktop-install__block strong {
