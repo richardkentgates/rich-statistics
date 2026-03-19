@@ -43,7 +43,7 @@
     <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
 
     <h2>Heatmap</h2>
-    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view loads your page in an <strong>iframe</strong> and stretches a transparent <code>&lt;canvas&gt;</code> element over it using CSS absolute positioning with <code>pointer-events: none</code>, so the canvas receives no clicks. A thermal colour gradient (blue → red) is painted onto the canvas using the recorded click coordinates. No external screenshot service, no browser extension, and no screen capture is involved — the page you see is always the live version.</p>
+    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view renders a self-contained dark canvas (<code>#111c2b</code>) over a screenshot-free recreation of your page structure. Radial-gradient heat dots scaled by click weight are painted directly onto the canvas, with a fold marker at roughly 30% page height, scroll-depth guide lines, and a side panel listing the top-clicked elements by selector. No external screenshot service, no browser extension, no iframe is involved.</p>
     <h3>What is stored</h3>
     <ul>
       <li>Page path</li>
@@ -54,7 +54,6 @@
     </ul>
     <h3>What is NOT stored</h3>
     <ul>
-      <li>Session ID — clicks are not linkable to a specific visit</li>
       <li>User ID — clicks are not linkable to a logged-in user</li>
       <li>Absolute pixel coordinates — only percentage positions</li>
     </ul>

@@ -118,13 +118,13 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🤖</div>
         <h3>Multi-signal Bot Detection</h3>
-        <p>17 combined signals (10 JavaScript + 7 server-side) score each request without ever reading an IP address. Bots are filtered before their visit is ever written to the database.</p>
+        <p>15 combined signals (10 JavaScript + 5 server-side) score each request without ever reading an IP address. Bots are filtered before their visit is ever written to the database.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🗺️</div>
         <h3>Heatmap</h3>
-        <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. The heatmap renders directly over a live iframe of your page — no screenshot service, no browser extension required.</p>
+        <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. The heatmap renders on a self-contained dark canvas with radial heat dots and a top-clicked elements panel &mdash; no screenshot service, no iframe required.</p>
         <span class="badge badge--premium">Premium</span>
       </div>
 
@@ -144,7 +144,6 @@
         <div class="feature-card__icon" aria-hidden="true">📧</div>
         <h3>Email Reports</h3>
         <p>Scheduled weekly or monthly digests sent to any address. Includes top pages, traffic summary, and period-over-period comparison.</p>
-        <span class="badge badge--premium">Premium</span>
       </div>
 
       <div class="feature-card">
@@ -240,7 +239,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Heatmap coordinates
         </h3>
-        <p>Click and scroll coordinates are stored as <code>(page, x_pct, y_pct, element)</code> tuples where x and y are percentage positions on the page. There is no timestamp, session ID, or any field that could link a click to a particular visitor.</p>
+        <p>Click coordinates are stored as <code>(page, x_pct, y_pct, element)</code> records where x and y are percentage positions. Individual records include a tab-scoped session UUID and a timestamp, but session UUIDs are stored in <code>sessionStorage</code> — they expire when the tab closes and cannot identify a visitor across sessions or devices. The heatmap overlay aggregates records by coordinate bucket, discarding session linkage entirely for display.</p>
       </div>
 
     </div>
@@ -260,11 +259,11 @@
   <div class="container">
     <div class="section__header">
       <h2>Downloads &amp; Pricing</h2>
-      <p>Free and premium versions are available at <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>.</p>
+      <p>The free version is available on the <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org plugin directory</a>. Premium is available via Freemius directly from within your WordPress admin.</p>
     </div>
     <div style="text-align:center;padding:20px 0">
-      <a class="btn btn--primary btn--lg" href="https://richardkentgates.com" target="_blank" rel="noopener">
-        Visit richardkentgates.com
+      <a class="btn btn--primary btn--lg" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
+        Install from WordPress.org
       </a>
     </div>
   </div>
@@ -284,10 +283,10 @@
       <a class="btn btn--primary btn--lg" href="app/" target="_blank" rel="noopener">
         Open Web App
       </a>
-      <a class="btn btn--outline btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb" rel="noopener">
+      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb" rel="noopener">
         &#8595; Linux Desktop (x86_64)
       </a>
-      <a class="btn btn--outline btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb" rel="noopener">
+      <a class="btn btn--outline btn--lg" href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb" rel="noopener">
         &#8595; Linux Desktop (ARM64)
       </a>
     </div>

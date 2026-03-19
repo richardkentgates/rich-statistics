@@ -45,6 +45,14 @@
   https://example.com/wp-json/rsa/v1/overview</code></pre>
     <p>Within the WordPress admin, all requests are automatically authenticated via nonce.</p>
 
+    <h2>Response envelope</h2>
+    <p>Every endpoint returns a consistent JSON wrapper:</p>
+    <pre><code>{
+  "ok": true,
+  "data": { /* endpoint-specific payload */ }
+}</code></pre>
+    <p>The examples below show the inner <code>data</code> object only for clarity.</p>
+
     <h2>Common query parameters</h2>
     <table>
       <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
@@ -69,8 +77,20 @@
 }</code></pre>
 
     <h3>GET /pages</h3>
-    <p>Top pages ranked by pageviews.</p>
-    <pre><code>GET /wp-json/rsa/v1/pages?period=30d</code></pre>
+    <p>Top pages ranked by pageviews. Supports filtering and sorting.</p>
+    <pre><code>GET /wp-json/rsa/v1/pages?period=30d&amp;sort=avg_time&amp;sort_dir=desc</code></pre>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>limit</code></td><td>integer</td><td><code>100</code></td><td>Max rows (1–100)</td></tr>
+        <tr><td><code>browser</code></td><td>string</td><td>—</td><td>Filter to a specific browser name</td></tr>
+        <tr><td><code>os</code></td><td>string</td><td>—</td><td>Filter to a specific OS name</td></tr>
+        <tr><td><code>path</code></td><td>string</td><td>—</td><td>Filter by path prefix (URL-encoded)</td></tr>
+        <tr><td><code>sort</code></td><td>string</td><td><code>views</code></td><td><code>views</code> or <code>avg_time</code></td></tr>
+        <tr><td><code>sort_dir</code></td><td>string</td><td><code>desc</code></td><td><code>asc</code> or <code>desc</code></td></tr>
+      </tbody>
+    </table>
     <pre><code>{
   "pages": [
     { "page": "/blog/privacy-analytics/", "views": 3210, "sessions": 2150 },
@@ -79,20 +99,14 @@
 }</code></pre>
 
     <h3>GET /audience</h3>
-    <p>Browser, OS, and screen resolution breakdowns.</p>
+    <p>Browser, OS, viewport, language, and timezone breakdowns.</p>
     <pre><code>GET /wp-json/rsa/v1/audience?period=7d</code></pre>
     <pre><code>{
-  "browsers": [
-    { "browser": "Chrome", "version": "120", "count": 5120 },
-    { "browser": "Safari", "version": "17", "count": 2340 }
-  ],
-  "os": [
-    { "os": "Windows", "count": 4900 },
-    { "os": "macOS", "count": 2100 }
-  ],
-  "screens": [
-    { "width": 1920, "height": 1080, "count": 3200 }
-  ]
+  "by_browser":  [ { "browser": "Chrome", "version": "120", "count": 5120 } ],
+  "by_os":       [ { "label": "Windows", "count": 4900 } ],
+  "by_viewport": [ { "label": "1920×1080", "count": 3200 } ],
+  "by_language": [ { "label": "en-US", "count": 6100 } ],
+  "by_timezone": [ { "label": "America/New_York", "count": 2840 } ]
 }</code></pre>
 
     <h3>GET /referrers</h3>
@@ -113,6 +127,39 @@
   "session_depth":  [ { "bucket": "1 page", "count": 320 }, { "bucket": "2 pages", "count": 180 } ],
   "entry_pages":    [ { "page": "/", "count": 820 } ]
 }</code></pre>
+
+    <h3>GET /campaigns</h3>
+    <p>UTM campaign performance: sessions and pageviews grouped by source / medium / campaign. Requires UTM parameters to be present on incoming links.</p>
+    <pre><code>GET /wp-json/rsa/v1/campaigns?period=30d&amp;medium=email</code></pre>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>limit</code></td><td>integer</td><td><code>100</code></td><td>Max rows (1–500)</td></tr>
+        <tr><td><code>medium</code></td><td>string</td><td>—</td><td>Filter to a specific UTM medium (e.g. <code>email</code>, <code>cpc</code>)</td></tr>
+      </tbody>
+    </table>
+    <pre><code>{
+  "campaigns": [
+    { "source": "newsletter", "medium": "email", "campaign": "march-digest", "sessions": 842, "pageviews": 1203 },
+    { "source": "google",     "medium": "cpc",   "campaign": "spring-sale",  "sessions": 540, "pageviews":  820 }
+  ]
+}</code></pre>
+
+    <h3>GET /user-flow</h3>
+    <p>Step-based path flow showing how sessions progress through your site. Powers the Path Explorer in the admin and PWA.</p>
+    <pre><code>GET /wp-json/rsa/v1/user-flow?period=30d&amp;steps=4</code></pre>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>steps</code></td><td>integer</td><td><code>4</code></td><td>Depth of steps to return (2–5)</td></tr>
+        <tr><td><code>entry_source</code></td><td>string</td><td>—</td><td>Filter to sessions starting from this entry page</td></tr>
+        <tr><td><code>focus_page</code></td><td>string</td><td>—</td><td>Center the flow on a specific page path</td></tr>
+        <tr><td><code>min_sessions</code></td><td>integer</td><td><code>1</code></td><td>Minimum session count to include a path node</td></tr>
+      </tbody>
+    </table>
+    <p>Also available: <code>GET /user-flow/journey</code> (page-to-page transition pairs) and <code>GET /user-flow/sources</code> (entry page breakdown).</p>
 
     <h3>GET /clicks <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h3>
     <p>Click events aggregated by element and protocol. The <code>href_value</code> field contains the actual destination: phone number for <code>tel:</code>, email address for <code>mailto:</code>, coordinates for <code>geo:</code>, SMS number for <code>sms:</code>, or file path for downloads.</p>
@@ -137,12 +184,31 @@
 }</code></pre>
 
     <h3>GET /heatmap <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h3>
-    <p>Click-position data for a specific page, used to render the heatmap overlay.</p>
+    <p>Click-position data for a specific page, used to render the heatmap overlay in the admin.</p>
     <pre><code>GET /wp-json/rsa/v1/heatmap?period=30d&amp;page=/about/</code></pre>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>page</code></td><td>string</td><td><code>/</code></td><td>Page path to load click data for</td></tr>
+        <tr><td><code>date_from</code></td><td>string</td><td>—</td><td>Override start date (<code>YYYY-MM-DD</code>); takes precedence over <code>period</code></td></tr>
+        <tr><td><code>date_to</code></td><td>string</td><td>—</td><td>Override end date (<code>YYYY-MM-DD</code>)</td></tr>
+      </tbody>
+    </table>
 
     <h3>GET /export</h3>
-    <p>Export raw event data for the given period. Supports <code>json</code> (default) and <code>csv</code> formats via the <code>format</code> parameter.</p>
-    <pre><code>GET /wp-json/rsa/v1/export?period=90d&amp;format=csv</code></pre>
+    <p>Export raw event data for the given period. Returns JSON by default; pass <code>format=csv</code> to download a CSV file with a <code>Content-Disposition</code> header.</p>
+    <pre><code>GET /wp-json/rsa/v1/export?period=90d&amp;format=csv&amp;data_type=pageviews</code></pre>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>period</code></td><td>string</td><td><code>30d</code></td><td>Time range preset</td></tr>
+        <tr><td><code>format</code></td><td>string</td><td><code>json</code></td><td><code>json</code> or <code>csv</code></td></tr>
+        <tr><td><code>data_type</code></td><td>string</td><td><code>pageviews</code></td><td><code>pageviews</code>, <code>sessions</code>, <code>clicks</code>, or <code>referrers</code></td></tr>
+        <tr><td><code>date_from</code></td><td>string</td><td>—</td><td>Custom start date (<code>YYYY-MM-DD</code>); overrides <code>period</code></td></tr>
+        <tr><td><code>date_to</code></td><td>string</td><td>—</td><td>Custom end date (<code>YYYY-MM-DD</code>)</td></tr>
+      </tbody>
+    </table>
 
     <h2>Error responses</h2>
     <table>

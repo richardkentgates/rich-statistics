@@ -41,22 +41,24 @@
 
     <h2>wp rich-stats overview</h2>
     <p>Print a traffic summary for the given period to stdout.</p>
-    <pre><code>wp rich-stats overview [--period=&lt;period&gt;] [--format=&lt;format&gt;]</code></pre>
+    <pre><code>wp rich-stats overview [--period=&lt;period&gt;] [--blog-id=&lt;id&gt;]</code></pre>
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Values</th></tr></thead>
       <tbody>
-        <tr><td><code>--period</code></td><td><code>30d</code></td><td><code>today</code>, <code>yesterday</code>, <code>7d</code>, <code>30d</code>, <code>90d</code>, <code>thismonth</code>, <code>lastmonth</code></td></tr>
-        <tr><td><code>--format</code></td><td><code>table</code></td><td><code>table</code>, <code>json</code>, <code>csv</code>, <code>yaml</code></td></tr>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td><code>7d</code>, <code>30d</code>, <code>90d</code>, <code>thismonth</code>, <code>lastmonth</code></td></tr>
+        <tr><td><code>--blog-id</code></td><td>current site</td><td>Multisite: switch to this blog ID before querying</td></tr>
       </tbody>
     </table>
     <p>Example:</p>
-    <pre><code>$ wp rich-stats overview --period=30d --format=json
-{
-  "pageviews": 41200,
-  "sessions": 27800,
-  "bounce_rate": "43.2%",
-  "avg_time_on_page": "1m 28s"
-}</code></pre>
+    <pre><code>$ wp rich-stats overview --period=30d
++------------+--------+
+| Metric     | Value  |
++------------+--------+
+| Page Views | 41,200 |
+| Sessions   | 27,800 |
+| Avg Time   | 1m 28s |
+| Bounce Rate| 43.2%  |
++------------+--------+</code></pre>
 
     <h2>wp rich-stats top-pages</h2>
     <p>List top pages by view count.</p>
@@ -64,7 +66,7 @@
     <table>
       <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range</td></tr>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range: <code>7d</code>, <code>30d</code>, <code>90d</code>, <code>thismonth</code>, <code>lastmonth</code></td></tr>
         <tr><td><code>--limit</code></td><td><code>10</code></td><td>Number of rows to return</td></tr>
       </tbody>
     </table>
@@ -163,13 +165,13 @@ Rich Statistics Status
 +----------------------+-----------------------+
 | Setting              | Value                 |
 +----------------------+-----------------------+
-| Version              | 1.2.0                 |
+| Version              | 1.4.2                 |
 | Tier                 | Free                  |
 | Retention (days)     | 90                    |
-| Bot threshold        | 3                     |
+| Bot threshold        | 5                     |
 | Email digest enabled | No                    |
 | Email frequency      | weekly                |
-| Next maintenance     | 2025-08-01 03:00 UTC  |
+| Next maintenance     | 2026-03-20 03:00 UTC  |
 | Next digest          | not scheduled         |
 +----------------------+-----------------------+</code></pre>
 
