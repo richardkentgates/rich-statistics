@@ -242,6 +242,16 @@ html, body {
 .rsa-signout-btn { color: #94a3b8; }
 .rsa-signout-btn:hover { color: #fff; }
 
+.rsa-nav-platform-label {
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: #64748b;
+	margin: 10px 10px 2px;
+	padding: 0;
+}
+
 .rsa-install-btn {
 	display: flex;
 	align-items: center;

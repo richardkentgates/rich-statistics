@@ -40,21 +40,27 @@
       <li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li>
       <li><a href="premium-features.html">Premium Features</a></li>
     </ul>
+    <strong class="wiki-sidebar__label">Infrastructure</strong>
+    <ul>
+      <li><a href="app-server-setup.html">App Server Setup</a></li>
+    </ul>
   </nav>
   <main class="wiki-content">
     <h1>Installation</h1>
     <p>Rich Statistics requires WordPress 6.0 or higher and PHP 8.0 or higher. It works on single-site and multisite installations.</p>
 
-    <h2>Option 1 — richardkentgates.com</h2>
+    <h2>Option 1 — WordPress.org plugin directory</h2>
     <ol>
-      <li>Download the plugin ZIP from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>.</li>
-      <li>In WordPress admin, go to <strong>Plugins → Add New → Upload Plugin</strong>.</li>
-      <li>Upload the ZIP and activate.</li>
+      <li>In your WordPress admin, go to <strong>Plugins → Add New</strong>.</li>
+      <li>Search for <strong>Rich Statistics</strong>.</li>
+      <li>Click <strong>Install Now</strong>, then <strong>Activate</strong>.</li>
     </ol>
-    <div class="callout">WordPress.org listing coming soon — once approved it will also be installable via the plugin directory and WP-CLI.</div>
+    <p>Or install from the command line via WP-CLI:</p>
+    <pre><code>wp plugin install rich-statistics --activate</code></pre>
+    <div class="callout">This is the recommended installation method.</div>
 
     <h2>Option 2 — Manual upload</h2>
-    <p>Same as above — download from <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a> and upload via <strong>Plugins → Add New → Upload Plugin</strong>.</p>
+    <p>Download the ZIP from the <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org plugin page</a> and upload it via <strong>Plugins → Add New → Upload Plugin</strong>.</p>
 
     <h2>System Requirements</h2>
     <table>
@@ -73,9 +79,9 @@
       <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
       <tbody>
         <tr><td><code>rsa_events</code></td><td>One row per accepted pageview — page path, referrer domain, browser, OS, language, timezone, viewport, time on page</td></tr>
-        <tr><td><code>rsa_sessions</code></td><td>Session-level data — UTM parameters, entry page, session UUID (tab-scoped only)</td></tr>
-        <tr><td><code>rsa_clicks</code></td><td>Click coordinates for heatmap and click tracking (Premium)</td></tr>
-        <tr><td><code>rsa_heatmap</code></td><td>Scroll depth and hover data for heatmaps (Premium)</td></tr>
+        <tr><td><code>rsa_sessions</code></td><td>Session-level data — entry page, session UUID (tab-scoped only), session start/end timestamps</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Individual click events with coordinates, element info, session ID, and timestamp (heatmap and click tracking — Premium)</td></tr>
+        <tr><td><code>rsa_heatmap</code></td><td>Daily-aggregated click coordinate buckets for the heatmap overlay (percentage x/y, page path, date — Premium)</td></tr>
       </tbody>
     </table>
     <p>All tables are dropped cleanly on plugin uninstall if the <strong>Remove data on uninstall</strong> option is checked in <strong>Rich Statistics → Preferences</strong>.</p>

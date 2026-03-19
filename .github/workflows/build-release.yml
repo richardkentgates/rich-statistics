@@ -193,26 +193,37 @@ jobs:
           CI: true
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
+      - name: Patch .desktop in .deb
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          dpkg-deb -R "${DEB}" /tmp/deb-root
+          DESKTOP=$(find /tmp/deb-root -name "*.desktop" | head -1)
+          if [ -n "${DESKTOP}" ]; then
+            sed -i 's/^Exec=.*/Exec=env WEBKIT_DISABLE_COMPOSITING_MODE=1 rich-statistics/' "${DESKTOP}"
+            sed -i 's/^Categories=.*/Categories=Network;/' "${DESKTOP}"
+          fi
+          dpkg-deb -b /tmp/deb-root "${DEB}"
+          rm -rf /tmp/deb-root
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
       - name: Push .deb to app server
-        env:
-          SSH_KEY: ${{ secrets.APP_SERVER_SSH_KEY }}
         run: |
           DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
           SIG=$(ls src-tauri/target/release/bundle/deb/*.deb.sig 2>/dev/null | head -1)
           DEST="rich-statistics-linux-${{ matrix.arch }}.deb"
 
-          install -m 600 /dev/null /tmp/ci_key
-          printf '%s' "${SSH_KEY}" > /tmp/ci_key
-
-          SSH="ssh -i /tmp/ci_key -o StrictHostKeyChecking=no -o BatchMode=yes"
-          SCP="scp -i /tmp/ci_key -o StrictHostKeyChecking=no"
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
 
           $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/desktop"
           $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}"
           if [ -n "${SIG}" ]; then
             $SCP "${SIG}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}.sig"
           fi
-          rm -f /tmp/ci_key
 
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
@@ -232,18 +243,19 @@ jobs:
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
             https://rs-app.richardkentgates.com/_deploy/
 
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
       - name: Write update.json on app server
-        env:
-          SSH_KEY: ${{ secrets.APP_SERVER_SSH_KEY }}
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           BASE_URL="https://rs-app.richardkentgates.com/desktop"
           DESKTOP_DIR="/var/www/rs-app/desktop"
 
-          install -m 600 /dev/null /tmp/ci_key
-          printf '%s' "${SSH_KEY}" > /tmp/ci_key
-          SSH="ssh -i /tmp/ci_key -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
 
           $SSH richardkentgates@104.197.231.120 \
             VERSION="${VERSION}" PUB_DATE="${PUB_DATE}" BASE_URL="${BASE_URL}" DESKTOP_DIR="${DESKTOP_DIR}" \
@@ -266,4 +278,3 @@ jobs:
           (desktop / "update.json").write_text(json.dumps(manifest, indent=2) + "\n")
           print(f"update.json written for v{version} ({', '.join(platforms)})")
           PYEOF
-          rm -f /tmp/ci_key
