@@ -226,8 +226,14 @@ dashboard as the PWA in a lightweight WebKitGTK window — no Electron, no bundl
 
 **Install (Debian / Ubuntu / Raspberry Pi OS):**
 ```bash
-sudo apt install ./rich-statistics-linux-amd64.deb   # installs libwebkit2gtk automatically
+# Copy to /tmp first — apt requires a world-readable path to sandbox the download
+cp ~/Downloads/rich-statistics-linux-amd64.deb /tmp/
+sudo apt install /tmp/rich-statistics-linux-amd64.deb
 ```
+
+> **Note:** Running `sudo apt install ./file.deb` directly from `~/Downloads` triggers
+> a harmless `_apt` sandboxing notice because apt cannot read files from your home
+> directory. Copying to `/tmp` avoids it. The package installs correctly either way.
 
 On non-apt systems, install `webkit2gtk-4.1` via your package manager, then run the binary directly from the release.
 
