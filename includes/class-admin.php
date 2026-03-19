@@ -228,15 +228,16 @@ class RSA_Admin {
 			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ), 'cap' => 'manage_options' ];
 		} else {
 			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
 		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'manage_options' ];
 		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['export']       = [ 'title' => __( 'Export',        'rich-statistics' ), 'label' => __( 'Export',        'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
 
@@ -715,8 +716,8 @@ class RSA_Admin {
 			<?php if ( function_exists( 'rs_fs' ) && rs_fs()->is_not_paying() ) : ?>
 			<div class="rsa-upsell-banner">
 				<div class="rsa-upsell-banner__content">
-					<strong><?php esc_html_e( 'Unlock Campaigns, User Flow, Click Tracking &amp; Heatmap', 'rich-statistics' ); ?></strong>
-					<?php esc_html_e( 'See exactly where visitors come from, where they go, what they click, and where they drop off.', 'rich-statistics' ); ?>
+					<strong><?php esc_html_e( 'Unlock Campaigns, User Flow, Click Tracking, Heatmap &amp; Export', 'rich-statistics' ); ?></strong>
+					<?php esc_html_e( 'See exactly where visitors come from, where they go, what they click, where they drop off, and export your raw data.', 'rich-statistics' ); ?>
 				</div>
 				<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
 					<?php esc_html_e( 'Upgrade Now', 'rich-statistics' ); ?>

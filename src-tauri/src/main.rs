@@ -3,13 +3,12 @@ use tauri_plugin_updater::UpdaterExt;
 #[tauri::command]
 async fn check_for_update(app: tauri::AppHandle) -> Result<(), String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
-    let update = updater.check().await.map_err(|e| e.to_string())?;
-    if let Some(update) = update {
-        let version = update.version.clone();
-        let downloaded = update.download(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
-        downloaded.install().map_err(|e| e.to_string())?;
-        drop(app); // let install finish
-        let _ = version; // suppress unused warning
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update
+            .download_and_install(|_, _| {}, || {})
+            .await
+            .map_err(|e| e.to_string())?;
+        app.restart();
     }
     Ok(())
 }

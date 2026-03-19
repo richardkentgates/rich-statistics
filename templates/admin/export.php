@@ -1,9 +1,27 @@
 <?php
 /**
- * Export — download stats as CSV.
+ * Premium: Export — download stats as CSV.
+ *
+ * @fs_premium_only
  */
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+	RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
+	?>
+	<div class="rsa-upsell-notice">
+		<h2><?php esc_html_e( 'Export is a Premium Feature', 'rich-statistics' ); ?></h2>
+		<p><?php esc_html_e( 'Download your analytics data as CSV for use in spreadsheets or external tools.', 'rich-statistics' ); ?></p>
+		<?php if ( function_exists( 'rs_fs' ) ) : ?>
+		<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary button-hero">
+			<?php esc_html_e( 'Upgrade to Unlock Export', 'rich-statistics' ); ?>
+		</a>
+		<?php endif; ?>
+	</div>
+	<?php
+	RSA_Admin::page_footer();
+	return;
+}
 
 RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 ?>
