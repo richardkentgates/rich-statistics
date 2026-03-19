@@ -284,17 +284,25 @@
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          URL sanitization
+          No IP addresses, ever
         </h3>
-        <p>Before a page URL is stored, it is scrubbed server-side. Any query parameter longer than 40 characters or resembling an email address is stripped. This prevents accidental storage of password-reset tokens, user IDs, or email addresses that sometimes appear in URLs.</p>
+        <p>IP addresses are never read, stored, logged, or passed to any processing function. <code>REMOTE_ADDR</code> is not accessed anywhere in the plugin codebase — not even for the bot detection pipeline. You can verify this yourself: <code>grep -rn "REMOTE_ADDR" includes/ assets/</code> will return zero matches.</p>
       </div>
 
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          Referrer handling
+          No cookies
         </h3>
-        <p>Referrer URLs are reduced to domain-only before storage. The path and query string — which can contain user-identifying tokens from the referring site — are discarded immediately and never written to the database.</p>
+        <p>The plugin sets no cookies — no tracking cookies, no session cookies, no preference cookies. <code>setcookie()</code> and <code>$_COOKIE</code> are not used anywhere in the plugin. Visitor state within a single tab is held in <code>sessionStorage</code>, which the browser clears automatically when the tab closes.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          URL &amp; referrer sanitization
+        </h3>
+        <p>Before a page path is stored, it is scrubbed server-side: any query parameter longer than 40 characters or resembling an email address is stripped — preventing accidental storage of password-reset tokens or email addresses that sometimes appear in URLs. Referrer URLs are reduced to domain-only before storage; the path and query string (which can contain user-identifying tokens from the referring site) are discarded immediately and never written to the database.</p>
       </div>
 
       <div class="privacy-block">
