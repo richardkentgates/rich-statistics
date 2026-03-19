@@ -52,7 +52,7 @@ rich-statistics/
 │   ├── class-heatmap.php     Premium heatmap aggregation + display
 │   ├── class-email.php       Scheduled HTML digest emails
 │   ├── class-pwa-download.php   Serves the PWA ZIP download; OTP generation
-│   └── class-woocommerce.php    WooCommerce order/product page path rewrites
+│   └── class-woocommerce.php    WooCommerce analytics: event recording (product views, add-to-cart, orders), path normalisation for WC URLs, dashboard data queries
 ├── cli/
 │   └── class-cli.php         WP-CLI command group: wp rich-stats *
 ├── assets/
@@ -90,7 +90,7 @@ rich-statistics/
 
 ---
 
-## Database Schema (v8)
+## Database Schema (v9)
 
 All tables use `{$wpdb->prefix}rsa_` prefix. Each WordPress subsite gets its own tables (standard multisite behaviour).
 
@@ -172,16 +172,38 @@ Pre-aggregated nightly from `rsa_clicks` by a cron task.
 | `weight` | INT UNSIGNED | Aggregated click count in this bucket |
 | `date_bucket` | DATE | Aggregated per day |
 
+### `{prefix}rsa_wc_events` (Premium)
+
+One row per WooCommerce interaction event.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | BIGINT UNSIGNED PK | |
+| `session_id` | VARCHAR(36) | Anonymous browser session UUID |
+| `event_type` | VARCHAR(32) | `product_view`, `add_to_cart`, `order_complete` |
+| `product_id` | BIGINT UNSIGNED | WooCommerce product ID (NULL for order events) |
+| `product_name` | VARCHAR(255) | Product title at time of event |
+| `product_sku` | VARCHAR(100) | SKU at time of event |
+| `quantity` | SMALLINT UNSIGNED | Quantity added/purchased |
+| `order_total` | DECIMAL(12,2) | Order total for `order_complete` events; NULL otherwise |
+| `order_currency` | VARCHAR(8) | ISO 4217 currency code |
+| `created_at` | DATETIME | UTC timestamp |
+
+Indexes: `session_id`, `event_type`, `created_at`. No customer PII is stored.
+
 ---
 
 ## Request Lifecycle — Tracking Ingest
 
 ```
 tracker.js  (runs on every frontend page)
-  1. Gather bot-detection signals → integer bitmask
-  2. Read UTM params from URL or sessionStorage
-  3. Generate/recall UUIDv4 session ID from sessionStorage
-  4. On tab close / visibility change → POST admin-ajax.php (Beacon API)
+  1. Verify config is present (ajaxUrl); bail if not
+  2. Check DNT/GPC: if navigator.doNotTrack === '1', window.doNotTrack === '1',
+     or navigator.globalPrivacyControl === true → return immediately, no data sent
+  3. Gather bot-detection signals → integer bitmask
+  4. Read UTM params from URL or sessionStorage
+  5. Generate/recall UUIDv4 session ID from sessionStorage
+  6. On tab close / visibility change → POST admin-ajax.php (Beacon API)
 
 RSA_Tracker::handle_ingest()
   1. verify_nonce('rsa_track')
@@ -201,11 +223,11 @@ RSA_Tracker::handle_ingest()
 
 Two independent scoring layers, summed and capped at 10. Requests scoring ≥ the configured threshold (default 3) are silently discarded.
 
-**Layer 1 — JavaScript (client-side bitmask sent with payload):**
-`WEBDRIVER (+4)`, `NO_HUMAN_EVENT (+3)`, `ZERO_SCREEN (+3)`, `CHROME_MISSING_OBJ (+3)`, `NO_LANGUAGES (+2)`, `INSTANT_LOAD (+2)`, `NO_CANVAS (+2)`, `HIDDEN_ON_ARRIVAL (+2)`, `NO_PLUGINS (+1)`, `NO_TOUCH_API (+1)`
+**Layer 1 — JavaScript (client-side bitmask sent with payload):** Checks browser environment signals and sends a pass/fail bitmask. The specific signals checked are intentionally undisclosed to prevent circumvention.
 
-**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):**
-Honest-bot UA (= 10), headless UA patterns (+4 each), short UA (+3), no `Accept-Language` (+2), no `Accept` (+1).
+**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):** Checks User-Agent patterns and HTTP request headers. Specific patterns are intentionally undisclosed.
+
+Requests are never blocked; scoring ≥ threshold results in silent discard. This avoids false positives breaking legitimate tracking and prevents probing of the threshold.
 
 ---
 
@@ -283,3 +305,4 @@ main         ← tagged releases only (v1.x.x)
 | 6 | Added `matched_rule` to `rsa_clicks` |
 | 7 | Added `href_value` to `rsa_clicks` |
 | 8 | Added `utm_source`, `utm_medium`, `utm_campaign` to `rsa_events` |
+| 9 | Added `rsa_wc_events` table (WooCommerce event tracking, Premium) |

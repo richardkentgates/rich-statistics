@@ -771,6 +771,7 @@ class RSA_Admin {
 			'content' =>
 				'<h2>' . esc_html__( 'Privacy by Design', 'rich-statistics' ) . '</h2>' .
 				'<p>' . esc_html__( 'Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only.', 'rich-statistics' ) . '</p>' .
+				'<p>' . esc_html__( 'If a visitor\'s browser has Do Not Track (DNT) or Global Privacy Control (GPC) enabled, the tracker exits immediately — no session is created and no data is sent.', 'rich-statistics' ) . '</p>' .
 				'<p>' . esc_html__( 'Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation.', 'rich-statistics' ) . '</p>',
 		] );
 
@@ -799,7 +800,8 @@ class RSA_Admin {
 				'content' =>
 					'<h2>' . esc_html__( 'Audience Breakdown', 'rich-statistics' ) . '</h2>' .
 					'<p>' . esc_html__( 'Operating system, browser name, browser version, viewport size, language, and timezone are detected from the browser environment using JavaScript and stored as non-identifying aggregate categories.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px).', 'rich-statistics' ) . '</p>',
+					'<p>' . esc_html__( 'Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px).', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Language codes follow the BCP 47 standard as reported by navigator.language (e.g. en-US, fr-FR, de).', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-referrers' => [
 				'id'      => 'rsa-referrers-help',
@@ -851,23 +853,40 @@ class RSA_Admin {
 					'<p>' . esc_html__( 'The side panel lists the top-clicked elements with a click bar chart — useful for identifying links and buttons that get the most engagement.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Use the Period selector to change the date range. Custom start/end dates are supported. Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient.', 'rich-statistics' ) . '</p>',
 			],
-			'rich-statistics_page_rich-statistics-email-settings' => [
-				'id'      => 'rsa-email-help',
-				'title'   => __( 'Email Digests', 'rich-statistics' ),
+			'rich-statistics_page_rich-statistics-woocommerce' => [
+				'id'      => 'rsa-woocommerce-help',
+				'title'   => __( 'WooCommerce Analytics (Premium)', 'rich-statistics' ),
 				'content' =>
-					'<h2>' . esc_html__( 'Email Digest Settings', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'Rich Statistics can send a periodic digest email summarising your key stats. Emails are sent via wp_mail — no third-party email service is required.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Frequencies: Daily (sent at midnight), Weekly (sent Monday), Monthly (sent on the 1st).', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Multiple recipients: enter comma-separated email addresses.', 'rich-statistics' ) . '</p>',
+					'<h2>' . esc_html__( 'WooCommerce Analytics (Premium)', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'Automatically tracks product views, add-to-cart events (standard and AJAX), and order completions. Surfaces a conversion funnel, top products table, and a revenue-over-time chart.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'No customer data is stored — events are linked to anonymous session IDs only. Order totals are recorded in the store currency but no customer name, address, or email is retained.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'WooCommerce tracking can be toggled on or off from Rich Statistics → Preferences.', 'rich-statistics' ) . '</p>',
 			],
-			'rich-statistics_page_rich-statistics-data-settings' => [
-				'id'      => 'rsa-data-help',
-				'title'   => __( 'Data Settings', 'rich-statistics' ),
+			'rich-statistics_page_rich-statistics-export' => [
+				'id'      => 'rsa-export-help',
+				'title'   => __( 'Export (Premium)', 'rich-statistics' ),
 				'content' =>
-					'<h2>' . esc_html__( 'Data & Privacy Settings', 'rich-statistics' ) . '</h2>' .
-					'<p><strong>' . esc_html__( 'Retention days', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Events older than this number of days are deleted nightly. Range: 1–730. Default: 90.', 'rich-statistics' ) . '</p>' .
-					'<p><strong>' . esc_html__( 'Bot threshold', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Any request scoring at or above this value is silently discarded as a bot. Range: 1–10. Default: 5. Lower = more aggressive filtering.', 'rich-statistics' ) . '</p>' .
-					'<p><strong>' . esc_html__( 'Remove data on uninstall', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'When enabled, all plugin data and options are permanently deleted when you delete the plugin. Cannot be undone.', 'rich-statistics' ) . '</p>',
+					'<h2>' . esc_html__( 'CSV Export (Premium)', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'Download raw events, sessions, or click data as a CSV file for any date range you choose. Use it with spreadsheet software, R, Python, or any business intelligence tool.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Exports are generated on demand — they are not cached. Large date ranges on high-traffic sites may take a moment to compile.', 'rich-statistics' ) . '</p>',
+			],
+			'rich-statistics_page_rich-statistics-preferences' => [
+				'id'      => 'rsa-preferences-help',
+				'title'   => __( 'Preferences', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'Preferences', 'rich-statistics' ) . '</h2>' .
+					'<p><strong>' . esc_html__( 'Bot score threshold', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Requests scoring at or above this value are silently discarded as automated traffic. Range: 1–10. Default: 5. Lower values filter more aggressively.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Data retention', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Events older than the retention period are pruned nightly. Range: 1–730 days. Default: 90 days. Disable pruning to keep all data indefinitely.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Email digests', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Configure a periodic summary email (daily, weekly, or monthly). Sent via wp_mail — no third-party email service required. Enter comma-separated addresses for multiple recipients.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Remove data on uninstall', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'When enabled, all plugin data and options are permanently deleted when you remove the plugin. This action cannot be undone.', 'rich-statistics' ) . '</p>',
+			],
+			'rich-statistics_page_rich-statistics-maintenance' => [
+				'id'      => 'rsa-maintenance-help',
+				'title'   => __( 'Maintenance', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'Maintenance', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'Lists every distinct page path recorded in the database. Live paths correspond to published pages or posts on your site. Unmatched paths belong to deleted pages, renamed URLs, or test paths that are no longer active.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Use the Purge button to permanently delete all events, click records, and heatmap data for a specific path. This is useful for removing test traffic, redirect chains, or data for pages you have since deleted. Purging cannot be undone.', 'rich-statistics' ) . '</p>',
 			],
 		];
 
