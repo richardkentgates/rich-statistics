@@ -119,7 +119,7 @@
       <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">🤖</div>
         <h3>Multi-signal Bot Detection</h3>
-        <p>15 combined signals (10 JavaScript + 5 server-side) score each request without ever reading an IP address. Bots are filtered before their visit is ever written to the database.</p>
+        <p>Requests are scored across 15 combined signals before anything is written to the database. The exact signals and thresholds are intentionally undisclosed — knowing them would make them easy to defeat. You can tune the score threshold in Preferences.</p>
       </div>
 
       <div class="feature-card">
@@ -244,9 +244,17 @@
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Do Not Track &amp; Global Privacy Control
+        </h3>
+        <p>If a visitor's browser sends a <code>DNT: 1</code> header or has the Global Privacy Control signal set (<code>navigator.globalPrivacyControl</code>), the tracker script exits immediately — before collecting any signal, before creating a session ID, before sending a single byte. No data is recorded for that visit.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Session IDs
         </h3>
-        <p>A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It <strong>dies when the tab closes</strong>, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a user's journey across sessions.</p>
+        <p>A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It <strong>dies when the tab closes</strong>, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a visitor's journey across sessions.</p>
       </div>
 
       <div class="privacy-block">
@@ -254,7 +262,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Bot detection
         </h3>
-        <p>The JavaScript layer measures browser capabilities (does <code>navigator.webdriver</code> exist? did the page load in under 50ms?) and sends a compact bitmask — not raw values, not a fingerprint. The PHP layer checks only two HTTP request headers (Accept-Language, Accept) and the User-Agent string. <strong>REMOTE_ADDR is never read or passed.</strong></p>
+        <p>The bot scoring pipeline checks browser and request characteristics to protect data quality. The bitmask sent from the browser contains only a pass/fail score per signal — never raw capability values. <strong>REMOTE_ADDR is never read or passed</strong> at any point in the detection chain.</p>
       </div>
 
       <div class="privacy-block">
@@ -289,6 +297,22 @@
         <p>Click coordinates are stored as <code>(page, x_pct, y_pct, element)</code> records where x and y are percentage positions. Individual records include a tab-scoped session UUID and a timestamp, but session UUIDs are stored in <code>sessionStorage</code> — they expire when the tab closes and cannot identify a visitor across sessions or devices. The heatmap overlay aggregates records by coordinate bucket, discarding session linkage entirely for display.</p>
       </div>
 
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No cross-site tracking
+        </h3>
+        <p>The tracker runs entirely within your WordPress site. No script is loaded from an external domain, no beacon is sent to a third party, and no data leaves your server. This also means no ad-network leakage and no exposure from a CDN compromise.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No persistent identifiers
+        </h3>
+        <p>There are no cookies, no <code>localStorage</code> writes, no browser fingerprinting, and no device ID generation. Between page loads the only thing that persists is an optional UTM value stored in <code>sessionStorage</code> — which also clears when the tab closes.</p>
+      </div>
+
     </div>
 
     <div class="privacy-audit-note">
@@ -312,6 +336,40 @@
       <a class="btn btn--primary btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">
         Download from GitHub
       </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     QUICK START
+============================================================ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="section__header">
+      <h2>Up and running in 60 seconds</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step__num">1</div>
+        <div class="step__body">
+          <h3>Install the plugin</h3>
+          <p>Download the plugin from <a href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">GitHub releases</a> and install it via your WordPress admin, then activate it.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">2</div>
+        <div class="step__body">
+          <h3>Visit your dashboard</h3>
+          <p>Navigate to <strong>Rich Statistics &rarr; Overview</strong> in your WordPress admin. The tracker begins collecting data immediately &mdash; no configuration required.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num">3</div>
+        <div class="step__body">
+          <h3>Adjust data retention (optional)</h3>
+          <p>Go to <strong>Rich Statistics &rarr; Preferences</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -386,40 +444,6 @@ sudo apt install ./rich-statistics-linux-arm64.deb</code></pre>
     </div>
 
     <p class="app-note">The app connects to your site's REST API using WordPress Application Passwords — no extra accounts, no new services, no data leaves your server.</p>
-  </div>
-</section>
-
-<!-- ============================================================
-     QUICK START
-============================================================ -->
-<section class="section section--alt">
-  <div class="container">
-    <div class="section__header">
-      <h2>Up and running in 60 seconds</h2>
-    </div>
-    <div class="steps">
-      <div class="step">
-        <div class="step__num">1</div>
-        <div class="step__body">
-          <h3>Install the plugin</h3>
-          <p>Download the plugin from <a href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">GitHub releases</a> and install it via your WordPress admin, then activate it.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step__num">2</div>
-        <div class="step__body">
-          <h3>Visit your dashboard</h3>
-          <p>Navigate to <strong>Rich Statistics → Overview</strong> in your WordPress admin. The tracker begins collecting data immediately — no configuration required.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step__num">3</div>
-        <div class="step__body">
-          <h3>Adjust data retention (optional)</h3>
-          <p>Go to <strong>Rich Statistics → Preferences</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
