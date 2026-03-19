@@ -27,6 +27,15 @@
 	}
 
 	// ----------------------------------------------------------------
+	// Honour Do Not Track and Global Privacy Control
+	// Both signals are a firm opt-out — bail immediately, no data sent.
+	// ----------------------------------------------------------------
+	if ( navigator.doNotTrack === '1' || window.doNotTrack === '1' ||
+	     navigator.globalPrivacyControl === true ) {
+		return;
+	}
+
+	// ----------------------------------------------------------------
 	// Bot-detection signal flags  (must match RSA_Bot_Detection constants)
 	// ----------------------------------------------------------------
 	var BOT = {
