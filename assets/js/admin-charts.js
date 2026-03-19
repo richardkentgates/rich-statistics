@@ -557,6 +557,31 @@
 	}
 
 	// ----------------------------------------------------------------
+	// View: WooCommerce
+	// ----------------------------------------------------------------
+
+	function initWooCommerce( data ) {
+		var el = canvasEl( 'rsa-chart-wc-revenue' );
+		if ( ! el || ! data || ! data.revenue_by_day || ! data.revenue_by_day.length ) { return; }
+
+		var days = data.revenue_by_day;
+		new Chart( el, makeLinear(
+			labels( days, 'day' ),
+			[ {
+				label           : 'Revenue',
+				data            : values( days, 'revenue' ),
+				borderColor     : PALETTE[0],
+				backgroundColor : 'rgba(74,144,184,0.15)',
+				borderWidth     : 2,
+				pointRadius     : days.length > 30 ? 0 : 3,
+				pointHoverRadius: 4,
+				fill            : true,
+				tension         : 0.3,
+			} ]
+		) );
+	}
+
+	// ----------------------------------------------------------------
 	// Router: pick init function based on view key
 	// ----------------------------------------------------------------
 
@@ -571,6 +596,7 @@
 			case 'referrers': initReferrers( data ); break;
 			case 'campaigns': initCampaigns( data ); break;
 			case 'behavior':  initBehavior( data );  break;
+			case 'woocommerce': initWooCommerce( data ); break;
 			case 'user-flow':
 				initPathExplorer( data.path_flow );
 				break;

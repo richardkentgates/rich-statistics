@@ -33,6 +33,26 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		</table>
 	</div>
 
+	<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+	<!-- WooCommerce Integration -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'WooCommerce', 'rich-statistics' ); ?></h2></div>
+		<table class="form-table">
+			<tr>
+				<th><label for="rsa_woocommerce_enabled"><?php esc_html_e( 'Enable WooCommerce tracking', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="checkbox" id="rsa_woocommerce_enabled" name="rsa_woocommerce_enabled" value="1"
+					       <?php checked( get_option( 'rsa_woocommerce_enabled', 1 ), 1 ); ?>>
+					<label for="rsa_woocommerce_enabled">
+						<?php esc_html_e( 'Record product views, add-to-cart events, and order completions.', 'rich-statistics' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'No customer data is stored. Events are linked to anonymous session IDs only.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<?php endif; ?>
+
 	<!-- Click Tracking (premium only) -->
 	<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
 	<div class="rsa-card rsa-card-full">
