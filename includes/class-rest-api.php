@@ -164,6 +164,7 @@ class RSA_Rest_API {
 			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
 			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
+		register_rest_route( self::NS, '/woocommerce', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_woocommerce' ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		$flow_args = array_merge( $read_args, [
 			'entry_source' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'focus_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
@@ -430,6 +431,15 @@ class RSA_Rest_API {
 		$filters = [ 'medium' => (string) ( $r['medium'] ?? '' ) ];
 		$rows    = RSA_Analytics::get_campaigns( $r['period'], (int) $r['limit'], $filters );
 		return self::ok( [ 'campaigns' => $rows ] );
+	}
+
+	public static function get_woocommerce( WP_REST_Request $r ): WP_REST_Response {
+		$active = class_exists( 'WooCommerce' );
+		if ( ! $active ) {
+			return self::ok( [ 'woocommerce_active' => false ] );
+		}
+		$data = RSA_Analytics::get_woocommerce( $r['period'] );
+		return self::ok( array_merge( [ 'woocommerce_active' => true ], $data ) );
 	}
 
 	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response {
