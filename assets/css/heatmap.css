@@ -56,6 +56,16 @@ max-height: 520px;
 overflow-y: auto;
 }
 
+@media ( min-width: 901px ) {
+.rsa-hm-admin-canvas-wrap { flex: 0 0 auto; }
+#rsa-heatmap-canvas {
+width: auto;
+height: min( calc(100vh - 240px), 560px );
+aspect-ratio: 540 / 756;
+}
+.rsa-hm-admin-table-wrap { max-height: min( calc(100vh - 240px), 560px ); }
+}
+
 @media ( max-width: 900px ) {
 .rsa-hm-admin-body {
 flex-direction: column;
