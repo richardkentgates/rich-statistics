@@ -137,14 +137,7 @@ jobs:
       - name: Add version to bundled versions.json
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          python3 - <<EOF
-import json, pathlib
-p = pathlib.Path("docs/app/versions.json")
-versions = json.loads(p.read_text())
-if "${VERSION}" not in versions:
-    versions.append("${VERSION}")
-p.write_text(json.dumps(sorted(versions, key=lambda v: list(map(int, v.split("."))))))
-EOF
+          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v.append(sys.argv[1]) if sys.argv[1] not in v else None; p.write_text(json.dumps(sorted(set(v),key=lambda x:list(map(int,x.split('.'))))))" "${VERSION}"
 
       - name: Install system dependencies
         run: |
