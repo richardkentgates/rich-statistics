@@ -103,6 +103,75 @@ jobs:
   # The same string must be stored on the server in /etc/rsa-webhook-token
   # (chmod 640, chown root:www-data).
   # ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Build native Linux desktop app (.deb) for amd64 and arm64.
+  # Tauri wraps the existing PWA (docs/app/) in a native WebKitGTK window.
+  # Artifacts are renamed to stable filenames so /releases/latest/download/ URLs work.
+  # ---------------------------------------------------------------------------
+  build-desktop:
+    name: Linux desktop (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          sed -i "s/\"version\": \"0\.0\.0\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
+          sed -i "s/^version = \"0\.0\.0\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libssl-dev \
+            librsvg2-dev \
+            patchelf \
+            file
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@^2
+
+      - name: Build .deb
+        run: tauri build
+        working-directory: src-tauri
+        env:
+          CI: true
+
+      - name: Stage artifact
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          cp "${DEB}" "rich-statistics-linux-${{ matrix.arch }}.deb"
+
+      - name: Upload .deb to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: rich-statistics-linux-${{ matrix.arch }}.deb
+
   ping-deploy:
     name: Trigger web app update
     runs-on: ubuntu-latest
