@@ -125,7 +125,7 @@ GitHub (source + CI)
   │
   ├── WordPress.org SVN (plugin distribution — free tier)
   │     └── deploy-wporg.yml triggers on tag → 10up/action-wordpress-plugin-deploy
-  │         (workflow not yet added — see §11)
+  │         (workflow pending — awaiting WP.org plugin submission approval, see §11)
   │
   └── Freemius dashboard (premium licensing + auto-updates)
         └── Developer manually uploads plugin ZIP after each release
@@ -196,7 +196,7 @@ develop  ──[all features / fixes merged here]──►
    `https://dashboard.freemius.com → Plugin → Versions → Add New Version`.
    Freemius delivers the update to premium users automatically.
 
-8. **WordPress.org** — the `deploy-wporg.yml` workflow (once added — see §11) will push
+8. **WordPress.org** — the `deploy-wporg.yml` workflow (pending WP.org submission approval — see §11) will push
    to the SVN repository automatically when a version tag is detected.
 
 ---
@@ -351,14 +351,16 @@ WordPress profile and enter it in the app's settings screen.
 The plugin will be distributed on WordPress.org for the free tier. The standard
 deploy mechanism is a GitHub Actions workflow using `10up/action-wordpress-plugin-deploy`.
 
-**This workflow (`deploy-wporg.yml`) has not yet been added to the repository.**
+> **Pending:** This workflow will be added once the plugin's WordPress.org submission
+> is approved and SVN access is granted. The plugin has not yet been submitted.
 
-When added, it will:
+Once approved, this workflow will:
 1. Trigger on `v*.*.*` tags (same as `build-release.yml`)
 2. Use `.distignore` to exclude dev-only files from the SVN commit
 3. Require two repository secrets: `SVN_USERNAME` and `SVN_PASSWORD`
 
-Until then, releases to WordPress.org must be done manually via the WP.org plugin dashboard.
+Until submission is approved, releases to WordPress.org must be done manually via
+the WP.org plugin dashboard. The `.distignore` file is already in place and correct.
 
 ---
 
