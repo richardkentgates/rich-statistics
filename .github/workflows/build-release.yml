@@ -114,4 +114,4 @@ jobs:
         run: |
           curl -fsS -X POST \
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
-            https://rs-app.richardkentgates.com/_deploy
+            https://rs-app.richardkentgates.com/_deploy/

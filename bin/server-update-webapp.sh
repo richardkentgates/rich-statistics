@@ -14,14 +14,16 @@ set -euo pipefail
 DEPLOY_DIR="/var/www/rs-app"
 VERSION_FILE="${DEPLOY_DIR}/.deployed-version"
 REPO="richardkentgates/rich-statistics"
-API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+# Use the tags API — any pushed tag is visible immediately,
+# unlike releases/latest which only counts formally published GitHub Releases.
+API_URL="https://api.github.com/repos/${REPO}/tags"
 LOG_TAG="rsa-app-update"
 
 log() { logger -t "${LOG_TAG}" "$*" || true; echo "$(date -u +%FT%TZ)  $*"; }
 
-# ── Fetch latest release tag from the public GitHub API ──────────────────────
+# ── Fetch latest tag from the public GitHub API ───────────────────────────────
 LATEST=$(curl -sf "${API_URL}" \
-    | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+    | python3 -c "import sys,json; tags=json.load(sys.stdin); print(tags[0]['name']) if tags else print('')")
 
 if [ -z "${LATEST}" ]; then
     log "ERROR: Could not determine latest release tag — skipping."
@@ -51,7 +53,10 @@ curl -sfL \
     -o "${TARBALL}"
 
 # ── Extract only docs/app/ ────────────────────────────────────────────────────
-tar -xzf "${TARBALL}" -C "${TMPDIR}" "${DIR_NAME}/docs/app/"
+tar -xzf "${TARBALL}" -C "${TMPDIR}" "${DIR_NAME}/docs/app/" 2>/dev/null || {
+    log "ERROR: docs/app/ not found in tarball for ${LATEST} — aborting."
+    exit 1
+}
 
 # ── Sync to the deploy directory ─────────────────────────────────────────────
 rsync -a --delete "${TMPDIR}/${DIR_NAME}/docs/app/" "${DEPLOY_DIR}/"
