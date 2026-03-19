@@ -214,7 +214,7 @@ jobs:
           DEST="rich-statistics-linux-${{ matrix.arch }}.deb"
 
           install -m 600 /dev/null /tmp/ci_key
-          printf '%s' "${SSH_KEY}" > /tmp/ci_key
+          printf '%s\n' "${SSH_KEY}" > /tmp/ci_key
 
           SSH="ssh -i /tmp/ci_key -o StrictHostKeyChecking=no -o BatchMode=yes"
           SCP="scp -i /tmp/ci_key -o StrictHostKeyChecking=no"
@@ -254,7 +254,7 @@ jobs:
           DESKTOP_DIR="/var/www/rs-app/desktop"
 
           install -m 600 /dev/null /tmp/ci_key
-          printf '%s' "${SSH_KEY}" > /tmp/ci_key
+          printf '%s\n' "${SSH_KEY}" > /tmp/ci_key
           SSH="ssh -i /tmp/ci_key -o StrictHostKeyChecking=no -o BatchMode=yes"
 
           $SSH richardkentgates@104.197.231.120 \
