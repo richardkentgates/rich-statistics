@@ -2,14 +2,29 @@
 
 > Privacy-first analytics for WordPress publishers — no PII, no consent banners required.
 
+<!-- Status -->
 [![Version](https://img.shields.io/badge/version-1.4.1-brightgreen)](CHANGELOG.md)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php)](https://php.net)
-[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress)](https://wordpress.org)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
+[![Build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
 [![Tests](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
-[![PWA](https://img.shields.io/badge/PWA-enabled-5A0FC8?logo=pwa)](https://rs-app.richardkentgates.com)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
+
+<!-- Stack -->
+[![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)](https://php.net)
+[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org)
+[![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](src-tauri/)
+[![Top language](https://img.shields.io/github/languages/top/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
+
+<!-- Platform -->
+[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://rs-app.richardkentgates.com)
+[![Linux amd64](https://img.shields.io/badge/Linux-amd64-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb)
+[![Linux arm64](https://img.shields.io/badge/Linux-arm64-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb)
+
+<!-- Privacy / Compliance -->
 [![No cookies](https://img.shields.io/badge/cookies-none-success)](https://statistics.richardkentgates.com)
+[![No PII](https://img.shields.io/badge/PII-none%20stored-success)](https://statistics.richardkentgates.com#privacy)
+[![GDPR friendly](https://img.shields.io/badge/GDPR-no%20consent%20banner-success)](https://statistics.richardkentgates.com#privacy)
 [![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://statistics.richardkentgates.com)
+[![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1%20AA-blueviolet)](https://statistics.richardkentgates.com)
 
 **Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com) &nbsp;|&nbsp; **Web App:** [rs-app.richardkentgates.com](https://rs-app.richardkentgates.com)
 
@@ -192,8 +207,7 @@ A progressive web app is included at `wp-content/plugins/rich-statistics/webapp/
 4. Tap **Add Site**, enter your site URL, and enter the App Code when prompted
 5. Create an **Application Password** in the section below on the profile page
 6. Enter the username and Application Password in the app to complete the connection
-7. Install to your home screen via your browser’s “Add to Home Screen” prompt
----
+7. Install to your home screen via your browser’s “Add to Home Screen” prompt---
 
 ## Linux Desktop App (Premium)
 
@@ -211,6 +225,7 @@ sudo apt install ./rich-statistics-linux-amd64.deb   # installs libwebkit2gtk au
 ```
 
 On non-apt systems, install `webkit2gtk-4.1` via your package manager, then run the binary directly from the release.
+
 ---
 
 ## Contributing
