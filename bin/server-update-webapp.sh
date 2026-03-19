@@ -62,9 +62,11 @@ fi
 
 # ── Sync to the deploy directory ─────────────────────────────────────────────
 # Root-level files (app.js, app.css, index.html, etc.): sync with --delete so
-# stale files are removed.
+# stale files are removed. Exclude versioned snapshot dirs and the _deploy
+# webhook handler so they are never wiped.
 rsync -a --delete \
     --exclude='[0-9]*.[0-9]*.[0-9]*/' \
+    --exclude='_deploy/' \
     "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 
 # Versioned snapshot subdirectories: additive-only — never delete old versions
