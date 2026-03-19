@@ -20,6 +20,15 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "TAURI_UPDATER_PUBKEY",
+      "endpoints": [
+        "https://rs-app.richardkentgates.com/desktop/update.json"
+      ],
+      "dialog": true
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["deb"],
