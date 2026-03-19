@@ -1,6 +1,27 @@
 <?php
+/**
+ * Premium: User Flow template.
+ *
+ * @fs_premium_only
+ */
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+	RSA_Admin::page_header( __( 'User Flow', 'rich-statistics' ) );
+	?>
+	<div class="rsa-upsell-notice">
+		<h2><?php esc_html_e( 'User Flow is a Premium Feature', 'rich-statistics' ); ?></h2>
+		<p><?php esc_html_e( 'Visualise the paths visitors take through your site — entry points, navigation sequences, and where they drop off.', 'rich-statistics' ); ?></p>
+		<?php if ( function_exists( 'rs_fs' ) ) : ?>
+		<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary button-hero">
+			<?php esc_html_e( 'Upgrade to Unlock User Flow', 'rich-statistics' ); ?>
+		</a>
+		<?php endif; ?>
+	</div>
+	<?php
+	RSA_Admin::page_footer();
+	return;
+}
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
 $allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
