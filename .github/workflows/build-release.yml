@@ -96,26 +96,22 @@ jobs:
             https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
 
   # ---------------------------------------------------------------------------
-  # Deploy web app to the app server on every version tag
-  # Requires secret: APP_SSH_KEY  (contents of ~/.ssh/id_rsa on the deploy host)
+  # Ping the app server webhook to pull & deploy docs/app/ from GitHub.
+  # No SSH key needed — server pulls public repo itself.
+  # Requires GitHub secret: DEPLOY_WEBHOOK_TOKEN  (a random string you choose,
+  # e.g.  openssl rand -hex 32)
+  # The same string must be stored on the server in /etc/rsa-webhook-token
+  # (chmod 640, chown root:www-data).
   # ---------------------------------------------------------------------------
-  deploy-app:
-    name: Deploy web app
+  ping-deploy:
+    name: Trigger web app update
     runs-on: ubuntu-latest
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy docs/app/ to app server
+      - name: Ping deploy webhook
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.APP_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H 104.197.231.120 >> ~/.ssh/known_hosts
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key" \
-            docs/app/ \
-            richardkentgates@104.197.231.120:/var/www/rs-app/
+          curl -fsS -X POST \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+            https://rs-app.richardkentgates.com/_deploy
