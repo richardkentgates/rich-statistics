@@ -1201,3 +1201,48 @@ color: var(--rsa-muted);
 	margin-left: 2px;
 	z-index: 1;
 }
+
+/* =========================================================================
+   Desktop app update banner (Tauri only — shown when plugin version is
+   newer than the highest bundled app version)
+   ========================================================================= */
+#rsa-desktop-update-banner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: #7c3a00;
+	border-bottom: 1px solid #a84d00;
+	color: #fde8c8;
+	font-size: 13px;
+	padding: 9px 16px;
+	position: sticky;
+	top: 0;
+	z-index: 999;
+	flex-wrap: wrap;
+}
+.rsa-desktop-update-icon {
+	font-size: 16px;
+	flex-shrink: 0;
+}
+#rsa-desktop-update-banner span {
+	flex: 1;
+	min-width: 0;
+}
+#rsa-desktop-update-banner a {
+	color: #ffd699;
+	font-weight: 600;
+	white-space: nowrap;
+	text-decoration: underline;
+}
+#rsa-desktop-update-dismiss {
+	background: none;
+	border: none;
+	color: #fde8c8;
+	font-size: 18px;
+	cursor: pointer;
+	padding: 0 4px;
+	line-height: 1;
+	flex-shrink: 0;
+	opacity: 0.7;
+}
+#rsa-desktop-update-dismiss:hover { opacity: 1; }

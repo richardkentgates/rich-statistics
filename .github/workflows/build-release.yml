@@ -134,6 +134,18 @@ jobs:
           sed -i "s/\"version\": \"0\.0\.0\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
           sed -i "s/^version = \"0\.0\.0\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
 
+      - name: Add version to bundled versions.json
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          python3 - <<EOF
+import json, pathlib
+p = pathlib.Path("docs/app/versions.json")
+versions = json.loads(p.read_text())
+if "${VERSION}" not in versions:
+    versions.append("${VERSION}")
+p.write_text(json.dumps(sorted(versions, key=lambda v: list(map(int, v.split("."))))))
+EOF
+
       - name: Install system dependencies
         run: |
           sudo apt-get update

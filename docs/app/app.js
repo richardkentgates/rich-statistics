@@ -143,7 +143,9 @@
 
 	function setActiveSite( id ) {
 		var targetSite = state.sites.find( function ( s ) { return s.id === id; } );
-		if ( targetSite && targetSite.appUrl ) {
+		// In the Tauri desktop app never navigate away to the hosted web app —
+		// version routing is handled locally by checkPluginVersion / tauriNavigateToVersion.
+		if ( ! isTauri() && targetSite && targetSite.appUrl ) {
 			var targetOrigin = '';
 			try { targetOrigin = new URL( targetSite.appUrl ).origin; } catch ( _ ) {}
 			if ( targetOrigin && targetOrigin !== window.location.origin ) {
@@ -433,6 +435,85 @@
 		return null;
 	}
 
+	/**
+	 * Returns true when running inside the native Tauri desktop window.
+	 * Tauri 2 exposes __TAURI_INTERNALS__ on the window object.
+	 */
+	function isTauri() {
+		return !! ( window.__TAURI_INTERNALS__ || window.__TAURI__ );
+	}
+
+	/**
+	 * Returns the current semver extracted from the Tauri local URL, e.g.
+	 * http://tauri.localhost/1.4.1/  →  "1.4.1", or null if at root.
+	 */
+	function getTauriCurrentVersion() {
+		var m = window.location.pathname.match( /^\/([0-9]+\.[0-9]+\.[0-9]+)\// );
+		return m ? m[1] : null;
+	}
+
+	/**
+	 * Navigate to a bundled versioned folder in the Tauri local server.
+	 * Falls back to the latest bundled version if the requested one isn't found,
+	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 */
+	function tauriNavigateToVersion( pluginVersion ) {
+		var current = getTauriCurrentVersion();
+		if ( current === pluginVersion ) return; // Already on correct version
+
+		fetch( '/versions.json' )
+			.then( function ( r ) { return r.ok ? r.json() : []; } )
+			.then( function ( bundled ) {
+				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
+					// Exact match — navigate to that versioned folder
+					window.location.href = '/' + pluginVersion + '/';
+				} else {
+					// Plugin is newer than all bundled versions — show update banner
+					showDesktopUpdateBanner( pluginVersion, bundled );
+					// Navigate to the highest bundled version we do have
+					var latest = bundled.slice().sort( function ( a, b ) {
+						var pa = a.split( '.' ).map( Number );
+						var pb = b.split( '.' ).map( Number );
+						for ( var i = 0; i < 3; i++ ) {
+							if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
+						}
+						return 0;
+					} )[ 0 ];
+					if ( latest && current !== latest ) {
+						window.location.href = '/' + latest + '/';
+					}
+				}
+			} )
+			.catch( function () {} );
+	}
+
+	/**
+	 * Show a dismissible banner inside the Tauri window when the installed
+	 * plugin is newer than the desktop app bundle.
+	 */
+	function showDesktopUpdateBanner( pluginVersion, bundled ) {
+		if ( document.getElementById( 'rsa-desktop-update-banner' ) ) return;
+		var latest  = bundled.slice().sort( function ( a, b ) {
+			var pa = a.split( '.' ).map( Number );
+			var pb = b.split( '.' ).map( Number );
+			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
+			return 0;
+		} )[ 0 ] || '?';
+		var dlUrl = 'https://github.com/richardkentgates/rich-statistics/releases/latest';
+		var banner = document.createElement( 'div' );
+		banner.id = 'rsa-desktop-update-banner';
+		banner.innerHTML =
+			'<span class="rsa-desktop-update-icon">&#9888;</span>' +
+			'<span>Plugin v' + pluginVersion + ' requires a newer desktop app ' +
+			'(you have bundles up to v' + latest + '). Some features may not work until you update.</span>' +
+			'<a href="' + dlUrl + '" target="_blank" rel="noopener">Download update</a>' +
+			'<button id="rsa-desktop-update-dismiss" aria-label="Dismiss">&times;</button>';
+		document.body.insertBefore( banner, document.body.firstChild );
+		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
+			banner.remove();
+		} );
+	}
+
 	function checkPluginVersion() {
 		if ( ! state.siteUrl ) return;
 
@@ -445,6 +526,14 @@
 
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
+
+				// In Tauri: route to the matching bundled version folder.
+				// Never navigate away to the hosted web app.
+				if ( isTauri() ) {
+					tauriNavigateToVersion( info.version );
+					localStorage.setItem( versionKey, info.version );
+					return;
+				}
 
 				// Cache the app_url on the site object so setActiveSite can navigate to it
 				if ( info.app_url ) {
