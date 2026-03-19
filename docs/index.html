@@ -285,13 +285,35 @@
         Open Web App
       </a>
       <a class="btn btn--outline btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-amd64.deb" rel="noopener">
-        Download for Linux (x86_64)
+        &#8595; Linux Desktop (x86_64)
       </a>
       <a class="btn btn--outline btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest/download/rich-statistics-linux-arm64.deb" rel="noopener">
-        Download for Linux (ARM64)
+        &#8595; Linux Desktop (ARM64)
       </a>
     </div>
-    <p class="app-note" style="margin-top:8px">Install with <code>sudo apt install ./rich-statistics-linux-*.deb</code> — webkit2gtk is installed automatically as a dependency.</p>
+
+    <div class="desktop-install">
+      <h3>Linux Desktop App <span class="desktop-install__tag">Native · No Electron</span></h3>
+      <p>A native WebKitGTK desktop window — built with Tauri. No bundled browser, no Electron overhead. Required libraries install automatically from your package manager.</p>
+      <div class="desktop-install__grid">
+        <div class="desktop-install__block">
+          <strong>Debian · Ubuntu · Raspberry Pi OS</strong>
+          <pre><code>sudo apt install ./rich-statistics-linux-amd64.deb
+# ARM boards (Pi 4 / Pi 5):
+sudo apt install ./rich-statistics-linux-arm64.deb</code></pre>
+        </div>
+        <div class="desktop-install__block">
+          <strong>Fedora · RHEL</strong>
+          <pre><code>sudo dnf install webkit2gtk4.1
+# extract &amp; run the binary from the .deb</code></pre>
+        </div>
+        <div class="desktop-install__block">
+          <strong>Arch Linux</strong>
+          <pre><code>sudo pacman -S webkit2gtk-4.1
+# extract &amp; run the binary from the .deb</code></pre>
+        </div>
+      </div>
+    </div>
 
     <div class="steps">
       <div class="step">

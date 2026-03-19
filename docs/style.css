@@ -249,6 +249,71 @@ pre code { background: none; padding: 0; }
   color: var(--gray-500);
 }
 
+/* ---- Desktop install block ---- */
+.desktop-install {
+  max-width: 820px;
+  margin: 0 auto 3rem;
+  background: var(--gray-900, #0f172a);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 28px 32px;
+  color: #e2e8f0;
+}
+.desktop-install h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.desktop-install__tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(74,144,184,0.18);
+  color: #7dd3fc;
+  border: 1px solid rgba(74,144,184,0.35);
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+  letter-spacing: 0.03em;
+}
+.desktop-install p {
+  font-size: 0.9375rem;
+  color: #94a3b8;
+  margin-bottom: 1.25rem;
+}
+.desktop-install__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 680px) {
+  .desktop-install__grid { grid-template-columns: 1fr; }
+  .desktop-install { padding: 20px 18px; }
+}
+.desktop-install__block strong {
+  display: block;
+  font-size: 0.8125rem;
+  color: #7dd3fc;
+  margin-bottom: 0.5rem;
+}
+.desktop-install__block pre {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: #e2e8f0;
+}
+.desktop-install__block pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
 /* ---- Badges ---- */
 .badge {
   display: inline-block;
