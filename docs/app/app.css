@@ -510,7 +510,7 @@ html, body {
 .rsa-hm-path { font-size: 13px; font-weight: 600; color: var(--rsa-text); font-family: monospace; }
 .rsa-hm-meta { font-size: 12px; color: var(--rsa-muted); }
 .rsa-hm-body { display: flex; gap: 20px; align-items: flex-start; }
-.rsa-hm-canvas-wrap { flex: 0 0 52%; min-width: 0; }
+.rsa-hm-canvas-wrap { flex: 0 0 52%; min-width: 0; position: relative; }
 #c-heatmap { height: auto !important; width: 100% !important; aspect-ratio: 540 / 756; border-radius: var(--rsa-radius); }
 
 /* Legend bar */
