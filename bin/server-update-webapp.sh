@@ -48,6 +48,7 @@ git clone \
     --filter=blob:none \
     --sparse \
     --branch "${LATEST}" \
+    -c advice.detachedHead=false \
     "${REPO}" \
     "${TMPDIR}/repo" \
     --quiet
