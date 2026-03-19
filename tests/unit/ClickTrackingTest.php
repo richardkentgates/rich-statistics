@@ -16,10 +16,11 @@ class ClickTrackingTest extends TestCase {
 	// ----------------------------------------------------------------
 	// RSA_DB::SCHEMA_VERSION — bump this comment when the version changes
 	// v8: utm_source, utm_medium, utm_campaign columns on rsa_events
+	// v9: woocommerce integration tables (rsa_wc_events)
 	// ----------------------------------------------------------------
 
 	public function test_schema_version_constant(): void {
-		$this->assertSame( 8, RSA_DB::SCHEMA_VERSION );
+		$this->assertSame( 9, RSA_DB::SCHEMA_VERSION );
 	}
 
 	public function test_option_key_constant(): void {
