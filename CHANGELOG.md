@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.6] — 2026-03-19
+
+### Added
+- Linux download card in the web app nav sidebar: replaces emoji with a styled penguin SVG badge showing "Download for / Linux (.deb)" with architecture-detected download link (arm64/amd64).
+- `bin/seed-woocommerce-data.php`: WP-CLI eval-file script that inserts 90 days of realistic WooCommerce sample events (product views, add-to-cart, orders) across 7 sample products with realistic conversion funnel ratios and a daily volume trend.
+
+---
+
 ## [1.4.5] — 2026-03-19
 
 ### Fixed
@@ -188,7 +196,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.5...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.6...HEAD
+[1.4.6]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.5...v1.4.6
 [1.4.5]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...v1.4.3
