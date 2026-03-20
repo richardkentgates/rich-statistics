@@ -231,6 +231,13 @@ jobs:
           $SSH <SSH_USER>@<PWA_SERVER_IP> "mkdir -p /var/www/rs-app/desktop"
           $SCP "${DEB}" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/${DEST}"
 
+      - name: Update APT repository
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          $SSH <SSH_USER>@<PWA_SERVER_IP> \
+            "sudo /usr/local/bin/rsa-apt-repo-update ${{ matrix.arch }} ${VERSION}"
+
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
   # update.json directly on the app server.
