@@ -117,7 +117,7 @@
       <li>Works on Chrome (desktop + Android) and Safari (iOS 16.4+)</li>
       <li>Updates in real time via the REST API</li>
       <li>Works offline: shows the most recently loaded data</li>
-      <li>Hosted at <a href="https://statistics.richardkentgates.com/app/" target="_blank" rel="noopener">statistics.richardkentgates.com/app/</a> — install directly from any browser without visiting WordPress admin</li>
+      <li>Hosted at <a href="https://rs-app.richardkentgates.com" target="_blank" rel="noopener">rs-app.richardkentgates.com</a> — install directly from any browser without visiting WordPress admin</li>
     </ul>
 
     <h3>Connecting the app to your site</h3>
@@ -128,6 +128,31 @@
       <li>Tap <strong>Connect</strong>. Your site is added and data starts loading immediately.</li>
     </ol>
     <p>You can add multiple sites and switch between them using the site switcher in the app's navigation bar.</p>
+
+    <h2>Linux Desktop App</h2>
+    <p>A native Linux desktop app wraps the same analytics dashboard in a lightweight WebKitGTK window — no Electron, no bundled browser (Tauri / <code>.deb</code> package). Supported on any Debian/Ubuntu/Raspberry Pi OS system.</p>
+
+    <h3>Install via APT (recommended)</h3>
+    <p>The APT repository provides automatic updates through your normal system package manager.</p>
+    <pre><code>curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
+    https://rs-app.richardkentgates.com/apt stable main" \
+    | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+
+sudo apt update &amp;&amp; sudo apt install rich-statistics</code></pre>
+    <p>Once enrolled, <code>sudo apt upgrade</code> keeps the app current alongside your other packages.</p>
+
+    <h3>Manual install (direct .deb download)</h3>
+    <table>
+      <thead><tr><th>Architecture</th><th>Download</th></tr></thead>
+      <tbody>
+        <tr><td>x86_64 (Intel/AMD)</td><td><a href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb">rich-statistics-linux-amd64.deb</a></td></tr>
+        <tr><td>ARM64 (Raspberry Pi / Apple Silicon VM)</td><td><a href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb">rich-statistics-linux-arm64.deb</a></td></tr>
+      </tbody>
+    </table>
+    <pre><code>sudo dpkg -i rich-statistics-linux-*.deb</code></pre>
 
     <h2>How upgrading works</h2>
     <p>There is no separate premium ZIP to download or reinstall. The upgrade is a standard WordPress plugin update delivered through Freemius:</p>

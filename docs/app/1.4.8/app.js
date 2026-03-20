@@ -68,7 +68,6 @@
 		bindSignOut();
 		bindAddSite();
 		bindInstallPrompt();
-		bindDesktopDownload();
 		showIosInstallTip();
 	} );
 
@@ -1007,30 +1006,6 @@
 				}
 			} );
 		} );
-	}
-
-	/**
-	 * Show a "Desktop App" download link in the nav footer when the user is on
-	 * Linux and has NOT already installed the Tauri desktop app.
-	 * ARM64 is detected from the User-Agent string; x86_64 is the default.
-	 */
-	function bindDesktopDownload() {
-		// Already running inside the desktop app — no need to offer a download.
-		if ( isTauri() ) return;
-
-		var ua = ( navigator.userAgent || '' ).toLowerCase();
-		var platform = ( navigator.platform || '' ).toLowerCase();
-		var isLinux = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
-		if ( ! isLinux ) return;
-
-		var base    = 'https://rs-app.richardkentgates.com/desktop';
-		var amd64Btn = document.getElementById( 'rsa-desktop-btn-amd64' );
-		var arm64Btn = document.getElementById( 'rsa-desktop-btn-arm64' );
-		var wrap     = document.getElementById( 'rsa-linux-download' );
-
-		if ( amd64Btn ) amd64Btn.href = base + '/rich-statistics-linux-amd64.deb';
-		if ( arm64Btn ) arm64Btn.href = base + '/rich-statistics-linux-arm64.deb';
-		if ( wrap ) wrap.hidden = false;
 	}
 
 	function toggleNav() {
