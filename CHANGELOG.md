@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.10] — 2026-03-20
+
+### Added
+- Offline banner: "You are offline. Showing cached data." — shown immediately when `navigator.onLine` is false and cleared automatically when connectivity returns.
+- Site-unreachable banner: "Can't reach [hostname]. Showing cached data." — distinguished from the offline banner; shown when the device has internet but the WordPress site is not responding (network-level failure, not an HTTP error).
+- Persistent data cache: each successful API response is saved to `localStorage` (`rsa_dc_*` keys) so both the PWA and the Tauri desktop app can render last-known data when offline or the site is unreachable. Previously, Tauri had no offline fallback at all (no service worker).
+- Auto-refresh: when the `online` event fires, the current view is automatically re-fetched and banners are cleared.
+
+---
+
 ## [1.4.9] — 2026-03-20
 
 ### Changed

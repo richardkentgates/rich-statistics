@@ -36,6 +36,7 @@
 		view        : 'overview',
 		charts      : {},        // keyed by canvas id
 		cache       : {},        // keyed by endpoint+period
+		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
 	};
@@ -69,6 +70,22 @@
 		bindAddSite();
 		bindInstallPrompt();
 		showIosInstallTip();
+
+		// Connection banners — check initial state and listen for changes.
+		if ( navigator.onLine === false ) {
+			setConnBanner( 'offline' );
+		}
+		window.addEventListener( 'offline', function () {
+			setConnBanner( 'offline' );
+		} );
+		window.addEventListener( 'online', function () {
+			// Connectivity restored: clear the banner and re-fetch the current view.
+			setConnBanner( null );
+			if ( state.siteUrl ) {
+				state.cache = {};
+				renderView( state.view );
+			}
+		} );
 	} );
 
 	// -----------------------------------------------------------------------
@@ -139,6 +156,26 @@
 		state.siteUrl     = site ? site.siteUrl     : '';
 		state.credentials = site ? site.credentials : '';
 		state.cache       = {};
+	}
+
+	// -----------------------------------------------------------------------
+	// Persistent data cache (localStorage) — offline fallback in Tauri
+	// (no service worker) and any session where the SW cache was evicted.
+	// Keyed by the full request URL. Values are not encrypted — they contain
+	// only the same aggregated stats data already visible in the dashboard.
+	// -----------------------------------------------------------------------
+	function dcSet( key, data ) {
+		try {
+			localStorage.setItem( 'rsa_dc_' + key, JSON.stringify( { ts: Date.now(), d: data } ) );
+		} catch ( _ ) {} // Quota errors are ignored — cache is best-effort
+	}
+
+	function dcGet( key ) {
+		try {
+			var raw = localStorage.getItem( 'rsa_dc_' + key );
+			if ( ! raw ) return null;
+			return JSON.parse( raw ).d;
+		} catch ( _ ) { return null; }
 	}
 
 	function setActiveSite( id ) {
@@ -387,7 +424,30 @@
 				? json.data
 				: json;
 			state.cache[ cacheKey ] = data;
+			dcSet( cacheKey, data );
+			// Clear site-down banner now that the site responded successfully.
+			if ( state.connState === 'site-down' ) {
+				setConnBanner( null );
+			}
 			return data;
+		} ).catch( function ( err ) {
+			// Re-throw auth/HTTP errors — callers handle those via handleApiError.
+			// Network errors (TypeError = no response at all): show the right banner
+			// and serve stale data from in-memory or localStorage cache if available.
+			if ( err.message === 'auth' ) throw err;
+			var isNetworkErr = ( err instanceof TypeError || err.name === 'TypeError' );
+			if ( isNetworkErr ) {
+				var bannerType = navigator.onLine === false ? 'offline' : 'site-down';
+				setConnBanner( bannerType );
+				var cachedData = state.cache[ cacheKey ];
+				if ( cachedData === undefined || cachedData === null ) {
+					cachedData = dcGet( cacheKey );
+				}
+				if ( cachedData !== null && cachedData !== undefined ) {
+					return cachedData;
+				}
+			}
+			throw err;
 		} );
 	}
 
@@ -1006,6 +1066,22 @@
 				}
 			} );
 		} );
+	}
+
+	function setConnBanner( type ) {
+		var offlineBanner  = document.getElementById( 'rsa-banner-offline'  );
+		var siteDownBanner = document.getElementById( 'rsa-banner-site-down' );
+		if ( ! offlineBanner || ! siteDownBanner ) return;
+		offlineBanner.hidden  = ( type !== 'offline'   );
+		siteDownBanner.hidden = ( type !== 'site-down' );
+		if ( type === 'site-down' ) {
+			var nameEl = document.getElementById( 'rsa-banner-site-name' );
+			if ( nameEl && state.siteUrl ) {
+				try { nameEl.textContent = new URL( state.siteUrl ).hostname; }
+				catch ( _ ) { nameEl.textContent = state.siteUrl; }
+			}
+		}
+		state.connState = type || 'online';
 	}
 
 	function toggleNav() {
