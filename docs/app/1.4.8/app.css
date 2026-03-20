@@ -974,6 +974,84 @@ font-size: 12px;
 }
 
 /* -----------------------------------------------------------------------
+   Install page
+----------------------------------------------------------------------- */
+.rsa-install-card {
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	padding: 14px 0 6px;
+}
+.rsa-install-card + .rsa-install-card { border-top: 1px solid var(--rsa-border); padding-top: 14px; }
+.rsa-install-card--done { opacity: .75; }
+.rsa-install-card--warn { background: #fffbea; border: 1px solid #f0d060; border-radius: var(--rsa-radius); padding: 12px 14px; }
+.rsa-install-card-icon {
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	border-radius: 8px;
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+}
+.rsa-install-icon-safari { background: #f0f8ff; }
+.rsa-install-card-body { flex: 1; min-width: 0; }
+.rsa-install-card-body h3 {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin: 0 0 6px;
+	text-transform: none;
+	letter-spacing: 0;
+}
+.rsa-install-steps {
+	padding-left: 18px;
+	margin: 0 0 8px;
+	color: var(--rsa-text);
+	font-size: 13px;
+	line-height: 1.7;
+}
+.rsa-install-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--rsa-muted);
+	vertical-align: middle;
+}
+.rsa-install-method-label {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .06em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+}
+.rsa-install-code {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 10px 12px;
+	font-size: 12px;
+	line-height: 1.6;
+	font-family: 'Courier New', Courier, monospace;
+	overflow-x: auto;
+	white-space: pre;
+	color: var(--rsa-text);
+	margin: 0;
+}
+.rsa-install-deb-link { flex: 0 0 auto; width: auto; padding: 6px 18px; }
+.rsa-install-compat-table { margin-top: 8px; }
+.rsa-install-page-btn { justify-content: center; }
+.rsa-install-btn-pending { font-style: italic; }
+
+/* -----------------------------------------------------------------------
    User Flow step cards
 ----------------------------------------------------------------------- */
 .rsa-uf-wrap {
