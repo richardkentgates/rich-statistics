@@ -46,6 +46,13 @@ class RestApiTest extends WP_UnitTestCase {
 			'/rsa/v1/behavior',
 			'/rsa/v1/clicks',
 			'/rsa/v1/export',
+			'/rsa/v1/campaigns',
+			'/rsa/v1/woocommerce',
+			'/rsa/v1/heatmap',
+			'/rsa/v1/user-flow',
+			'/rsa/v1/user-flow/journey',
+			'/rsa/v1/user-flow/sources',
+			'/rsa/v1/info',
 		];
 
 		foreach ( $expected as $route ) {
@@ -250,5 +257,110 @@ class RestApiTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'element_text',  $row );
 		$this->assertArrayHasKey( 'href_value',    $row );
 		$this->assertArrayHasKey( 'count',         $row );
+	}
+
+	// ----------------------------------------------------------------
+	// /behavior response shape
+	// ----------------------------------------------------------------
+
+	public function test_behavior_response_has_expected_keys(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/behavior' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		if ( 200 !== $response->get_status() ) {
+			$this->markTestSkipped( 'Behavior endpoint requires premium; skipping.' );
+		}
+
+		$body = $response->get_data();
+		$this->assertArrayHasKey( 'time_histogram', $body['data'] );
+		$this->assertArrayHasKey( 'session_depth',  $body['data'] );
+		$this->assertArrayHasKey( 'entry_pages',    $body['data'] );
+	}
+
+	// ----------------------------------------------------------------
+	// /campaigns response shape
+	// ----------------------------------------------------------------
+
+	public function test_campaigns_route_is_accessible(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/campaigns' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		$this->assertContains( $response->get_status(), [ 200, 403 ] );
+	}
+
+	public function test_campaigns_response_has_campaigns_key(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/campaigns' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		if ( 200 !== $response->get_status() ) {
+			$this->markTestSkipped( 'Campaigns endpoint requires premium; skipping.' );
+		}
+
+		$body = $response->get_data();
+		$this->assertArrayHasKey( 'campaigns', $body['data'] );
+		$this->assertIsArray( $body['data']['campaigns'] );
+	}
+
+	// ----------------------------------------------------------------
+	// /woocommerce response shape
+	// ----------------------------------------------------------------
+
+	public function test_woocommerce_route_is_accessible(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/woocommerce' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		$this->assertContains( $response->get_status(), [ 200, 403 ] );
+	}
+
+	public function test_woocommerce_response_has_active_flag(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/woocommerce' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		if ( 200 !== $response->get_status() ) {
+			$this->markTestSkipped( 'WooCommerce endpoint requires premium; skipping.' );
+		}
+
+		$body = $response->get_data();
+		$this->assertArrayHasKey( 'woocommerce_active', $body['data'] );
+		// When WooCommerce is not installed, should return false with no error.
+		$this->assertIsBool( $body['data']['woocommerce_active'] );
+	}
+
+	// ----------------------------------------------------------------
+	// /user-flow response shape
+	// ----------------------------------------------------------------
+
+	public function test_user_flow_route_is_accessible(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/user-flow' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		$this->assertContains( $response->get_status(), [ 200, 403 ] );
+	}
+
+	public function test_user_flow_response_has_rows_key(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/user-flow' );
+		$request->set_param( 'period', '7d' );
+		$response = static::$server->dispatch( $request );
+
+		if ( 200 !== $response->get_status() ) {
+			$this->markTestSkipped( 'User-flow endpoint requires premium; skipping.' );
+		}
+
+		$body = $response->get_data();
+		$this->assertArrayHasKey( 'rows', $body['data'] );
+		$this->assertIsArray( $body['data']['rows'] );
 	}
 }
