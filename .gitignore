@@ -24,6 +24,7 @@ src-tauri/Cargo.lock
 # -------------------------------------------------------------------------
 /phpunit.xml
 /.phpunit.result.cache
+/.phpunit.cache/
 /tests/_output/
 /tests/tmp/
 /wordpress-tests-lib/
