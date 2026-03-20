@@ -360,7 +360,9 @@ class RestApiTest extends WP_UnitTestCase {
 		}
 
 		$body = $response->get_data();
-		$this->assertArrayHasKey( 'rows', $body['data'] );
-		$this->assertIsArray( $body['data']['rows'] );
+		$this->assertArrayHasKey( 'steps',          $body['data'] );
+		$this->assertArrayHasKey( 'links',          $body['data'] );
+		$this->assertArrayHasKey( 'total_sessions', $body['data'] );
+		$this->assertIsArray( $body['data']['steps'] );
 	}
 }

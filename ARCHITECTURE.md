@@ -306,3 +306,125 @@ main         ← tagged releases only (v1.x.x)
 | 7 | Added `href_value` to `rsa_clicks` |
 | 8 | Added `utm_source`, `utm_medium`, `utm_campaign` to `rsa_events` |
 | 9 | Added `rsa_wc_events` table (WooCommerce event tracking, Premium) |
+
+---
+
+## PWA / Desktop App Architecture
+
+The companion app is served from GitHub Pages at `rs-app.richardkentgates.com/app/` and is also bundled inside the Tauri-wrapped Linux desktop app (`.deb`).
+
+### Versioned Snapshot Folder Layout
+
+Every release bakes a frozen snapshot of the app files into `docs/app/{version}/`:
+
+```
+docs/app/
+├── index.html        ← "live" canonical copy (always latest)
+├── app.js
+├── app.css
+├── sw.js
+├── config.js
+├── chart.min.js
+├── manifest.json
+├── icons/
+├── versions.json     ← JSON array of all published semver strings
+├── 1.4.6/            ← frozen snapshot at that release
+│   ├── index.html
+│   ├── app.js
+│   └── ...
+├── 1.4.7/
+└── 1.4.8/
+```
+
+The `build-release.yml` CI workflow creates the snapshot in its **`build`** job (web app, pushed to `main`) and again in the **`build-desktop`** job (bundled into the `.deb` before `tauri build` runs).
+
+**Critical:** the desktop job must create the snapshot *before* `tauri build` so it is included in the bundle. If the snapshot only exists in the git-pushed commit from the `build` job, the `build-desktop` job is checking out the tag (which predates that commit) and the folder will be absent from the `.deb`.
+
+### Version Switching — How It Works
+
+The REST endpoint `/wp-json/rsa/v1/info` returns `{"ok":true,"data":{"version":"X.Y.Z",...}}` where `version` is the `RSA_VERSION` PHP constant.
+
+**`checkPluginVersion()` in `app.js`:**
+1. Fetches `/wp-json/rsa/v1/info` for the connected site.
+2. Stores the version in `localStorage` under `rsa_pv_{siteId}`.
+3. In Tauri → calls `tauriNavigateToVersion(pluginVersion)`.
+4. In browser → clears all SW caches and reloads if the stored version differs.
+
+**`tauriNavigateToVersion(pluginVersion)` in `app.js`:**
+1. Fetches `/versions.json` from the Tauri local server to get the list of bundled versions.
+2. If the requested version is in the list, does a `HEAD` fetch for `/{version}/index.html` to **verify the folder is physically present** in the bundle before navigating.
+3. If present → `window.location.href = '/{version}/'`.
+4. If absent (snapshot missing from this `.deb` build) → stays on current location silently.
+5. If the plugin version is newer than all bundled versions → shows the in-app update banner with a `.deb` download link, and navigates to the highest bundled version available.
+
+**`localStorage` key:** `rsa_pv_{siteId}` — one key per registered site so version state is independent per site.
+
+### PWA Service Worker — Force Reload on Update
+
+The service worker (`sw.js`) uses a **dual-notification** strategy to ensure all open tabs reload when a new SW activates. A single notification mechanism is unreliable because there is no guarantee of message delivery order.
+
+**SW side (`activate` event):**
+```javascript
+event.waitUntil(
+    caches.keys()
+        .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+        .then(() => self.clients.claim())
+        .then(() => self.clients.matchAll({ includeUncontrolled: true }))
+        .then(clients => clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED' })))
+);
+```
+`clients.claim()` **must be inside the `event.waitUntil()` promise chain**, not called fire-and-forget. Outside the chain it races with activation completion.
+
+**Page side (`index.html` SW registration):**
+```javascript
+var _rsaHadSWController = !! navigator.serviceWorker.controller;
+navigator.serviceWorker.register('./sw.js').then(reg => { ... });
+navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (_rsaHadSWController) window.location.reload();
+});
+navigator.serviceWorker.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'SW_ACTIVATED' && _rsaHadSWController) {
+        window.location.reload();
+    }
+});
+```
+`_rsaHadSWController` distinguishes a **first install** (no existing SW → no reload needed) from an **update** (had a SW → reload to load new assets). Without this guard every first-install triggers an unnecessary reload.
+
+### Known Issues Resolved (March 2026)
+
+#### `RSA_VERSION` constant not bumped (v1.4.3 → v1.4.5)
+**Symptom:** REST API returned `"version": "1.4.2"` even on plugin versions 1.4.3, 1.4.4, and 1.4.5. All version display and the auto-switching mechanism were broken.
+**Root cause:** Only the plugin header `Version:` comment was being bumped on each release; the `define( 'RSA_VERSION', '...' )` constant in `rich-statistics.php` was left at `'1.4.2'`.
+**Rule:** Both `Version:` header **and** `RSA_VERSION` constant **must** be bumped together on every release. The constant is what the REST API returns; the header is what WordPress reads for updates.
+
+#### Tauri desktop app: blank "Add your site" screen after version switch (v1.4.7)
+**Symptom:** After `checkPluginVersion()` detected a new plugin version and called `tauriNavigateToVersion()`, the desktop app navigated to `/{version}/` but that folder was not present in the `.deb` bundle. WebKit served partial/broken HTML with no JavaScript, showing the default no-JS state: welcome screen with a broken image icon.
+**Root cause — CI:** The `build-desktop` job checked out the release tag. The versioned snapshot folder is created by the `build` job which then commits it to `main` *after* the tag. The `build-desktop` job therefore never had the folder and did not include it in `frontendDist`.
+**Root cause — `versions.json`:** The desktop job *did* add the version to `versions.json` in its local checkout, so the app believed the folder existed when in fact it did not.
+**Fix 1 — CI:** Added a "Create versioned app snapshot" step to the `build-desktop` job, *before* `tauri build`, that copies the current `docs/app/*.{html,js,css,...}` files into `docs/app/{VERSION}/`. This mirrors what the `build` job does.
+**Fix 2 — Runtime guard:** `tauriNavigateToVersion()` now does a `HEAD` request for `/{version}/index.html` before navigating. If the response is not `2xx`, the function returns silently, keeping the app on its current (working) location. This means users with an older affected build gracefully stay at root rather than hitting a blank screen.
+
+#### PWA service worker: tabs not reloading after update
+**Symptom:** After deploying a new release, open tabs continued to serve stale cached assets. Closing and reopening the tab fixed it, but the auto-reload on update was silent.
+**Root cause:** `self.clients.claim()` was called fire-and-forget outside `event.waitUntil()`, racing with the `activate` event completing. No `controllerchange` or `message` listener existed on the page.
+**Fix:** See "PWA Service Worker — Force Reload on Update" section above.
+
+---
+
+## App Server
+
+The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
+- `/app/` — live canonical PWA (GitHub Pages mirror)
+- `/app/{version}/` — versioned snapshots referenced by `versions.json`
+- `/desktop/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
+- `/desktop/rich-statistics-linux-arm64.deb` — latest arm64 `.deb`
+
+**Webhook deploy flow:**
+1. CI `ping-deploy` job POSTs to `/_deploy/` with `DEPLOY_WEBHOOK_TOKEN`
+2. Server runs `/usr/local/bin/rsa-app-update` which pulls `docs/app/` from GitHub and syncs to `/var/www/rs-app/`
+3. `.deployed-version` file on the server records the last deployed version
+
+**SSH access:** `richardkentgates@104.197.231.120` using `~/.ssh/id_rsa`
+
+**Test server (WP site for development):** `richardkentgates@34.56.56.233`, WP root at `/srv/www/wordpress`, WP-CLI at `/usr/local/bin/wp`.
+> Note: `wp plugin install` from a local ZIP fails on this server due to `upgrade/` directory permissions. Use `sudo unzip -o plugin.zip -d /srv/www/wordpress/wp-content/plugins/` instead.
