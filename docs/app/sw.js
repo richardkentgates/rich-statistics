@@ -41,7 +41,7 @@ self.addEventListener( 'install', function ( event ) {
 } );
 
 // -------------------------------------------------------------------------
-// Activate: purge stale caches
+// Activate: purge stale caches, claim clients, signal update to open pages
 // -------------------------------------------------------------------------
 self.addEventListener( 'activate', function ( event ) {
 	event.waitUntil(
@@ -57,9 +57,19 @@ self.addEventListener( 'activate', function ( event ) {
 					} )
 					.map( function ( key ) { return caches.delete( key ); } )
 			);
+		} ).then( function () {
+			// Claim all open clients so they immediately switch to this SW.
+			return self.clients.claim();
+		} ).then( function () {
+			// Tell every open page to reload so it picks up the new app files.
+			// The client-side guard (hadController) prevents reloading on first install.
+			return self.clients.matchAll( { includeUncontrolled: true, type: 'window' } ).then( function ( clients ) {
+				clients.forEach( function ( client ) {
+					client.postMessage( { type: 'SW_ACTIVATED' } );
+				} );
+			} );
 		} )
 	);
-	self.clients.claim();
 } );
 
 // -------------------------------------------------------------------------
