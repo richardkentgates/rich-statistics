@@ -88,6 +88,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 |---|---|
 | Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click |
 | Heatmap | Viewport-relative thermal overlay on any page URL |
+| WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
 
@@ -190,6 +191,12 @@ wp rich-stats email-test --recipient=you@example.com
 # Show plugin/cron/DB status
 wp rich-stats status
 
+# WooCommerce funnel + revenue + top products (Premium)
+wp rich-stats woocommerce --period=30d
+
+# Click-tracking summary (Premium)
+wp rich-stats clicks --period=7d
+
 # Multisite: scope to blog ID 3
 wp rich-stats overview --blog-id=3
 ```
@@ -213,6 +220,7 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/user-flow` | Step-based path flow data (Miller columns) |
 | GET | `/clicks` | Click element totals (premium) |
 | GET | `/heatmap` | Heatmap coordinates for a page (premium; supports `date_from`/`date_to`) |
+| GET | `/woocommerce` | WooCommerce funnel, revenue, and top-product data (premium; requires WooCommerce active) |
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
 | POST | `/track` | Ingest endpoint (used by the tracker on every page load) |
