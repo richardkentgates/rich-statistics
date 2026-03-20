@@ -465,6 +465,9 @@
 	 * and shows an update prompt if the plugin version is newer than all bundles.
 	 */
 	function tauriNavigateToVersion( pluginVersion ) {
+		// Reject anything that is not a clean semver — prevents path traversal
+		// if the API response were ever tampered with.
+		if ( ! /^\d+\.\d+\.\d+$/.test( pluginVersion ) ) return;
 		var current = getTauriCurrentVersion();
 		if ( current === pluginVersion ) return; // Already on correct version
 
