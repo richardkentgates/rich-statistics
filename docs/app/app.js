@@ -2219,6 +2219,18 @@
 				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( truncate( p.product_name, 40 ) ) + '</td><td>' + fmt( p.events ) + '</td></tr>';
 			} );
 
+			// Build conversion funnel rows: Stage / Count / Conversion %
+			var funnelSteps = [
+				{ label: 'Product Views', count: funnel.views  },
+				{ label: 'Add to Cart',   count: funnel.cart   },
+				{ label: 'Orders',        count: funnel.orders },
+			];
+			var funnelRows = funnelSteps.map( function ( step, i ) {
+				var prev = i === 0 ? null : funnelSteps[ i - 1 ].count;
+				var rateStr = prev === null ? '&mdash;' : ( prev > 0 ? ( ( step.count / prev ) * 100 ).toFixed( 1 ) + '%' : '0%' );
+				return '<tr><td>' + esc( step.label ) + '</td><td>' + fmt( step.count ) + '</td><td>' + rateStr + '</td></tr>';
+			} );
+
 			container.innerHTML =
 				tmplKpiGrid( [
 					{ label: 'Product Views', value: fmt( funnel.views )           },
@@ -2226,13 +2238,24 @@
 					{ label: 'Orders',        value: fmt( funnel.orders )          },
 					{ label: 'Revenue',       value: '$' + revenue.toFixed( 2 )   },
 				] ) +
-				'<div class="rsa-chart-wrap"><canvas id="c-wc-revenue"></canvas></div>' +
 				'<div class="rsa-grid-2" style="margin-top:20px">' +
-					'<div class="rsa-table-card"><h3>Top Viewed Products</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+					'<div class="rsa-table-card"><h3>Conversion Funnel</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+						'<thead><tr><th>Stage</th><th>Count</th><th>Conversion</th></tr></thead>' +
+						'<tbody>' + funnelRows.join( '' ) + '</tbody>' +
+					'</table></div></div>' +
+					'<div class="rsa-table-card"><h3>Revenue Over Time</h3>' +
+						( revenueByDay.length
+							? '<div class="rsa-chart-wrap"><canvas id="c-wc-revenue"></canvas></div>'
+							: '<p class="rsa-field-hint">No order data in the selected period.</p>'
+						) +
+					'</div>' +
+				'</div>' +
+				'<div class="rsa-grid-2" style="margin-top:20px">' +
+					'<div class="rsa-table-card"><h3>Top Products &mdash; Views</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
 						'<thead><tr><th>#</th><th>Product</th><th>Views</th></tr></thead>' +
 						'<tbody>' + ( viewedRows.length ? viewedRows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody>' +
 					'</table></div></div>' +
-					'<div class="rsa-table-card"><h3>Top Add-to-Cart</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+					'<div class="rsa-table-card"><h3>Top Products &mdash; Add to Cart</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
 						'<thead><tr><th>#</th><th>Product</th><th>Events</th></tr></thead>' +
 						'<tbody>' + ( cartRows.length ? cartRows.join( '' ) : '<tr><td colspan="3">No data.</td></tr>' ) + '</tbody>' +
 					'</table></div></div>' +
