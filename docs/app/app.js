@@ -561,15 +561,12 @@
 			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
 			return 0;
 		} )[ 0 ] || '?';
-		var arch   = /aarch64|arm64/i.test( navigator.userAgent ) ? 'arm64' : 'amd64';
-		var dlUrl  = 'https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-' + arch + '.deb';
 		var banner = document.createElement( 'div' );
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =
 			'<span class="rsa-desktop-update-icon">&#9888;</span>' +
 			'<span>Plugin v' + esc( pluginVersion ) + ' requires a newer desktop app ' +
-			'(you have bundles up to v' + esc( latest ) + '). Some features may not work until you update.</span>' +
-			'<a href="' + dlUrl + '" target="_blank" rel="noopener noreferrer">Download update</a>' +
+			'(you have bundles up to v' + esc( latest ) + '). An update is available via your system package manager.</span>' +
 			'<button id="rsa-desktop-update-dismiss" aria-label="Dismiss">&times;</button>';
 		document.body.insertBefore( banner, document.body.firstChild );
 		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
