@@ -170,10 +170,19 @@ cp "${REPO_ROOT}/bin/server-update-webapp.sh" /usr/local/bin/rsa-app-update
 chmod +x /usr/local/bin/rsa-app-update
 info "Script: /usr/local/bin/rsa-app-update"
 
-# ─── 8. Sudoers — let www-data call the update script ───────────────────────
+# ─── 7b. APT repository update script ───────────────────────────────────────
+step "Installing apt-repo-update script"
+cp "${REPO_ROOT}/bin/server-apt-repo-update.sh" /usr/local/bin/rsa-apt-repo-update
+chmod +x /usr/local/bin/rsa-apt-repo-update
+info "Script: /usr/local/bin/rsa-apt-repo-update"
+
+# ─── 8. Sudoers — let www-data call the update scripts ──────────────────────
 step "Configuring sudoers"
 SUDOERS_FILE="/etc/sudoers.d/rsa-app-update"
-echo "www-data ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-app-update" > "${SUDOERS_FILE}"
+cat > "${SUDOERS_FILE}" <<'SUDOERS'
+www-data ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-app-update
+richardkentgates ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-apt-repo-update
+SUDOERS
 chmod 440 "${SUDOERS_FILE}"
 visudo -c -f "${SUDOERS_FILE}" || die "sudoers file failed validation — check manually."
 info "Sudoers: ${SUDOERS_FILE}"
