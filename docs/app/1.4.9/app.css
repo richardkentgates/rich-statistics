@@ -384,6 +384,26 @@ html, body {
 	will-change: scroll-position;       /* hints compositor to own this layer  */
 }
 
+/* Connection status banners — sit between topbar and scroll container */
+.rsa-conn-banner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 7px 16px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	flex-shrink: 0;
+}
+.rsa-conn-banner--offline {
+	background: #2a2a2a;
+	color: #c8c8c8;
+}
+.rsa-conn-banner--site-down {
+	background: #4a3000;
+	color: #ffd280;
+}
+
 /* Overlay to close nav on mobile */
 .rsa-nav-open ~ .rsa-main::before {
 	content: '';
