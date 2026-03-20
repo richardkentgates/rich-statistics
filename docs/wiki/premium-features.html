@@ -46,6 +46,28 @@
     <h1>Premium Features</h1>
     <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
 
+    <h2>WooCommerce Analytics</h2>
+    <p>When WooCommerce is active and Rich Statistics Premium is enabled, the plugin automatically records three event types from your store:</p>
+    <ul>
+      <li><strong>Product views</strong> — fired when a visitor loads a single-product page.</li>
+      <li><strong>Add to cart</strong> — fired on both the standard form submission and the WooCommerce AJAX add-to-cart action.</li>
+      <li><strong>Order complete</strong> — fired on the WooCommerce <code>order_complete</code> hook; records the order total in the store currency.</li>
+    </ul>
+    <p>The data powers a dedicated <strong>WooCommerce</strong> tab in the WordPress admin and the PWA / desktop app, showing:</p>
+    <ul>
+      <li>Conversion funnel: Product Views → Add to Cart → Orders with counts per step</li>
+      <li>Total order count and total revenue for the selected period</li>
+      <li>Daily revenue bar chart</li>
+      <li>Top 10 products by view count and by add-to-cart events</li>
+    </ul>
+    <h3>Privacy</h3>
+    <ul>
+      <li>No customer data is stored. Events are linked to the anonymous tab-scoped session UUID only.</li>
+      <li>Order totals are stored as a number in the store currency. No customer name, address, payment method, or email is retained.</li>
+      <li>Product names and IDs are stored to enable the top-products table.</li>
+    </ul>
+    <p>WooCommerce tracking can be toggled on or off from <strong>Rich Statistics → Preferences</strong>.</p>
+
     <h2>Heatmap</h2>
     <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view renders a self-contained dark canvas (<code>#111c2b</code>) over a screenshot-free recreation of your page structure. Radial-gradient heat dots scaled by click weight are painted directly onto the canvas, with a fold marker at roughly 30% page height, scroll-depth guide lines, and a side panel listing the top-clicked elements by selector. No external screenshot service, no browser extension, no iframe is involved.</p>
     <h3>What is stored</h3>
