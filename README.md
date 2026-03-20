@@ -248,23 +248,36 @@ A progressive web app is included at `wp-content/plugins/rich-statistics/webapp/
 A native Linux desktop app is built automatically with each release. It wraps the same
 dashboard as the PWA in a lightweight WebKitGTK window — no Electron, no bundled browser.
 
+### Install via APT (recommended)
+
+The APT repository provides automatic updates via your normal system package manager.
+
+```bash
+# Add the GPG key
+curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+
+# Add the repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
+    https://rs-app.richardkentgates.com/apt stable main" \
+    | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+
+# Install
+sudo apt update && sudo apt install rich-statistics
+```
+
+Once enrolled, `sudo apt upgrade` keeps the app up to date like any other package.
+
+### Manual install (direct .deb download)
+
 | Architecture | Download |
 |---|---|
 | x86_64 (Intel/AMD) | [rich-statistics-linux-amd64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) |
 | ARM64 (Raspberry Pi / Apple Silicon VM) | [rich-statistics-linux-arm64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb) |
 
-**Install (Debian / Ubuntu / Raspberry Pi OS):**
 ```bash
-# Copy to /tmp first — apt requires a world-readable path to sandbox the download
-cp ~/Downloads/rich-statistics-linux-amd64.deb /tmp/
-sudo apt install /tmp/rich-statistics-linux-amd64.deb
+sudo dpkg -i rich-statistics-linux-*.deb
 ```
-
-> **Note:** Running `sudo apt install ./file.deb` directly from `~/Downloads` triggers
-> a harmless `_apt` sandboxing notice because apt cannot read files from your home
-> directory. Copying to `/tmp` avoids it. The package installs correctly either way.
-
-On non-apt systems, install `webkit2gtk-4.1` via your package manager, then run the binary directly from the release.
 
 ---
 

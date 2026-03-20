@@ -33,6 +33,9 @@ html, body {
 	font-size: 14px;
 	color: var(--rsa-text);
 	background: var(--rsa-bg);
+	/* Prevent the body from being the scroll container — scroll happens inside
+	   .rsa-main-scroll so WebKitGTK can promote it to a GPU compositing layer. */
+	overflow: hidden;
 }
 
 /* =========================================================================
@@ -366,6 +369,19 @@ html, body {
 	min-width: 0;
 	margin-left: 0;
 	transition: margin-left .22s ease;
+	/* Give .rsa-main a fixed height so .rsa-main-scroll is the sole scroll
+	   container. WebKitGTK (Tauri/Linux) composites fixed-height overflow
+	   scroll containers on the GPU, eliminating frame-rate-limited soft scroll. */
+	height: 100vh;
+	overflow: hidden;
+}
+
+/* The actual scrolling viewport — promoted to GPU compositing layer */
+.rsa-main-scroll {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;  /* enables momentum scroll in WebKitGTK */
+	will-change: scroll-position;       /* hints compositor to own this layer  */
 }
 
 /* Overlay to close nav on mobile */
@@ -377,7 +393,8 @@ html, body {
 	z-index: 99;
 }
 
-/* Top bar */
+/* Top bar — fixed within .rsa-main (not sticky inside a scroll container,
+   which causes compositing issues in WebKitGTK) */
 .rsa-topbar {
 	position: sticky;
 	top: 0;
@@ -390,6 +407,8 @@ html, body {
 	border-bottom: 1px solid var(--rsa-border);
 	box-shadow: var(--rsa-shadow);
 	gap: 12px;
+	/* Promote topbar to its own layer so scroll beneath it doesn't cause repaint */
+	will-change: transform;
 }
 
 .rsa-menu-toggle {
