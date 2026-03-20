@@ -7,6 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.9] — 2026-03-20
+
+### Changed
+- Linux app: fix scroll lag in WebKitGTK by promoting main content area to a GPU compositing layer (`will-change: scroll-position` on a constrained `overflow-y: auto` container).
+- Web app: remove Linux download section from sidebar — Install page is now the single entry point for Linux install instructions.
+- Docs: update README and wiki with APT repository as the primary Linux install method; add Linux Desktop App section to premium features wiki page; fix stale app server URL.
+
+---
+
 ## [1.4.8] — 2026-03-19
 
 ### Fixed
