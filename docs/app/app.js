@@ -500,7 +500,8 @@
 			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
 			return 0;
 		} )[ 0 ] || '?';
-		var dlUrl = 'https://github.com/richardkentgates/rich-statistics/releases/latest';
+		var arch   = /aarch64|arm64/i.test( navigator.userAgent ) ? 'arm64' : 'amd64';
+		var dlUrl  = 'https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-' + arch + '.deb';
 		var banner = document.createElement( 'div' );
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =

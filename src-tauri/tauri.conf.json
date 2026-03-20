@@ -20,15 +20,7 @@
       "csp": null
     }
   },
-  "plugins": {
-    "updater": {
-      "pubkey": "RWTmaBbsFpKyeVjt1cl9BYoAKp5TWK3BrTI1T49Y6o6SwSelrBCzJuaD",
-      "endpoints": [
-        "https://rs-app.richardkentgates.com/desktop/update.json"
-      ],
-      "dialog": true
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
     "targets": ["deb"],
