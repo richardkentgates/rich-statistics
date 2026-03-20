@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.8] — 2026-03-19
+
+### Fixed
+- Linux desktop app: version switching no longer shows a blank "add your site" screen. The Tauri build now includes the current version's snapshot folder (CI fix), and a runtime guard verifies the versioned folder exists before navigating to it — falling back silently to the current location if the folder is absent.
+- Web app: Linux download section now shows both x86-64 and ARM64 `.deb` links instead of only the architecture detected from the browser user-agent.
+
+---
+
 ## [1.4.6] — 2026-03-19
 
 ### Added
