@@ -191,7 +191,6 @@ jobs:
         working-directory: src-tauri
         env:
           CI: true
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Patch .desktop in .deb
         run: |
@@ -221,9 +220,6 @@ jobs:
 
           $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/desktop"
           $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}"
-          if [ -n "${SIG}" ]; then
-            $SCP "${SIG}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}.sig"
-          fi
 
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
@@ -242,39 +238,3 @@ jobs:
           curl -fsS -X POST \
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
             https://rs-app.richardkentgates.com/_deploy/
-
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
-
-      - name: Write update.json on app server
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          BASE_URL="https://rs-app.richardkentgates.com/desktop"
-          DESKTOP_DIR="/var/www/rs-app/desktop"
-
-          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
-
-          $SSH richardkentgates@104.197.231.120 \
-            VERSION="${VERSION}" PUB_DATE="${PUB_DATE}" BASE_URL="${BASE_URL}" DESKTOP_DIR="${DESKTOP_DIR}" \
-            python3 - << 'PYEOF'
-          import json, pathlib, os
-          desktop  = pathlib.Path(os.environ["DESKTOP_DIR"])
-          base_url = os.environ["BASE_URL"]
-          version  = os.environ["VERSION"]
-          pub_date = os.environ["PUB_DATE"]
-          platforms = {}
-          for arch, key in [("amd64","linux-x86_64"),("arm64","linux-aarch64")]:
-              deb = desktop / f"rich-statistics-linux-{arch}.deb"
-              sig = desktop / f"rich-statistics-linux-{arch}.deb.sig"
-              if deb.exists():
-                  platforms[key] = {
-                      "url": f"{base_url}/rich-statistics-linux-{arch}.deb",
-                      "signature": sig.read_text().strip() if sig.exists() else ""
-                  }
-          manifest = {"version": version, "pub_date": pub_date, "notes": "", "platforms": platforms}
-          (desktop / "update.json").write_text(json.dumps(manifest, indent=2) + "\n")
-          print(f"update.json written for v{version} ({', '.join(platforms)})")
-          PYEOF

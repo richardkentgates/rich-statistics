@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           1.4.4
+ * Version:           1.4.5
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
