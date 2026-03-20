@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#2e6f8e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -64,6 +65,7 @@
 				<li><a href="#" data-view="clicks"      class="rsa-nav-link">Clicks</a></li>
 				<li><a href="#" data-view="heatmap"     class="rsa-nav-link">Heatmap</a></li>
 				<li><a href="#" data-view="export"      class="rsa-nav-link">Export</a></li>
+				<li><a href="#" data-view="install"     class="rsa-nav-link">Install</a></li>
 		</ul>
 		<div class="rsa-nav-footer">
 			<button type="button" class="rsa-install-btn" id="rsa-install-btn" hidden>
@@ -120,6 +122,7 @@
 		<div id="rsa-view-heatmap"    class="rsa-view" hidden></div>
 		<div id="rsa-view-export"     class="rsa-view" hidden></div>
 		<div id="rsa-view-woocommerce" class="rsa-view" hidden></div>
+		<div id="rsa-view-install"    class="rsa-view" hidden></div>
 	</main>
 </div>
 
@@ -193,36 +196,7 @@
      replaced with your site URL + username in personalized downloads) -->
 <script src="config.js"></script>
 <script src="app.js"></script>
-<script>
-	// Register service worker for offline shell.
-	// When a new SW installs and takes control (via skipWaiting + clients.claim),
-	// we reload so open pages pick up the new app files immediately.
-	if ( 'serviceWorker' in navigator ) {
-		// Remember whether a SW was already controlling this page before we
-		// registered/refreshed — used to distinguish an UPDATE from first install.
-		var _rsaHadSWController = !! navigator.serviceWorker.controller;
-
-		navigator.serviceWorker.register( 'sw.js' ).catch( function () {} );
-
-		// controllerchange fires when skipWaiting() causes a new SW to take over.
-		navigator.serviceWorker.addEventListener( 'controllerchange', function () {
-			if ( _rsaHadSWController ) {
-				window.location.reload();
-			} else {
-				// First install — mark that we now have a controller so that
-				// the next update will trigger a reload.
-				_rsaHadSWController = true;
-			}
-		} );
-
-		// SW also sends an explicit SW_ACTIVATED message after clients.claim().
-		// Handles the case where controllerchange already fired before this listener was attached.
-		navigator.serviceWorker.addEventListener( 'message', function ( event ) {
-			if ( event.data && event.data.type === 'SW_ACTIVATED' && _rsaHadSWController ) {
-				window.location.reload();
-			}
-		} );
-	}
-</script>
+<!-- Service worker registration — separate file to allow strict script-src 'self' CSP -->
+<script src="sw-init.js"></script>
 </body>
 </html>

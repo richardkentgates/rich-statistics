@@ -465,6 +465,9 @@
 	 * and shows an update prompt if the plugin version is newer than all bundles.
 	 */
 	function tauriNavigateToVersion( pluginVersion ) {
+		// Reject anything that is not a clean semver — prevents path traversal
+		// if the API response were ever tampered with.
+		if ( ! /^\d+\.\d+\.\d+$/.test( pluginVersion ) ) return;
 		var current = getTauriCurrentVersion();
 		if ( current === pluginVersion ) return; // Already on correct version
 
@@ -888,6 +891,7 @@
 			heatmap     : 'Heatmap',
 			export      : 'Export',
 			woocommerce : 'WooCommerce',
+			install     : 'Install',
 		};
 		document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -1068,6 +1072,7 @@
 			case 'heatmap'    : renderHeatmap( container );     break;
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
+			case 'install'    : renderInstall( container );    break;
 			default: setLoading( false );
 		}
 	}
@@ -2284,6 +2289,188 @@
 				);
 			}
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
+	}
+
+	// -----------------------------------------------------------------------
+	// Install
+	// -----------------------------------------------------------------------
+	function renderInstall( container ) {
+		var ua         = navigator.userAgent || '';
+		var platform   = ( navigator.platform || '' ).toLowerCase();
+		var isLinux    = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
+		var isIos      = /iphone|ipad|ipod/i.test( ua );
+		var isAndroid  = /android/i.test( ua );
+		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|edg|android/i.test( ua );
+		var isFirefox  = /firefox|fxios/i.test( ua );
+		var isChrome   = /chrome|crios/i.test( ua ) && ! /edg/i.test( ua );
+		var isEdge     = /edg\//i.test( ua );
+		var isSamsung  = /samsungbrowser/i.test( ua );
+		var isStandalone = ( 'standalone' in window.navigator && window.navigator.standalone ) ||
+		                   window.matchMedia( '(display-mode: standalone)' ).matches;
+		var isTauriApp = isTauri();
+
+		var BASE_DL = 'https://rs-app.richardkentgates.com/desktop';
+
+		// ── PWA section ──────────────────────────────────────────────────
+		var pwaSection;
+		if ( isTauriApp ) {
+			pwaSection = ''; // Already in the desktop app — skip PWA install
+		} else if ( isStandalone ) {
+			pwaSection =
+				'<div class="rsa-install-card rsa-install-card--done">' +
+					'<div class="rsa-install-card-icon">✓</div>' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Web App Installed</h3>' +
+						'<p class="rsa-field-hint">You\'re running Rich Statistics as an installed app. Nice!</p>' +
+					'</div>' +
+				'</div>';
+		} else if ( isIos && isSafari ) {
+			pwaSection =
+				'<div class="rsa-install-card">' +
+					'<div class="rsa-install-card-icon rsa-install-icon-safari">&#63743;</div>' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Install on iPhone / iPad</h3>' +
+						'<ol class="rsa-install-steps">' +
+							'<li>Tap the <strong>Share</strong> button <span class="rsa-install-badge">↑</span> in the Safari toolbar.</li>' +
+							'<li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>' +
+							'<li>Tap <strong>Add</strong> — the app icon will appear on your home screen.</li>' +
+						'</ol>' +
+						'<p class="rsa-field-hint">Works on iOS 16.4 + with Safari only. Chrome and Firefox on iOS cannot install PWAs.</p>' +
+					'</div>' +
+				'</div>';
+		} else if ( isIos ) {
+			pwaSection =
+				'<div class="rsa-install-card rsa-install-card--warn">' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Install on iPhone / iPad</h3>' +
+						'<p class="rsa-field-hint">Open this page in <strong>Safari</strong>, then tap Share ↑ → "Add to Home Screen".</p>' +
+						'<p class="rsa-field-hint">PWA installation on iOS requires Safari — this browser does not support it.</p>' +
+					'</div>' +
+				'</div>';
+		} else if ( isAndroid ) {
+			if ( isChrome || isEdge || isSamsung ) {
+				pwaSection =
+					'<div class="rsa-install-card">' +
+						'<div class="rsa-install-card-body">' +
+							'<h3>Install on Android</h3>' +
+							'<p class="rsa-field-hint">Tap the <strong>"Install App"</strong> button below, or look for <strong>"Add to Home Screen"</strong> / <strong>"Install"</strong> in the browser menu (⋮).</p>' +
+							'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px">' +
+								'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
+								' Install App' +
+							'</button>' +
+						'</div>' +
+					'</div>';
+			} else {
+				pwaSection =
+					'<div class="rsa-install-card rsa-install-card--warn">' +
+						'<div class="rsa-install-card-body">' +
+							'<h3>Install on Android</h3>' +
+							'<p class="rsa-field-hint">Open this page in <strong>Chrome</strong>, <strong>Edge</strong>, or <strong>Samsung Internet</strong> to install it as an app.</p>' +
+						'</div>' +
+					'</div>';
+			}
+		} else if ( isSafari ) {
+			// macOS Safari — no beforeinstallprompt, but File > Add to Dock in recent macOS
+			pwaSection =
+				'<div class="rsa-install-card">' +
+					'<div class="rsa-install-card-icon rsa-install-icon-safari">&#63743;</div>' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Install as Desktop App — Safari</h3>' +
+						'<ol class="rsa-install-steps">' +
+							'<li>In the <strong>File</strong> menu, choose <strong>"Add to Dock…"</strong> (macOS Sonoma+).</li>' +
+							'<li>The app will open in its own window without browser chrome.</li>' +
+						'</ol>' +
+						'<p class="rsa-field-hint">On older macOS, use Chrome or Edge for the install button below.</p>' +
+					'</div>' +
+				'</div>';
+		} else if ( isFirefox ) {
+			pwaSection =
+				'<div class="rsa-install-card rsa-install-card--warn">' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Install as Desktop App</h3>' +
+						'<p class="rsa-field-hint">Firefox does not support installing web apps. Open this page in <strong>Chrome</strong> or <strong>Edge</strong> to use the install button.</p>' +
+					'</div>' +
+				'</div>';
+		} else {
+			// Chrome / Edge / Chromium-based — standard beforeinstallprompt flow
+			pwaSection =
+				'<div class="rsa-install-card">' +
+					'<div class="rsa-install-card-body">' +
+						'<h3>Install as Desktop App</h3>' +
+						'<p class="rsa-field-hint">Click the button to add Rich Statistics to your applications — it will open in its own window without browser tabs or address bar.</p>' +
+						'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px" hidden>' +
+							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
+							' Install App' +
+						'</button>' +
+						'<p class="rsa-field-hint rsa-install-btn-pending" style="margin-top:8px">Looking for install prompt\u2026 If this message persists, the app may already be installed or your browser does not support PWA install.</p>' +
+					'</div>' +
+				'</div>';
+		}
+
+		// ── Linux desktop section ─────────────────────────────────────────
+		var linuxSection =
+			'<div class="rsa-chart-card" style="margin-top:20px">' +
+				'<h3>Linux Desktop App</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Linux desktop app is a native Tauri application (.deb) for amd64 and arm64 Debian/Ubuntu systems. It wraps the same analytics interface and updates automatically via your system package manager.</p>' +
+
+				'<div class="rsa-install-method">' +
+					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
+					'<pre class="rsa-install-code">curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://rs-app.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
+				'</div>' +
+
+				'<div class="rsa-install-method" style="margin-top:16px">' +
+					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
+					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
+						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
+						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
+					'</div>' +
+					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
+				'</div>' +
+			'</div>';
+
+		// ── PWA compatibility reference card ─────────────────────────────
+		var compatSection =
+			'<div class="rsa-chart-card" style="margin-top:20px">' +
+				'<h3>Browser &amp; Platform Support</h3>' +
+				'<table class="rsa-table rsa-install-compat-table">' +
+					'<thead><tr><th>Browser / Platform</th><th>Install Method</th></tr></thead>' +
+					'<tbody>' +
+						'<tr><td>Chrome &amp; Edge (desktop)</td><td>Install button (above) or address-bar ⊕ icon</td></tr>' +
+						'<tr><td>Chrome / Samsung Internet (Android)</td><td>Install button or browser menu → "Add to Home Screen"</td></tr>' +
+						'<tr><td>Safari (iOS 16.4+)</td><td>Share ↑ → "Add to Home Screen"</td></tr>' +
+						'<tr><td>Safari (macOS Sonoma+)</td><td>File → "Add to Dock…"</td></tr>' +
+						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
+						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
+					'</tbody>' +
+				'</table>' +
+			'</div>';
+
+		container.innerHTML =
+			'<div class="rsa-chart-card">' +
+				'<h3>Web App</h3>' +
+				pwaSection +
+			'</div>' +
+			linuxSection +
+			compatSection;
+
+		// Sync install button visibility with the deferred prompt state
+		if ( _installPrompt ) {
+			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
+				btn.hidden = false;
+			} );
+			container.querySelectorAll( '.rsa-install-btn-pending' ).forEach( function ( el ) {
+				el.hidden = true;
+			} );
+		} else if ( ! isIos && ! isSafari && ! isFirefox && ! isStandalone && ! isTauriApp ) {
+			// Not yet resolved — show pending note (the global beforeinstallprompt
+			// listener will un-hide .rsa-install-btn when the browser fires it)
+			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
+				btn.hidden = true;
+			} );
+		}
+
+		setLoading( false );
 	}
 
 	// -----------------------------------------------------------------------
