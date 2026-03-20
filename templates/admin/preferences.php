@@ -195,6 +195,47 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		</table>
 	</div>
 
+	<!-- App Access -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'App Access', 'rich-statistics' ); ?></h2></div>
+		<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
+		<table class="form-table">
+			<tr>
+				<th><?php esc_html_e( 'Allowed roles', 'rich-statistics' ); ?></th>
+				<td>
+					<?php
+					$allowed_roles = (array) get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+					foreach ( wp_roles()->roles as $role_slug => $role_data ) :
+						$is_admin = $role_slug === 'administrator';
+					?>
+					<label style="display:block;margin-bottom:6px;">
+						<input type="checkbox"
+						       name="rsa_allowed_roles[]"
+						       value="<?php echo esc_attr( $role_slug ); ?>"
+						       <?php checked( $is_admin || in_array( $role_slug, $allowed_roles, true ) ); ?>
+						       <?php disabled( $is_admin ); ?>>
+						<?php echo esc_html( translate_user_role( $role_data['name'] ) ); ?>
+						<?php if ( $is_admin ) : ?>
+						<span class="description"><?php esc_html_e( '(always allowed)', 'rich-statistics' ); ?></span>
+						<?php endif; ?>
+					</label>
+					<?php endforeach; ?>
+					<p class="description"><?php esc_html_e( 'Users with these roles will see the Rich Statistics App section on their profile page and can authenticate with the REST API.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+		</table>
+		<?php else : ?>
+		<div style="padding:16px 0;">
+			<p><?php esc_html_e( 'Control which WordPress user roles can access the analytics app and REST API.', 'rich-statistics' ); ?></p>
+			<?php if ( function_exists( 'rs_fs' ) ) : ?>
+			<a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary">
+				<?php esc_html_e( 'Upgrade to Configure App Access', 'rich-statistics' ); ?>
+			</a>
+			<?php endif; ?>
+		</div>
+		<?php endif; ?>
+	</div>
+
 	<!-- Email Reports -->
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header"><h2><?php esc_html_e( 'Email Reports', 'rich-statistics' ); ?></h2></div>
@@ -231,6 +272,17 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 					<input type="text" id="rsa_email_digest_recipients" name="rsa_email_digest_recipients" class="regular-text"
 					       value="<?php echo esc_attr( get_option( 'rsa_email_digest_recipients', get_option( 'admin_email' ) ) ); ?>">
 					<p class="description"><?php esc_html_e( 'Comma-separated list of email addresses.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th><?php esc_html_e( 'Role-based recipients', 'rich-statistics' ); ?></th>
+				<td>
+					<input type="checkbox" id="rsa_email_digest_use_roles" name="rsa_email_digest_use_roles" value="1"
+					       <?php checked( get_option( 'rsa_email_digest_use_roles' ), 1 ); ?>>
+					<label for="rsa_email_digest_use_roles">
+						<?php esc_html_e( 'Send only to WordPress users with an allowed app role (ignores the manual list above).', 'rich-statistics' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Allowed roles are configured in the App Access section above.', 'rich-statistics' ); ?></p>
 				</td>
 			</tr>
 		</table>

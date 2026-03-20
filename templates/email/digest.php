@@ -74,6 +74,10 @@
 			</td>
 		</tr>
 
+		{{REFERRERS}}
+
+		{{WC_SECTION}}
+
 		<!-- CTA -->
 		<tr>
 			<td style="padding:28px 36px;text-align:center;">
