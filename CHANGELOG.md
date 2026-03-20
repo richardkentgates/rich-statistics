@@ -7,6 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.4] — 2026-03-19
+
+### Fixed
+- Web app nav order: WooCommerce now appears after Behavior, matching WP admin menu order
+- Linux desktop auto-updater: replaced placeholder signing key with real minisign keypair so update dialogs fire correctly
+
+---
+
+## [1.4.4] — 2026-03-19
+
+### Fixed
+- Web app nav order: WooCommerce now appears after Behavior, matching the WP admin menu order (was incorrectly placed at the bottom after Export).
+- Linux desktop auto-updater: replaced placeholder signing key with a real minisign keypair so the native update dialog fires correctly when a new version is available.
+
+---
+
 ## [1.4.3] — 2026-03-19
 
 ### Added
@@ -172,7 +188,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.4...HEAD
+[1.4.4]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.0...v1.4.1

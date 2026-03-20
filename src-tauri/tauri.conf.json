@@ -22,7 +22,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "RWTV9nu6y2OaqllTAcE1lc8GXDPE+DDenggNLbPQwpMrSkGsPmMQTnjj",
+      "pubkey": "RWTmaBbsFpKyeVjt1cl9BYoAKp5TWK3BrTI1T49Y6o6SwSelrBCzJuaD",
       "endpoints": [
         "https://rs-app.richardkentgates.com/desktop/update.json"
       ],
