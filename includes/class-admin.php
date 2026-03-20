@@ -224,9 +224,13 @@ class RSA_Admin {
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
 			: '';
 		if ( class_exists( 'WooCommerce' ) ) {
-			if ( $is_premium && get_option( 'rsa_woocommerce_enabled', 1 ) ) {
-				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
+			if ( $is_premium ) {
+				// Premium: only add the menu item when tracking is enabled; disabled = hidden entirely.
+				if ( get_option( 'rsa_woocommerce_enabled', 1 ) ) {
+					$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
+				}
 			} else {
+				// Not premium — show with upgrade prompt.
 				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 			}
 		}
@@ -538,6 +542,7 @@ class RSA_Admin {
 			'rsa_email_digest_enabled'     => 'absint',
 			'rsa_email_digest_frequency'   => 'sanitize_text_field',
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
+			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
 		];
 
@@ -567,8 +572,52 @@ class RSA_Admin {
 		$safe_cpts = array_values( array_filter( array_map( 'sanitize_key', $raw_cpts ) ) );
 		update_option( 'rsa_enabled_post_types', $safe_cpts );
 
+		// Allowed roles for app access (REST API + profile OTP).
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_roles  = isset( $_POST['rsa_allowed_roles'] ) && is_array( $_POST['rsa_allowed_roles'] )
+			? array_map( 'wp_unslash', $_POST['rsa_allowed_roles'] )
+			: [];
+		// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$valid_roles = array_keys( wp_roles()->roles );
+		$safe_roles  = array_values( array_filter(
+			array_map( 'sanitize_key', $raw_roles ),
+			function ( $r ) use ( $valid_roles ) { return in_array( $r, $valid_roles, true ); }
+		) );
+		if ( ! in_array( 'administrator', $safe_roles, true ) ) {
+			$safe_roles[] = 'administrator';
+		}
+		update_option( 'rsa_allowed_roles', $safe_roles );
+
 		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
 		exit;
+	}
+
+	// ----------------------------------------------------------------
+	// App access: per-role permission check
+	// ----------------------------------------------------------------
+
+	/**
+	 * Returns true when the given user (default: current user) has a role
+	 * that is permitted to use the Rich Statistics App (REST API + OTP).
+	 * Administrators are always allowed regardless of the stored option.
+	 */
+	public static function user_can_access_app( ?WP_User $user = null ): bool {
+		if ( ! $user ) {
+			$user = wp_get_current_user();
+		}
+		if ( ! $user || ! $user->ID ) {
+			return false;
+		}
+		if ( in_array( 'administrator', (array) $user->roles, true ) ) {
+			return true;
+		}
+		$allowed = (array) get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+		foreach ( (array) $user->roles as $role ) {
+			if ( in_array( $role, $allowed, true ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// ----------------------------------------------------------------
@@ -580,7 +629,12 @@ class RSA_Admin {
 	 * fire outside any table context, so we provide the <h2> + table wrapper.
 	 */
 	public static function profile_webapp_section( WP_User $profile_user ): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		// Show only if the profile user's role is permitted to use the app.
+		if ( ! self::user_can_access_app( $profile_user ) ) {
+			return;
+		}
+		// When editing another user, require the viewing user to be an admin.
+		if ( $profile_user->ID !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 		?>
@@ -593,7 +647,7 @@ class RSA_Admin {
 
 	/** @internal Called from profile_webapp_section(); also used standalone in unit tests. */
 	public static function profile_webapp_button( WP_User $profile_user ): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! self::user_can_access_app( $profile_user ) ) {
 			return;
 		}
 		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {

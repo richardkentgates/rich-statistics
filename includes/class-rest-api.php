@@ -260,7 +260,7 @@ class RSA_Rest_API {
 				[ 'status' => 401 ]
 			);
 		}
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! RSA_Admin::user_can_access_app() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
