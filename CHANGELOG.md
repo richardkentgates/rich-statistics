@@ -7,19 +7,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [1.4.4] — 2026-03-19
+## [1.4.5] — 2026-03-19
 
 ### Fixed
-- Web app nav order: WooCommerce now appears after Behavior, matching WP admin menu order
-- Linux desktop auto-updater: replaced placeholder signing key with real minisign keypair so update dialogs fire correctly
+- Linux desktop app: replaced non-functional Tauri updater plugin (which only supports AppImage, not deb) with the in-app update banner. When the installed app is older than the WordPress plugin version, a banner appears inside the app with a direct download link for the correct architecture (.deb).
+- CI: removed dead signing key usage and update.json writes now that the Tauri updater plugin is not in use.
 
 ---
 
 ## [1.4.4] — 2026-03-19
 
 ### Fixed
-- Web app nav order: WooCommerce now appears after Behavior, matching the WP admin menu order (was incorrectly placed at the bottom after Export).
-- Linux desktop auto-updater: replaced placeholder signing key with a real minisign keypair so the native update dialog fires correctly when a new version is available.
+- Web app nav order: WooCommerce now appears after Behavior, matching the WP admin menu order.
+- Linux desktop auto-updater: replaced placeholder signing key with a real minisign keypair.
 
 ---
 
@@ -188,7 +188,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.4...HEAD
+[Unreleased]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.5...HEAD
+[1.4.5]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/richardkentgates/rich-statistics/compare/v1.4.1...v1.4.2
