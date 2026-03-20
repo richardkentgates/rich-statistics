@@ -1,0 +1,257 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.1) — leave blank to use tag'
+        required: false
+
+jobs:
+  build:
+    name: Build plugin ZIP
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Verify PHP syntax
+        run: |
+          find . -name "*.php" \
+            -not -path "./vendor/freemius/languages/*" \
+            | xargs -I{} php -l "{}"
+
+      - name: Create plugin ZIP
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="rich-statistics-${VERSION}.zip"
+          mkdir -p build
+
+          zip -r "build/${ZIP_NAME}" . \
+            --exclude="*.git*" \
+            --exclude="*.github*" \
+            --exclude="*/tests/*" \
+            --exclude="*/bin/*" \
+            --exclude="*/build/*" \
+            --exclude="*/docs/*" \
+            --exclude="composer.json" \
+            --exclude="composer.lock" \
+            --exclude="phpunit.xml.dist" \
+            --exclude=".gitignore" \
+            --exclude=".gitattributes" \
+            --exclude="*.gitkeep" \
+            --exclude="*.sh" \
+            --exclude="CONTRIBUTING.md" \
+            --exclude="SECURITY.md" \
+            --exclude="README.md"
+
+          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "ZIP created: build/${ZIP_NAME}"
+          unzip -l "build/${ZIP_NAME}" | tail -20
+        id: zip
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rich-statistics-${{ steps.version.outputs.version }}
+          path: build/rich-statistics-${{ steps.version.outputs.version }}.zip
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/rich-statistics-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true
+          body: |
+            ## Rich Statistics ${{ steps.version.outputs.version }}
+
+            See [CHANGELOG.md](https://github.com/richardkentgates/rich-statistics/blob/main/CHANGELOG.md) for details.
+
+            ### Upload to Freemius
+            Download the ZIP above and upload it at:
+            https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
+
+      - name: Create versioned web app snapshot
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          APP_VERSIONED="docs/app/${VERSION}"
+          if [ ! -d "$APP_VERSIONED" ]; then
+            mkdir -p "$APP_VERSIONED"
+            for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+              [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
+            done
+            [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
+          fi
+          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v=sorted(set(v+[sys.argv[1]]),key=lambda x:list(map(int,x.split('.')))); p.write_text(json.dumps(v))" "${VERSION}"
+          git add docs/app/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: add versioned web app snapshot v${VERSION} [skip ci]"
+            git push origin main
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Ping the app server webhook to pull & deploy docs/app/ from GitHub.
+  # No SSH key needed — server pulls public repo itself.
+  # Requires GitHub secret: DEPLOY_WEBHOOK_TOKEN  (a random string you choose,
+  # e.g.  openssl rand -hex 32)
+  # The same string must be stored on the server in /etc/rsa-webhook-token
+  # (chmod 640, chown root:www-data).
+  # ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Build native Linux desktop app (.deb) for amd64 and arm64.
+  # Tauri wraps the existing PWA (docs/app/) in a native WebKitGTK window.
+  # Artifacts are renamed to stable filenames so /releases/latest/download/ URLs work.
+  # ---------------------------------------------------------------------------
+  build-desktop:
+    name: Linux desktop (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
+
+      - name: Add version to bundled versions.json
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v.append(sys.argv[1]) if sys.argv[1] not in v else None; p.write_text(json.dumps(sorted(set(v),key=lambda x:list(map(int,x.split('.'))))))" "${VERSION}"
+      - name: Create versioned app snapshot
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          APP_VERSIONED="docs/app/${VERSION}"
+          if [ ! -d "$APP_VERSIONED" ]; then
+            mkdir -p "$APP_VERSIONED"
+            for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+              [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
+            done
+            [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
+          fi
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libssl-dev \
+            librsvg2-dev \
+            patchelf \
+            file
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@^2
+
+      - name: Build .deb
+        run: tauri build
+        working-directory: src-tauri
+        env:
+          CI: true
+
+      - name: Patch .desktop in .deb
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          dpkg-deb -R "${DEB}" /tmp/deb-root
+          DESKTOP=$(find /tmp/deb-root -name "*.desktop" | head -1)
+          if [ -n "${DESKTOP}" ]; then
+            sed -i 's/^Exec=.*/Exec=env WEBKIT_DISABLE_COMPOSITING_MODE=1 rich-statistics/' "${DESKTOP}"
+            sed -i 's/^Categories=.*/Categories=Network;/' "${DESKTOP}"
+          fi
+          dpkg-deb -b /tmp/deb-root "${DEB}"
+          rm -rf /tmp/deb-root
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Push .deb to app server
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          SIG=$(ls src-tauri/target/release/bundle/deb/*.deb.sig 2>/dev/null | head -1)
+          DEST="rich-statistics-linux-${{ matrix.arch }}.deb"
+
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
+
+          $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/desktop"
+          $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}"
+
+      - name: Update APT repository
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          $SSH richardkentgates@104.197.231.120 \
+            "sudo /usr/local/bin/rsa-apt-repo-update ${{ matrix.arch }} ${VERSION}"
+
+  # ---------------------------------------------------------------------------
+  # After both .deb builds complete: sync docs/app/ via webhook and write
+  # update.json directly on the app server.
+  # Requires secrets: DEPLOY_WEBHOOK_TOKEN, APP_SERVER_SSH_KEY
+  # ---------------------------------------------------------------------------
+  ping-deploy:
+    name: Trigger web app update
+    runs-on: ubuntu-latest
+    needs: [build, build-desktop]
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Sync docs/app/ via webhook
+        run: |
+          curl -fsS -X POST \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+            https://rs-app.richardkentgates.com/_deploy/

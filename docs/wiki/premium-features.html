@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Features — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul><li><a href="installation.html">Installation</a></li><li><a href="configuration.html">Configuration</a></li></ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul>
+      <li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li>
+      <li><a href="premium-features.html" aria-current="page">Premium Features</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Infrastructure</strong>
+    <ul>
+      <li><a href="app-server-setup.html">App Server Setup</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Premium Features</h1>
+    <p>All premium features are unlocked by a <a href="../#pricing">Premium license</a> managed through Freemius. The plugin is the same codebase — premium features are enabled by your license key.</p>
+
+    <h2>WooCommerce Analytics</h2>
+    <p>When WooCommerce is active and Rich Statistics Premium is enabled, the plugin automatically records three event types from your store:</p>
+    <ul>
+      <li><strong>Product views</strong> — fired when a visitor loads a single-product page.</li>
+      <li><strong>Add to cart</strong> — fired on both the standard form submission and the WooCommerce AJAX add-to-cart action.</li>
+      <li><strong>Order complete</strong> — fired on the WooCommerce <code>order_complete</code> hook; records the order total in the store currency.</li>
+    </ul>
+    <p>The data powers a dedicated <strong>WooCommerce</strong> tab in the WordPress admin and the PWA / desktop app, showing:</p>
+    <ul>
+      <li>Conversion funnel: Product Views → Add to Cart → Orders with counts per step</li>
+      <li>Total order count and total revenue for the selected period</li>
+      <li>Daily revenue bar chart</li>
+      <li>Top 10 products by view count and by add-to-cart events</li>
+    </ul>
+    <h3>Privacy</h3>
+    <ul>
+      <li>No customer data is stored. Events are linked to the anonymous tab-scoped session UUID only.</li>
+      <li>Order totals are stored as a number in the store currency. No customer name, address, payment method, or email is retained.</li>
+      <li>Product names and IDs are stored to enable the top-products table.</li>
+    </ul>
+    <p>WooCommerce tracking can be toggled on or off from <strong>Rich Statistics → Preferences</strong>.</p>
+
+    <h2>Heatmap</h2>
+    <p>Click coordinates are recorded every time a visitor clicks or taps anywhere on the page. The admin heatmap view renders a self-contained dark canvas (<code>#111c2b</code>) over a screenshot-free recreation of your page structure. Radial-gradient heat dots scaled by click weight are painted directly onto the canvas, with a fold marker at roughly 30% page height, scroll-depth guide lines, and a side panel listing the top-clicked elements by selector. No external screenshot service, no browser extension, no iframe is involved.</p>
+    <h3>What is stored</h3>
+    <ul>
+      <li>Page path</li>
+      <li>Click x position as a percentage of page width</li>
+      <li>Click y position as a percentage of page height</li>
+      <li>Element tag and any stable semantic ID (e.g. <code>button#add-to-cart</code>)</li>
+      <li>Timestamp (date only — no time-of-day to avoid session reconstruction)</li>
+    </ul>
+    <h3>What is NOT stored</h3>
+    <ul>
+      <li>User ID — clicks are not linkable to a logged-in user</li>
+      <li>Absolute pixel coordinates — only percentage positions</li>
+    </ul>
+
+    <h2>Click Tracking &amp; Destination Capture</h2>
+    <p>Non-navigational link clicks are tracked by protocol: <code>tel:</code>, <code>mailto:</code>, <code>geo:</code>, <code>sms:</code>, and file downloads. HTTP/HTTPS navigation is tracked automatically as pageviews and is not double-counted here.</p>
+    <p>The <strong>Destination</strong> column in the Click Tracking view records the actual value passed to the protocol handler:</p>
+    <table>
+      <thead><tr><th>Protocol</th><th>Destination stored</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>tel:</code></td><td>Phone number</td><td><code>+15551234567</code></td></tr>
+        <tr><td><code>mailto:</code></td><td>Email address</td><td><code>hello@example.com</code></td></tr>
+        <tr><td><code>sms:</code></td><td>SMS number</td><td><code>+15551234567</code></td></tr>
+        <tr><td><code>geo:</code></td><td>Coordinates</td><td><code>37.786,-122.4</code></td></tr>
+        <tr><td>download</td><td>File path or URL</td><td><code>/files/brochure.pdf</code></td></tr>
+      </tbody>
+    </table>
+    <p>You can also configure additional element IDs and CSS classes to track in <strong>Rich Statistics → Preferences</strong>.</p>
+
+    <h2>Email Reports</h2>
+    <p>Config lives in <strong>Rich Statistics → Preferences → Email Reports</strong>.</p>
+    <table>
+      <thead><tr><th>Setting</th><th>Options</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td>Enabled</td><td>On / Off</td><td>Off</td></tr>
+        <tr><td>Frequency</td><td>Daily (midnight) / Weekly (Mondays) / Monthly (1st)</td><td>Weekly</td></tr>
+        <tr><td>Recipients</td><td>Comma-separated email addresses</td><td>Admin email</td></tr>
+      </tbody>
+    </table>
+    <p>Reports include: period-over-period comparison, top 10 pages, top 5 referrers, and summary stats (pageviews, sessions, bounce rate, avg time on page). Reports are sent via <code>wp_mail()</code> — no third-party email service.</p>
+
+    <h2>PWA Dashboard</h2>
+    <p>The analytics dashboard can be installed as a Progressive Web App on any device. This makes it available in your device's app launcher for quick access to live stats without opening a browser and navigating to WordPress admin.</p>
+    <ul>
+      <li>Works on Chrome (desktop + Android) and Safari (iOS 16.4+)</li>
+      <li>Updates in real time via the REST API</li>
+      <li>Works offline: shows the most recently loaded data</li>
+      <li>Hosted at <a href="https://rs-app.richardkentgates.com" target="_blank" rel="noopener">rs-app.richardkentgates.com</a> — install directly from any browser without visiting WordPress admin</li>
+    </ul>
+
+    <h3>Connecting the app to your site</h3>
+    <ol>
+      <li>In WordPress, go to <strong>Users &rarr; Profile &rarr; Rich Statistics App</strong> and click <strong>Generate App Code</strong>. A 6-digit code appears — it is valid for 15 minutes.</li>
+      <li>Open the app and tap <strong>Add Your Site</strong>. Enter your site URL and the 6-digit App Code, then tap <strong>Verify Code</strong>.</li>
+      <li>Once verified, the app shows your username. Go back to your WordPress profile and create a new <strong>Application Password</strong> (Users &rarr; Profile &rarr; Application Passwords), copy it, and paste it into the app.</li>
+      <li>Tap <strong>Connect</strong>. Your site is added and data starts loading immediately.</li>
+    </ol>
+    <p>You can add multiple sites and switch between them using the site switcher in the app's navigation bar.</p>
+
+    <h2>Linux Desktop App</h2>
+    <p>A native Linux desktop app wraps the same analytics dashboard in a lightweight WebKitGTK window — no Electron, no bundled browser (Tauri / <code>.deb</code> package). Supported on any Debian/Ubuntu/Raspberry Pi OS system.</p>
+
+    <h3>Install via APT (recommended)</h3>
+    <p>The APT repository provides automatic updates through your normal system package manager.</p>
+    <pre><code>curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
+    https://rs-app.richardkentgates.com/apt stable main" \
+    | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+
+sudo apt update &amp;&amp; sudo apt install rich-statistics</code></pre>
+    <p>Once enrolled, <code>sudo apt upgrade</code> keeps the app current alongside your other packages.</p>
+
+    <h3>Manual install (direct .deb download)</h3>
+    <table>
+      <thead><tr><th>Architecture</th><th>Download</th></tr></thead>
+      <tbody>
+        <tr><td>x86_64 (Intel/AMD)</td><td><a href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb">rich-statistics-linux-amd64.deb</a></td></tr>
+        <tr><td>ARM64 (Raspberry Pi / Apple Silicon VM)</td><td><a href="https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb">rich-statistics-linux-arm64.deb</a></td></tr>
+      </tbody>
+    </table>
+    <pre><code>sudo dpkg -i rich-statistics-linux-*.deb</code></pre>
+
+    <h2>How upgrading works</h2>
+    <p>There is no separate premium ZIP to download or reinstall. The upgrade is a standard WordPress plugin update delivered through Freemius:</p>
+    <ol>
+      <li>In your WordPress admin, navigate to <strong>Rich Statistics → Upgrade</strong>.</li>
+      <li>Click <strong>Upgrade to Premium</strong>. You are taken to a Freemius-hosted payment page.</li>
+      <li>Complete the purchase. Freemius activates your license silently on your site in the background.</li>
+      <li>WordPress shows a normal <strong>Update Available</strong> notification for Rich Statistics. Click <strong>Update Now</strong>.</li>
+      <li>Premium features are immediately active. No re-installation, no ZIP file.</li>
+    </ol>
+
+    <h2>Moving your license</h2>
+    <p>Each license covers one production site. To move it:</p>
+    <ol>
+      <li>On the original site, go to <strong>Rich Statistics → Account</strong> and click <strong>Deactivate License</strong>.</li>
+      <li>On the new site (with the free version installed), go to <strong>Rich Statistics → Account</strong> and click <strong>Activate License</strong>.</li>
+    </ol>
+
+    <div class="callout">
+      All premium features maintain the same privacy guarantees as the free plugin. No IP addresses, no cookies, no additional data shared with third parties.
+    </div>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand"><strong>Rich Statistics</strong><span>Privacy-first analytics for WordPress</span></div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

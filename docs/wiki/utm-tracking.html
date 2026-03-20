@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UTM Campaign Tracking — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul><li><a href="installation.html">Installation</a></li><li><a href="configuration.html">Configuration</a></li></ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html" aria-current="page">UTM Campaign Tracking</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul><li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li><li><a href="premium-features.html">Premium Features</a></li></ul>
+    <strong class="wiki-sidebar__label">Infrastructure</strong>
+    <ul><li><a href="app-server-setup.html">App Server Setup</a></li></ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>UTM Campaign Tracking</h1>
+    <p>Rich Statistics automatically detects UTM parameters on incoming URLs and attributes them to every pageview in that browser session. No configuration required — just add UTM parameters to your links and the Campaigns admin page will start populating.</p>
+
+    <h2>How it works</h2>
+    <p>When a visitor lands on your site, the tracker script reads three URL parameters:</p>
+    <table>
+      <thead><tr><th>Parameter</th><th>What it represents</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>utm_source</code></td><td>Where the traffic came from</td><td><code>newsletter</code>, <code>google</code>, <code>twitter</code></td></tr>
+        <tr><td><code>utm_medium</code></td><td>The marketing channel</td><td><code>email</code>, <code>cpc</code>, <code>social</code></td></tr>
+        <tr><td><code>utm_campaign</code></td><td>The campaign name</td><td><code>summer-sale-2025</code>, <code>launch</code></td></tr>
+      </tbody>
+    </table>
+    <p>If UTM values are found in the URL they are saved to <code>sessionStorage</code> and then sent with every subsequent pageview in the same browser session. This means the full visit — not just the landing page — is attributed to the campaign.</p>
+    <p>If a visitor lands on a page <em>without</em> UTM parameters, the tracker looks for previously stored UTM values in <code>sessionStorage</code>. If none exist, no UTM data is recorded and the visit appears in Referrers instead.</p>
+
+    <h2>Viewing campaign data</h2>
+    <p>Go to <strong>Rich Statistics → Campaigns</strong> in your WordPress admin. The table shows each unique source / medium / campaign combination along with the number of sessions and pageviews it generated. Use the <strong>Medium</strong> filter to narrow results to a single channel (e.g. only email traffic).</p>
+
+    <h2>Tagging your links</h2>
+    <p>Append UTM parameters to any URL that points to your site. Google's Campaign URL Builder is a convenient tool for this, or you can construct the parameters by hand:</p>
+    <pre><code>https://example.com/blog/new-post
+  ?utm_source=newsletter
+  &amp;utm_medium=email
+  &amp;utm_campaign=july-digest-2025</code></pre>
+    <div class="callout callout--info">
+      UTM parameter values are case-sensitive. <code>Email</code> and <code>email</code> will appear as separate rows in the Campaigns table. Use a consistent naming convention across your team.
+    </div>
+
+    <h2>What is stored</h2>
+    <ul>
+      <li><code>utm_source</code> — up to 100 characters</li>
+      <li><code>utm_medium</code> — up to 100 characters</li>
+      <li><code>utm_campaign</code> — up to 255 characters</li>
+    </ul>
+    <p>The values are stored as plain text columns on the <code>rsa_events</code> table alongside the standard pageview data. They are subject to the same retention policy as all other event data (configurable in Preferences, default 90 days).</p>
+
+    <h2>What is NOT stored</h2>
+    <ul>
+      <li><code>utm_content</code> and <code>utm_term</code> — not captured</li>
+      <li>The full landing-page URL — only the path is stored (consistent with the rest of the plugin)</li>
+      <li>Any IP address or persistent identifier</li>
+    </ul>
+
+    <h2>Privacy considerations</h2>
+    <p>UTM values are set by <em>you</em> on your own links, so they do not contain visitor PII. The source, medium, and campaign name you put into your links are the only values recorded. No referrer URL, email address, or personal identifier is ever extracted from UTM parameters.</p>
+    <p>Because <code>sessionStorage</code> is used (not cookies or <code>localStorage</code>), UTM attribution ends when the visitor closes the browser tab. Opening the same link in a new tab starts a fresh session with fresh UTM attribution.</p>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Rich Statistics &mdash; <a href="../">statistics.richardkentgates.com</a></p>
+  </div>
+</footer>
+</body>
+</html>

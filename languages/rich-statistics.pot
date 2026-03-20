@@ -1,0 +1,1188 @@
+# Copyright (C) 2026 Rich Statistics
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Rich Statistics 1.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/rich-statistics\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-03-17T16:19:42+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: rich-statistics\n"
+
+#. Plugin Name of the plugin
+#. Author of the plugin
+#: rich-statistics.php
+#: includes/class-admin.php:59
+#: includes/class-admin.php:60
+#: includes/class-admin.php:72
+#: includes/class-admin.php:84
+msgid "Rich Statistics"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: rich-statistics.php
+msgid "https://richstatistics.com"
+msgstr ""
+
+#. Description of the plugin
+#: rich-statistics.php
+msgid "Privacy-first analytics for WordPress publishers. No PII, no consent banners required."
+msgstr ""
+
+#: includes/class-admin.php:46
+#: includes/class-admin.php:469
+msgid "Generate App Code"
+msgstr ""
+
+#: includes/class-admin.php:47
+msgid "Generating…"
+msgstr ""
+
+#: includes/class-admin.php:48
+msgid "New Code"
+msgstr ""
+
+#: includes/class-admin.php:49
+#: includes/class-admin.php:485
+msgid "Copy"
+msgstr ""
+
+#: includes/class-admin.php:50
+msgid "Copied!"
+msgstr ""
+
+#: includes/class-admin.php:51
+msgid "Expired"
+msgstr ""
+
+#: includes/class-admin.php:52
+msgid "Could not generate a code. Please try again."
+msgstr ""
+
+#: includes/class-admin.php:83
+msgid "Rich Statistics (Network)"
+msgstr ""
+
+#: includes/class-admin.php:96
+#: includes/class-admin.php:627
+#: templates/admin/overview.php:29
+msgid "Overview"
+msgstr ""
+
+#: includes/class-admin.php:97
+#: includes/class-admin.php:636
+#: templates/admin/pages.php:27
+msgid "Pages"
+msgstr ""
+
+#: includes/class-admin.php:98
+#: includes/class-admin.php:644
+#: templates/admin/audience.php:10
+msgid "Audience"
+msgstr ""
+
+#: includes/class-admin.php:99
+#: includes/class-admin.php:652
+#: templates/admin/referrers.php:23
+msgid "Referrers"
+msgstr ""
+
+#: includes/class-admin.php:100
+#: includes/class-admin.php:660
+#: templates/admin/behavior.php:23
+msgid "Behavior"
+msgstr ""
+
+#: includes/class-admin.php:101
+#: includes/class-admin.php:668
+#: templates/admin/user-flow.php:56
+msgid "User Flow"
+msgstr ""
+
+#: includes/class-admin.php:104
+msgid "Upgrade"
+msgstr ""
+
+#: includes/class-admin.php:107
+#: includes/class-admin.php:110
+#: templates/admin/click-map.php:10
+#: templates/admin/click-map.php:41
+msgid "Click Map"
+msgstr ""
+
+#: includes/class-admin.php:108
+#: includes/class-admin.php:111
+#: templates/admin/heatmap.php:11
+#: templates/admin/heatmap.php:38
+msgid "Heatmap"
+msgstr ""
+
+#: includes/class-admin.php:113
+#: templates/admin/preferences.php:9
+msgid "Preferences"
+msgstr ""
+
+#: includes/class-admin.php:114
+#: templates/admin/export.php:8
+msgid "Export"
+msgstr ""
+
+#: includes/class-admin.php:299
+#: includes/class-admin.php:369
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: includes/class-admin.php:431
+#: includes/class-admin.php:447
+#: includes/class-admin.php:466
+msgid "Rich Statistics App"
+msgstr ""
+
+#: includes/class-admin.php:450
+msgid "Upgrade to unlock the Stats App"
+msgstr ""
+
+#: includes/class-admin.php:452
+msgid "The Rich Statistics App lets you view your stats from any device as a PWA — no browser required. Available with a premium licence."
+msgstr ""
+
+#: includes/class-admin.php:474
+msgid "Download App"
+msgstr ""
+
+#: includes/class-admin.php:479
+msgid "App Code:"
+msgstr ""
+
+#: includes/class-admin.php:482
+msgid "App code"
+msgstr ""
+
+#. translators: %s is replaced by the countdown timer element
+#: includes/class-admin.php:492
+#, php-format
+msgid "Expires in %s — enter this code in the app when adding this site."
+msgstr ""
+
+#: includes/class-admin.php:500
+msgid "First time? Use “Download App” to install the app on any device. Then click “Generate App Code”, tap “Add Site” in the app, enter this site’s URL and the code, then create an Application Password in the section below to complete the connection."
+msgstr ""
+
+#: includes/class-admin.php:513
+#: templates/admin/export.php:37
+msgid "Last 7 days"
+msgstr ""
+
+#: includes/class-admin.php:514
+#: templates/admin/export.php:38
+msgid "Last 30 days"
+msgstr ""
+
+#: includes/class-admin.php:515
+#: templates/admin/export.php:39
+msgid "Last 90 days"
+msgstr ""
+
+#: includes/class-admin.php:516
+#: templates/admin/export.php:40
+msgid "This month"
+msgstr ""
+
+#: includes/class-admin.php:517
+#: templates/admin/export.php:41
+msgid "Last month"
+msgstr ""
+
+#: includes/class-admin.php:549
+#: templates/admin/export.php:52
+msgid "to"
+msgstr ""
+
+#: includes/class-admin.php:551
+msgid "Apply"
+msgstr ""
+
+#: includes/class-admin.php:577
+msgid "Unlock Click Maps, Heatmaps &amp; the Stats App"
+msgstr ""
+
+#: includes/class-admin.php:578
+msgid "Get the full picture — see exactly where visitors click, scroll, and engage on every page."
+msgstr ""
+
+#: includes/class-admin.php:581
+msgid "Upgrade Now"
+msgstr ""
+
+#: includes/class-admin.php:604
+msgid "For more information:"
+msgstr ""
+
+#: includes/class-admin.php:606
+msgid "Plugin website"
+msgstr ""
+
+#: includes/class-admin.php:608
+msgid "Documentation wiki"
+msgstr ""
+
+#: includes/class-admin.php:610
+msgid "Report an issue"
+msgstr ""
+
+#: includes/class-admin.php:616
+msgid "Privacy"
+msgstr ""
+
+#: includes/class-admin.php:618
+msgid "Privacy by Design"
+msgstr ""
+
+#: includes/class-admin.php:619
+msgid "Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only."
+msgstr ""
+
+#: includes/class-admin.php:620
+msgid "Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation."
+msgstr ""
+
+#: includes/class-admin.php:629
+msgid "Overview Dashboard"
+msgstr ""
+
+#: includes/class-admin.php:630
+msgid "The overview shows your total pageviews, unique sessions, average time on page, and bounce rate for the selected period. The daily chart lets you spot traffic trends at a glance."
+msgstr ""
+
+#: includes/class-admin.php:631
+msgid "Use the period selector (top right) to switch between Last 7 days, Last 30 days, Last 90 days, This month, and Last month."
+msgstr ""
+
+#: includes/class-admin.php:632
+msgid "Bounce rate"
+msgstr ""
+
+#: includes/class-admin.php:632
+msgid "is calculated as the percentage of sessions that viewed only a single page."
+msgstr ""
+
+#: includes/class-admin.php:638
+#: templates/admin/overview.php:74
+msgid "Top Pages"
+msgstr ""
+
+#: includes/class-admin.php:639
+msgid "This view ranks every page on your site by the number of pageviews in the selected period. The average time on page is shown for each URL."
+msgstr ""
+
+#: includes/class-admin.php:640
+msgid "Page paths are stored after stripping query parameters that appear to contain personal data (email-shaped values or strings longer than 40 characters)."
+msgstr ""
+
+#: includes/class-admin.php:646
+msgid "Audience Breakdown"
+msgstr ""
+
+#: includes/class-admin.php:647
+msgid "Operating system, browser name, browser version, viewport size, language, and timezone are detected from the browser environment using JavaScript and stored as non-identifying aggregate categories."
+msgstr ""
+
+#: includes/class-admin.php:648
+msgid "Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px)."
+msgstr ""
+
+#: includes/class-admin.php:654
+msgid "Referrer Tracking"
+msgstr ""
+
+#: includes/class-admin.php:655
+msgid "Only the referring domain is stored — never the full URL. This prevents leaking of personal data that might appear in referrer URLs (e.g. search queries, email campaign tokens)."
+msgstr ""
+
+#: includes/class-admin.php:656
+msgid "Direct traffic, bookmark visits, and traffic from HTTPS sites to your HTTP site appear as \"(direct)\" because browsers do not send a Referer header in these cases."
+msgstr ""
+
+#: includes/class-admin.php:662
+msgid "Behavior Analysis"
+msgstr ""
+
+#: includes/class-admin.php:663
+msgid "Time on page is measured using the Visibility API — the timer pauses when the visitor switches tabs and resumes when they return. The value is sent when the page is closed via the Beacon API."
+msgstr ""
+
+#: includes/class-admin.php:664
+msgid "Session depth shows how many pages most visitors view in a single session. Entry pages lists the pages where most sessions start."
+msgstr ""
+
+#: includes/class-admin.php:670
+msgid "User Flow Analysis"
+msgstr ""
+
+#: includes/class-admin.php:671
+msgid "The flow chart visualises how visitors navigate between pages. Each ribbon represents a page-to-page transition; the wider the ribbon, the more visitors made that journey."
+msgstr ""
+
+#: includes/class-admin.php:672
+msgid "Use the Entry Page and Exit Page dropdowns to focus on traffic entering or leaving a specific page. Switch to the Transitions Table view to sort and browse every recorded page pair with counts and percentages."
+msgstr ""
+
+#: includes/class-admin.php:676
+msgid "Click Map (Premium)"
+msgstr ""
+
+#: includes/class-admin.php:678
+msgid "Click Tracking (Premium)"
+msgstr ""
+
+#: includes/class-admin.php:679
+msgid "Click tracking captures non-navigational interactions: phone links (tel:), email links (mailto:), map links (geo:), SMS links (sms:), and file downloads. HTTP/HTTPS link navigation is tracked automatically as pageviews. You can add additional element IDs and CSS classes in Preferences."
+msgstr ""
+
+#: includes/class-admin.php:680
+msgid "The Destination column shows the actual value supplied to the protocol handler: the phone number for tel: links, the email address for mailto: links, the coordinates for geo: links, the SMS number for sms: links, and the file path or URL for downloads."
+msgstr ""
+
+#: includes/class-admin.php:681
+msgid "Click tracking uses event delegation — no inline event handlers are added to the page."
+msgstr ""
+
+#: includes/class-admin.php:685
+#: includes/class-admin.php:687
+msgid "Heatmap (Premium)"
+msgstr ""
+
+#: includes/class-admin.php:688
+msgid "The heatmap shows where visitors click on a page using a thermal colour overlay (blue = cold → red = hot). Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size."
+msgstr ""
+
+#: includes/class-admin.php:689
+msgid "Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient."
+msgstr ""
+
+#: includes/class-admin.php:693
+msgid "Email Digests"
+msgstr ""
+
+#: includes/class-admin.php:695
+msgid "Email Digest Settings"
+msgstr ""
+
+#: includes/class-admin.php:696
+msgid "Rich Statistics can send a periodic digest email summarising your key stats. Emails are sent via wp_mail — no third-party email service is required."
+msgstr ""
+
+#: includes/class-admin.php:697
+msgid "Frequencies: Daily (sent at midnight), Weekly (sent Monday), Monthly (sent on the 1st)."
+msgstr ""
+
+#: includes/class-admin.php:698
+msgid "Multiple recipients: enter comma-separated email addresses."
+msgstr ""
+
+#: includes/class-admin.php:702
+msgid "Data Settings"
+msgstr ""
+
+#: includes/class-admin.php:704
+msgid "Data & Privacy Settings"
+msgstr ""
+
+#: includes/class-admin.php:705
+msgid "Retention days"
+msgstr ""
+
+#: includes/class-admin.php:705
+msgid "Events older than this number of days are deleted nightly. Range: 1–730. Default: 90."
+msgstr ""
+
+#: includes/class-admin.php:706
+msgid "Bot threshold"
+msgstr ""
+
+#: includes/class-admin.php:706
+msgid "Any request scoring at or above this value is silently discarded as a bot. Range: 1–10. Default: 3. Lower = more aggressive filtering."
+msgstr ""
+
+#: includes/class-admin.php:707
+#: templates/admin/data-settings.php:35
+#: templates/admin/preferences.php:144
+msgid "Remove data on uninstall"
+msgstr ""
+
+#: includes/class-admin.php:707
+msgid "When enabled, all plugin data and options are permanently deleted when you delete the plugin. Cannot be undone."
+msgstr ""
+
+#. translators: %s: site name
+#: includes/class-email.php:90
+#, php-format
+msgid "[%s] Analytics Digest"
+msgstr ""
+
+#: includes/class-email.php:116
+#: templates/admin/overview.php:9
+msgid "Permission denied."
+msgstr ""
+
+#: includes/class-email.php:130
+msgid "last 7 days"
+msgstr ""
+
+#: includes/class-email.php:131
+msgid "last 30 days"
+msgstr ""
+
+#: includes/class-email.php:132
+msgid "last 90 days"
+msgstr ""
+
+#: includes/class-email.php:133
+msgid "this month"
+msgstr ""
+
+#: includes/class-email.php:134
+msgid "last month"
+msgstr ""
+
+#: includes/class-pwa-download.php:48
+#: includes/class-pwa-download.php:99
+msgid "You do not have permission."
+msgstr ""
+
+#: includes/class-pwa-download.php:87
+msgid "You do not have permission to download the Rich Statistics Web App."
+msgstr ""
+
+#: includes/class-pwa-download.php:155
+msgid "The ZipArchive PHP extension is required to generate the download. Please ask your host to enable it."
+msgstr ""
+
+#: includes/class-pwa-download.php:163
+msgid "Could not create the download package. Please try again."
+msgstr ""
+
+#: includes/class-rest-api.php:107
+msgid "You must be logged in to access Rich Statistics data."
+msgstr ""
+
+#: includes/class-rest-api.php:114
+msgid "You do not have permission to access Rich Statistics data."
+msgstr ""
+
+#: includes/class-rest-api.php:238
+msgid "Invalid code format. Please enter the 6-digit code from your profile page."
+msgstr ""
+
+#: includes/class-rest-api.php:249
+msgid "Too many incorrect attempts. Please wait a few minutes before trying again."
+msgstr ""
+
+#: includes/class-rest-api.php:259
+msgid "Invalid or expired code."
+msgstr ""
+
+#. translators: 1: minimum WP version, 2: minimum PHP version
+#: rich-statistics.php:195
+#, php-format
+msgid "Rich Statistics requires WordPress %1$s and PHP %2$s or higher."
+msgstr ""
+
+#: templates/admin/audience.php:16
+msgid "Operating System"
+msgstr ""
+
+#: templates/admin/audience.php:23
+msgid "Browser"
+msgstr ""
+
+#: templates/admin/audience.php:30
+msgid "Viewport / Device Size"
+msgstr ""
+
+#: templates/admin/audience.php:37
+msgid "Language"
+msgstr ""
+
+#: templates/admin/audience.php:44
+msgid "Timezone Distribution"
+msgstr ""
+
+#: templates/admin/behavior.php:39
+#: templates/admin/pages.php:61
+msgid "All Browsers"
+msgstr ""
+
+#: templates/admin/behavior.php:48
+#: templates/admin/pages.php:70
+msgid "All OS"
+msgstr ""
+
+#: templates/admin/behavior.php:55
+#: templates/admin/click-map.php:62
+#: templates/admin/pages.php:77
+#: templates/admin/referrers.php:46
+#: templates/admin/user-flow.php:122
+#: templates/admin/user-flow.php:147
+msgid "Filter"
+msgstr ""
+
+#: templates/admin/behavior.php:57
+#: templates/admin/click-map.php:64
+#: templates/admin/pages.php:79
+#: templates/admin/referrers.php:48
+#: templates/admin/user-flow.php:124
+#: templates/admin/user-flow.php:149
+msgid "Clear"
+msgstr ""
+
+#: templates/admin/behavior.php:64
+msgid "Time on Page"
+msgstr ""
+
+#: templates/admin/behavior.php:70
+msgid "Session Depth (Pages Viewed)"
+msgstr ""
+
+#: templates/admin/behavior.php:81
+msgid "Top Entry Pages"
+msgstr ""
+
+#: templates/admin/behavior.php:87
+#: templates/admin/behavior.php:113
+#: templates/admin/overview.php:85
+#: templates/admin/pages.php:100
+msgid "Page"
+msgstr ""
+
+#: templates/admin/behavior.php:88
+#: templates/admin/behavior.php:114
+#: templates/admin/export.php:23
+#: templates/admin/overview.php:39
+msgid "Sessions"
+msgstr ""
+
+#: templates/admin/behavior.php:102
+#: templates/admin/behavior.php:128
+#: templates/admin/overview.php:99
+msgid "No data yet."
+msgstr ""
+
+#: templates/admin/behavior.php:107
+msgid "Top Exit Pages"
+msgstr ""
+
+#: templates/admin/click-map.php:13
+msgid "Click Map is a Premium Feature"
+msgstr ""
+
+#: templates/admin/click-map.php:14
+msgid "See exactly where visitors click on every page. Identify high-interest areas, dead zones, and navigation patterns at a glance."
+msgstr ""
+
+#: templates/admin/click-map.php:17
+msgid "Upgrade to Unlock Click Map"
+msgstr ""
+
+#: templates/admin/click-map.php:47
+msgid "Click Events"
+msgstr ""
+
+#: templates/admin/click-map.php:57
+#: templates/admin/pages.php:52
+msgid "All Pages"
+msgstr ""
+
+#: templates/admin/click-map.php:77
+msgid "Element"
+msgstr ""
+
+#: templates/admin/click-map.php:78
+msgid "Trigger"
+msgstr ""
+
+#: templates/admin/click-map.php:79
+msgid "Destination"
+msgstr ""
+
+#: templates/admin/click-map.php:80
+msgid "Text / Label"
+msgstr ""
+
+#: templates/admin/click-map.php:81
+msgid "Clicks"
+msgstr ""
+
+#: templates/admin/click-map.php:111
+msgid "No click data yet. Make sure click tracking is active in Data Settings."
+msgstr ""
+
+#: templates/admin/data-settings.php:9
+msgid "Data & Settings"
+msgstr ""
+
+#: templates/admin/data-settings.php:13
+#: templates/admin/email-settings.php:13
+msgid "Settings saved."
+msgstr ""
+
+#: templates/admin/data-settings.php:22
+#: templates/admin/preferences.php:131
+msgid "Data Retention"
+msgstr ""
+
+#: templates/admin/data-settings.php:25
+#: templates/admin/preferences.php:134
+msgid "Keep data for"
+msgstr ""
+
+#: templates/admin/data-settings.php:30
+#: templates/admin/preferences.php:139
+msgid "days"
+msgstr ""
+
+#: templates/admin/data-settings.php:31
+#: templates/admin/preferences.php:140
+msgid "Data older than this is pruned automatically each night. Minimum 1, maximum 730."
+msgstr ""
+
+#: templates/admin/data-settings.php:40
+#: templates/admin/preferences.php:149
+msgid "Drop all Rich Statistics tables and options when the plugin is deleted."
+msgstr ""
+
+#: templates/admin/data-settings.php:43
+msgid "⚠ This cannot be undone. On a multisite network, this removes data for every subsite."
+msgstr ""
+
+#: templates/admin/data-settings.php:52
+msgid "Bot Detection"
+msgstr ""
+
+#: templates/admin/data-settings.php:55
+#: templates/admin/preferences.php:25
+msgid "Bot score threshold"
+msgstr ""
+
+#: templates/admin/data-settings.php:60
+msgid "Events with a bot score at or above this value are discarded. Range 1–10. Lower = more aggressive. Default: 3."
+msgstr ""
+
+#: templates/admin/data-settings.php:69
+msgid "Click Tracking Protocols"
+msgstr ""
+
+#: templates/admin/data-settings.php:71
+#: templates/admin/preferences.php:41
+msgid "Premium"
+msgstr ""
+
+#: templates/admin/data-settings.php:73
+#: templates/admin/preferences.php:44
+msgid "Unlock Pro"
+msgstr ""
+
+#: templates/admin/data-settings.php:80
+msgid "HTTP/HTTPS links"
+msgstr ""
+
+#: templates/admin/data-settings.php:81
+#: templates/admin/preferences.php:52
+msgid "tel: (phone number links)"
+msgstr ""
+
+#: templates/admin/data-settings.php:82
+#: templates/admin/preferences.php:54
+msgid "mailto: (email links)"
+msgstr ""
+
+#: templates/admin/data-settings.php:83
+#: templates/admin/preferences.php:55
+msgid "geo: (map coordinate links)"
+msgstr ""
+
+#: templates/admin/data-settings.php:84
+#: templates/admin/preferences.php:53
+msgid "sms: (text message links)"
+msgstr ""
+
+#: templates/admin/data-settings.php:100
+#: templates/admin/preferences.php:71
+msgid "Track by Element ID"
+msgstr ""
+
+#: templates/admin/data-settings.php:106
+msgid "Comma-separated element IDs. The element must be natively clickable (a, button, input, etc.)"
+msgstr ""
+
+#: templates/admin/data-settings.php:111
+#: templates/admin/preferences.php:81
+msgid "Track by CSS Class"
+msgstr ""
+
+#: templates/admin/data-settings.php:117
+msgid "Comma-separated class names. Same native-click requirement applies."
+msgstr ""
+
+#: templates/admin/data-settings.php:125
+msgid "Manual Data Operations"
+msgstr ""
+
+#: templates/admin/data-settings.php:129
+#: templates/admin/preferences.php:214
+msgid "This will delete all records older than your retention setting. Continue?"
+msgstr ""
+
+#: templates/admin/data-settings.php:130
+#: templates/admin/preferences.php:215
+msgid "Run Pruning Now"
+msgstr ""
+
+#: templates/admin/data-settings.php:135
+#: templates/admin/preferences.php:220
+msgid "Export CSV (90 days)"
+msgstr ""
+
+#: templates/admin/data-settings.php:140
+msgid "Save Settings"
+msgstr ""
+
+#: templates/admin/email-settings.php:9
+#: templates/admin/preferences.php:161
+msgid "Email Reports"
+msgstr ""
+
+#: templates/admin/email-settings.php:21
+msgid "Digest Email"
+msgstr ""
+
+#: templates/admin/email-settings.php:25
+msgid "Enable Digest"
+msgstr ""
+
+#: templates/admin/email-settings.php:29
+#: templates/admin/preferences.php:168
+msgid "Send periodic analytics digest emails"
+msgstr ""
+
+#: templates/admin/email-settings.php:34
+#: templates/admin/preferences.php:172
+msgid "Frequency"
+msgstr ""
+
+#: templates/admin/email-settings.php:39
+#: templates/admin/preferences.php:177
+msgid "Daily"
+msgstr ""
+
+#: templates/admin/email-settings.php:40
+#: templates/admin/preferences.php:178
+msgid "Weekly"
+msgstr ""
+
+#: templates/admin/email-settings.php:41
+#: templates/admin/preferences.php:179
+msgid "Monthly"
+msgstr ""
+
+#: templates/admin/email-settings.php:56
+#: templates/admin/preferences.php:190
+msgid "Recipients"
+msgstr ""
+
+#: templates/admin/email-settings.php:60
+#: templates/admin/preferences.php:194
+msgid "Comma-separated list of email addresses."
+msgstr ""
+
+#: templates/admin/email-settings.php:66
+msgid "Save Email Settings"
+msgstr ""
+
+#: templates/admin/email-settings.php:70
+#: templates/admin/preferences.php:201
+msgid "Send Test Email"
+msgstr ""
+
+#: templates/admin/export.php:16
+msgid "Export Data as CSV"
+msgstr ""
+
+#: templates/admin/export.php:19
+msgid "Data type"
+msgstr ""
+
+#: templates/admin/export.php:22
+msgid "Pageviews (events)"
+msgstr ""
+
+#: templates/admin/export.php:24
+msgid "Click events"
+msgstr ""
+
+#: templates/admin/export.php:25
+msgid "Referrers (aggregated)"
+msgstr ""
+
+#: templates/admin/export.php:30
+msgid "Date range"
+msgstr ""
+
+#: templates/admin/export.php:42
+msgid "Custom range"
+msgstr ""
+
+#: templates/admin/export.php:59
+msgid "Download CSV"
+msgstr ""
+
+#: templates/admin/heatmap.php:14
+msgid "Heatmap is a Premium Feature"
+msgstr ""
+
+#: templates/admin/heatmap.php:15
+msgid "Visualise scroll depth and engagement intensity across any page with a real-time heatmap overlay — no external service required."
+msgstr ""
+
+#: templates/admin/heatmap.php:18
+msgid "Upgrade to Unlock Heatmap"
+msgstr ""
+
+#: templates/admin/heatmap.php:46
+msgid "Page:"
+msgstr ""
+
+#: templates/admin/heatmap.php:50
+msgid "/ (Home)"
+msgstr ""
+
+#: templates/admin/heatmap.php:61
+msgid "Load Heatmap"
+msgstr ""
+
+#. translators: %1$s: number of data points, %2$s: page path
+#: templates/admin/heatmap.php:71
+#, php-format
+msgid "Showing %1$s data points for %2$s"
+msgstr ""
+
+#: templates/admin/heatmap.php:83
+msgid "Page preview for heatmap"
+msgstr ""
+
+#. translators: %s: page path
+#: templates/admin/heatmap.php:97
+#, php-format
+msgid "No heatmap data yet for %s. Data is aggregated nightly from click events."
+msgstr ""
+
+#: templates/admin/network-settings.php:8
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: templates/admin/network-settings.php:33
+msgid "Rich Statistics — Network Settings"
+msgstr ""
+
+#: templates/admin/network-settings.php:38
+msgid "Network settings saved."
+msgstr ""
+
+#: templates/admin/network-settings.php:42
+msgid "These settings apply network-wide and set defaults for all sub-sites. Individual sites can override their own retention and bot threshold settings in their own Data Settings page."
+msgstr ""
+
+#: templates/admin/network-settings.php:51
+msgid "Default Retention (days)"
+msgstr ""
+
+#: templates/admin/network-settings.php:63
+msgid "Applied to new sites. Existing sites keep their own setting."
+msgstr ""
+
+#: templates/admin/network-settings.php:69
+msgid "Disable Tracker Network-wide"
+msgstr ""
+
+#: templates/admin/network-settings.php:77
+msgid "Stop collecting analytics data on all sub-sites"
+msgstr ""
+
+#: templates/admin/network-settings.php:80
+msgid "Useful during maintenance or to temporarily pause data collection across all sites."
+msgstr ""
+
+#: templates/admin/network-settings.php:86
+msgid "Save Network Settings"
+msgstr ""
+
+#: templates/admin/network-settings.php:91
+msgid "Sub-site Status"
+msgstr ""
+
+#: templates/admin/network-settings.php:92
+msgid "Per-site analytics for the last 30 days. Click the site name to view its full dashboard."
+msgstr ""
+
+#: templates/admin/network-settings.php:104
+msgid "Site"
+msgstr ""
+
+#: templates/admin/network-settings.php:105
+msgid "ID"
+msgstr ""
+
+#: templates/admin/network-settings.php:106
+msgid "Pageviews (30d)"
+msgstr ""
+
+#: templates/admin/network-settings.php:107
+msgid "Sessions (30d)"
+msgstr ""
+
+#: templates/admin/network-settings.php:108
+msgid "Retention (days)"
+msgstr ""
+
+#: templates/admin/network-settings.php:109
+msgid "Tracker active?"
+msgstr ""
+
+#: templates/admin/network-settings.php:142
+msgid "Yes"
+msgstr ""
+
+#: templates/admin/network-settings.php:143
+msgid "No"
+msgstr ""
+
+#: templates/admin/overview.php:35
+msgid "Page Views"
+msgstr ""
+
+#: templates/admin/overview.php:43
+msgid "Avg. Time on Page"
+msgstr ""
+
+#: templates/admin/overview.php:55
+msgid "Bounce Rate"
+msgstr ""
+
+#: templates/admin/overview.php:63
+msgid "Pageviews Over Time"
+msgstr ""
+
+#: templates/admin/overview.php:76
+#: templates/admin/overview.php:108
+msgid "See all"
+msgstr ""
+
+#: templates/admin/overview.php:86
+#: templates/admin/pages.php:101
+msgid "Views"
+msgstr ""
+
+#: templates/admin/overview.php:106
+msgid "Top Referrers"
+msgstr ""
+
+#: templates/admin/overview.php:117
+msgid "Domain"
+msgstr ""
+
+#: templates/admin/overview.php:118
+#: templates/admin/referrers.php:71
+msgid "Visits"
+msgstr ""
+
+#: templates/admin/overview.php:131
+msgid "No referral traffic yet."
+msgstr ""
+
+#: templates/admin/pages.php:86
+msgid "Top Pages by Views"
+msgstr ""
+
+#: templates/admin/pages.php:102
+msgid "Avg. Time"
+msgstr ""
+
+#: templates/admin/pages.php:120
+msgid "No page view data for the selected filters."
+msgstr ""
+
+#: templates/admin/preferences.php:13
+msgid "Preferences saved."
+msgstr ""
+
+#: templates/admin/preferences.php:22
+msgid "Tracking"
+msgstr ""
+
+#: templates/admin/preferences.php:30
+msgid "Events with a bot score at or above this value are discarded. Range 1–10. Higher = less aggressive filtering. Default: 5."
+msgstr ""
+
+#: templates/admin/preferences.php:39
+msgid "Click Tracking"
+msgstr ""
+
+#: templates/admin/preferences.php:56
+msgid "download attribute (file downloads)"
+msgstr ""
+
+#: templates/admin/preferences.php:77
+msgid "Comma-separated element IDs."
+msgstr ""
+
+#: templates/admin/preferences.php:87
+msgid "Comma-separated class names."
+msgstr ""
+
+#: templates/admin/preferences.php:95
+msgid "Custom Post Types in Page Dropdowns"
+msgstr ""
+
+#. translators: %s: post type slug
+#: templates/admin/preferences.php:115
+#, php-format
+msgid "Include %s in page filter dropdowns"
+msgstr ""
+
+#: templates/admin/preferences.php:125
+msgid "No public custom post types detected."
+msgstr ""
+
+#: templates/admin/preferences.php:152
+msgid "⚠ This cannot be undone."
+msgstr ""
+
+#: templates/admin/preferences.php:164
+msgid "Enable digest"
+msgstr ""
+
+#: templates/admin/preferences.php:206
+msgid "Save Preferences"
+msgstr ""
+
+#: templates/admin/preferences.php:210
+msgid "Data Operations"
+msgstr ""
+
+#: templates/admin/referrers.php:39
+msgid "All landing pages"
+msgstr ""
+
+#: templates/admin/referrers.php:54
+msgid "Traffic Sources"
+msgstr ""
+
+#: templates/admin/referrers.php:69
+msgid "Referring Domain"
+msgstr ""
+
+#: templates/admin/referrers.php:70
+msgid "Top Landing Page"
+msgstr ""
+
+#: templates/admin/referrers.php:72
+msgid "Share"
+msgstr ""
+
+#: templates/admin/referrers.php:95
+msgid "No referral traffic recorded yet."
+msgstr ""
+
+#: templates/admin/user-flow.php:93
+msgid "All entry sources"
+msgstr ""
+
+#: templates/admin/user-flow.php:94
+msgid "(direct)"
+msgstr ""
+
+#: templates/admin/user-flow.php:102
+msgid "Any page"
+msgstr ""
+
+#: templates/admin/user-flow.php:109
+msgid "Min. sessions"
+msgstr ""
+
+#: templates/admin/user-flow.php:114
+msgid "Steps"
+msgstr ""
+
+#: templates/admin/user-flow.php:129
+msgid "Any from page"
+msgstr ""
+
+#: templates/admin/user-flow.php:136
+msgid "Any to page"
+msgstr ""
+
+#: templates/admin/user-flow.php:143
+msgid "Min. transitions"
+msgstr ""
+
+#: templates/admin/user-flow.php:160
+msgid "Flow Chart"
+msgstr ""
+
+#: templates/admin/user-flow.php:161
+msgid "Transitions Table"
+msgstr ""
+
+#: templates/admin/user-flow.php:168
+msgid "Total Transitions"
+msgstr ""
+
+#: templates/admin/user-flow.php:172
+msgid "Unique From Pages"
+msgstr ""
+
+#: templates/admin/user-flow.php:176
+msgid "Unique To Pages"
+msgstr ""
+
+#: templates/admin/user-flow.php:180
+msgid "Page Pairs"
+msgstr ""
+
+#: templates/admin/user-flow.php:190
+msgid "Navigation Flow"
+msgstr ""
+
+#: templates/admin/user-flow.php:194
+msgid "No path data for this period. The chart shows actual visitor journeys step-by-step — Step 1 is the first page, Step 2 the second, and so on. Sessions that end before the next step show an (exit) node. Try a wider date range or lower the minimum sessions threshold."
+msgstr ""
+
+#: templates/admin/user-flow.php:203
+msgid "All Transitions"
+msgstr ""
+
+#: templates/admin/user-flow.php:210
+msgid "From Page"
+msgstr ""
+
+#: templates/admin/user-flow.php:211
+msgid "To Page"
+msgstr ""
+
+#: templates/admin/user-flow.php:212
+msgid "Transitions"
+msgstr ""
+
+#: templates/admin/user-flow.php:213
+msgid "% of Total"
+msgstr ""
+
+#: templates/admin/user-flow.php:229
+msgid "No transition data for this period and filter."
+msgstr ""
