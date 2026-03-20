@@ -148,8 +148,14 @@
 		// version routing is handled locally by checkPluginVersion / tauriNavigateToVersion.
 		if ( ! isTauri() && targetSite && targetSite.appUrl ) {
 			var targetOrigin = '';
-			try { targetOrigin = new URL( targetSite.appUrl ).origin; } catch ( _ ) {}
-			if ( targetOrigin && targetOrigin !== window.location.origin ) {
+			var targetProto  = '';
+			try {
+				var parsedAppUrl = new URL( targetSite.appUrl );
+				targetOrigin = parsedAppUrl.origin;
+				targetProto  = parsedAppUrl.protocol;
+			} catch ( _ ) {}
+			if ( targetOrigin && targetOrigin !== window.location.origin &&
+					( targetProto === 'https:' || targetProto === 'http:' ) ) {
 				window.location.href = targetSite.appUrl;
 				return;
 			}
@@ -516,9 +522,9 @@
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =
 			'<span class="rsa-desktop-update-icon">&#9888;</span>' +
-			'<span>Plugin v' + pluginVersion + ' requires a newer desktop app ' +
-			'(you have bundles up to v' + latest + '). Some features may not work until you update.</span>' +
-			'<a href="' + dlUrl + '" target="_blank" rel="noopener">Download update</a>' +
+			'<span>Plugin v' + esc( pluginVersion ) + ' requires a newer desktop app ' +
+			'(you have bundles up to v' + esc( latest ) + '). Some features may not work until you update.</span>' +
+			'<a href="' + dlUrl + '" target="_blank" rel="noopener noreferrer">Download update</a>' +
 			'<button id="rsa-desktop-update-dismiss" aria-label="Dismiss">&times;</button>';
 		document.body.insertBefore( banner, document.body.firstChild );
 		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
