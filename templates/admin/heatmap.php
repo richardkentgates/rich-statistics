@@ -84,7 +84,8 @@ RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ), $period );
 <span class="rsa-hm-admin-meta">
 <?php
 $total = (int) array_sum( array_column( $heatmap_data, 'weight' ) );
-printf( esc_html__( '%s interaction%s', 'rich-statistics' ), number_format( $total ), 1 !== $total ? 's' : '' );
+/* translators: 1: formatted interaction count, 2: plural suffix 's' or empty string */
+printf( esc_html__( '%1$s interaction%2$s', 'rich-statistics' ), number_format( $total ), 1 !== $total ? 's' : '' );
 ?>
 </span>
 </div>

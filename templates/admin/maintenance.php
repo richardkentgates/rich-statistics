@@ -37,7 +37,7 @@ $nonce = wp_create_nonce( 'wp_rest' );
 					printf(
 						/* translators: %d = number of days */
 						esc_html__( 'All distinct page paths recorded in the database. Live = published page or post. Unmatched = deleted, never existed, or outside current keep-data setting (%d days). Purge removes all events, clicks and heatmap data for that path.', 'rich-statistics' ),
-						$retention_days
+						(int) $retention_days
 					);
 					?>
 				</p>
