@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.0.1] — 2026-03-20
+
+### Fixed
+- WooCommerce sub-menu item now hides entirely when tracking is disabled (was incorrectly showing an upgrade notice)
+- Email digest recipients now correctly filtered by allowed roles when role-based recipients is enabled
+
+### Added
+- Per-role app access control (`rsa_allowed_roles`) — configure which user roles can access the PWA, REST API, and OTP generation
+- Preferences: App Access card with role checkboxes (premium)
+- Preferences: role-based email recipients option — send digests to all users with allowed roles instead of a manual list
+- Email digest now includes a Top Referrers section
+- Email digest now includes a WooCommerce section (orders, revenue, add-to-cart KPIs + top products by views) when WooCommerce tracking is active
+
+---
+
 ## [2.0.0] — 2026-03-20
 
 ### Added
