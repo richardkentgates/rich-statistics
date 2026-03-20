@@ -20,8 +20,8 @@ desktop app (Tauri/.deb) that connect to the plugin via the WordPress REST API.
 | | |
 |---|---|
 | **WordPress plugin ZIP** | The main PHP plugin, distributed via WordPress.org (free) and Freemius (premium) |
-| **PWA / web app** | Vanilla JS at `docs/app/`, served from `rs-app.richardkentgates.com/app/` |
-| **Linux desktop app** | Tauri-wrapped `.deb` in `webapp/`, served from `rs-app.richardkentgates.com/desktop/` |
+| **PWA / web app** | Vanilla JS at `docs/app/`, served from `rs-app.richardkentgates.com` |
+| **Linux desktop app** | Tauri-wrapped `.deb` in `src-tauri/`, served from `rs-app.richardkentgates.com/desktop/` |
 
 ---
 
@@ -133,3 +133,49 @@ main         ← tagged releases only
 
 Tags (`v1.x.x`) on `main` trigger the full release build. Tests run on push/PR to
 both `main` and `develop`.
+
+---
+
+## Release process (exact steps — follow every time)
+
+1. Finish work on `develop`, push
+2. `git checkout main && git merge develop && git push origin main`
+3. Bump version in **three places**: `rich-statistics.php` (header + `RSA_VERSION`), `readme.txt` (Stable tag), `CHANGELOG.md` (new section with date)
+4. `git add rich-statistics.php readme.txt CHANGELOG.md && git commit -m "chore: bump version to X.Y.Z"`
+5. `git push origin main`
+6. `git tag vX.Y.Z && git push origin vX.Y.Z` ← this triggers all automation
+7. Sync back: `git checkout develop && git merge main && git push origin develop`
+8. Monitor: `gh run list --limit 10 --json databaseId,name,status,conclusion,headBranch`
+
+**NEVER manually SCP or deploy app files to the server.** All deployment is handled
+by the tag-triggered CI workflow automatically.
+
+---
+
+## What the tag triggers (build-release.yml)
+
+| Job | What it does |
+|---|---|
+| `build` | Builds plugin ZIP, creates GitHub Release, commits versioned `docs/app/X.Y.Z/` snapshot to `main` |
+| `build-desktop` (amd64 + arm64) | Builds `.deb` via Tauri, SCPs to server's `/var/www/rs-app/desktop/`, runs `rsa-apt-repo-update` on server |
+| `ping-deploy` | POSTs to `/_deploy/` webhook; server pulls `docs/app/` from GitHub and goes live |
+
+---
+
+## App server
+
+| Item | Value |
+|---|---|
+| IP | `104.197.231.120` |
+| User | `richardkentgates` |
+| Local SSH key | `~/.ssh/id_rsa` (only this works — `gcloud_key` and `id_ed25519` are rejected) |
+| Web root | `/var/www/rs-app/` |
+| APT repo | `https://rs-app.richardkentgates.com/apt stable main` |
+| APT update script | `/usr/local/bin/rsa-apt-repo-update` |
+| Webhook token file | `/etc/rsa-webhook-token` (chmod 640, chown root:www-data) |
+
+### Test/dev WordPress server (separate GCP VM)
+- IP `34.56.56.233`, user `richardkentgates`, SSH key `~/.ssh/id_rsa`
+- WordPress root `/srv/www/wordpress`, plugin path `.../wp-content/plugins/rich-statistics/`
+- Deploy: `rsync -az --delete --exclude='.git' -e "ssh -i ~/.ssh/id_rsa" ./ richardkentgates@34.56.56.233:/srv/www/wordpress/wp-content/plugins/rich-statistics/`
+- `vendor/freemius/` MUST be included in rsync — it ships in the plugin
