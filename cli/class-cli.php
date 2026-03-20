@@ -11,6 +11,8 @@
  *   wp rich-stats purge [--older-than=90] [--dry-run]
  *   wp rich-stats email-test [--recipient=you@example.com]
  *   wp rich-stats status
+ *   wp rich-stats clicks [--period=30d] [--limit=20] [--page=/] (Premium)
+ *   wp rich-stats woocommerce [--period=30d] [--limit=10] (Premium)
  */
 defined( 'ABSPATH' ) || exit;
 
@@ -326,6 +328,80 @@ class RSA_CLI extends WP_CLI_Command {
 			];
 		}
 		$this->cli_table( $items );
+	}
+
+	// ----------------------------------------------------------------
+	// woocommerce  (premium data)
+	// ----------------------------------------------------------------
+
+	/**
+	 * Show WooCommerce analytics: funnel, revenue, and top products.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : One of: 7d, 30d, 90d, thismonth, lastmonth. Default: 30d.
+	 *
+	 * [--limit=<n>]
+	 * : Number of top products to show per table. Default: 10.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp rich-stats woocommerce --period=30d
+	 *     wp rich-stats woocommerce --period=7d --limit=5
+	 *
+	 * @subcommand woocommerce
+	 */
+	public function woocommerce( array $args, array $assoc ): void {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			WP_CLI::error( 'WooCommerce analytics requires a Rich Statistics Premium licence.' );
+		}
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			WP_CLI::error( 'WooCommerce is not active on this site.' );
+		}
+
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$limit  = max( 1, (int) ( $assoc['limit'] ?? 10 ) );
+		$this->maybe_switch_blog( $assoc );
+
+		$data   = RSA_Analytics::get_woocommerce( $period );
+		$funnel = $data['funnel'] ?? [ 'views' => 0, 'cart' => 0, 'orders' => 0 ];
+
+		WP_CLI::line( '' );
+		WP_CLI::line( WP_CLI::colorize( '%BFunnel%n' ) );
+		$this->cli_table( [
+			[ 'Event', 'Count' ],
+			[ 'Product Views', number_format( $funnel['views']  ) ],
+			[ 'Add to Cart',   number_format( $funnel['cart']   ) ],
+			[ 'Orders',        number_format( $funnel['orders'] ) ],
+		] );
+
+		WP_CLI::line( '' );
+		WP_CLI::line( WP_CLI::colorize( '%BRevenue%n' ) );
+		WP_CLI::line( '  Total orders:  ' . number_format( $data['orders_count'] ?? 0 ) );
+		WP_CLI::line( '  Total revenue: $' . number_format( (float) ( $data['revenue_total'] ?? 0 ), 2 ) );
+
+		$viewed = array_slice( $data['top_products_viewed'] ?? [], 0, $limit );
+		if ( ! empty( $viewed ) ) {
+			WP_CLI::line( '' );
+			WP_CLI::line( WP_CLI::colorize( '%BTop Viewed Products%n' ) );
+			$items = [ [ '#', 'Product', 'Views' ] ];
+			foreach ( $viewed as $i => $p ) {
+				$items[] = [ $i + 1, mb_strimwidth( $p['product_name'], 0, 50, '\u2026' ), number_format( $p['views'] ) ];
+			}
+			$this->cli_table( $items );
+		}
+
+		$top_cart = array_slice( $data['top_products_cart'] ?? [], 0, $limit );
+		if ( ! empty( $top_cart ) ) {
+			WP_CLI::line( '' );
+			WP_CLI::line( WP_CLI::colorize( '%BTop Add-to-Cart%n' ) );
+			$items = [ [ '#', 'Product', 'Events' ] ];
+			foreach ( $top_cart as $i => $p ) {
+				$items[] = [ $i + 1, mb_strimwidth( $p['product_name'], 0, 50, '\u2026' ), number_format( $p['events'] ) ];
+			}
+			$this->cli_table( $items );
+		}
 	}
 
 	// ----------------------------------------------------------------
