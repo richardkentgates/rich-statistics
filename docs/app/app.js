@@ -466,8 +466,18 @@
 			.then( function ( r ) { return r.ok ? r.json() : []; } )
 			.then( function ( bundled ) {
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
-					// Exact match — navigate to that versioned folder
-					window.location.href = '/' + pluginVersion + '/';
+					// Verify the versioned folder is actually present before navigating.
+					// versions.json may list the version while the snapshot folder was
+					// not included in this particular Tauri build.
+					fetch( '/' + pluginVersion + '/index.html', { method: 'HEAD' } )
+						.then( function ( r ) {
+							if ( r.ok ) {
+								window.location.href = '/' + pluginVersion + '/';
+							}
+							// Folder absent — stay at current location silently.
+						} )
+						.catch( function () {} );
+					return;
 				} else {
 					// Plugin is newer than all bundled versions — show update banner
 					showDesktopUpdateBanner( pluginVersion, bundled );
@@ -1003,17 +1013,14 @@
 		var isLinux = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
 		if ( ! isLinux ) return;
 
-		var arch = ( ua.indexOf( 'aarch64' ) !== -1 || ua.indexOf( 'arm64' ) !== -1 ) ? 'arm64' : 'amd64';
-		var base = 'https://rs-app.richardkentgates.com/desktop';
-		var url  = base + '/rich-statistics-linux-' + arch + '.deb';
+		var base    = 'https://rs-app.richardkentgates.com/desktop';
+		var amd64Btn = document.getElementById( 'rsa-desktop-btn-amd64' );
+		var arm64Btn = document.getElementById( 'rsa-desktop-btn-arm64' );
+		var wrap     = document.getElementById( 'rsa-linux-download' );
 
-		var btn = document.getElementById( 'rsa-desktop-btn' );
-		if ( ! btn ) return;
-		btn.href   = url;
-		btn.hidden = false;
-
-		var label = document.getElementById( 'rsa-linux-label' );
-		if ( label ) label.hidden = false;
+		if ( amd64Btn ) amd64Btn.href = base + '/rich-statistics-linux-amd64.deb';
+		if ( arm64Btn ) arm64Btn.href = base + '/rich-statistics-linux-arm64.deb';
+		if ( wrap ) wrap.hidden = false;
 	}
 
 	function toggleNav() {

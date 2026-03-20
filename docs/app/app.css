@@ -273,6 +273,22 @@ html, body {
 .rsa-linux-download-label { display: flex; flex-direction: column; line-height: 1.2; }
 .rsa-linux-download-small { font-size: 10px; font-weight: 400; opacity: .7; text-transform: uppercase; letter-spacing: .06em; }
 
+.rsa-linux-arch-links { display: flex; gap: 6px; margin: 0 0 6px; }
+.rsa-linux-arch-link {
+	flex: 1;
+	text-align: center;
+	padding: 5px 8px;
+	border: 1px solid rgba(255,255,255,.18);
+	border-radius: var(--rsa-radius);
+	background: rgba(255,255,255,.06);
+	color: #a0b8cc;
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background .15s, color .15s, border-color .15s;
+}
+.rsa-linux-arch-link:hover { background: rgba(255,255,255,.13); color: #e2eaf2; border-color: rgba(255,255,255,.3); }
+
 .rsa-install-btn {
 	display: flex;
 	align-items: center;
