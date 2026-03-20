@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!--
+  PHPUnit configuration for integration tests (requires WordPress + MySQL).
+
+  Deliberately omits `failOnWarning` and `beStrictAboutOutputDuringTests` that
+  are present in phpunit.xml.dist (used for unit tests).  WordPress 6.x can emit
+  PHP 8.x deprecation notices and minor output during database bootstrap; making
+  the integration suite strict on those signals would cause noise-driven failures
+  unrelated to the plugin code under test.
+-->
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    cacheDirectory=".phpunit.cache"
+    colors="true"
+>
+    <testsuites>
+        <testsuite name="integration">
+            <directory>tests/integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory suffix=".php">includes</directory>
+            <directory suffix=".php">cli</directory>
+        </include>
+        <exclude>
+            <directory>freemius</directory>
+            <directory>vendor</directory>
+        </exclude>
+    </source>
+</phpunit>

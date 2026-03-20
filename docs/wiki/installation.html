@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul>
+      <li><a href="installation.html" aria-current="page">Installation</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul>
+      <li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li>
+      <li><a href="premium-features.html">Premium Features</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Infrastructure</strong>
+    <ul>
+      <li><a href="app-server-setup.html">App Server Setup</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Installation</h1>
+    <p>Rich Statistics requires WordPress 6.0 or higher and PHP 8.0 or higher. It works on single-site and multisite installations.</p>
+
+    <h2>Option 1 — WordPress.org plugin directory</h2>
+    <ol>
+      <li>In your WordPress admin, go to <strong>Plugins → Add New</strong>.</li>
+      <li>Search for <strong>Rich Statistics</strong>.</li>
+      <li>Click <strong>Install Now</strong>, then <strong>Activate</strong>.</li>
+    </ol>
+    <p>Or install from the command line via WP-CLI:</p>
+    <pre><code>wp plugin install rich-statistics --activate</code></pre>
+    <div class="callout">This is the recommended installation method.</div>
+
+    <h2>Option 2 — Manual upload</h2>
+    <p>Download the ZIP from the <a href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">WordPress.org plugin page</a> and upload it via <strong>Plugins → Add New → Upload Plugin</strong>.</p>
+
+    <h2>System Requirements</h2>
+    <table>
+      <thead><tr><th>Requirement</th><th>Minimum</th><th>Recommended</th></tr></thead>
+      <tbody>
+        <tr><td>WordPress</td><td>6.0</td><td>Latest</td></tr>
+        <tr><td>PHP</td><td>8.0</td><td>8.2+</td></tr>
+        <tr><td>MySQL / MariaDB</td><td>MySQL 5.7 / MariaDB 10.3</td><td>MySQL 8.0+</td></tr>
+        <tr><td>Browser (admin)</td><td>Any modern browser</td><td>Chrome/Firefox/Edge latest</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Database tables</h2>
+    <p>On activation, the plugin creates four tables in your WordPress database (using <code>$wpdb->prefix</code>, e.g. <code>wp_rsa_events</code> on a standard install, or <code>wp_2_rsa_events</code> for subsite 2 on multisite):</p>
+    <table>
+      <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>rsa_events</code></td><td>One row per accepted pageview — page path, referrer domain, browser, OS, language, timezone, viewport, time on page</td></tr>
+        <tr><td><code>rsa_sessions</code></td><td>Session-level data — entry page, session UUID (tab-scoped only), session start/end timestamps</td></tr>
+        <tr><td><code>rsa_clicks</code></td><td>Individual click events with coordinates, element info, session ID, and timestamp (heatmap and click tracking — Premium)</td></tr>
+        <tr><td><code>rsa_heatmap</code></td><td>Daily-aggregated click coordinate buckets for the heatmap overlay (percentage x/y, page path, date — Premium)</td></tr>
+      </tbody>
+    </table>
+    <p>All tables are dropped cleanly on plugin uninstall if the <strong>Remove data on uninstall</strong> option is checked in <strong>Rich Statistics → Preferences</strong>.</p>
+
+    <h2>Multisite notes</h2>
+    <p>When network-activated, a network admin menu item appears under <strong>Network Admin → Analytics</strong>. A network administrator can disable tracking on any sub-site from that screen. Each sub-site's data is stored with its blog ID so network-wide and per-site reports are both available.</p>
+
+    <h2>Upgrading to Premium</h2>
+    <p>There is no separate premium ZIP to install. The upgrade happens as a standard WordPress plugin update:</p>
+    <ol>
+      <li>In your WordPress admin, go to <strong>Rich Statistics → Upgrade</strong> (added by the Freemius SDK).</li>
+      <li>Click <strong>Upgrade to Premium</strong>. You are taken to a Freemius-hosted checkout page.</li>
+      <li>Complete the purchase. Your license activates automatically on your site.</li>
+      <li>A standard WordPress update notification appears. Click <strong>Update Now</strong>.</li>
+      <li>Premium features are now active — no re-installation, no ZIP download.</li>
+    </ol>
+    <div class="callout">
+      <strong>License management:</strong> Go to <strong>Rich Statistics → Account</strong> (the Freemius account menu) to view your license status, deactivate to move it to another site, or cancel. Each license covers one production site.
+    </div>
+
+    <div class="callout callout--warn">
+      <strong>Freemius opt-in on first activation.</strong> The Freemius SDK makes outbound requests to <code>api.freemius.com</code> on first activation to power its opt-in screen and license verification. This is standard behavior for all Freemius-powered plugins. You can skip the opt-in — it does not affect plugin functionality.
+    </div>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand"><strong>Rich Statistics</strong><span>Privacy-first analytics for WordPress</span></div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

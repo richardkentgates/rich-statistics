@@ -1,0 +1,767 @@
+/* ==========================================================================
+   Rich Statistics — Admin Styles
+   ========================================================================== */
+
+/* Variables — aligned with WP admin native palette */
+:root {
+	--rsa-bg         : #f0f0f1;                    /* WP admin body */
+	--rsa-surface    : #fff;                       /* card/box background */
+	--rsa-border     : #c3c4c7;                    /* WP native border */
+	--rsa-text       : #1d2327;                    /* WP native body text */
+	--rsa-muted      : #646970;                    /* WP native muted text */
+	--rsa-accent     : #2271b1;                    /* WP primary blue */
+	--rsa-accent-lt  : rgba(34, 113, 177, 0.07);   /* light tint */
+	--rsa-success    : #00a32a;                    /* WP native green */
+	--rsa-danger     : #d63638;                    /* WP native red */
+	--rsa-warning    : #dba617;                    /* WP native yellow */
+	--rsa-radius     : 3px;                        /* WP native radius */
+	--rsa-shadow     : none;                       /* WP is flat */
+	--rsa-shadow-md  : 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Wrapper */
+.rsa-wrap {
+	margin-right: 20px;
+	font-size: 14px;
+	color: var(--rsa-text);
+}
+
+/* Header bar */
+.rsa-header {
+	display: flex;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 16px 0 16px;
+	padding-bottom: 0;
+}
+
+.rsa-title {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--rsa-text);
+}
+
+.rsa-logo {
+	margin-right: 6px;
+}
+
+/* Period controls wrapper (contains preset buttons + date form) */
+.rsa-period-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-left: auto;
+}
+
+/* Period selector */
+.rsa-period-selector {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.rsa-period-btn {
+	display: inline-block;
+	padding: 5px 12px;
+	border-radius: var(--rsa-radius);
+	font-size: 12px;
+	font-weight: 500;
+	text-decoration: none;
+	color: var(--rsa-muted);
+	background: transparent;
+	border: 1px solid var(--rsa-border);
+	transition: all 0.15s ease;
+}
+
+.rsa-period-btn:hover,
+.rsa-period-btn:focus {
+	color: var(--rsa-accent);
+	border-color: var(--rsa-accent);
+	background: var(--rsa-accent-lt);
+}
+
+.rsa-period-active {
+	color: var(--rsa-accent) !important;
+	background: var(--rsa-accent-lt) !important;
+	border-color: var(--rsa-accent) !important;
+}
+
+/* Custom date range row — always visible */
+.rsa-custom-range {
+	display: flex;
+	align-items: center;
+	padding-top: 4px;
+}
+
+.rsa-custom-range-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-custom-range input[type="date"] {
+	margin: 0;
+	padding: 4px 8px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 13px;
+	color: var(--rsa-text);
+	background: #fff;
+}
+
+.rsa-date-sep {
+	color: var(--rsa-muted);
+	font-size: 13px;
+}
+
+/* Flow chart container */
+#rsa-flow-chart {
+	min-height: 60px;
+	overflow-x: auto;
+}
+
+/* KPI Grid */
+.rsa-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.rsa-kpi-card {
+	padding: 10px 8px;
+}
+
+.rsa-kpi-label {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--rsa-muted);
+	margin-bottom: 8px;
+}
+
+.rsa-kpi-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	line-height: 1;
+}
+
+/* Card */
+.rsa-card {
+	border-top: 1px solid var(--rsa-border);
+	padding: 14px 0;
+	margin-bottom: 14px;
+}
+
+.rsa-card-full {
+	width: 100%;
+}
+
+.rsa-card-wide {
+	grid-column: 1 / -1;
+}
+
+.rsa-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 0 8px;
+	border-bottom: 1px solid var(--rsa-border);
+	margin-bottom: 12px;
+	background: transparent;
+}
+
+.rsa-card-header h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--rsa-text);
+}
+
+.rsa-card-footer {
+	padding: 12px 0 0;
+	border-top: 1px solid var(--rsa-border);
+	margin-top: 16px;
+	background: transparent;
+}
+
+/* Two-column layout */
+.rsa-two-col {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 14px;
+	margin-bottom: 14px;
+}
+
+/* Audience grid */
+.rsa-audience-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 14px;
+	margin-bottom: 14px;
+}
+
+/* Chart wrappers */
+.rsa-chart-wrap {
+	padding: 8px 0;
+	position: relative;
+}
+
+.rsa-chart-wrap--doughnut {
+	display: flex;
+	justify-content: center;
+	max-height: 280px;
+}
+
+.rsa-chart-wrap--bar canvas {
+	max-height: 300px;
+}
+
+/* Tables */
+.rsa-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.rsa-table--full {
+	width: 100%;
+}
+
+.rsa-table thead th {
+	padding: 10px 16px;
+	text-align: left;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--rsa-muted);
+	background: transparent;
+	border-bottom: 1px solid var(--rsa-border);
+}
+
+.rsa-table tbody tr {
+	border-bottom: 1px solid var(--rsa-border);
+	transition: background 0.1s;
+}
+
+.rsa-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.rsa-table tbody tr:hover {
+	background: var(--rsa-bg);
+}
+
+.rsa-table tbody td {
+	padding: 10px 16px;
+	color: var(--rsa-text);
+}
+
+.rsa-td-rank {
+	color: var(--rsa-muted);
+	font-size: 12px;
+	width: 32px;
+}
+
+.rsa-td-page,
+.rsa-td-classes,
+.rsa-td-text {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+	max-width: 360px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Click map element descriptor */
+.rsa-el-id {
+	color: var(--rsa-accent);
+}
+
+.rsa-el-class {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 11px;
+	color: var(--rsa-muted);
+}
+
+/* Click trigger badges */
+.rsa-trigger-rule {
+	color: #00a32a;
+	background: rgba(0,163,42,0.08);
+	padding: 1px 6px;
+	border-radius: var(--rsa-radius);
+}
+
+.rsa-trigger-protocol {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+	color: var(--rsa-accent);
+}
+
+/* Bar cell (inline bar in table column) */
+.rsa-bar-cell {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.rsa-bar-fill {
+	height: 6px;
+	background: var(--rsa-accent);
+	border-radius: 3px;
+	min-width: 2px;
+}
+
+/* Empty state */
+.rsa-empty {
+	padding: 32px 20px;
+	color: var(--rsa-muted);
+	text-align: center;
+	font-style: italic;
+}
+
+/* "See all" link */
+.rsa-see-all {
+	font-size: 12px;
+	color: var(--rsa-accent);
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.rsa-see-all:hover {
+	text-decoration: underline;
+}
+
+/* Inline form (search/filter row inside card headers) */
+.rsa-inline-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* Filter bar (above data tables) */
+.rsa-filter-bar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+
+.rsa-filter-bar select,
+.rsa-filter-bar input[type="search"],
+.rsa-filter-bar input[type="text"] {
+	margin: 0;
+}
+
+/* Sortable column header links */
+.rsa-table thead th a {
+	color: var(--rsa-text);
+	text-decoration: none;
+}
+
+.rsa-table thead th a:hover {
+	color: var(--rsa-accent);
+	text-decoration: underline;
+}
+
+/* Settings form */
+.rsa-settings-form .form-table th {
+	padding-top: 14px;
+	width: 220px;
+}
+
+.rsa-warning {
+	color: var(--rsa-danger) !important;
+}
+
+/* Premium badge */
+.rsa-premium-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	background: linear-gradient(135deg, #2271b1, #135e96);
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 20px;
+	letter-spacing: 0.04em;
+}
+
+/* Referrer domain pill */
+.rsa-referrer-domain {
+	font-family: ui-monospace, "SFMono-Regular", monospace;
+	font-size: 12px;
+}
+
+/* <fs_premium_only> */
+
+/* Heatmap viewer */
+.rsa-heatmap-controls form {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding: 16px 20px;
+}
+
+.rsa-heatmap-info {
+	padding: 10px 20px;
+	color: var(--rsa-muted);
+	font-size: 13px;
+	border-bottom: 1px solid var(--rsa-border);
+}
+
+.rsa-heatmap-container {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+}
+
+.rsa-heatmap-iframe {
+	display: block;
+	width: 100%;
+	height: 80vh;
+	border: none;
+	background: #fff;
+	pointer-events: none;
+}
+
+.rsa-heatmap-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* </fs_premium_only> */
+
+/* Webapp profile button row */
+.rsa-webapp-row th,
+.rsa-webapp-row td {
+	padding-top: 10px;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+	.rsa-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.rsa-two-col,
+	.rsa-audience-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.rsa-period-controls {
+		margin-left: 0;
+		margin-top: 8px;
+		width: 100%;
+	}
+
+	.rsa-chart-wrap--doughnut {
+		max-height: none;
+	}
+}
+
+/* ----------------------------------------------------------------
+   Upsell banner (shown to non-paying users across all admin pages)
+   ---------------------------------------------------------------- */
+.rsa-upsell-banner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+background: linear-gradient(135deg, #1d2327 0%, #2c3338 100%);
+border-left: 4px solid #2271b1;
+color: #f0f0f1;
+padding: 14px 18px;
+margin-bottom: 16px;
+border-radius: 0 4px 4px 0;
+}
+
+.rsa-upsell-banner__content {
+flex: 1;
+font-size: 13px;
+line-height: 1.5;
+}
+
+.rsa-upsell-banner__content strong {
+display: block;
+font-size: 14px;
+margin-bottom: 2px;
+color: #fff;
+}
+
+.rsa-upsell-banner .button-primary {
+white-space: nowrap;
+flex-shrink: 0;
+}
+
+/* Upsell full-page notice (click-map / heatmap locked pages) */
+.rsa-upsell-notice {
+background: #fff;
+border: 1px solid #dcdcde;
+border-top: 4px solid #2271b1;
+border-radius: 4px;
+padding: 32px 28px;
+max-width: 640px;
+margin-top: 20px;
+}
+
+.rsa-upsell-notice h2 {
+margin-top: 0;
+font-size: 20px;
+}
+
+.rsa-upsell-notice p {
+color: #50575e;
+margin-bottom: 20px;
+}
+
+@media screen and (max-width: 600px) {
+.rsa-upsell-banner {
+flex-direction: column;
+align-items: flex-start;
+}
+}
+
+/* User-flow table: inline proportion bar */
+.rsa-td-bar { min-width: 120px; }
+
+.rsa-bar-wrap {
+	position: relative;
+	height: 18px;
+	background: #f0f0f1;
+	border-radius: var(--rsa-radius);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+}
+
+.rsa-bar-wrap .rsa-bar-fill {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--rsa-accent);
+	opacity: 0.22;
+	border-radius: var(--rsa-radius);
+}
+
+.rsa-bar-label {
+	position: relative;
+	z-index: 1;
+	padding: 0 6px;
+	font-size: 12px;
+	color: var(--rsa-text);
+	white-space: nowrap;
+}
+
+/* ---- Card description (subtitle under card header h2) ---- */
+.rsa-card-desc {
+	margin: 2px 0 0;
+	font-size: 13px;
+	color: var(--rsa-muted);
+}
+
+/* ---- Path Explorer: funnel summary bar ---- */
+.rsa-funnel {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	margin-bottom: 20px;
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.rsa-funnel-step {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 14px 10px 12px;
+	border-right: 1px solid var(--rsa-border);
+	position: relative;
+	overflow: hidden;
+}
+
+.rsa-funnel-step:last-child {
+	border-right: none;
+}
+
+.rsa-funnel-step-bg {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: var(--rsa-accent);
+	opacity: 0.06;
+	transition: height 0.3s ease;
+}
+
+.rsa-funnel-step-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-funnel-step-count {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	position: relative;
+	z-index: 1;
+	line-height: 1;
+}
+
+.rsa-funnel-step-pct {
+	font-size: 12px;
+	color: var(--rsa-accent);
+	font-weight: 600;
+	margin-top: 4px;
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-funnel-step-pct.is-drop {
+	color: var(--rsa-muted);
+}
+
+/* ---- Path Explorer (Miller columns) ---- */
+.rsa-explorer {
+	display: flex;
+	gap: 0;
+	overflow-x: auto;
+	padding: 4px 0 16px;
+	min-height: 200px;
+}
+
+.rsa-explorer-col {
+	flex: 1 1 0;
+	min-width: 180px;
+	max-width: 280px;
+	border-right: 1px solid var(--rsa-border);
+}
+
+.rsa-explorer-col:last-child {
+	border-right: none;
+}
+
+.rsa-explorer-col-hdr {
+	padding: 8px 12px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--rsa-muted);
+	border-bottom: 1px solid var(--rsa-border);
+	background: #fafafa;
+}
+
+.rsa-explorer-col-list {
+	max-height: 460px;
+	overflow-y: auto;
+}
+
+.rsa-explorer-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 10px;
+	border-bottom: 1px solid rgba(195, 196, 199, 0.35);
+	overflow: hidden;
+}
+
+.rsa-explorer-item.is-clickable {
+	cursor: pointer;
+}
+
+.rsa-explorer-item.is-clickable:hover {
+	background: var(--rsa-accent-lt);
+}
+
+.rsa-explorer-item.is-selected {
+	background: var(--rsa-accent-lt);
+	border-left: 3px solid var(--rsa-accent);
+}
+
+.rsa-explorer-item.is-exit {
+	opacity: 0.55;
+}
+
+.rsa-explorer-item-bar {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--rsa-accent);
+	opacity: 0.07;
+	pointer-events: none;
+}
+
+.rsa-explorer-item-label {
+	flex: 1 1 0;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+	color: var(--rsa-text);
+	position: relative;
+	z-index: 1;
+}
+
+.rsa-explorer-item-meta {
+	flex-shrink: 0;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	position: relative;
+	z-index: 1;
+	white-space: nowrap;
+}
+
+.rsa-explorer-item-arrow {
+	flex-shrink: 0;
+	font-size: 16px;
+	line-height: 1;
+	color: var(--rsa-muted);
+	position: relative;
+	z-index: 1;
+}
+
+/* ---- Journey Table: grouped from_page ---- */
+.rsa-table--grouped .rsa-group-first td {
+	border-top: 2px solid var(--rsa-border);
+	vertical-align: top;
+}
+
+.rsa-td-group-label {
+	font-weight: 600;
+	font-size: 13px;
+	white-space: nowrap;
+	padding-right: 16px;
+}
+
+.rsa-group-spacer td {
+	height: 6px;
+	padding: 0;
+	border: none;
+}
