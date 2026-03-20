@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Map — Rich Statistics Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" /><link rel="stylesheet" href="wiki.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav container">
+    <a class="nav__logo" href="../">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#2563eb"/><rect x="5" y="14" width="4" height="9" rx="1" fill="white"/><rect x="12" y="9" width="4" height="14" rx="1" fill="white"/><rect x="19" y="4" width="4" height="19" rx="1" fill="white" opacity="0.7"/></svg>
+      Rich Statistics
+    </a>
+    <ul class="nav__links">
+      <li><a href="../#features">Features</a></li><li><a href="../#pricing">Pricing</a></li>
+      <li><a href="./">Docs</a></li>
+      <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="wiki-layout container">
+  <nav class="wiki-sidebar">
+    <strong class="wiki-sidebar__label">Getting Started</strong>
+    <ul><li><a href="installation.html">Installation</a></li><li><a href="configuration.html">Configuration</a></li></ul>
+    <strong class="wiki-sidebar__label">Reference</strong>
+    <ul>
+      <li><a href="bot-detection.html">Bot Detection</a></li>
+      <li><a href="utm-tracking.html">UTM Campaign Tracking</a></li>
+      <li><a href="rest-api.html">REST API</a></li>
+      <li><a href="cli-reference.html">WP-CLI Reference</a></li>
+    </ul>
+    <strong class="wiki-sidebar__label">Compliance</strong>
+    <ul><li><a href="privacy-compliance.html">Privacy &amp; Compliance</a></li><li><a href="premium-features.html">Premium Features</a></li></ul>
+    <strong class="wiki-sidebar__label">Infrastructure</strong>
+    <ul>
+      <li><a href="app-server-setup.html">App Server Setup</a></li>
+      <li><a href="code-map.html" aria-current="page">Code Map</a></li>
+    </ul>
+  </nav>
+  <main class="wiki-content">
+    <h1>Code Map</h1>
+    <p>A full map of every source file in the Rich Statistics repository — what each file does, what it exports, and how files depend on one another. Use this as a reference when navigating the codebase.</p>
+
+    <h2>Deliverables</h2>
+    <p>The repository produces three independent deliverables from the same source:</p>
+    <table>
+      <thead><tr><th>Deliverable</th><th>Source</th><th>Distribution</th></tr></thead>
+      <tbody>
+        <tr><td>WordPress plugin ZIP</td><td>All PHP + JS in repo root</td><td>WordPress.org (free) / Freemius (premium)</td></tr>
+        <tr><td>PWA / web app</td><td><code>docs/app/</code></td><td>Served from <code>rs-app.richardkentgates.com</code></td></tr>
+        <tr><td>Linux desktop app (.deb)</td><td><code>docs/app/</code> via <code>src-tauri/</code></td><td>APT repo at <code>rs-app.richardkentgates.com/apt</code></td></tr>
+      </tbody>
+    </table>
+    <p>The PWA and desktop app share the same JS/CSS source (<code>docs/app/</code>). Tauri's <code>frontendDist: "../docs/app"</code> bundles those files directly into the <code>.deb</code>. Runtime feature detection via <code>window.__TAURI__</code> splits desktop-only behaviour (e.g. update banners) from the browser PWA.</p>
+
+    <h2>Plugin Bootstrap</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>rich-statistics.php</code></td>
+          <td>Plugin entry point. Defines constants (<code>RSA_VERSION</code>, <code>RSA_DIR</code>, <code>RSA_URL</code>, <code>RSA_ASSETS_URL</code>, <code>RSA_APP_URL</code>), initialises the Freemius SDK via <code>rs_fs()</code>, autoloads all classes on <code>plugins_loaded</code>. Premium classes are only loaded when <code>can_use_premium_code__premium_only()</code> returns true.</td>
+        </tr>
+        <tr>
+          <td><code>vendor/freemius/</code></td>
+          <td>Committed Freemius SDK — handles licensing, payments, and in-plugin auto-updates. Never downloaded at build time.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Database Layer</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-db.php</code></td>
+          <td>Schema definition and all database lifecycle logic. <code>install()</code> creates tables via <code>dbDelta()</code>. <code>prune_old_data()</code> deletes rows beyond the retention window (default 90 days). <code>aggregate_heatmap()</code> runs nightly and buckets yesterday's clicks into a 2 % grid. <code>seed_defaults()</code> writes first-run option values.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><strong>Five tables</strong> (all prefixed <code>{wpdb->prefix}rsa_</code>):</p>
+    <table>
+      <thead><tr><th>Table</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td><code>rsa_events</code></td><td>One row per pageview — session_id, page, referrer_domain, OS, browser, browser_version, language, timezone, viewport, time_on_page, bot_score, UTM fields, created_at</td></tr>
+        <tr><td><code>rsa_sessions</code></td><td>One row per browser session — session_id (UNIQUE), pages_viewed, total_time, entry_page, exit_page, OS, browser, language, timezone, created_at, updated_at</td></tr>
+        <tr><td><code>rsa_clicks</code> (premium)</td><td>One row per tracked click — element tag/id/class/text, href protocol/value, matched rule, x_pct, y_pct</td></tr>
+        <tr><td><code>rsa_heatmap</code> (premium)</td><td>Nightly-aggregated click buckets — page, x_pct, y_pct, weight, date_bucket</td></tr>
+        <tr><td><code>rsa_wc_events</code> (WooCommerce)</td><td>WooCommerce events — event_type, product_id, product_name, product_sku, quantity, order_total, order_currency</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Tracking — Browser to Database</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-tracker.php</code></td>
+          <td>Enqueues <code>tracker.js</code> on the frontend. Handles the <code>rsa_track</code> AJAX action: verifies nonce, rate-limits per session, sanitises all fields, calls <code>RSA_Bot_Detection::score()</code>, then upserts <code>rsa_sessions</code> and inserts into <code>rsa_events</code>.</td>
+        </tr>
+        <tr>
+          <td><code>assets/js/tracker.js</code></td>
+          <td>Frontend tracker (ES5). Respects Do Not Track and Global Privacy Control. Gathers OS, browser, UTM, viewport, and time-on-page. Builds a client-side bot signal bitmask from 10 checks. Sends the payload via the Beacon API (or <code>fetch</code> fallback) to <code>admin-ajax.php?action=rsa_track</code>. In premium mode also sends click events.</td>
+        </tr>
+        <tr>
+          <td><code>includes/class-bot-detection.php</code></td>
+          <td>Two-layer scoring. <code>score(int $bitmask, ?string $ua)</code> combines client-side signal weights (1–4 pts each) with server-side User-Agent pattern matching. Returns a total score; events at or above the configured threshold are discarded.</td>
+        </tr>
+        <tr>
+          <td><code>includes/class-click-tracking.php</code> (premium)</td>
+          <td>AJAX ingest handler for click events sent by <code>tracker.js</code>. Validates session UUID format, sanitises all element fields, and inserts into <code>rsa_clicks</code>.</td>
+        </tr>
+        <tr>
+          <td><code>includes/class-woocommerce.php</code> (premium)</td>
+          <td>Hooks into WooCommerce actions to record product views, add-to-cart, and order completions as rows in <code>rsa_wc_events</code>. Gated by <code>rsa_woocommerce_enabled</code> option.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Analytics Queries</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-analytics.php</code></td>
+          <td>All read-only SQL aggregation. Key methods: <code>get_overview()</code>, <code>get_top_pages()</code>, <code>get_audience()</code>, <code>get_referrers()</code>, <code>get_campaigns()</code>, <code>get_woocommerce()</code>, <code>get_user_flow()</code>. Every query uses <code>$wpdb->prepare()</code> and applies bot filtering. Called by the admin UI, REST API, email digest, and WP-CLI.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>WordPress Admin UI</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-admin.php</code></td>
+          <td>Registers admin menus and sub-pages. Enqueues admin assets. Handles the <code>rsa_save_settings</code> form post. Serves the PWA at the <code>/rs-app/</code> rewrite rule. Renders the profile-page OTP section (premium). Exposes <code>user_can_access_app()</code> static helper used by the REST API, OTP handler, and profile display.</td>
+        </tr>
+        <tr>
+          <td><code>assets/js/admin-charts.js</code></td>
+          <td>Chart.js wrappers for the admin dashboard. Reads the <code>RSA_DATA</code> global injected by PHP and renders charts appropriate to the current view.</td>
+        </tr>
+        <tr>
+          <td><code>assets/css/admin.css</code></td>
+          <td>Admin styles.</td>
+        </tr>
+        <tr>
+          <td><code>templates/admin/*.php</code></td>
+          <td>One partial per admin sub-page: <code>overview</code>, <code>pages</code>, <code>audience</code>, <code>referrers</code>, <code>campaigns</code>, <code>behavior</code>, <code>user-flow</code>, <code>click-map</code>, <code>heatmap</code>, <code>preferences</code>, <code>data-settings</code>, <code>email-settings</code>, <code>export</code>, <code>network-settings</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Premium Features</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-rest-api.php</code></td>
+          <td>REST namespace <code>rsa/v1</code>. Endpoints: <code>/overview</code>, <code>/pages</code>, <code>/audience</code>, <code>/referrers</code>, <code>/campaigns</code>, <code>/behavior</code>, <code>/user-flow</code>. Auth via WordPress Application Passwords. CORS headers allow cross-origin requests including Tauri's <code>tauri://</code> scheme.</td>
+        </tr>
+        <tr>
+          <td><code>includes/class-heatmap.php</code></td>
+          <td>Enqueues heatmap assets on the admin heatmap page. The actual nightly aggregation runs via <code>RSA_DB::aggregate_heatmap()</code> on the <code>rsa_daily_maintenance</code> cron.</td>
+        </tr>
+        <tr>
+          <td><code>assets/js/heatmap-overlay.js</code></td>
+          <td>Canvas-based heatmap renderer. Reads aggregated bucket data from the REST API and draws a weighted heat grid over the page.</td>
+        </tr>
+        <tr>
+          <td><code>assets/css/heatmap.css</code></td>
+          <td>Heatmap overlay styles.</td>
+        </tr>
+        <tr>
+          <td><code>includes/class-pwa-download.php</code></td>
+          <td>OTP generation for PWA site pairing and PWA ZIP download. Generates a 6-digit code (SHA-256 hashed transient, 15-minute TTL, single-use). Per-IP rate-limiting (5 wrong attempts per 5 minutes) on the verification endpoint.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Email Digest</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>includes/class-email.php</code></td>
+          <td>Scheduled HTML digest. Resolves recipients either from a manual list or from all WordPress users with the allowed roles (<code>rsa_allowed_roles</code>). Composes overview + top pages + referrers sections, plus a WooCommerce section when WC tracking is active and premium is enabled. Sends via <code>wp_mail()</code>.</td>
+        </tr>
+        <tr>
+          <td><code>templates/email/digest.php</code></td>
+          <td>HTML email template. Token placeholders: <code>{{OVERVIEW_*}}</code>, <code>{{TOP_PAGES}}</code>, <code>{{REFERRERS}}</code>, <code>{{WC_SECTION}}</code>, <code>{{DASH_URL}}</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>WP-CLI</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>cli/class-cli.php</code></td>
+          <td>Registers the <code>wp rich-stats</code> command group. Subcommands: <code>overview</code>, <code>top-pages</code>, <code>audience</code>, <code>export</code>, <code>purge</code>, <code>email-test</code>, <code>status</code>, <code>clicks</code> (premium), <code>woocommerce</code> (premium).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>PWA &amp; Desktop App (<code>docs/app/</code>)</h2>
+    <p>These files are served as the live PWA and are also bundled directly into the Tauri <code>.deb</code> desktop app via <code>frontendDist: "../docs/app"</code>.</p>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>docs/app/index.html</code></td>
+          <td>PWA shell. When loaded through the WordPress plugin (<code>/rs-app/</code>), <code>RSA_Admin::serve_app()</code> injects the <code>RSA_CONFIG</code> global with the site URL, nonce, and app URL.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/config.js</code></td>
+          <td>Auto-detects the WordPress site URL from the script's own <code>src</code> path. Sets <code>window.RSA_CONFIG</code> for use by <code>app.js</code>.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/app.js</code></td>
+          <td>All PWA and desktop app logic. Multi-site management via localStorage. OTP two-step pairing flow. REST API calls with Basic auth. View rendering for overview, pages, audience, referrers, behavior, and clicks. Offline cache. Desktop-only features (e.g. <code>showDesktopUpdateBanner()</code>) are gated behind <code>window.__TAURI__</code> or <code>window.__TAURI_INTERNALS__</code>.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/sw.js</code></td>
+          <td>Service Worker. Caches static assets (JS, CSS, chart library). Uses network-first strategy for API calls with cache fallback for offline use.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/app.css</code></td>
+          <td>PWA and desktop app UI styles.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/manifest.json</code></td>
+          <td>PWA manifest — name, icons, theme colour, display mode.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/versions.json</code></td>
+          <td>JSON array of versioned snapshot directory names. Updated automatically by CI on each release tag. Used by the desktop app's version-check logic to detect when a newer app bundle is available.</td>
+        </tr>
+        <tr>
+          <td><code>docs/app/{version}/</code></td>
+          <td>Immutable snapshots of each released app (committed by CI). Allows the desktop app to compare its bundled version against the plugin version.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Tauri Desktop App (<code>src-tauri/</code>)</h2>
+    <table>
+      <thead><tr><th>File</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>src-tauri/tauri.conf.json</code></td>
+          <td>Tauri configuration. <code>frontendDist: "../docs/app"</code> bundles the shared PWA source. Build target: <code>deb</code>. Window dimensions 1200×800 (min 360×560). CSP allows <code>connect-src *</code> for cross-origin calls to any WordPress install.</td>
+        </tr>
+        <tr>
+          <td><code>src-tauri/src/main.rs</code></td>
+          <td>Minimal Rust shim. Opens a WebKitGTK window and loads the <code>docs/app/</code> frontend.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>CI / CD (<code>.github/workflows/</code>)</h2>
+    <table>
+      <thead><tr><th>File</th><th>Trigger</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>tests.yml</code></td>
+          <td>Push / PR to <code>main</code> or <code>develop</code></td>
+          <td>Unit tests (PHP 8.1–8.3, Brain Monkey) and integration tests (PHP 8.1–8.2, WordPress + MySQL 8.0).</td>
+        </tr>
+        <tr>
+          <td><code>build-release.yml</code></td>
+          <td><code>v*.*.*</code> tag on <code>main</code></td>
+          <td>
+            <strong>build</strong> job — validates PHP syntax, creates plugin ZIP, publishes GitHub Release, commits versioned <code>docs/app/{version}/</code> snapshot and updates <code>versions.json</code>.<br>
+            <strong>build-desktop</strong> job (amd64 + arm64) — Tauri builds <code>.deb</code>, SCPs to app server, runs <code>rsa-apt-repo-update</code>.<br>
+            <strong>ping-deploy</strong> — POSTs to <code>/_deploy/</code> webhook; server pulls <code>docs/app/</code> and goes live.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Server Scripts (<code>bin/</code>)</h2>
+    <table>
+      <thead><tr><th>File</th><th>Status</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>bin/server-webhook.php</code></td>
+          <td>Committed — source for <code>_deploy/index.php</code> on the app server</td>
+          <td>Receives POST from CI, verifies <code>DEPLOY_WEBHOOK_TOKEN</code>, runs <code>rsa-app-update</code>.</td>
+        </tr>
+        <tr>
+          <td><code>bin/server-update-webapp.sh</code></td>
+          <td>Committed — source for <code>/usr/local/bin/rsa-app-update</code></td>
+          <td>Pulls latest <code>docs/app/</code> from GitHub and copies to web root.</td>
+        </tr>
+        <tr>
+          <td><code>bin/server-apt-repo-update.sh</code></td>
+          <td>Committed — source for <code>/usr/local/bin/rsa-apt-repo-update</code></td>
+          <td>Adds a new <code>.deb</code> to the APT repo, re-signs <code>Release</code> files.</td>
+        </tr>
+        <tr>
+          <td><code>bin/install-wp-tests.sh</code></td>
+          <td>Committed — used by CI integration tests</td>
+          <td>Downloads and configures a WordPress test suite against a local MySQL instance.</td>
+        </tr>
+        <tr>
+          <td><code>bin/setup-app-server.sh</code></td>
+          <td><strong>Local only</strong> (gitignored)</td>
+          <td>Provisions a new Debian 12 VPS from scratch: Apache, PHP, certbot, ufw, fail2ban, APT repo, CI SSH keypair, webhook token.</td>
+        </tr>
+        <tr>
+          <td><code>bin/setup-apt-repo.sh</code></td>
+          <td><strong>Local only</strong> (gitignored)</td>
+          <td>Initialises the APT repo GPG key and directory structure on the server.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Data Flow</h2>
+    <p>The path a pageview takes from the browser all the way to the analytics dashboard:</p>
+    <ol>
+      <li><strong>Browser</strong> — <code>tracker.js</code> collects signals, builds a bot bitmask, and sends a POST to <code>admin-ajax.php?action=rsa_track</code> via the Beacon API.</li>
+      <li><strong>Ingest</strong> — <code>RSA_Tracker::handle_ingest()</code> verifies the nonce, rate-limits, sanitises fields, calls <code>RSA_Bot_Detection::score()</code>, then upserts <code>rsa_sessions</code> and inserts into <code>rsa_events</code>.</li>
+      <li><strong>Storage</strong> — rows live in MySQL until the nightly cron prunes anything beyond the retention window (default 90 days).</li>
+      <li><strong>Read — Admin UI</strong> — <code>RSA_Analytics</code> queries aggregate the data; results are injected via <code>wp_localize_script()</code> and rendered by <code>admin-charts.js</code> / Chart.js.</li>
+      <li><strong>Read — PWA / Desktop</strong> — the app authenticates with Application Passwords and calls <code>/wp-json/rsa/v1/*</code>; <code>RSA_Rest_API</code> delegates to <code>RSA_Analytics</code> and returns JSON.</li>
+      <li><strong>Read — Email</strong> — the <code>rsa_send_digest</code> cron calls <code>RSA_Email::send_digest()</code>, which queries <code>RSA_Analytics</code> and sends HTML via <code>wp_mail()</code>.</li>
+      <li><strong>Nightly maintenance</strong> — the <code>rsa_daily_maintenance</code> cron runs <code>RSA_DB::prune_old_data()</code> and <code>RSA_DB::aggregate_heatmap()</code>.</li>
+    </ol>
+
+    <h2>Option Reference</h2>
+    <p>Default values set by <code>RSA_DB::seed_defaults()</code>:</p>
+    <table>
+      <thead><tr><th>Option key</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>rsa_retention_days</code></td><td>90</td><td>Days of event data to keep before pruning</td></tr>
+        <tr><td><code>rsa_bot_score_threshold</code></td><td>5</td><td>Minimum combined bot score to discard a request</td></tr>
+        <tr><td><code>rsa_remove_data_on_uninstall</code></td><td>0</td><td>Drop tables on plugin deletion</td></tr>
+        <tr><td><code>rsa_track_protocol_tel</code></td><td>1</td><td>Track <code>tel:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_mailto</code></td><td>1</td><td>Track <code>mailto:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_geo</code></td><td>1</td><td>Track <code>geo:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_sms</code></td><td>1</td><td>Track <code>sms:</code> link clicks</td></tr>
+        <tr><td><code>rsa_track_protocol_download</code></td><td>1</td><td>Track file download clicks</td></tr>
+        <tr><td><code>rsa_click_track_ids</code></td><td>""</td><td>Comma-separated element IDs to track (premium)</td></tr>
+        <tr><td><code>rsa_click_track_classes</code></td><td>""</td><td>Comma-separated CSS classes to track (premium)</td></tr>
+        <tr><td><code>rsa_email_digest_enabled</code></td><td>0</td><td>Enable scheduled email digest</td></tr>
+        <tr><td><code>rsa_email_digest_frequency</code></td><td>weekly</td><td>Digest frequency: daily / weekly / monthly</td></tr>
+        <tr><td><code>rsa_email_digest_recipients</code></td><td>admin email</td><td>Comma-separated recipient addresses</td></tr>
+        <tr><td><code>rsa_email_digest_use_roles</code></td><td>0</td><td>Send to all users with allowed roles instead of manual list</td></tr>
+        <tr><td><code>rsa_allowed_roles</code></td><td>["administrator"]</td><td>Roles that can access the app, REST API, and OTP generation</td></tr>
+        <tr><td><code>rsa_woocommerce_enabled</code></td><td>1</td><td>Enable WooCommerce event tracking (premium)</td></tr>
+      </tbody>
+    </table>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <strong>Rich Statistics</strong>
+      <span>Privacy-first analytics for WordPress</span>
+    </div>
+    <nav class="site-footer__links">
+      <a href="./">Documentation</a>
+      <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://richardkentgates.com" target="_blank" rel="noopener">richardkentgates.com</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
