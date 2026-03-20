@@ -198,6 +198,31 @@
       </tbody>
     </table>
 
+    <h3>GET /woocommerce <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h3>
+    <p>WooCommerce conversion funnel, revenue, and top-product data. Returns <code>woocommerce_active: false</code> when WooCommerce is not installed on the site rather than an error, so the PWA can show an appropriate message.</p>
+    <pre><code>GET /wp-json/rsa/v1/woocommerce?period=30d</code></pre>
+    <pre><code>{
+  "woocommerce_active": true,
+  "funnel": {
+    "views":  4210,
+    "cart":   1830,
+    "orders":  412
+  },
+  "orders_count":  412,
+  "revenue_total": 18340.00,
+  "revenue_by_day": [
+    { "day": "2026-03-01", "revenue": "610.00" },
+    { "day": "2026-03-02", "revenue": "840.50" }
+  ],
+  "top_products_viewed": [
+    { "product_id": 42, "product_name": "Blue Widget Pro", "views": 1820 }
+  ],
+  "top_products_cart": [
+    { "product_id": 42, "product_name": "Blue Widget Pro", "total_qty": 390, "events": 812 }
+  ]
+}</code></pre>
+    <div class="callout">Requires an active Premium licence. Returns <code>{ "woocommerce_active": false }</code> when WooCommerce is not installed; returns a 403 on free-tier installs.</div>
+
     <h3>GET /export</h3>
     <p>Export raw event data for the given period. Returns JSON by default; pass <code>format=csv</code> to download a CSV file with a <code>Content-Disposition</code> header.</p>
     <pre><code>GET /wp-json/rsa/v1/export?period=90d&amp;format=csv&amp;data_type=pageviews</code></pre>

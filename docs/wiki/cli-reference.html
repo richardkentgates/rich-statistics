@@ -197,6 +197,49 @@ Rich Statistics Status
 | mailto   | hi@example.com | a       | Email us | 18     |
 +----------+----------------+---------+----------+--------+</code></pre>
     <div class="callout">Requires an active Premium licence. Returns an error on free-tier installs.</div>
+
+    <h2>wp rich-stats woocommerce <span style="font-weight:normal;font-size:0.85em">(Premium)</span></h2>
+    <p>Show a WooCommerce analytics summary: conversion funnel, revenue totals, top viewed products, and top add-to-cart products. Requires both an active Premium licence and WooCommerce to be installed and active.</p>
+    <pre><code>wp rich-stats woocommerce [--period=&lt;period&gt;] [--limit=&lt;n&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--period</code></td><td><code>30d</code></td><td>Time range: 7d, 30d, 90d, thismonth, lastmonth</td></tr>
+        <tr><td><code>--limit</code></td><td><code>10</code></td><td>Number of top products to show per table</td></tr>
+      </tbody>
+    </table>
+    <p>Example:</p>
+    <pre><code>$ wp rich-stats woocommerce --period=30d
+
+Funnel
++-----------------+-------+
+| Event           | Count |
++-----------------+-------+
+| Product Views   | 4,210 |
+| Add to Cart     | 1,830 |
+| Orders          |   412 |
++-----------------+-------+
+
+Revenue
+  Total orders:  412
+  Total revenue: $18,340.00
+
+Top Viewed Products
++---+---------------------------+-------+
+| # | Product                   | Views |
++---+---------------------------+-------+
+| 1 | Blue Widget Pro           | 1,820 |
+| 2 | Red Widget Standard       |   940 |
++---+---------------------------+-------+
+
+Top Add-to-Cart
++---+---------------------------+--------+
+| # | Product                   | Events |
++---+---------------------------+--------+
+| 1 | Blue Widget Pro           |    812 |
+| 2 | Red Widget Standard       |    430 |
++---+---------------------------+--------+</code></pre>
+    <div class="callout">Requires an active Premium licence and WooCommerce to be installed and active. Returns an error on free-tier installs or when WooCommerce is not present.</div>
   </main>
 </div>
 <footer class="site-footer">
