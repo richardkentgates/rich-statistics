@@ -11,12 +11,15 @@
 #   • mod_rewrite, mod_headers, mod_ssl
 #   • Certbot (Let's Encrypt SSL, apache authenticator)
 #   • git, rsync, curl, python3, fail2ban, ufw
-#   • /var/www/rs-app/  web root + all subdirectories
+#   • dpkg-dev, apt-utils, gnupg  (APT repo tooling)
+#   • /var/www/rs-app/  web root + all subdirectories (app/, desktop/, apt/)
 #   • /_deploy/index.php  webhook handler (from bin/server-webhook.php)
-#   • /usr/local/bin/rsa-app-update  update script (from bin/server-update-webapp.sh)
+#   • /usr/local/bin/rsa-app-update  app update script (from bin/server-update-webapp.sh)
+#   • /usr/local/bin/rsa-apt-repo-update  APT repo update script (from bin/server-apt-repo-update.sh)
+#   • APT repo initialised via bin/setup-apt-repo.sh (GPG key + repo structure)
 #   • /etc/rsa-webhook-token  (random 32-byte hex, root:www-data 640)
-#   • /etc/sudoers.d/rsa-app-update  (lets www-data call the update script)
-#   • Apache virtual-host configs for port 80 + 443
+#   • /etc/sudoers.d/rsa-app-update  (lets www-data + SERVER_USER call the update scripts)
+#   • Apache virtual-host configs for port 80 + 443 (with /apt/ directory indexing)
 #   • Let's Encrypt TLS certificate (certbot --apache)
 #   • ED25519 SSH keypair for GitHub Actions CI
 #   • fail2ban sshd jail
@@ -96,6 +99,12 @@ done
 [[ -f "${REPO_ROOT}/bin/server-update-webapp.sh" ]] \
     || die "bin/server-update-webapp.sh not found"
 
+[[ -f "${REPO_ROOT}/bin/server-apt-repo-update.sh" ]] \
+    || die "bin/server-apt-repo-update.sh not found"
+
+[[ -f "${REPO_ROOT}/bin/setup-apt-repo.sh" ]] \
+    || die "bin/setup-apt-repo.sh not found"
+
 if [[ $SKIP_SSL -eq 0 && -z "${ADMIN_EMAIL}" ]]; then
     die "--email is required for SSL.  Use --skip-ssl to defer certificate setup."
 fi
@@ -117,7 +126,10 @@ apt-get install -y \
     python3 \
     fail2ban \
     ufw \
-    sudo
+    sudo \
+    dpkg-dev \
+    apt-utils \
+    gnupg
 info "Packages installed."
 
 # ─── 2. Apache modules ───────────────────────────────────────────────────────
@@ -176,12 +188,22 @@ cp "${REPO_ROOT}/bin/server-apt-repo-update.sh" /usr/local/bin/rsa-apt-repo-upda
 chmod +x /usr/local/bin/rsa-apt-repo-update
 info "Script: /usr/local/bin/rsa-apt-repo-update"
 
+# ─── 7c. Initialise APT repository ──────────────────────────────────────────
+step "Initialising APT repository"
+if [[ -d "${WEB_ROOT}/apt/dists" ]]; then
+    warn "APT repo already initialised — skipping setup-apt-repo.sh."
+    warn "To re-initialise: sudo bash ${REPO_ROOT}/bin/setup-apt-repo.sh"
+else
+    bash "${REPO_ROOT}/bin/setup-apt-repo.sh"
+fi
+info "APT repo ready."
+
 # ─── 8. Sudoers — let www-data call the update scripts ──────────────────────
 step "Configuring sudoers"
 SUDOERS_FILE="/etc/sudoers.d/rsa-app-update"
-cat > "${SUDOERS_FILE}" <<'SUDOERS'
+cat > "${SUDOERS_FILE}" <<SUDOERS
 www-data ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-app-update
-richardkentgates ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-apt-repo-update
+${SERVER_USER} ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-apt-repo-update
 SUDOERS
 chmod 440 "${SUDOERS_FILE}"
 visudo -c -f "${SUDOERS_FILE}" || die "sudoers file failed validation — check manually."
@@ -200,6 +222,19 @@ cat > "${SITE_CONF}" <<APACHECONF
         AllowOverride None
         Require all granted
     </Directory>
+
+    # APT clients enumerate Packages/Release files by traversing the directory
+    # tree, so indexing must be enabled under /apt/.
+    <Directory ${WEB_ROOT}/apt>
+        Options +Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # Correct MIME type for the ASCII-armoured GPG public key
+    <Files "public.gpg">
+        Header set Content-Type "application/pgp-keys"
+    </Files>
 
     <LocationMatch "^/[0-9]+\.[0-9]+\.[0-9]+/">
         Header set Cache-Control "public, max-age=31536000, immutable"
@@ -341,4 +376,16 @@ echo "  curl -I https://${DOMAIN}/"
 echo ""
 echo "To manually trigger an app update:"
 echo "  sudo -u ${SERVER_USER} /usr/local/bin/rsa-app-update"
+echo ""
+echo "APT repository:"
+echo "  https://${DOMAIN}/apt"
+echo "  Public key: https://${DOMAIN}/apt/public.gpg"
+echo ""
+echo "To add the APT repository on a client machine:"
+echo "  curl -fsSL https://${DOMAIN}/apt/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg"
+echo "  echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] https://${DOMAIN}/apt stable main\" | sudo tee /etc/apt/sources.list.d/rich-statistics.list"
+echo "  sudo apt update && sudo apt install rich-statistics"
+echo ""
+echo "To manually publish a new .deb to the APT repo:"
+echo "  sudo /usr/local/bin/rsa-apt-repo-update <amd64|arm64> <version>"
 echo ""

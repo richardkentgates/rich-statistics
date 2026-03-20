@@ -418,6 +418,7 @@ The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
 - `/app/{version}/` — versioned snapshots referenced by `versions.json`
 - `/desktop/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
 - `/desktop/rich-statistics-linux-arm64.deb` — latest arm64 `.deb`
+- `/apt/` — Debian APT repository (see below)
 
 **Webhook deploy flow:**
 1. CI `ping-deploy` job POSTs to `/_deploy/` with `DEPLOY_WEBHOOK_TOKEN`
@@ -426,5 +427,58 @@ The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
 
 **SSH access:** `richardkentgates@104.197.231.120` using `~/.ssh/id_rsa`
 
+**Provisioning:** `bin/setup-app-server.sh` provisions a fresh Debian 12 VPS from scratch. It installs and configures Apache, PHP, Certbot, fail2ban, ufw, the webhook handler, both update scripts, and the APT repository. Run it once on a new server; it is idempotent for most steps. Call `bin/setup-apt-repo.sh` separately if you need to re-initialise just the APT repo.
+
 **Test server (WP site for development):** `richardkentgates@34.56.56.233`, WP root at `/srv/www/wordpress`, WP-CLI at `/usr/local/bin/wp`.
 > Note: `wp plugin install` from a local ZIP fails on this server due to `upgrade/` directory permissions. Use `sudo unzip -o plugin.zip -d /srv/www/wordpress/wp-content/plugins/` instead.
+
+---
+
+## APT Repository
+
+The app server doubles as a Debian/Ubuntu APT repository so users can install and upgrade the Linux desktop app through their normal system package manager.
+
+**Repository URL:** `https://rs-app.richardkentgates.com/apt stable main`
+
+**Public signing key:** `https://rs-app.richardkentgates.com/apt/public.gpg`
+GPG fingerprint: `7528670109B7907492528C2F7F1EA217D64A5134`
+(RSA 4096, uid: `Rich Statistics APT Signing Key <apt@rs-app.richardkentgates.com>`)
+
+**Directory layout on server:**
+```
+/var/www/rs-app/apt/
+  public.gpg                                  ← ASCII-armoured public key
+  pool/
+    main/
+      amd64/
+        rich-statistics_<version>_amd64.deb
+      arm64/
+        rich-statistics_<version>_arm64.deb
+  dists/
+    stable/
+      main/
+        binary-amd64/
+          Packages  Packages.gz
+        binary-arm64/
+          Packages  Packages.gz
+      Release  InRelease  Release.gpg          ← GPG-signed by root's keyring on server
+```
+
+**How CI updates the repo:**
+1. `build-desktop` job builds `.deb` for each arch and SCPs to `/var/www/rs-app/desktop/`
+2. CI then calls `sudo /usr/local/bin/rsa-apt-repo-update <arch> <version>` via SSH
+3. The script copies the `.deb` into `pool/`, regenerates `Packages`/`Release`/`InRelease`, and GPG-signs using the key stored in root's keyring on the server
+
+**Signing key lives in:** root's GPG keyring on `104.197.231.120`. The private key is not stored in the repo or in CI — it is generated once by `bin/setup-apt-repo.sh` during server provisioning.
+
+**User installation:**
+```bash
+curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
+    https://rs-app.richardkentgates.com/apt stable main" \
+    | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+sudo apt update && sudo apt install rich-statistics
+```
+
+After setup, `sudo apt upgrade` will update the desktop app alongside all other system packages.
