@@ -163,7 +163,17 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v.append(sys.argv[1]) if sys.argv[1] not in v else None; p.write_text(json.dumps(sorted(set(v),key=lambda x:list(map(int,x.split('.'))))))" "${VERSION}"
-
+      - name: Create versioned app snapshot
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          APP_VERSIONED="docs/app/${VERSION}"
+          if [ ! -d "$APP_VERSIONED" ]; then
+            mkdir -p "$APP_VERSIONED"
+            for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+              [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
+            done
+            [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
+          fi
       - name: Install system dependencies
         run: |
           sudo apt-get update

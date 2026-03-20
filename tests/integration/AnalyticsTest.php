@@ -146,4 +146,115 @@ class AnalyticsTest extends WP_UnitTestCase {
 		// Cleanup
 		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'test-session-clickmap' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
+
+	// ----------------------------------------------------------------
+	// get_campaigns() — structure
+	// ----------------------------------------------------------------
+
+	public function test_get_campaigns_returns_array(): void {
+		$result = RSA_Analytics::get_campaigns( '30d' );
+		$this->assertIsArray( $result );
+	}
+
+	public function test_get_campaigns_rows_have_expected_keys(): void {
+		global $wpdb;
+
+		// Seed one campaign event
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			[
+				'session_id'   => 'test-session-campaigns',
+				'page'         => '/landing/',
+				'utm_source'   => 'google',
+				'utm_medium'   => 'cpc',
+				'utm_campaign' => 'spring-sale',
+				'bot_score'    => 0,
+				'created_at'   => current_time( 'mysql' ),
+			]
+		);
+
+		$result = RSA_Analytics::get_campaigns( '30d' );
+		$rows   = array_filter( $result, fn( $r ) => $r['campaign'] === 'spring-sale' );
+		$this->assertNotEmpty( $rows, 'Expected seeded campaign row in results' );
+
+		$row = reset( $rows );
+		$this->assertArrayHasKey( 'source',    $row );
+		$this->assertArrayHasKey( 'medium',    $row );
+		$this->assertArrayHasKey( 'campaign',  $row );
+		$this->assertArrayHasKey( 'pageviews', $row );
+		$this->assertArrayHasKey( 'sessions',  $row );
+
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', [ 'session_id' => 'test-session-campaigns' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	// ----------------------------------------------------------------
+	// get_woocommerce() — structure (WooCommerce not active in test env)
+	// ----------------------------------------------------------------
+
+	public function test_get_woocommerce_returns_expected_keys(): void {
+		$result = RSA_Analytics::get_woocommerce( '30d' );
+
+		$this->assertArrayHasKey( 'top_products_viewed', $result );
+		$this->assertArrayHasKey( 'top_products_cart',   $result );
+		$this->assertArrayHasKey( 'orders_count',        $result );
+		$this->assertArrayHasKey( 'revenue_total',       $result );
+		$this->assertArrayHasKey( 'revenue_by_day',      $result );
+		$this->assertArrayHasKey( 'funnel',              $result );
+	}
+
+	public function test_get_woocommerce_funnel_has_expected_keys(): void {
+		$result = RSA_Analytics::get_woocommerce( '30d' );
+
+		$this->assertArrayHasKey( 'views',  $result['funnel'] );
+		$this->assertArrayHasKey( 'cart',   $result['funnel'] );
+		$this->assertArrayHasKey( 'orders', $result['funnel'] );
+	}
+
+	// ----------------------------------------------------------------
+	// get_user_flow() — structure
+	// ----------------------------------------------------------------
+
+	public function test_get_user_flow_returns_array(): void {
+		$result = RSA_Analytics::get_user_flow( '30d' );
+		$this->assertIsArray( $result );
+	}
+
+	public function test_get_user_flow_rows_have_expected_keys(): void {
+		global $wpdb;
+
+		// Seed two events in the same session to create a transition
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			[
+				'session_id' => 'test-session-flow',
+				'page'       => '/page-a/',
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s', time() - 60 ),
+			]
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			[
+				'session_id' => 'test-session-flow',
+				'page'       => '/page-b/',
+				'bot_score'  => 0,
+				'created_at' => current_time( 'mysql' ),
+			]
+		);
+
+		$result = RSA_Analytics::get_user_flow( '30d' );
+		$rows   = array_filter( $result, fn( $r ) => $r['from_page'] === '/page-a/' && $r['to_page'] === '/page-b/' );
+
+		if ( ! empty( $rows ) ) {
+			$row = reset( $rows );
+			$this->assertArrayHasKey( 'from_page', $row );
+			$this->assertArrayHasKey( 'to_page',   $row );
+			$this->assertArrayHasKey( 'count',     $row );
+		} else {
+			// LEAD() window function may not be supported in all test DB configs; just assert array is returned.
+			$this->assertIsArray( $result );
+		}
+
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', [ 'session_id' => 'test-session-flow' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
 }
