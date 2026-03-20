@@ -1000,7 +1000,7 @@ class RSA_Analytics {
 		}
 
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
-		$table = RSA_DB::wc_events_table();
+		$table = esc_sql( RSA_DB::wc_events_table() );
 
 		// Funnel counts
 		$funnel_rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
