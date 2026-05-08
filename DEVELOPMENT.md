@@ -11,18 +11,18 @@ and [CONTRIBUTING.md](CONTRIBUTING.md) (local setup, coding standards, PR proces
 
 ## Table of Contents
 
-1. [What This Repo Produces](#1-what-this-repo-produces)
-2. [Repository Map](#2-repository-map)
-3. [What Ships in the Distribution ZIP](#3-what-ships-in-the-distribution-zip)
-4. [External Services & Topology](#4-external-services--topology)
-5. [GitHub Secrets](#5-github-secrets)
-6. [Release Process](#6-release-process)
-7. [CI / CD Pipeline](#7-ci--cd-pipeline)
-8. [App Server Infrastructure](#8-app-server-infrastructure)
-9. [Freemius Premium Integration](#9-freemius-premium-integration)
-10. [Webapp & Desktop App](#10-webapp--desktop-app)
-11. [WordPress.org Distribution](#11-wordpressorg-distribution)
-12. [Design Notes](#12-design-notes)
+1. [What This Repo Produces](#what-this-repo-produces)
+2. [Repository Map](#repository-map)
+3. [What Ships in the Distribution ZIP](#what-ships-in-the-distribution-zip)
+4. [External Services & Topology](#external-services--topology)
+5. [GitHub Secrets](#github-secrets)
+6. [Release Process](#release-process)
+7. [CI / CD Pipeline](#ci--cd-pipeline)
+8. [App Server Infrastructure](#app-server-infrastructure)
+9. [Freemius Premium Integration](#freemius-premium-integration)
+10. [Webapp & Desktop App](#webapp--desktop-app)
+11. [WordPress.org Distribution](#wordpressorg-distribution)
+12. [Design Notes](#design-notes)
 
 ---
 
