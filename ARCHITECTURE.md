@@ -79,7 +79,7 @@ rich-statistics/
 │   ├── data-settings.php
 │   └── network-settings.php
 ├── templates/email/           HTML email digest template
-├── webapp/                    Installable PWA (vanilla JS, no build step)
+├── src-tauri/                    Installable PWA (vanilla JS, no build step)
 ├── docs/                      GitHub Pages site + wiki (not shipped in dist ZIP)
 ├── tests/                     PHPUnit unit + integration tests
 ├── cli/                       WP-CLI command class
