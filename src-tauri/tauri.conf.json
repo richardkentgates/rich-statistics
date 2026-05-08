@@ -24,7 +24,7 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "nsis"],
-    "icon": ["icons/icon.ico", "icons/32x32.png", "icons/128x128.png", "icons/256x256.png"],
+    "icon": ["../docs/app/icons/icon-512.png"],
     "linux": {
       "deb": {
         "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libssl3"]

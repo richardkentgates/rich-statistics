@@ -254,10 +254,9 @@ jobs:
 
       - name: Stamp version
         run: |
-          $VERSION = "${{ github.ref_name }}" -replace '^v', ''
+          $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "")
           (Get-Content src-tauri/tauri.conf.json) -replace '"version": "[^"]*"', "`"version`": `"$VERSION`"" | Set-Content src-tauri/tauri.conf.json
           (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$VERSION`"" | Set-Content src-tauri/Cargo.toml
-          Write-Host "Version stamped to: $VERSION"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -283,6 +282,21 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Push .exe to app server
+        run: |
+          $EXE = Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          $DEST = "rich-statistics-windows.exe"
+          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/$DEST"
+
+      - name: Update update.json with Windows platform
+        run: |
+          ssh -o StrictHostKeyChecking=no -o BatchMode=yes richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
   # update.json directly on the app server.
@@ -295,25 +309,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: rich-statistics-windows
-
-      - name: Push .exe to app server
-        run: |
-          EXE=$(ls *.exe | head -1)
-          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/rich-statistics-windows.exe"
-
-      - name: Update update.json with Windows platform
-        run: |
-          ssh -o StrictHostKeyChecking=no -o BatchMode=yes richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
-
       - name: Sync docs/app/ via webhook
         run: |
           curl -fsS -X POST \
