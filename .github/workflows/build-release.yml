@@ -254,9 +254,10 @@ jobs:
 
       - name: Stamp version
         run: |
-          $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "")
+          $VERSION = "${{ github.ref_name }}" -replace '^v', ''
           (Get-Content src-tauri/tauri.conf.json) -replace '"version": "[^"]*"', "`"version`": `"$VERSION`"" | Set-Content src-tauri/tauri.conf.json
           (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$VERSION`"" | Set-Content src-tauri/Cargo.toml
+          Write-Host "Version stamped to: $VERSION"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
