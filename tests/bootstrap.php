@@ -93,15 +93,12 @@ if ( is_dir( $wp_tests_dir ) ) {
 			RSA_Rest_API::init();
 		}
 
-	// Ensure DB tables exist for all integration tests (AnalyticsTest, RestApiTest
-	// don't call RSA_DB::install() in their setUp, so we do it here once).
-	if ( class_exists( 'RSA_DB' ) ) {
-		RSA_DB::install();
-	}
-
-	require_once $wp_tests_dir . '/includes/bootstrap.php';
-	return; // WP bootstrap takes over
-} // end of if ( is_dir( $wp_tests_dir ) )
+		// Ensure DB tables exist for all integration tests (AnalyticsTest, RestApiTest
+		// don't call RSA_DB::install() in their setUp, so we do it here once).
+		if ( class_exists( 'RSA_DB' ) ) {
+			RSA_DB::install();
+		}
+	} );
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
 	return; // WP bootstrap takes over
