@@ -98,7 +98,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 		if ( class_exists( 'RSA_DB' ) ) {
 			RSA_DB::install();
 		}
-	} );
+	} ); // end anonymous function
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
 	return; // WP bootstrap takes over
