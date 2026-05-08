@@ -27,6 +27,7 @@
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
 [![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb)
 [![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
+[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
 
 <!-- Plugin features -->
 [![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
@@ -78,9 +79,18 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Bot filtering | 10-signal client-side scoring + server-side UA/header checks |
 | Data retention | Configurable 1–730 days (default 90) |
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
-| WP-CLI | `wp rich-stats overview/top-pages/audience/export/purge/status` |
+| WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin, network-wide disable switch |
 | Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests |
+
+## Desktop Apps
+
+Rich Statistics offers native desktop apps for Linux and Windows:
+
+- **Linux**: Download `.deb` installer for [amd64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) or [arm64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
+- **Windows**: Download `.exe` installer from [rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
+
+The apps include automatic update detection via the built-in Tauri updater.
 
 ### Premium (via Freemius)
 
@@ -173,7 +183,7 @@ For detailed compliance information, see the [Privacy section of our documentati
 wp rich-stats overview --period=30d
 
 # Top pages
-wp rich-stats top-pages --period=7d --limit=20
+wp rich-stats top_pages --period=7d --limit=20
 
 # Audience breakdown
 wp rich-stats audience --period=30d
@@ -223,9 +233,11 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/woocommerce` | WooCommerce funnel, revenue, and top-product data (premium; requires WooCommerce active) |
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
-| POST | `/track` | Ingest endpoint (used by the tracker on every page load) |
+| POST | `/ai/query` | AI chat query endpoint (premium) |
 | POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
 | GET/POST | `/user-settings` | Sync app site list across devices |
+
+**Note:** Page tracking uses WordPress AJAX (`admin-ajax.php?action=rsa_track`), not the REST API.
 
 All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismonth`, `lastmonth`.
 
@@ -233,11 +245,11 @@ All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismo
 
 ## PWA Web App (Premium)
 
-A progressive web app is included at `wp-content/plugins/rich-statistics/src-tauri/`.
+The web app is served from `https://rs-app.richardkentgates.com/app/` and can be installed from the plugin admin.
 
 1. Navigate to **Users → Your Profile** in WordPress
 2. Scroll to the **Rich Statistics App** section and click **Generate App Code**
-3. Open or install the web app (use the **Download App** button or visit `rs-app.richardkentgates.com`)
+3. Open or install the web app (use the **Download App** button in the admin, or visit `rs-app.richardkentgates.com`)
 4. Tap **Add Site**, enter your site URL, and enter the App Code when prompted
 5. Create an **Application Password** in the section below on the profile page
 6. Enter the username and Application Password in the app to complete the connection
