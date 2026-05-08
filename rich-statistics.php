@@ -24,7 +24,7 @@ if ( function_exists( 'rs_fs' ) ) {
 	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
-	define( 'RSA_VERSION',     '2.0.2' );
+	define( 'RSA_VERSION',     '2.1.0' );
 	define( 'RSA_FILE',        __FILE__ );
 	define( 'RSA_DIR',         plugin_dir_path( __FILE__ ) );
 	define( 'RSA_URL',         plugin_dir_url( __FILE__ ) );
