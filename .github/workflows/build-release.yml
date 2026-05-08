@@ -284,16 +284,15 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
-
       - name: Push .exe to app server
         run: |
           $EXE = Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
           $DEST = "rich-statistics-windows.exe"
-          scp -o StrictHostKeyChecking=no "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/$DEST"
+          $KEY_PATH = "$env:RUNNER_TEMP\deploy_key"
+          "${{ secrets.APP_SERVER_SSH_KEY }}" | Out-File -FilePath $KEY_PATH -Encoding ascii
+          icacls $KEY_PATH /inheritance:r /grant:r "$env:USERNAME:R"
+          scp -i "$KEY_PATH" -o StrictHostKeyChecking=no "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/$DEST"
+          Remove-Item $KEY_PATH
 
       - name: Update update.json with Windows platform
         run: |
