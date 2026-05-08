@@ -544,6 +544,7 @@ class RSA_Admin {
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
 			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
+			'rsa_ai_api_key'                => 'sanitize_text_field',
 		];
 
 		foreach ( $fields as $key => $sanitizer ) {
