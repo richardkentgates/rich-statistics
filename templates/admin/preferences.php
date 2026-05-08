@@ -67,20 +67,61 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 	<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
 	<!-- AI Integration (Premium) -->
 	<div class="rsa-card rsa-card-full">
-		<div class="rsa-card-header"><h2><?php esc_html_e( 'AI Integration', 'rich-statistics' ); ?></h2></div>
+		<div class="rsa-card-header">
+			<h2><?php esc_html_e( 'AI Integration', 'rich-statistics' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Privacy-first: only aggregate data is shared. Supports OpenAI or your own local LLM (Ollama, etc.).', 'rich-statistics' ); ?></p>
+		</div>
 		<table class="form-table">
 			<tr>
+				<th><label for="rsa_ai_provider"><?php esc_html_e( 'Provider', 'rich-statistics' ); ?></label></th>
+				<td>
+					<select id="rsa_ai_provider" name="rsa_ai_provider" onchange="toggleAiSettings()">
+						<option value="openai" <?php selected( get_option( 'rsa_ai_provider', 'openai' ), 'openai' ); ?>><?php esc_html_e( 'OpenAI (cloud)', 'rich-statistics' ); ?></option>
+						<option value="custom" <?php selected( get_option( 'rsa_ai_provider', 'openai' ), 'custom' ); ?>><?php esc_html_e( 'Bring Your Own (local/custom)', 'rich-statistics' ); ?></option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Choose OpenAI for cloud API, or "Bring Your Own" for local LLMs like Ollama.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+			<tr class="ai-openai-only">
 				<th><label for="rsa_ai_api_key"><?php esc_html_e( 'OpenAI API Key', 'rich-statistics' ); ?></label></th>
 				<td>
 					<input type="password" id="rsa_ai_api_key" name="rsa_ai_api_key"
 					       class="regular-text"
 					       value="<?php echo esc_attr( get_option( 'rsa_ai_api_key', '' ) ); ?>"
 					       placeholder="sk-...">
-					<p class="description"><?php esc_html_e( 'Enter your OpenAI API key for conversational analytics. Get one at platform.openai.com', 'rich-statistics' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Get your API key at platform.openai.com', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+			<tr class="ai-custom-only">
+				<th><label for="rsa_ai_endpoint"><?php esc_html_e( 'API Endpoint', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="url" id="rsa_ai_endpoint" name="rsa_ai_endpoint"
+					       class="regular-text"
+					       value="<?php echo esc_attr( get_option( 'rsa_ai_endpoint', 'http://localhost:11434/v1/chat/completions' ) ); ?>"
+					       placeholder="http://localhost:11434/v1/chat/completions">
+					<p class="description"><?php esc_html_e( 'For Ollama: http://localhost:11434/v1/chat/completions. No API key needed.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="rsa_ai_model"><?php esc_html_e( 'Model', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="text" id="rsa_ai_model" name="rsa_ai_model"
+					       class="regular-text"
+					       value="<?php echo esc_attr( get_option( 'rsa_ai_model', 'gpt-4o-mini' ) ); ?>"
+					       placeholder="gpt-4o-mini">
+					<p class="description"><?php esc_html_e( 'OpenAI: gpt-4o-mini. Ollama: llama3.2:3b, mistral:7b, etc.', 'rich-statistics' ); ?></p>
 				</td>
 			</tr>
 		</table>
 	</div>
+	<script>
+	function toggleAiSettings() {
+		var provider = document.getElementById( 'rsa_ai_provider' ).value;
+		document.querySelectorAll( '.ai-openai-only' ).forEach( el => el.style.display = provider === 'openai' ? '' : 'none' );
+		document.querySelectorAll( '.ai-custom-only' ).forEach( el => el.style.display = provider === 'custom' ? '' : 'none' );
+	}
+	toggleAiSettings();
+	</script>
 	<?php endif; ?>
 
 	<!-- Click Tracking (premium only) -->

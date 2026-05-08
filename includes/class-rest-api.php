@@ -607,7 +607,7 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// AI conversational endpoint
+	// AI conversational endpoint (BYOK + Local LLM support)
 	// ----------------------------------------------------------------
 
 	/**
@@ -621,68 +621,111 @@ class RSA_Rest_API {
 		$question = sanitize_text_field( $r->get_param( 'question' ) );
 		$period   = $r->get_param( 'period' ) ?: '30d';
 
-		$api_key = get_option( 'rsa_ai_api_key', '' );
-		if ( empty( $api_key ) ) {
+		// Get AI configuration
+		$provider = get_option( 'rsa_ai_provider', 'openai' ); // 'openai' or 'custom'
+		$api_key  = get_option( 'rsa_ai_api_key', '' );
+		$endpoint = get_option( 'rsa_ai_endpoint', 'https://api.openai.com/v1/chat/completions' );
+		$model    = get_option( 'rsa_ai_model', 'gpt-4o-mini' );
+
+		// For custom/local endpoints, key might not be required (local Ollama)
+		if ( $provider === 'openai' && empty( $api_key ) ) {
 			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI API key not configured' ], 400 );
 		}
 
-		// Gather relevant data based on question keywords
+		// Gather relevant data (privacy: only aggregate data, no PII)
 		$data = [];
 		$question_lower = strtolower( $question );
 
 		if ( str_contains( $question_lower, 'overview' ) || str_contains( $question_lower, 'summary' ) || str_contains( $question_lower, 'total' ) ) {
-			$data['overview'] = RSA_Analytics::get_overview( $period );
+			$data['overview'] = self::strip_pii( RSA_Analytics::get_overview( $period ) );
 		}
 		if ( str_contains( $question_lower, 'page' ) || str_contains( $question_lower, 'top' ) ) {
-			$data['pages'] = RSA_Analytics::get_top_pages( $period, 10 );
+			$data['pages'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_top_pages( $period, 10 ) );
 		}
 		if ( str_contains( $question_lower, 'visitor' ) || str_contains( $question_lower, 'audience' ) || str_contains( $question_lower, 'browser' ) || str_contains( $question_lower, 'os' ) ) {
-			$data['audience'] = RSA_Analytics::get_audience( $period );
+			$data['audience'] = self::strip_pii( RSA_Analytics::get_audience( $period ) );
 		}
 		if ( str_contains( $question_lower, 'refer' ) || str_contains( $question_lower, 'source' ) ) {
-			$data['referrers'] = RSA_Analytics::get_referrers( $period, 10 );
+			$data['referrers'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_referrers( $period, 10 ) );
 		}
 		if ( str_contains( $question_lower, 'campaign' ) || str_contains( $question_lower, 'utm' ) ) {
-			$data['campaigns'] = RSA_Analytics::get_campaigns( $period, 10 );
+			$data['campaigns'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_campaigns( $period, 10 ) );
 		}
 		if ( str_contains( $question_lower, 'woocommerce' ) || str_contains( $question_lower, 'revenue' ) || str_contains( $question_lower, 'product' ) ) {
-			$data['woocommerce'] = RSA_Analytics::get_woocommerce( $period, 10 );
+			$data['woocommerce'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_woocommerce( $period, 10 ) );
 		}
 		if ( str_contains( $question_lower, 'flow' ) || str_contains( $question_lower, 'journey' ) || str_contains( $question_lower, 'entry' ) ) {
-			$data['user_flow'] = RSA_Analytics::get_user_flow( $period );
+			$data['user_flow'] = self::strip_pii( RSA_Analytics::get_user_flow( $period ) );
 		}
 
-		// Build context for AI
-		$context = "You are a analytics assistant. Answer the user's question based on this data:\n";
-		$context .= wp_json_encode( $data, JSON_PRETTY_PRINT ) . "\n\n";
-		$context .= "Question: " . $question . "\n\n";
-		$context .= "Provide a concise, conversational answer. Include specific numbers from the data.";
+		// Build privacy-safe context for AI
+		$system_prompt = "You are a privacy-first analytics assistant. " .
+			"Answer the user's question based on the provided aggregate data only. " .
+			"Never invent numbers. Be concise and conversational.\n\n" .
+			"Data:\n" . wp_json_encode( $data, JSON_PRETTY_PRINT );
 
-		// Call OpenAI API
-		$response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', [
-			'headers' => [
-				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type'  => 'application/json',
+		// Build request body (OpenAI-compatible format for local LLMs)
+		$body = [
+			'model'    => $model,
+			'messages' => [
+				[ 'role' => 'system', 'content' => $system_prompt ],
+				[ 'role' => 'user', 'content' => $question ],
 			],
-			'body'    => wp_json_encode( [
-				'model'    => 'gpt-3.5-turbo',
-				'messages' => [
-					[ 'role' => 'system', 'content' => $context ],
-					[ 'role' => 'user', 'content' => $question ],
-				],
-				'max_tokens' => 500,
-			] ),
+			'max_tokens' => 500,
+		];
+
+		// Add API key header only if provided (local LLMs don't need it)
+		$headers = [ 'Content-Type' => 'application/json' ];
+		if ( ! empty( $api_key ) ) {
+			$headers['Authorization'] = 'Bearer ' . $api_key;
+		}
+
+		// Call AI API
+		$response = wp_remote_post( $endpoint, [
+			'headers' => $headers,
+			'body'    => wp_json_encode( $body ),
 			'timeout' => 30,
 		] );
 
 		if ( is_wp_error( $response ) ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed' ], 500 );
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed: ' . $response->get_error_message() ], 500 );
 		}
 
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$status = wp_remote_retrieve_response_code( $response );
+		if ( $status !== 200 ) {
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI API error: HTTP ' . $status ], 500 );
+		}
+
+		$body   = json_decode( wp_remote_retrieve_body( $response ), true );
 		$answer = $body['choices'][0]['message']['content'] ?? 'Unable to generate response.';
 
-		return self::ok( [ 'question' => $question, 'answer' => $answer, 'data' => $data ] );
+		return self::ok( [
+			'question'  => $question,
+			'answer'    => $answer,
+			'provider'  => $provider,
+			'model'     => $model,
+		] );
+	}
+
+	/**
+	 * Strip PII from data before sending to AI
+	 */
+	private static function strip_pii( array $data ): array {
+		array_walk_recursive( $data, function ( &$value, $key ) {
+			// Remove any email-like strings
+			if ( is_string( $value ) && filter_var( $value, FILTER_VALIDATE_EMAIL ) ) {
+				$value = '[email-redacted]';
+			}
+			// Truncate session IDs (first 8 chars only)
+			if ( is_string( $value ) && strlen( $value ) === 32 && ctype_xdigit( $value ) ) {
+				$value = substr( $value, 0, 8 ) . '...';
+			}
+			// Remove IP-like strings
+			if ( is_string( $value ) && preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $value ) ) {
+				$value = '[ip-redacted]';
+			}
+		} );
+		return $data;
 	}
 
 	// ----------------------------------------------------------------
