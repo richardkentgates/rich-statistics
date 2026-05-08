@@ -17,6 +17,11 @@
  */
 defined( 'ABSPATH' ) || exit;
 
+// Ensure admin class is loaded for user_can_access_app()
+if ( ! class_exists( 'RSA_Admin' ) && file_exists( __DIR__ . '/class-admin.php' ) ) {
+	require_once __DIR__ . '/class-admin.php';
+}
+
 class RSA_Rest_API {
 
 	const NS = 'rsa/v1';
