@@ -22,6 +22,13 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 		if ( $admin_role && ! isset( $admin_role->capabilities['rsa_manage_statistics'] ) ) {
 			$admin_role->add_cap( 'rsa_manage_statistics' );
 		}
+
+		// Add rsa_analyst to allowed roles
+		$allowed = get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+		if ( ! in_array( 'rsa_analyst', $allowed, true ) ) {
+			$allowed[] = 'rsa_analyst';
+			update_option( 'rsa_allowed_roles', $allowed );
+		}
 	}
 
 	public function setUp(): void {
