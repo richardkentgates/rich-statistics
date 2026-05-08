@@ -67,7 +67,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 	require_once $wp_tests_dir . '/includes/functions.php';
 
 	// Load the plugin before WordPress finishes loading
-	add_filter( 'muplugins_loaded', function () {
+	tests_add_filter( 'muplugins_loaded', function () {
 		// Load only the core classes needed by integration tests.
 		// Omit class-admin.php and class-email.php — they use rs_fs()->get_upgrade_url()
 		// and other premium methods not stubbed in tests, and are not exercised by
