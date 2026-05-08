@@ -283,19 +283,23 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
-
       - name: Push .exe to app server
         run: |
           $EXE = Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
-          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/rich-statistics-windows.exe"
+          $KEY_FILE = "$env:USERPROFILE\.ssh\id_rsa"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
+          "${{ secrets.APP_SERVER_SSH_KEY }}" | Out-File -FilePath $KEY_FILE -Encoding ascii
+          icacls $KEY_FILE /inheritance:r /grant:r "$env:USERNAME:R"
+          scp -i "$KEY_FILE" -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/rich-statistics-windows.exe"
+          Remove-Item $KEY_FILE
 
       - name: Update update.json with Windows platform
         run: |
-          ssh -o StrictHostKeyChecking=no -o BatchMode=yes richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+          $KEY_FILE = "$env:USERPROFILE\.ssh\id_rsa"
+          "${{ secrets.APP_SERVER_SSH_KEY }}" | Out-File -FilePath $KEY_FILE -Encoding ascii
+          icacls $KEY_FILE /inheritance:r /grant:r "$env:USERNAME:R"
+          ssh -i "$KEY_FILE" -o StrictHostKeyChecking=no -o BatchMode=yes richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+          Remove-Item $KEY_FILE
 
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
