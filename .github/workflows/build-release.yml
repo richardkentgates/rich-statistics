@@ -295,6 +295,25 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rich-statistics-windows
+
+      - name: Push .exe to app server
+        run: |
+          EXE=$(ls *.exe | head -1)
+          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/rich-statistics-windows.exe"
+
+      - name: Update update.json with Windows platform
+        run: |
+          ssh -o StrictHostKeyChecking=no -o BatchMode=yes richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+
       - name: Sync docs/app/ via webhook
         run: |
           curl -fsS -X POST \
