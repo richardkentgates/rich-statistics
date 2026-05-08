@@ -138,6 +138,17 @@ class RSA_Rest_API {
 
 		$auth = [ __CLASS__, 'check_auth' ];
 
+		// AI conversational endpoint (Premium)
+		register_rest_route( self::NS, '/ai/query', [
+			'methods'             => 'POST',
+			'callback'            => [ __CLASS__, 'ai_query' ],
+			'permission_callback' => $auth,
+			'args'                => [
+				'question' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
+				'period'   => $read_args['period'],
+			],
+		] );
+
 		register_rest_route( self::NS, '/overview',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_overview'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
 		register_rest_route( self::NS, '/pages',     [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_pages'     ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
 			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
@@ -596,10 +607,90 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// Response helper
+	// AI conversational endpoint
+	// ----------------------------------------------------------------
+
+	/**
+	 * @fs_premium_only
+	 */
+	public static function ai_query( WP_REST_Request $r ): WP_REST_Response {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'Premium feature' ], 403 );
+		}
+
+		$question = sanitize_text_field( $r->get_param( 'question' ) );
+		$period   = $r->get_param( 'period' ) ?: '30d';
+
+		$api_key = get_option( 'rsa_ai_api_key', '' );
+		if ( empty( $api_key ) ) {
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI API key not configured' ], 400 );
+		}
+
+		// Gather relevant data based on question keywords
+		$data = [];
+		$question_lower = strtolower( $question );
+
+		if ( str_contains( $question_lower, 'overview' ) || str_contains( $question_lower, 'summary' ) || str_contains( $question_lower, 'total' ) ) {
+			$data['overview'] = RSA_Analytics::get_overview( $period );
+		}
+		if ( str_contains( $question_lower, 'page' ) || str_contains( $question_lower, 'top' ) ) {
+			$data['pages'] = RSA_Analytics::get_top_pages( $period, 10 );
+		}
+		if ( str_contains( $question_lower, 'visitor' ) || str_contains( $question_lower, 'audience' ) || str_contains( $question_lower, 'browser' ) || str_contains( $question_lower, 'os' ) ) {
+			$data['audience'] = RSA_Analytics::get_audience( $period );
+		}
+		if ( str_contains( $question_lower, 'refer' ) || str_contains( $question_lower, 'source' ) ) {
+			$data['referrers'] = RSA_Analytics::get_referrers( $period, 10 );
+		}
+		if ( str_contains( $question_lower, 'campaign' ) || str_contains( $question_lower, 'utm' ) ) {
+			$data['campaigns'] = RSA_Analytics::get_campaigns( $period, 10 );
+		}
+		if ( str_contains( $question_lower, 'woocommerce' ) || str_contains( $question_lower, 'revenue' ) || str_contains( $question_lower, 'product' ) ) {
+			$data['woocommerce'] = RSA_Analytics::get_woocommerce( $period, 10 );
+		}
+		if ( str_contains( $question_lower, 'flow' ) || str_contains( $question_lower, 'journey' ) || str_contains( $question_lower, 'entry' ) ) {
+			$data['user_flow'] = RSA_Analytics::get_user_flow( $period );
+		}
+
+		// Build context for AI
+		$context = "You are a analytics assistant. Answer the user's question based on this data:\n";
+		$context .= wp_json_encode( $data, JSON_PRETTY_PRINT ) . "\n\n";
+		$context .= "Question: " . $question . "\n\n";
+		$context .= "Provide a concise, conversational answer. Include specific numbers from the data.";
+
+		// Call OpenAI API
+		$response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', [
+			'headers' => [
+				'Authorization' => 'Bearer ' . $api_key,
+				'Content-Type'  => 'application/json',
+			],
+			'body'    => wp_json_encode( [
+				'model'    => 'gpt-3.5-turbo',
+				'messages' => [
+					[ 'role' => 'system', 'content' => $context ],
+					[ 'role' => 'user', 'content' => $question ],
+				],
+				'max_tokens' => 500,
+			] ),
+			'timeout' => 30,
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed' ], 500 );
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$answer = $body['choices'][0]['message']['content'] ?? 'Unable to generate response.';
+
+		return self::ok( [ 'question' => $question, 'answer' => $answer, 'data' => $data ] );
+	}
+
+	// ----------------------------------------------------------------
+	// Private helpers
 	// ----------------------------------------------------------------
 
 	private static function ok( mixed $data ): WP_REST_Response {
 		return new WP_REST_Response( [ 'ok' => true, 'data' => $data ], 200 );
 	}
+}
 }

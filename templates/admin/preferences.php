@@ -64,6 +64,25 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 	</div>
 	<?php endif; ?>
 
+	<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
+	<!-- AI Integration (Premium) -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'AI Integration', 'rich-statistics' ); ?></h2></div>
+		<table class="form-table">
+			<tr>
+				<th><label for="rsa_ai_api_key"><?php esc_html_e( 'OpenAI API Key', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="password" id="rsa_ai_api_key" name="rsa_ai_api_key"
+					       class="regular-text"
+					       value="<?php echo esc_attr( get_option( 'rsa_ai_api_key', '' ) ); ?>"
+					       placeholder="sk-...">
+					<p class="description"><?php esc_html_e( 'Enter your OpenAI API key for conversational analytics. Get one at platform.openai.com', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<?php endif; ?>
+
 	<!-- Click Tracking (premium only) -->
 	<?php if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) : ?>
 	<div class="rsa-card rsa-card-full">
