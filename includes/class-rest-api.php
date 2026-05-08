@@ -253,13 +253,22 @@ class RSA_Rest_API {
 	// ----------------------------------------------------------------
 
 	public static function check_auth( WP_REST_Request $request ): bool|WP_Error {
-		if ( ! is_user_logged_in() ) {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			return new WP_Error(
-				'rest_not_logged_in',
-				__( 'You must be logged in to access Rich Statistics data.', 'rich-statistics' ),
-				[ 'status' => 401 ]
+				'rest_forbidden',
+				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
+				[ 'status' => 403 ]
 			);
 		}
+		if ( ! RSA_Admin::user_can_access_app() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
+				[ 'status' => 403 ]
+			);
+		}
+		return true;
+	}
 		if ( ! RSA_Admin::user_can_access_app() ) {
 			return new WP_Error(
 				'rest_forbidden',
