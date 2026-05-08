@@ -248,6 +248,7 @@ class RSA_Admin {
 			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
 		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['ai-chat']      = [ 'title' => __( 'AI Chat',       'rich-statistics' ), 'label' => __( '🤖 AI Chat',     'rich-statistics' ), 'cap' => 'manage_options' ];
 		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'manage_options' ];
 		return $pages;
 	}
