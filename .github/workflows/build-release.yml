@@ -290,7 +290,7 @@ jobs:
           $DEST = "rich-statistics-windows.exe"
           $KEY_PATH = "$env:RUNNER_TEMP\deploy_key"
           "${{ secrets.APP_SERVER_SSH_KEY }}" | Out-File -FilePath $KEY_PATH -Encoding ascii
-          icacls $KEY_PATH /inheritance:r /grant:r "$env:USERNAME:R"
+          icacls $KEY_PATH /inheritance:r /grant:r "$(whoami):(R)"
           scp -i "$KEY_PATH" -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/$DEST"
           Remove-Item $KEY_PATH
 
