@@ -397,6 +397,7 @@ class RSA_Admin {
 	public static function page_preferences():      void { self::render( 'preferences' ); }
 	public static function page_maintenance():       void { self::render( 'maintenance' ); }
 	public static function page_export():           void { self::render( 'export' ); }
+	public static function page_ai_chat():          void { self::render( 'ai-chat' ); }
 	public static function page_woocommerce():      void { self::render( 'woocommerce' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
