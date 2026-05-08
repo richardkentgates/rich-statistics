@@ -2374,6 +2374,17 @@
 				'</div>' +
 			'</div>';
 
+		var testSection =
+			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #feca57">' +
+				'<h3 style="color:#feca57">Test Version — Staging Environment</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The test version mirrors production code deployed for integration testing. Data here may include test entries.</p>' +
+				'<div class="rsa-install-method">' +
+					'<div class="rsa-install-method-label">Test Web App</div>' +
+					'<p style="margin-bottom:8px"><a href="https://rs-test.richardkentgates.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#feca57;color:#1a1a2e;border-radius:6px;text-decoration:none;font-size:14px">Open Test App</a></p>' +
+				'</div>' +
+				'<p class="rsa-field-hint" style="margin-top:8px">Test environment connects to: <code><WP_TEST_SERVER_IP></code> (staging WordPress)</p>' +
+			'</div>';
+
 		var devSection =
 			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #4a90b8">' +
 				'<h3>Dev Version — Pre-Release Testing</h3>' +
@@ -2424,6 +2435,7 @@
 			'</div>' +
 			linuxSection +
 			windowsSection +
+			testSection +
 			devSection +
 			compatSection;
 

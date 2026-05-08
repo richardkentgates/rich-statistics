@@ -163,6 +163,28 @@ jobs:
           retention-days: 1
 
   # ---------------------------------------------------------------------------
+  # Build and deploy web app to test endpoint (from main branch).
+  # This is a separate staging environment for integration testing.
+  # Requires secret: DEPLOY_WEBHOOK_TOKEN_TEST
+  # ---------------------------------------------------------------------------
+  deploy-web-test:
+    name: Deploy web app to test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to test endpoint
+        run: |
+          curl -fsS -X POST \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_TEST }}" \
+            https://rs-app.richardkentgates.com/_deploy-test/
+
+  # ---------------------------------------------------------------------------
   # Run tests on dev branch
   # ---------------------------------------------------------------------------
   test:
