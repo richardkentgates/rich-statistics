@@ -2326,24 +2326,21 @@
 	// Install
 	// -----------------------------------------------------------------------
 	function renderInstall( container ) {
-		var ua         = navigator.userAgent || '';
-		var platform   = ( navigator.platform || '' ).toLowerCase();
-		var isLinux    = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
-		var isWindows  = platform.indexOf( 'win' ) !== -1 || ua.indexOf( 'windows' ) !== -1;
-		var isIos      = /iphone|ipad|ipod/i.test( ua );
-		var isAndroid  = /android/i.test( ua );
-		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|edg|android/i.test( ua );
-		var isFirefox  = /firefox|fxios/i.test( ua );
-		var isChrome   = /chrome|crios/i.test( ua ) && ! /edg/i.test( ua );
-		var isEdge     = /edg\//i.test( ua );
-		var isSamsung  = /samsungbrowser/i.test( ua );
-		var isStandalone = ( 'standalone' in window.navigator && window.navigator.standalone ) ||
-		                   window.matchMedia( '(display-mode: standalone)' ).matches;
-		var isTauriApp = isTauri();
-
 		var BASE_DL = 'https://rs-app.richardkentgates.com/desktop';
 
-		// ── Linux desktop section ─────────────────────────────────────────
+		var pwaSection =
+			'<div class="rsa-install-card">' +
+				'<div class="rsa-install-card-body">' +
+					'<h3>Install as Desktop App</h3>' +
+					'<p class="rsa-field-hint">Click the button to add Rich Statistics to your applications — it will open in its own window without browser tabs or address bar.</p>' +
+					'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px" hidden>' +
+						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
+						' Install App' +
+					'</button>' +
+					'<p class="rsa-field-hint rsa-install-btn-pending" style="margin-top:8px">Looking for install prompt\u2026 If this message persists, the app may already be installed or your browser does not support PWA install.</p>' +
+				'</div>' +
+			'</div>';
+
 		var linuxSection =
 			'<div class="rsa-chart-card" style="margin-top:20px">' +
 				'<h3>Linux Desktop App</h3>' +
@@ -2365,79 +2362,30 @@
 				'</div>' +
 			'</div>';
 
-		// ── Windows desktop section ──────────────────────────────
-	var windowsSection =
-		'<div class="rsa-chart-card" style="margin-top:20px">' +
-			'<h3>Windows Desktop App</h3>' +
-			'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Windows desktop app is a native Tauri application (.exe) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
-
-			'<div class="rsa-install-method">' +
-				'<div class="rsa-install-method-label">Download Installer</div>' +
-				'<p style="margin-bottom:8px"><a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="text-decoration:none">Download rich-statistics-windows.exe</a></p>' +
-				'<pre class="rsa-install-code">1. Run the downloaded .exe installer
-2. Follow the NSIS setup wizard
-3. The app will check for updates automatically</pre>' +
-			'</div>' +
-		'</div>';	// macOS Safari — no beforeinstallprompt, but File > Add to Dock in recent macOS
-			pwaSection =
-				'<div class="rsa-install-card">' +
-					'<div class="rsa-install-card-icon rsa-install-icon-safari">&#63743;</div>' +
-					'<div class="rsa-install-card-body">' +
-						'<h3>Install as Desktop App — Safari</h3>' +
-						'<ol class="rsa-install-steps">' +
-							'<li>In the <strong>File</strong> menu, choose <strong>"Add to Dock…"</strong> (macOS Sonoma+).</li>' +
-							'<li>The app will open in its own window without browser chrome.</li>' +
-						'</ol>' +
-						'<p class="rsa-field-hint">On older macOS, use Chrome or Edge for the install button below.</p>' +
-					'</div>' +
-				'</div>';
-		} else if ( isFirefox ) {
-			pwaSection =
-				'<div class="rsa-install-card rsa-install-card--warn">' +
-					'<div class="rsa-install-card-body">' +
-						'<h3>Install as Desktop App</h3>' +
-						'<p class="rsa-field-hint">Firefox does not support installing web apps. Open this page in <strong>Chrome</strong> or <strong>Edge</strong> to use the install button.</p>' +
-					'</div>' +
-				'</div>';
-		} else {
-			// Chrome / Edge / Chromium-based — standard beforeinstallprompt flow
-			pwaSection =
-				'<div class="rsa-install-card">' +
-					'<div class="rsa-install-card-body">' +
-						'<h3>Install as Desktop App</h3>' +
-						'<p class="rsa-field-hint">Click the button to add Rich Statistics to your applications — it will open in its own window without browser tabs or address bar.</p>' +
-						'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px" hidden>' +
-							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
-							' Install App' +
-						'</button>' +
-						'<p class="rsa-field-hint rsa-install-btn-pending" style="margin-top:8px">Looking for install prompt\u2026 If this message persists, the app may already be installed or your browser does not support PWA install.</p>' +
-					'</div>' +
-				'</div>';
-		}
-
-		// ── Linux desktop section ─────────────────────────────────────────
-		var linuxSection =
+		var windowsSection =
 			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Linux Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Linux desktop app is a native Tauri application (.deb) for amd64 and arm64 Debian/Ubuntu systems. It wraps the same analytics interface and updates automatically via your system package manager.</p>' +
+				'<h3>Windows Desktop App</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Windows desktop app is a native Tauri application (.exe) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
 
 				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://rs-app.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
-				'</div>' +
-
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
-					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
-					'</div>' +
-					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
+					'<div class="rsa-install-method-label">Download Installer</div>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-btn rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="text-decoration:none;display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;font-size:14px">Download rich-statistics-windows.exe</a></p>' +
+					'<pre class="rsa-install-code">1. Download the .exe installer above\n2. Run the installer and follow the NSIS setup wizard\n3. The app will check for updates automatically</pre>' +
 				'</div>' +
 			'</div>';
 
-		// ── PWA compatibility reference card ─────────────────────────────
+		var macosSection =
+			'<div class="rsa-chart-card" style="margin-top:20px">' +
+				'<h3>macOS Desktop App</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The macOS desktop app is a native Tauri application (.dmg/.app) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
+
+				'<div class="rsa-install-method">' +
+					'<div class="rsa-install-method-label">Download Installer</div>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-btn rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-macos.dmg" style="text-decoration:none;display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;font-size:14px">Download rich-statistics-macos.dmg</a></p>' +
+					'<pre class="rsa-install-code">1. Download the .dmg installer above\n2. Open the .dmg and drag the app to Applications\n3. The app will check for updates automatically</pre>' +
+				'</div>' +
+			'</div>';
+
 		var compatSection =
 			'<div class="rsa-chart-card" style="margin-top:20px">' +
 				'<h3>Browser &amp; Platform Support</h3>' +
@@ -2451,6 +2399,7 @@
 						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
 						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
 						'<tr><td>Windows 10/11</td><td>Download .exe installer above</td></tr>' +
+						'<tr><td>macOS</td><td>Download .dmg installer above</td></tr>' +
 					'</tbody>' +
 				'</table>' +
 			'</div>';
@@ -2462,21 +2411,15 @@
 			'</div>' +
 			linuxSection +
 			windowsSection +
+			macosSection +
 			compatSection;
 
-		// Sync install button visibility with the deferred prompt state
 		if ( _installPrompt ) {
 			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
 				btn.hidden = false;
 			} );
 			container.querySelectorAll( '.rsa-install-btn-pending' ).forEach( function ( el ) {
 				el.hidden = true;
-			} );
-		} else if ( ! isIos && ! isSafari && ! isFirefox && ! isStandalone && ! isTauriApp ) {
-			// Not yet resolved — show pending note (the global beforeinstallprompt
-			// listener will un-hide .rsa-install-btn when the browser fires it)
-			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
-				btn.hidden = true;
 			} );
 		}
 
