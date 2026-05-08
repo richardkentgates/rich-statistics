@@ -736,4 +736,3 @@ class RSA_Rest_API {
 		return new WP_REST_Response( [ 'ok' => true, 'data' => $data ], 200 );
 	}
 }
-}
