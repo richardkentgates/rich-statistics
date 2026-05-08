@@ -79,8 +79,9 @@ rich-statistics/
 │   ├── data-settings.php
 │   └── network-settings.php
 ├── templates/email/           HTML email digest template
-├── src-tauri/                    Installable PWA (vanilla JS, no build step)
+├── src-tauri/               Tauri 2 desktop app wrapper (Rust) — wraps docs/app/
 ├── docs/                      GitHub Pages site + wiki (not shipped in dist ZIP)
+│   └── app/                  PWA frontend (vanilla JS, no build step)
 ├── tests/                     PHPUnit unit + integration tests
 ├── cli/                       WP-CLI command class
 ├── languages/                 POT file for i18n

@@ -243,11 +243,11 @@ All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismo
 
 ## PWA Web App (Premium)
 
-A progressive web app is included at `wp-content/plugins/rich-statistics/src-tauri/`.
+The web app is served from `https://rs-app.richardkentgates.com/app/` and can be installed from the plugin admin.
 
 1. Navigate to **Users → Your Profile** in WordPress
 2. Scroll to the **Rich Statistics App** section and click **Generate App Code**
-3. Open or install the web app (use the **Download App** button or visit `rs-app.richardkentgates.com`)
+3. Open or install the web app (use the **Download App** button in the admin, or visit `rs-app.richardkentgates.com`)
 4. Tap **Add Site**, enter your site URL, and enter the App Code when prompted
 5. Create an **Application Password** in the section below on the profile page
 6. Enter the username and Application Password in the app to complete the connection
