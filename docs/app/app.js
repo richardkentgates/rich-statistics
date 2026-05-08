@@ -2374,6 +2374,32 @@
 				'</div>' +
 			'</div>';
 
+		var devSection =
+			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #4a90b8">' +
+				'<h3>Dev Version — Pre-Release Testing</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The dev version is built from the <code>develop</code> branch and may contain untested features. Use for testing before production release.</p>' +
+				'<div class="rsa-install-method">' +
+					'<div class="rsa-install-method-label">Dev Web App</div>' +
+					'<p style="margin-bottom:8px"><a href="https://rs-dev.richardkentgates.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Open Dev App</a></p>' +
+				'</div>' +
+				'<div class="rsa-install-method" style="margin-top:16px">' +
+					'<div class="rsa-install-method-label">Dev Linux — via APT</div>' +
+					'<pre class="rsa-install-code">curl -fsSL https://rs-dev.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics-dev.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics-dev.gpg] \\\n    https://rs-dev.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics-dev.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+				'</div>' +
+				'<div class="rsa-install-method" style="margin-top:12px">' +
+					'<div class="rsa-install-method-label">Dev Linux — direct .deb</div>' +
+					'<div style="margin-top:8px">' +
+						'<a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px">x86-64 .deb</a>' +
+						'<a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px;margin-left:8px">ARM64 .deb</a>' +
+					'</div>' +
+				'</div>' +
+				'<div class="rsa-install-method" style="margin-top:12px">' +
+					'<div class="rsa-install-method-label">Dev Windows</div>' +
+					'<p style="margin-bottom:8px"><a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-windows.exe" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Dev Windows .exe</a></p>' +
+				'</div>' +
+				'<p class="rsa-field-hint" style="margin-top:12px">To revert to production: run the standard install commands above, or <code>sudo apt remove rich-statistics &amp;&amp; sudo apt autoremove</code> then reinstall.</p>' +
+			'</div>';
+
 		var compatSection =
 			'<div class="rsa-chart-card" style="margin-top:20px">' +
 				'<h3>Browser &amp; Platform Support</h3>' +
@@ -2398,6 +2424,7 @@
 			'</div>' +
 			linuxSection +
 			windowsSection +
+			devSection +
 			compatSection;
 
 		if ( _installPrompt ) {
