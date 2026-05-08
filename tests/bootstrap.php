@@ -101,6 +101,10 @@ if ( is_dir( $wp_tests_dir ) ) {
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
 	return; // WP bootstrap takes over
+} // end of if ( is_dir( $wp_tests_dir ) )
+
+	require_once $wp_tests_dir . '/includes/bootstrap.php';
+	return; // WP bootstrap takes over
 }
 
 // -----------------------------------------------------------------------
