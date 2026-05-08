@@ -285,15 +285,6 @@ class RSA_Rest_API {
 		}
 		return true;
 	}
-		if ( ! RSA_Admin::user_can_access_app() ) {
-			return new WP_Error(
-				'rest_forbidden',
-				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
-				[ 'status' => 403 ]
-			);
-		}
-		return true;
-	}
 
 	// ----------------------------------------------------------------
 	// Plugin info (public)

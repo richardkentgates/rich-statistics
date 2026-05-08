@@ -667,7 +667,7 @@ class RSA_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) ) {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 			if ( function_exists( 'rs_fs' ) ) {
 				?>
 				<tr class="rsa-webapp-row">
