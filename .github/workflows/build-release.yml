@@ -255,10 +255,9 @@ jobs:
       - name: Stamp version
         run: |
           $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "")
-          $configPath = "src-tauri/tauri.conf.json"
-          $json = Get-Content $configPath -Raw
-          $json = $json -replace '"version": "[^"]*"', "`"version`": `"$VERSION`""
-          Set-Content -Path $configPath -Value $json -NoNewline
+          $content = [IO.File]::ReadAllText("src-tauri\tauri.conf.json")
+          $content = $content -replace '( "version": )"[^"]*"', "`$1`"$VERSION`""
+          [IO.File]::WriteAllText("src-tauri\tauri.conf.json", $content)
           (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$VERSION`"" | Set-Content src-tauri/Cargo.toml
 
       - name: Install Rust
