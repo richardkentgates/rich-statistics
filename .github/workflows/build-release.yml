@@ -288,6 +288,31 @@ jobs:
   # update.json directly on the app server.
   # Requires secrets: DEPLOY_WEBHOOK_TOKEN, APP_SERVER_SSH_KEY
   # ---------------------------------------------------------------------------
+  push-windows-to-server:
+    name: Push Windows .exe to server
+    runs-on: ubuntu-latest
+    needs: [build-desktop-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rich-statistics-windows
+
+      - name: Push .exe to app server
+        run: |
+          EXE=$(ls *.exe | head -1)
+          scp -o StrictHostKeyChecking=no "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/rich-statistics-windows.exe"
+
+      - name: Update update.json with Windows platform
+        run: |
+          ssh -o StrictHostKeyChecking=no -o BatchMode=yes <SSH_USER>@<PWA_SERVER_IP> "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+
   ping-deploy:
     name: Trigger web app update
     runs-on: ubuntu-latest
