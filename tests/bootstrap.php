@@ -67,38 +67,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 	require_once $wp_tests_dir . '/includes/functions.php';
 
 	// Load the plugin before WordPress finishes loading
-	tests_add_filter( 'muplugins_loaded', function () {
-		// Load only the core classes needed by integration tests.
-		// Omit class-admin.php and class-email.php — they use rs_fs()->get_upgrade_url()
-		// and other premium methods not stubbed in tests, and are not exercised by
-		// the integration test suite.
-		$classes = [
-			'class-db',
-			'class-bot-detection',
-			'class-tracker',
-			'class-analytics',
-			'class-click-tracking',
-			'class-heatmap',
-			'class-rest-api',
-		];
-		foreach ( $classes as $cls ) {
-			$f = RSA_DIR . 'includes/' . $cls . '.php';
-			if ( file_exists( $f ) ) {
-				require_once $f;
-			}
-		}
-
-		// Boot the REST routes so 'rest_api_init' hook is wired up before tests fire it.
-		if ( class_exists( 'RSA_Rest_API' ) ) {
-			RSA_Rest_API::init();
-		}
-
-		// Ensure DB tables exist for all integration tests (AnalyticsTest, RestApiTest
-		// don't call RSA_DB::install() in their setUp, so we do it here once).
-		if ( class_exists( 'RSA_DB' ) ) {
-			RSA_DB::install();
-		}
-	} ); // end anonymous function
+	tests_add_filter( 'muplugins_loaded', 'rsa_load_plugin_for_tests' );
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
 	return; // WP bootstrap takes over
@@ -143,4 +112,41 @@ if ( ! function_exists( 'absint' ) ) {
 require_once RSA_DIR . 'includes/class-bot-detection.php';
 require_once RSA_DIR . 'includes/class-db.php';
 require_once RSA_DIR . 'includes/class-tracker.php';
- 
+
+// -----------------------------------------------------------------------
+// Helper function for WordPress integration tests
+// -----------------------------------------------------------------------
+if ( ! function_exists( 'rsa_load_plugin_for_tests' ) ) {
+	function rsa_load_plugin_for_tests() {
+		// Load only the core classes needed by integration tests.
+		// Omit class-admin.php and class-email.php — they use rs_fs()->get_upgrade_url()
+		// and other premium methods not stubbed in tests, and are not exercised by
+		// the integration test suite.
+		$classes = [
+			'class-db',
+			'class-bot-detection',
+			'class-tracker',
+			'class-analytics',
+			'class-click-tracking',
+			'class-heatmap',
+			'class-rest-api',
+		];
+		foreach ( $classes as $cls ) {
+			$f = RSA_DIR . 'includes/' . $cls . '.php';
+			if ( file_exists( $f ) ) {
+				require_once $f;
+			}
+		}
+
+		// Boot the REST routes so 'rest_api_init' hook is wired up before tests fire it.
+		if ( class_exists( 'RSA_Rest_API' ) ) {
+			RSA_Rest_API::init();
+		}
+
+		// Ensure DB tables exist for all integration tests (AnalyticsTest, RestApiTest
+		// Don't call RSA_DB::install() in their setUp, so we do it here once.
+		if ( class_exists( 'RSA_DB' ) ) {
+			RSA_DB::install();
+		}
+	}
+}
