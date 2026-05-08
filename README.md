@@ -17,7 +17,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)](https://dev.mysql.com)
 [![MariaDB](https://img.shields.io/badge/MariaDB-10.3%2B-C0765A?logo=mariadb&logoColor=white)](https://mariadb.org)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES5%20vanilla-F7DF1E?logo=javascript&logoColor=black)](assets/js/)
-[![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](webapp/)
+[![Tauri](https://img.shields.io/badge/desktop-Tauri%202-FFC131?logo=tauri&logoColor=white)](src-tauri/)
 [![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Composer](https://img.shields.io/badge/Composer-managed-885630?logo=composer&logoColor=white)](composer.json)
 [![PHPUnit](https://img.shields.io/badge/tested%20with-PHPUnit-366488)](tests/)
@@ -233,7 +233,7 @@ All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismo
 
 ## PWA Web App (Premium)
 
-A progressive web app is included at `wp-content/plugins/rich-statistics/webapp/`.
+A progressive web app is included at `wp-content/plugins/rich-statistics/src-tauri/`.
 
 1. Navigate to **Users → Your Profile** in WordPress
 2. Scroll to the **Rich Statistics App** section and click **Generate App Code**
