@@ -66,6 +66,34 @@ if ( is_dir( $wp_tests_dir ) ) {
 	}
 	require_once $wp_tests_dir . '/includes/functions.php';
 
+	// Define the callback function BEFORE registering the hook and loading WP.
+	// Must be defined in this scope so WordPress can find it when the hook fires.
+	if ( ! function_exists( 'rsa_load_plugin_for_tests' ) ) {
+		function rsa_load_plugin_for_tests() {
+			$classes = [
+				'class-db',
+				'class-bot-detection',
+				'class-tracker',
+				'class-analytics',
+				'class-click-tracking',
+				'class-heatmap',
+				'class-rest-api',
+			];
+			foreach ( $classes as $cls ) {
+				$f = RSA_DIR . 'includes/' . $cls . '.php';
+				if ( file_exists( $f ) ) {
+					require_once $f;
+				}
+			}
+			if ( class_exists( 'RSA_Rest_API' ) ) {
+				RSA_Rest_API::init();
+			}
+			if ( class_exists( 'RSA_DB' ) ) {
+				RSA_DB::install();
+			}
+		}
+	}
+
 	// Load the plugin before WordPress finishes loading
 	tests_add_filter( 'muplugins_loaded', 'rsa_load_plugin_for_tests' );
 
