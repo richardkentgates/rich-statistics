@@ -27,6 +27,7 @@
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
 [![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb)
 [![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
+[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
 
 <!-- Plugin features -->
 [![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
@@ -81,6 +82,15 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | WP-CLI | `wp rich-stats overview/top-pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin, network-wide disable switch |
 | Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests |
+
+## Desktop Apps
+
+Rich Statistics offers native desktop apps for Linux and Windows:
+
+- **Linux**: Download `.deb` installer for [amd64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) or [arm64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
+- **Windows**: Download `.exe` installer from [rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
+
+The apps include automatic update detection via the built-in Tauri updater.
 
 ### Premium (via Freemius)
 
