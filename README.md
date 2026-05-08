@@ -79,7 +79,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Bot filtering | 10-signal client-side scoring + server-side UA/header checks |
 | Data retention | Configurable 1–730 days (default 90) |
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
-| WP-CLI | `wp rich-stats overview/top-pages/audience/export/purge/status` |
+| WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin, network-wide disable switch |
 | Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests |
 
@@ -183,7 +183,7 @@ For detailed compliance information, see the [Privacy section of our documentati
 wp rich-stats overview --period=30d
 
 # Top pages
-wp rich-stats top-pages --period=7d --limit=20
+wp rich-stats top_pages --period=7d --limit=20
 
 # Audience breakdown
 wp rich-stats audience --period=30d
@@ -233,9 +233,11 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/woocommerce` | WooCommerce funnel, revenue, and top-product data (premium; requires WooCommerce active) |
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
-| POST | `/track` | Ingest endpoint (used by the tracker on every page load) |
+| POST | `/ai/query` | AI chat query endpoint (premium) |
 | POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
 | GET/POST | `/user-settings` | Sync app site list across devices |
+
+**Note:** Page tracking uses WordPress AJAX (`admin-ajax.php?action=rsa_track`), not the REST API.
 
 All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismonth`, `lastmonth`.
 
