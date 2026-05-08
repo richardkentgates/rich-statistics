@@ -832,9 +832,9 @@ class RSA_Analytics {
 			if ( empty( $rows ) ) {
 				return '';
 			}
-			$output = implode( ',', array_keys( $rows[0] ) ) . "\n";
+			$output = "\xEF\xBB\xBF" . implode( ',', array_keys( $rows[0] ) ) . "\n";
 			foreach ( $rows as $row ) {
-				$output .= implode( ',', array_map( fn( $v ) => '"' . str_replace( '"', '""', $v ) . '"', $row ) ) . "\n";
+				$output .= implode( ',', array_map( static fn( $v ) => '"' . str_replace( '"', '""', (string) $v ) . '"', array_values( $row ) ) ) . "\n";
 			}
 			return $output;
 		}
