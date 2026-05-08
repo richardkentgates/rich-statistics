@@ -2369,20 +2369,8 @@
 
 				'<div class="rsa-install-method">' +
 					'<div class="rsa-install-method-label">Download Installer</div>' +
-					'<p style="margin-bottom:8px"><a class="rsa-install-btn rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="text-decoration:none;display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;font-size:14px">Download rich-statistics-windows.exe</a></p>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-btn" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download rich-statistics-windows.exe</a></p>' +
 					'<pre class="rsa-install-code">1. Download the .exe installer above\n2. Run the installer and follow the NSIS setup wizard\n3. The app will check for updates automatically</pre>' +
-				'</div>' +
-			'</div>';
-
-		var macosSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>macOS Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The macOS desktop app is a native Tauri application (.dmg/.app) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
-
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Download Installer</div>' +
-					'<p style="margin-bottom:8px"><a class="rsa-install-btn rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-macos.dmg" style="text-decoration:none;display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;font-size:14px">Download rich-statistics-macos.dmg</a></p>' +
-					'<pre class="rsa-install-code">1. Download the .dmg installer above\n2. Open the .dmg and drag the app to Applications\n3. The app will check for updates automatically</pre>' +
 				'</div>' +
 			'</div>';
 
@@ -2399,7 +2387,6 @@
 						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
 						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
 						'<tr><td>Windows 10/11</td><td>Download .exe installer above</td></tr>' +
-						'<tr><td>macOS</td><td>Download .dmg installer above</td></tr>' +
 					'</tbody>' +
 				'</table>' +
 			'</div>';
@@ -2411,7 +2398,6 @@
 			'</div>' +
 			linuxSection +
 			windowsSection +
-			macosSection +
 			compatSection;
 
 		if ( _installPrompt ) {
