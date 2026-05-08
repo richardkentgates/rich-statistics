@@ -561,15 +561,12 @@
 			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
 			return 0;
 		} )[ 0 ] || '?';
-		var arch   = /aarch64|arm64/i.test( navigator.userAgent ) ? 'arm64' : 'amd64';
-		var dlUrl  = 'https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-' + arch + '.deb';
 		var banner = document.createElement( 'div' );
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =
 			'<span class="rsa-desktop-update-icon">&#9888;</span>' +
 			'<span>Plugin v' + esc( pluginVersion ) + ' requires a newer desktop app ' +
-			'(you have bundles up to v' + esc( latest ) + '). Some features may not work until you update.</span>' +
-			'<a href="' + dlUrl + '" target="_blank" rel="noopener noreferrer">Download update</a>' +
+			'(you have bundles up to v' + esc( latest ) + '). An update is available via your system package manager.</span>' +
 			'<button id="rsa-desktop-update-dismiss" aria-label="Dismiss">&times;</button>';
 		document.body.insertBefore( banner, document.body.firstChild );
 		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
@@ -2332,6 +2329,7 @@
 		var ua         = navigator.userAgent || '';
 		var platform   = ( navigator.platform || '' ).toLowerCase();
 		var isLinux    = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
+		var isWindows  = platform.indexOf( 'win' ) !== -1 || ua.indexOf( 'windows' ) !== -1;
 		var isIos      = /iphone|ipad|ipod/i.test( ua );
 		var isAndroid  = /android/i.test( ua );
 		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|edg|android/i.test( ua );
@@ -2345,19 +2343,43 @@
 
 		var BASE_DL = 'https://rs-app.richardkentgates.com/desktop';
 
-		// ── PWA section ──────────────────────────────────────────────────
-		var pwaSection;
-		if ( isTauriApp ) {
-			pwaSection = ''; // Already in the desktop app — skip PWA install
-		} else if ( isStandalone ) {
-			pwaSection =
-				'<div class="rsa-install-card rsa-install-card--done">' +
-					'<div class="rsa-install-card-icon">✓</div>' +
-					'<div class="rsa-install-card-body">' +
-						'<h3>Web App Installed</h3>' +
-						'<p class="rsa-field-hint">You\'re running Rich Statistics as an installed app. Nice!</p>' +
+		// ── Linux desktop section ─────────────────────────────────────────
+		var linuxSection =
+			'<div class="rsa-chart-card" style="margin-top:20px">' +
+				'<h3>Linux Desktop App</h3>' +
+				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Linux desktop app is a native Tauri application (.deb) for amd64 and arm64 Debian/Ubuntu systems. It wraps the same analytics interface and updates automatically via your system package manager.</p>' +
+
+				'<div class="rsa-install-method">' +
+					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
+					'<pre class="rsa-install-code">curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://rs-app.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
+				'</div>' +
+
+				'<div class="rsa-install-method" style="margin-top:16px">' +
+					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
+					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
+						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
+						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
+					'</div>' +
+					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
+				'</div>' +
+			'</div>';
+
+		// ── Windows desktop section ──────────────────────────────────────
+		var windowsSection = '';
+		if ( isWindows ) {
+			windowsSection =
+				'<div class="rsa-chart-card" style="margin-top:20px">' +
+					'<h3>Windows Desktop App</h3>' +
+					'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Windows desktop app is a native Tauri application (.exe) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
+
+					'<div class="rsa-install-method">' +
+						'<div class="rsa-install-method-label">Download Installer</div>' +
+						'<p style="margin-bottom:8px"><a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="text-decoration:none">Download rich-statistics-windows.exe</a></p>' +
+						'<pre class="rsa-install-code">1. Run the downloaded .exe installer\n2. Follow the NSIS setup wizard\n3. The app will check for updates automatically</pre>' +
 					'</div>' +
 				'</div>';
+		}
 		} else if ( isIos && isSafari ) {
 			pwaSection =
 				'<div class="rsa-install-card">' +
@@ -2476,6 +2498,7 @@
 						'<tr><td>Safari (macOS Sonoma+)</td><td>File → "Add to Dock…"</td></tr>' +
 						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
 						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
+						'<tr><td>Windows 10/11</td><td>Download .exe installer above</td></tr>' +
 					'</tbody>' +
 				'</table>' +
 			'</div>';
@@ -2486,6 +2509,7 @@
 				pwaSection +
 			'</div>' +
 			linuxSection +
+			windowsSection +
 			compatSection;
 
 		// Sync install button visibility with the deferred prompt state
