@@ -15,6 +15,19 @@ class RSA_Admin {
 		add_action( 'admin_post_rsa_export_csv',    [ __CLASS__, 'handle_export_csv' ] );
 		add_action( 'current_screen',        [ __CLASS__, 'register_help_tabs' ] );
 
+		// Register custom role and capability on init
+		if ( ! get_role( 'rsa_analyst' ) ) {
+			add_role( 'rsa_analyst', __( 'Statistics Analyst', 'rich-statistics' ), [
+				'rsa_manage_statistics' => true,
+				'read' => true,
+			] );
+		}
+		// Ensure administrator has the custom capability too
+		$admin = get_role( 'administrator' );
+		if ( $admin && ! isset( $admin->capabilities['rsa_manage_statistics'] ) ) {
+			$admin->add_cap( 'rsa_manage_statistics' );
+		}
+
 		// Priority 1 ensures RSA section appears first among plugin sections,
 		// placing it directly after WP's built-in Application Passwords block.
 		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
@@ -150,7 +163,7 @@ class RSA_Admin {
 		if ( ! in_array( $hook, [ 'profile.php', 'user-edit.php' ], true ) ) {
 			return;
 		}
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			return;
 		}
 		$js_file = RSA_DIR . 'assets/js/rsa-profile-otp.js';
@@ -179,7 +192,7 @@ class RSA_Admin {
 		add_menu_page(
 			__( 'Rich Statistics', 'rich-statistics' ),
 			__( 'Rich Statistics', 'rich-statistics' ),
-			'manage_options',
+			'rsa_manage_statistics',
 			'rich-statistics',
 			[ __CLASS__, 'page_overview' ],
 			'dashicons-chart-area',
@@ -214,11 +227,11 @@ class RSA_Admin {
 	private static function get_sub_pages(): array {
 		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 		$pages = [
-			'overview'  => [ 'title' => __( 'Overview',  'rich-statistics' ), 'label' => __( 'Overview',  'rich-statistics' ), 'cap' => 'manage_options' ],
-			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'manage_options' ],
-			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'manage_options' ],
-			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'manage_options' ],
-			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'manage_options' ],
+			'overview'  => [ 'title' => __( 'Overview',  'rich-statistics' ), 'label' => __( 'Overview',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
+			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
+			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
+			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
+			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
 		];
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
@@ -227,29 +240,28 @@ class RSA_Admin {
 			if ( $is_premium ) {
 				// Premium: only add the menu item when tracking is enabled; disabled = hidden entirely.
 				if ( get_option( 'rsa_woocommerce_enabled', 1 ) ) {
-					$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'manage_options' ];
+					$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 				}
 			} else {
 				// Not premium — show with upgrade prompt.
-				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 			}
 		}
 		if ( $is_premium ) {
-			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ), 'cap' => 'manage_options' ];
-			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'manage_options' ];
-			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'manage_options' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'manage_options' ];
-			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 		} else {
-			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
-			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
-			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
-			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 		}
-		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['ai-chat']      = [ 'title' => __( 'AI Chat',       'rich-statistics' ), 'label' => __( '🤖 AI Chat',     'rich-statistics' ), 'cap' => 'manage_options' ];
-		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'manage_options' ];
+		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 		return $pages;
 	}
 
@@ -398,7 +410,6 @@ class RSA_Admin {
 	public static function page_preferences():      void { self::render( 'preferences' ); }
 	public static function page_maintenance():       void { self::render( 'maintenance' ); }
 	public static function page_export():           void { self::render( 'export' ); }
-	public static function page_ai_chat():          void { self::render( 'ai-chat' ); }
 	public static function page_woocommerce():      void { self::render( 'woocommerce' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
 
@@ -456,7 +467,7 @@ class RSA_Admin {
 
 	public static function handle_export_csv(): void {
 		check_admin_referer( 'rsa_export_csv' );
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do this.', 'rich-statistics' ) );
 		}
 
@@ -526,7 +537,7 @@ class RSA_Admin {
 
 	public static function save_settings(): void {
 		check_admin_referer( 'rsa_settings_save' );
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do this.', 'rich-statistics' ) );
 		}
 
@@ -546,7 +557,6 @@ class RSA_Admin {
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
 			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
-			'rsa_ai_api_key'                => 'sanitize_text_field',
 		];
 
 		foreach ( $fields as $key => $sanitizer ) {
@@ -636,8 +646,8 @@ class RSA_Admin {
 		if ( ! self::user_can_access_app( $profile_user ) ) {
 			return;
 		}
-		// When editing another user, require the viewing user to be an admin.
-		if ( $profile_user->ID !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+		// When editing another user, require the viewing user to be an admin or Statistics Analyst.
+		if ( $profile_user->ID !== get_current_user_id() && ! current_user_can( 'rsa_manage_statistics' ) ) {
 			return;
 		}
 		?>
@@ -653,7 +663,11 @@ class RSA_Admin {
 		if ( ! self::user_can_access_app( $profile_user ) ) {
 			return;
 		}
-		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+		// Only show auth key (App Code) to administrators.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) ) {
 			if ( function_exists( 'rs_fs' ) ) {
 				?>
 				<tr class="rsa-webapp-row">

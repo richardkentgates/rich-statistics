@@ -22,7 +22,7 @@ class RSA_CLI extends WP_CLI_Command {
 	// overview
 	// ----------------------------------------------------------------
 
-	/**
+ /**
 	 * Show key metrics for a period.
 	 *
 	 * ## OPTIONS
@@ -40,6 +40,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * @subcommand overview
 	 */
 	public function overview( array $args, array $assoc ): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			WP_CLI::error( 'You do not have permission to use Rich Statistics commands.' );
+		}
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$this->maybe_switch_blog( $assoc );
 
