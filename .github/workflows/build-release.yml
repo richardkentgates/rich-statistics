@@ -254,13 +254,10 @@ jobs:
 
       - name: Stamp version
         run: |
-          $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "").Replace("v", "")
+          $VERSION = "${{ github.ref_name }}" -replace '^v', ''
           (Get-Content src-tauri/tauri.conf.json) -replace '"version": "[^"]*"', "`"version`": `"$VERSION`"" | Set-Content src-tauri/tauri.conf.json
           (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$VERSION`"" | Set-Content src-tauri/Cargo.toml
           Write-Host "Version stamped to: $VERSION"
-          # Verify the version is valid semver (no leading v)
-          $CONTENT = Get-Content src-tauri/tauri.conf.json -Raw
-          Write-Host "Tauri config: $CONTENT"
           Write-Host "Version stamped to: $VERSION"
 
       - name: Install Rust
