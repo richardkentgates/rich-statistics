@@ -50,10 +50,9 @@ rich-statistics/
 ├── cli/                  WP-CLI command class
 ├── languages/            .pot file for translators
 │
-├── webapp/               Tauri source for the desktop app — this folder is
-│                         packaged by the Tauri CI build into .deb files.
-│                         The JS/HTML/CSS here mirrors docs/app/ and is kept
-│                         in sync manually.
+├── src-tauri/            Tauri 2 source for the desktop app — this folder is
+│                         packaged by the Tauri CI build into .deb and .exe files.
+│                         The frontend dist is docs/app/ (same as PWA).
 │
 ├── vendor/               Composer dependencies
 │   ├── freemius/         Freemius SDK — COMMITTED (not .gitignored).
@@ -318,9 +317,38 @@ return false and free-tier tests run without any Freemius dependency.
 
 ## 10. Webapp & Desktop App
 
-### How they relate
+The PWA lives in `docs/app/` and is served from `https://rs-app.richardkentgates.com/app/`.
 
-```
+`src-tauri/` is the Tauri 2 source folder (wraps `docs/app/` in a native window). 
+The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pushes them to the app server via SSH.
+
+- **PWA**: vanilla JS, no build step — edit `docs/app/` directly.
+- **Desktop app**: `src-tauri/` contains the Tauri 2 config and Rust glue.
+  The CI installs Tauri, runs `tauri build`, and uploads the resulting binaries.
+- **Auto-update**: The PWA detects new plugin versions via `update.json`.
+  The desktop app uses Tauri's built-in updater (reads `update.json` from `/desktop/`).
+- **`update.json`** (on the app server):
+  ```json
+  {
+    "version": "1.4.4",
+    "pub_date": "2025-06-15T12:00:00Z",
+    "notes": "",
+    "platforms": {
+      "linux-x86_64": {
+        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb",
+        "signature": ""
+      },
+      "linux-aarch64": {
+        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb",
+        "signature": ""
+      },
+      "windows-x86_64": {
+        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe",
+        "signature": ""
+      }
+    }
+  }
+  ```
 webapp/                   ← Tauri source (wraps the PWA in a native GTK window)
   app.html / app.js …       Kept in sync with docs/app/ manually
 
