@@ -8,6 +8,9 @@
 
 class RestApiExtraTest extends WP_UnitTestCase {
 
+	/** @var WP_REST_Server */
+	protected static WP_REST_Server $server;
+
 	/** @var WP_User Admin user */
 	protected static WP_User $admin;
 
@@ -23,6 +26,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		global $wp_rest_server;
 		$wp_rest_server = new WP_REST_Server();
 		do_action( 'rest_api_init', $wp_rest_server );
+		static::$server = $wp_rest_server;
 	}
 
 	// ----------------------------------------------------------------
@@ -31,27 +35,29 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 	public function test_info_returns_version(): void {
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
-		$response = rest_do_request( $request );
-		$data = $response->get_data();
+		$response = static::$server->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
 		$this->assertArrayHasKey( 'version', $data );
 		$this->assertNotEmpty( $data['version'] );
 	}
 
 	public function test_info_returns_app_url(): void {
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
-		$response = rest_do_request( $request );
-		$data = $response->get_data();
+		$response = static::$server->dispatch( $request );
 
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
 		$this->assertArrayHasKey( 'app_url', $data );
 	}
 
 	public function test_info_returns_site_name(): void {
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
-		$response = rest_do_request( $request );
-		$data = $response->get_data();
+		$response = static::$server->dispatch( $request );
 
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
 		$this->assertArrayHasKey( 'site_name', $data );
 		$this->assertNotEmpty( $data['site_name'] );
 	}
@@ -59,7 +65,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_info_no_auth_required(): void {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
 	}
@@ -71,7 +77,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_user_settings_requires_auth(): void {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/user-settings' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertContains( $response->get_status(), [ 401, 403 ] );
 	}
@@ -79,7 +85,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_user_settings_returns_sites_array_for_authenticated(): void {
 		wp_set_current_user( self::$admin->ID );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/user-settings' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -98,7 +104,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/user-settings' );
 		$request->set_param( 'sites', [] );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertContains( $response->get_status(), [ 401, 403 ] );
 	}
@@ -109,7 +115,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$request->set_param( 'sites', [
 			[ 'id' => 'x', 'label' => 'Test', 'siteUrl' => 'http://test.com/', 'appUrl' => 'http://test.com/rs-app/', 'secret' => 'should-be-removed' ],
 		] );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -127,7 +133,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		wp_set_current_user( self::$admin->ID );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/user-settings' );
 		$request->set_param( 'sites', 'not-an-array' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -144,7 +150,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-install' );
 		$request->set_param( 'site_token', 'any-token' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertContains( $response->get_status(), [ 401, 403 ] );
 	}
@@ -155,7 +161,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-install' );
 		$request->set_param( 'site_token', 'some-token' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -173,7 +179,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-install' );
 		$request->set_param( 'site_token', 'my-secret-token' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -192,7 +198,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-install' );
 		$request->set_param( 'site_token', 'wrong-token' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -211,7 +217,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-install' );
 		$request->set_param( 'site_token', 'consume-token' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -229,7 +235,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_verify_otp_rejects_non_six_digits(): void {
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-otp' );
 		$request->set_param( 'otp', '12345' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertSame( 400, $response->get_status() );
 	}
@@ -237,7 +243,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_verify_otp_rejects_invalid_format(): void {
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-otp' );
 		$request->set_param( 'otp', 'abc123' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -249,7 +255,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_verify_otp_strips_spaces_and_dashes(): void {
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-otp' );
 		$request->set_param( 'otp', '123 456' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -261,7 +267,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_verify_otp_fails_with_nonexistent_code(): void {
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/verify-otp' );
 		$request->set_param( 'otp', '999999' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -279,7 +285,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$request->set_param( 'nonce', 'invalid-nonce' );
 		$request->set_param( 'session_id', 'test-session' );
 		$request->set_param( 'page', '/test/' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertSame( 403, $response->get_status() );
 	}
@@ -292,7 +298,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		wp_set_current_user( self::$admin->ID );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/filter-options' );
 		$request->set_param( 'period', '7d' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
@@ -313,7 +319,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/purge-page' );
 		$request->set_param( 'page', '/test/' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertContains( $response->get_status(), [ 401, 403 ] );
 	}
@@ -321,7 +327,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 	public function test_purge_page_requires_page_param(): void {
 		wp_set_current_user( self::$admin->ID );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/purge-page' );
-		$response = rest_do_request( $request );
+		$response = static::$server->dispatch( $request );
 
 		$this->assertNotSame( 200, $response->get_status() );
 	}
