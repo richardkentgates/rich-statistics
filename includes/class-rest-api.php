@@ -269,6 +269,14 @@ class RSA_Rest_API {
 	// ----------------------------------------------------------------
 
 	public static function check_auth( WP_REST_Request $request ): bool|WP_Error {
+		// Freemius premium gate — app features require active premium licence
+		if ( function_exists( 'rs_fs' ) && ! rs_fs()->can_use_premium_code__premium_only() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'This feature requires a premium licence.', 'rich-statistics' ),
+				[ 'status' => 403 ]
+			);
+		}
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
