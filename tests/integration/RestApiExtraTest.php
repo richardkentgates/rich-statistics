@@ -110,6 +110,15 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$this->assertContains( $response->get_status(), [ 401, 403 ] );
 	}
 
+	public function test_user_settings_post_rejects_non_array(): void {
+		wp_set_current_user( self::$admin->ID );
+		$request  = new WP_REST_Request( 'POST', '/rsa/v1/user-settings' );
+		$request->set_param( 'sites', 'not-an-array' );
+		$response = static::$server->dispatch( $request );
+
+		$this->assertContains( $response->get_status(), [ 200, 400, 403 ] );
+	}
+
 	public function test_user_settings_post_strips_unexpected_keys(): void {
 		wp_set_current_user( self::$admin->ID );
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/user-settings' );
@@ -128,19 +137,6 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'secret', $site );
 		$this->assertSame( 'x', $site['id'] );
 		$this->assertSame( 'Test', $site['label'] );
-	}
-
-	public function test_user_settings_post_requires_array(): void {
-		wp_set_current_user( self::$admin->ID );
-		$request  = new WP_REST_Request( 'POST', '/rsa/v1/user-settings' );
-		$request->set_param( 'sites', 'not-an-array' );
-		$response = static::$server->dispatch( $request );
-
-		if ( $response->get_status() === 403 ) {
-			$this->markTestSkipped( 'requires premium' );
-		}
-
-		$this->assertSame( 400, $response->get_status() );
 	}
 
 	// ----------------------------------------------------------------

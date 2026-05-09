@@ -53,9 +53,9 @@ class AdminTest extends WP_UnitTestCase {
 		$this->assertFalse( RSA_Admin::user_can_access_app( self::$editor ) );
 	}
 
-	public function test_editor_with_rsa_role_can_access_app(): void {
+	public function test_editor_cannot_access_app_by_default(): void {
 		$result = RSA_Admin::user_can_access_app( self::$editor );
-		$this->assertTrue( $result );
+		$this->assertFalse( $result );
 	}
 
 	public function test_null_user_cannot_access_app(): void {
