@@ -5,6 +5,7 @@
  * These tests do NOT require a WordPress installation because they verify
  * pure PHP behaviour: DB constants and the sanitization/clamping patterns
  * used inside RSA_Click_Tracking::handle_click().
+ * Classes are loaded in setUp() after Patchwork initialization.
  *
  * @package RichStatistics\Tests
  */
@@ -12,6 +13,11 @@
 use PHPUnit\Framework\TestCase;
 
 class ClickTrackingTest extends TestCase {
+
+	protected function setUp(): void {
+		parent::setUp();
+		require_once RSA_DIR . 'includes/class-db.php';
+	}
 
 	// ----------------------------------------------------------------
 	// RSA_DB::SCHEMA_VERSION — bump this comment when the version changes
