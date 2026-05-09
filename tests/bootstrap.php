@@ -63,7 +63,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 
 	if ( ! function_exists( 'rsa_load_plugin_for_tests' ) ) {
 		function rsa_load_plugin_for_tests() {
-			$classes = [
+			$includes = [
 				'class-db',
 				'class-bot-detection',
 				'class-tracker',
@@ -75,11 +75,16 @@ if ( is_dir( $wp_tests_dir ) ) {
 				'class-heatmap',
 				'class-rest-api',
 			];
-			foreach ( $classes as $cls ) {
+			foreach ( $includes as $cls ) {
 				$f = RSA_DIR . 'includes/' . $cls . '.php';
 				if ( file_exists( $f ) ) {
 					require_once $f;
 				}
+			}
+			// Load CLI class only if WP_CLI is available (not in test environment)
+			$cli_path = RSA_DIR . 'cli/class-cli.php';
+			if ( file_exists( $cli_path ) && ! class_exists( 'RSA_CLI' ) && class_exists( 'WP_CLI_Command' ) ) {
+				require_once $cli_path;
 			}
 			if ( class_exists( 'RSA_Rest_API' ) ) {
 				RSA_Rest_API::init();
@@ -91,6 +96,24 @@ if ( is_dir( $wp_tests_dir ) ) {
 	}
 
 	tests_add_filter( 'muplugins_loaded', 'rsa_load_plugin_for_tests' );
+
+	// Load WooCommerce if available — needs Action Scheduler and WordPress init to complete first.
+	// We hook at 'init' priority 1 to ensure all WP APIs are ready before loading WC.
+	tests_add_filter( 'init', function() {
+		$wc_path = WP_CONTENT_DIR . '/plugins/woocommerce/woocommerce.php';
+		$as_path = WP_CONTENT_DIR . '/plugins/woocommerce/packages/action-scheduler/action-scheduler.php';
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			// Load Action Scheduler first (WooCommerce dependency)
+			if ( file_exists( $as_path ) && ! function_exists( 'as_next_scheduled_action' ) ) {
+				include_once $as_path;
+			}
+			// Load WooCommerce
+			if ( file_exists( $wc_path ) ) {
+				include_once $wc_path;
+			}
+		}
+	}, 1 );
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
 	return;
