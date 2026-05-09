@@ -6,6 +6,52 @@
  * using that site's wpdb->prefix (e.g. wp_2_rsa_events).
  * All methods that write/read data are prefix-aware and must be
  * called while the correct blog is switched in.
+ *
+ * ── Privacy-first design ──────────────────────────────────────────
+ *
+ *   NO IP addresses stored anywhere.
+ *   NO cookies used for tracking — sessionStorage (JS) + POST params (PHP).
+ *   NO PII: session IDs are UUIDv4 (anonymous), referrers are domain-only,
+ *           page paths are sanitized (email-like query params stripped).
+ *
+ * ── Schema relationships ─────────────────────────────────────────────
+ *
+ *   rsa_events         — raw pageview events. Each row = one page view.
+ *                        Links to rsa_sessions via session_id.
+ *                        bot_score filters out automated traffic.
+ *
+ *   rsa_sessions       — session aggregates (updated per event, not real-time).
+ *                        Built from rsa_events pageviews per session.
+ *
+ *   rsa_clicks         — click events (premium). Links to rsa_events/sessions
+ *                        via session_id. Recorded by tracker.js sendBeacon
+ *                        POST to admin-ajax.php on every page view.
+ *
+ *   rsa_heatmap        — pre-aggregated click coordinates for canvas rendering.
+ *                        Date-bucketed, no session ID stored (aggregated only).
+ *
+ *   rsa_wc_events      — WooCommerce commerce events. Links to rsa_events
+ *                        via session_id. Source: $_POST['rsa_sid'] sent by
+ *                        tracker.js on every page load (via sendBeacon).
+ *
+ * ── Session ID flow ────────────────────────────────────────────────
+ *
+ *   PHP (RSA_Tracker::enqueue) → outputs window.rsaSessionId as inline script
+ *       → JS (tracker.js) picks up window.rsaSessionId, stores in sessionStorage
+ *       → JS sends sendBeacon POST with session_id on pagehide/visibilitychange
+ *       → PHP (RSA_Tracker::handle_ingest) writes rsa_events + rsa_sessions
+ *       → JS sends click events via sendBeacon with same session_id
+ *       → PHP (RSA_Woocommerce::session_id) reads $_POST['rsa_sid'] (same POST param)
+ *       → PHP (RSA_Woocommerce) writes rsa_wc_events with matching session_id
+ *
+ *   No cookie involved at any point — purely client-side sessionStorage + POST.
+ *
+ * ── Bot detection ───────────────────────────────────────────────────
+ *
+ *   Client-side (tracker.js): bot_signals bitmask (WEBDRIVER, NO_PLUGINS, etc.)
+ *   Server-side (RSA_Bot_Detection): UA pattern matching + header analysis
+ *   Threshold: configurable, default excludes score >= 10
+ *   NO IP address ever passed to bot scorer.
  */
 defined( 'ABSPATH' ) || exit;
 

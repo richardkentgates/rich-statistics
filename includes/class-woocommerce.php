@@ -149,14 +149,36 @@ class RSA_Woocommerce {
 	}
 
 	/**
-	 * Returns the RSA session ID from the cookie/header that the tracker.js
-	 * sets.  If unavailable (e.g. server-side order hook) returns a placeholder.
+	 * Returns the RSA session ID for the current visitor.
+	 *
+	 * Source: $_POST['rsa_sid'] — set by tracker.js via sendBeacon/ajax
+	 * on every page view.  WC hooks fire after the tracker has already
+	 * sent the event (pagehide fires after WC hooks), so the session ID
+	 * is reliably available in $_POST.
+	 *
+	 * If unavailable (e.g. direct order hook without a prior page view),
+	 * a fresh UUIDv4 is generated. This ensures every visitor has a
+	 * session ID and allows WC events to be correlated with tracker events.
+	 *
+	 * No cookies — session ID originates from sessionStorage (JS only).
 	 */
 	private static function session_id(): string {
-		$sid = sanitize_text_field( wp_unslash( $_COOKIE['rsa_sid'] ?? '' ) );
+		$sid = sanitize_text_field( wp_unslash( $_POST['rsa_sid'] ?? '' ) );
 		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
 			return $sid;
 		}
-		return '00000000-0000-4000-8000-000000000000';
+		return self::generate_uuid();
+	}
+
+	private static function generate_uuid(): string {
+		$hex = bin2hex( random_bytes( 16 ) );
+		return sprintf(
+			'%s-%s-4%s-%s-%s',
+			substr( $hex, 0, 8 ),
+			substr( $hex, 8, 4 ),
+			substr( $hex, 12, 3 ),
+			substr( $hex, 15, 4 ),
+			substr( $hex, 19, 12 )
+		);
 	}
 }

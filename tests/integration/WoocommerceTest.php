@@ -27,7 +27,7 @@ class WoocommerceTest extends WP_UnitTestCase {
 			'quantity'    => null,
 			'order_total' => null,
 			'order_currency' => null,
-			'created_at'  => current_time( 'mysql' ),
+			'created_at'  => gmdate( 'Y-m-d H:i:s' ),
 		];
 		$merged = array_merge( $defaults, $data );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -156,5 +156,56 @@ class WoocommerceTest extends WP_UnitTestCase {
 	public function test_wc_events_table_returns_prefixed_name(): void {
 		global $wpdb;
 		$this->assertSame( $wpdb->prefix . 'rsa_wc_events', RSA_DB::wc_events_table() );
+	}
+
+	// ----------------------------------------------------------------
+	// session_id() — UUID generation, no cookies
+	// ----------------------------------------------------------------
+
+	public function test_wc_session_id_returns_valid_uuidv4(): void {
+		$sid = $this->invoke_wc_session_id( [] );
+		$this->assertMatchesRegularQuery( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid );
+	}
+
+	public function test_wc_session_id_uses_post_param_when_available(): void {
+		$known = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
+		$sid   = $this->invoke_wc_session_id( [ 'rsa_sid' => $known ] );
+		$this->assertSame( $known, $sid );
+	}
+
+	public function test_wc_session_id_invalid_post_param_generates_new_uuid(): void {
+		$sid1 = $this->invoke_wc_session_id( [ 'rsa_sid' => 'not-a-valid-uuid' ] );
+		$sid2 = $this->invoke_wc_session_id( [ 'rsa_sid' => '' ] );
+		$this->assertMatchesRegularQuery( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid1 );
+		$this->assertMatchesRegularQuery( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid2 );
+		$this->assertNotSame( $sid1, $sid2 );
+	}
+
+	// ----------------------------------------------------------------
+	// RSA_Tracker session ID generation
+	// ----------------------------------------------------------------
+
+	public function test_tracker_generates_valid_uuidv4(): void {
+		$sid = RSA_Tracker::get_or_create_session_id();
+		$this->assertMatchesRegularQuery( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid );
+	}
+
+	public function test_tracker_session_id_is_deterministic_per_request(): void {
+		$sid1 = RSA_Tracker::get_or_create_session_id();
+		$sid2 = RSA_Tracker::get_or_create_session_id();
+		$this->assertSame( $sid1, $sid2 );
+	}
+
+	// ----------------------------------------------------------------
+	// Helpers
+	// ----------------------------------------------------------------
+
+	private function invoke_wc_session_id( array $post ): string {
+		if ( ! empty( $post ) ) {
+			$_POST = $post;
+		}
+		$ref = new ReflectionMethod( RSA_Woocommerce::class, 'session_id' );
+		$ref->setAccessible( true );
+		return $ref->invoke( null );
 	}
 }
