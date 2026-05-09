@@ -259,8 +259,6 @@ jobs:
         run: |
           VERSION="${VERSION#v}"
           python bin/stamp-version.py "$VERSION"
-          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
-          echo "Version stamped: $VERSION"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
