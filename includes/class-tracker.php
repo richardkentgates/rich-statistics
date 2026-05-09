@@ -92,13 +92,16 @@ class RSA_Tracker {
 			return self::$current_session_id;
 		}
 		$hex = bin2hex( random_bytes( 16 ) );
+		$hex = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
+		$variants = [ '8', '9', 'a', 'b' ];
+		$hex = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
 		self::$current_session_id = sprintf(
-			'%s-%s-4%s-%s-%s',
+			'%s-%s-%s-%s-%s',
 			substr( $hex, 0, 8 ),
 			substr( $hex, 8, 4 ),
-			substr( $hex, 12, 3 ),
-			substr( $hex, 15, 4 ),
-			substr( $hex, 19, 12 )
+			substr( $hex, 12, 4 ),
+			substr( $hex, 16, 4 ),
+			substr( $hex, 20, 12 )
 		);
 		return self::$current_session_id;
 	}
