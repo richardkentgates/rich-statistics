@@ -265,7 +265,11 @@ jobs:
           echo 'import json,os;v=os.environ["VERSION"];f=open("src-tauri/tauri.conf.json","r",encoding="utf-8");c=json.load(f);f.close();c["version"]=v;open("src-tauri/tauri.conf.json","w",encoding="utf-8").write(json.dumps(c,indent=2))' > stamp.py
           VERSION=$VERSION python stamp.py
           rm stamp.py
-          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          if [ "$OSTYPE" == "msys" ] || [ -d "/c/Windows" ]; then
+            sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          else
+            sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          fi
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
