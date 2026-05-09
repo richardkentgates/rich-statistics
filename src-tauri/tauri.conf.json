@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Rich Statistics",
-  "version": "2.1.2",
+  "version": "2.2.3",
   "identifier": "com.richardkentgates.rich-statistics",
   "build": {
     "frontendDist": "../docs/app"
@@ -23,11 +23,20 @@
   "plugins": {},
   "bundle": {
     "active": true,
-    "targets": ["deb", "nsis"],
-    "icon": ["../docs/app/icons/icon-512.png"],
+    "targets": [
+      "deb",
+      "nsis"
+    ],
+    "icon": [
+      "../docs/app/icons/icon-512.png"
+    ],
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libssl3"]
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libgtk-3-0",
+          "libssl3"
+        ]
       }
     },
     "windows": {
