@@ -150,9 +150,16 @@
 	var referrer   = document.referrer || '';
 
 	// ----------------------------------------------------------------
-	// Session ID — lives in sessionStorage, never a cookie
+	// Session ID — sourced from PHP (window.rsaSessionId), with sessionStorage
+	// as fallback for environments where the inline script is unavailable.
+	// No cookies.
 	// ----------------------------------------------------------------
 	var sessionId = ( function () {
+		// Use the server-provided ID when available
+		if ( typeof window.rsaSessionId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test( window.rsaSessionId ) ) {
+			return window.rsaSessionId;
+		}
+		// Fall back to sessionStorage
 		var key = 'rsa_sid';
 		var existing = '';
 		try {
@@ -161,7 +168,7 @@
 		if ( existing && /^[0-9a-f-]{36}$/.test( existing ) ) {
 			return existing;
 		}
-		// Generate UUIDv4
+		// Generate UUIDv4 as last resort
 		var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace( /[xy]/g, function ( c ) {
 			var r = ( Math.random() * 16 ) | 0;
 			var v = c === 'x' ? r : ( r & 0x3 ) | 0x8;

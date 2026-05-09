@@ -66,6 +66,13 @@ class RSA_Tracker {
 			'premium'   => $premium_config,
 		] );
 
+		// Output session ID as JS variable for the tracker to use.
+		// Tracker.js picks up window.rsaSessionId rather than generating its own.
+		// WC hooks receive it via the tracker's sendBeacon POST data.
+		// No cookie — entirely client-side sessionStorage + POST param.
+		$sid = self::get_or_create_session_id();
+		echo '<script>window.rsaSessionId="' . esc_js( $sid ) . '";try{sessionStorage.setItem("rsa_sid","' . $sid . '")}catch(e){}</script>';
+
 		// Enqueue heatmap overlay if premium
 		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 			$hm_file    = RSA_DIR . 'assets/js/heatmap-overlay.js';
@@ -78,6 +85,22 @@ class RSA_Tracker {
 				true
 			);
 		}
+	}
+
+	private static function get_or_create_session_id(): string {
+		if ( ! empty( self::$current_session_id ) ) {
+			return self::$current_session_id;
+		}
+		$hex = bin2hex( random_bytes( 16 ) );
+		self::$current_session_id = sprintf(
+			'%s-%s-4%s-%s-%s',
+			substr( $hex, 0, 8 ),
+			substr( $hex, 8, 4 ),
+			substr( $hex, 12, 3 ),
+			substr( $hex, 15, 4 ),
+			substr( $hex, 19, 12 )
+		);
+		return self::$current_session_id;
 	}
 
 	private static function get_protocol_options(): array {
@@ -264,6 +287,18 @@ class RSA_Tracker {
 	// ----------------------------------------------------------------
 	// Rate limiting via transients
 	// ----------------------------------------------------------------
+
+	private static $current_session_id = '';
+
+	public static function get_current_session_id(): string {
+		return self::$current_session_id;
+	}
+
+	public static function set_current_session_id( string $sid ): void {
+		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
+			self::$current_session_id = $sid;
+		}
+	}
 
 	private static function is_rate_limited( string $session_id ): bool {
 		$key   = 'rsa_rl_' . substr( md5( $session_id ), 0, 16 );

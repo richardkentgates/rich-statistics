@@ -108,7 +108,10 @@ $base = admin_url( 'admin.php' );
 		</tbody>
 	</table>
 	<?php else : ?>
-	<p class="rsa-empty"><?php esc_html_e( 'No click data yet. Make sure click tracking is active in Data Settings.', 'rich-statistics' ); ?></p>
+	<div class="rsa-empty" style="padding:16px;background:#f0f6ff;border-radius:6px;border:1px solid #c3d9f0;">
+		<p style="margin:0 0 8px;"><?php esc_html_e( 'No click data yet. Click tracking records interactions with tel:, mailto:, sms:, geo:, and download links.', 'rich-statistics' ); ?></p>
+		<p style="margin:0;color:#64748b;font-size:12px;"><?php esc_html_e( 'If data is missing after site changes, check that the analytics plugin session ID is flowing correctly between pageviews and click events.', 'rich-statistics' ); ?></p>
+	</div>
 	<?php endif; ?>
 </div>
 
