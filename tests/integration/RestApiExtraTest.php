@@ -39,8 +39,9 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'version', $data );
-		$this->assertNotEmpty( $data['version'] );
+		$this->assertSame( true, $data['ok'] );
+		$this->assertArrayHasKey( 'version', $data['data'] );
+		$this->assertNotEmpty( $data['data']['version'] );
 	}
 
 	public function test_info_returns_app_url(): void {
@@ -49,7 +50,7 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'app_url', $data );
+		$this->assertArrayHasKey( 'app_url', $data['data'] );
 	}
 
 	public function test_info_returns_site_name(): void {
@@ -58,8 +59,8 @@ class RestApiExtraTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'site_name', $data );
-		$this->assertNotEmpty( $data['site_name'] );
+		$this->assertArrayHasKey( 'site_name', $data['data'] );
+		$this->assertNotEmpty( $data['data']['site_name'] );
 	}
 
 	public function test_info_no_auth_required(): void {
@@ -92,8 +93,8 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		}
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'sites', $data );
-		$this->assertIsArray( $data['sites'] );
+		$this->assertArrayHasKey( 'sites', $data['data'] );
+		$this->assertIsArray( $data['data']['sites'] );
 	}
 
 	// ----------------------------------------------------------------
