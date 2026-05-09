@@ -155,7 +155,7 @@ class EmailTest extends WP_UnitTestCase {
 	// ----------------------------------------------------------------
 
 	public function test_period_default_is_30d(): void {
-		update_option( 'rsa_email_digest_recipients', '' );
+		update_option( 'rsa_email_digest_recipients', 'admin@test.com' );
 		update_option( 'rsa_email_digest_use_roles', 0 );
 		update_option( 'rsa_email_digest_frequency', 'weekly' );
 
