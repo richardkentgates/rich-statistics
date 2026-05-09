@@ -4,6 +4,7 @@
  *
  * These tests do NOT require a WordPress installation because
  * RSA_Bot_Detection is pure PHP with no WordPress dependencies.
+ * Class is loaded in setUp() after Brain\Monkey's Patchwork is initialized.
  *
  * @package RichStatistics\Tests
  */
@@ -11,6 +12,12 @@
 use PHPUnit\Framework\TestCase;
 
 class BotDetectionTest extends TestCase {
+
+	protected function setUp(): void {
+		parent::setUp();
+		// Load class after Brain\Monkey/Patchwork are initialized
+		require_once RSA_DIR . 'includes/class-bot-detection.php';
+	}
 
 	// ----------------------------------------------------------------
 	// Client-side signal scoring

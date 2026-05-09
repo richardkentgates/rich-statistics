@@ -3,7 +3,7 @@
  * Unit tests for RSA_Tracker — page sanitization and payload parsing logic.
  *
  * Tested via Brain\Monkey for WordPress function stubs so no WP installation
- * is required.
+ * is required. Classes are loaded in setUp() after Patchwork initialization.
  *
  * @package RichStatistics\Tests
  */
@@ -17,6 +17,8 @@ class TrackerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		Monkey\setUp();
+		require_once RSA_DIR . 'includes/class-bot-detection.php';
+		require_once RSA_DIR . 'includes/class-tracker.php';
 	}
 
 	protected function tearDown(): void {
