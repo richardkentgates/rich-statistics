@@ -131,12 +131,31 @@ PYEOF
 }
 
 install_db() {
-    if [ "${SKIP_DB_CREATE}" = "true" ]; then
-        return
-    fi
-    mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS" --host="$DB_HOST" 2>/dev/null || true
+	if [ "${SKIP_DB_CREATE}" = "true" ]; then
+		return
+	fi
+	mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS" --host="$DB_HOST" 2>/dev/null || true
+}
+
+install_woocommerce() {
+	if [ "${SKIP_WOOCOMMERCE}" = "true" ]; then
+		return
+	fi
+	local wc_dir="${WP_CORE_DIR}/wp-content/plugins/woocommerce"
+	if [ -d "$wc_dir" ]; then
+		return
+	fi
+	mkdir -p "$(dirname "$wc_dir")"
+	download "https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip" "/tmp/woocommerce.zip"
+	unzip -q "/tmp/woocommerce.zip" -d /tmp/
+	if [ -d "/tmp/woocommerce" ]; then
+		mv /tmp/woocommerce "$wc_dir"
+		rm -f /tmp/woocommerce.zip
+		echo "Installed WooCommerce to $wc_dir"
+	fi
 }
 
 install_wp
 install_test_suite
 install_db
+install_woocommerce
