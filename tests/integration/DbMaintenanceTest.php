@@ -20,7 +20,7 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 
 	private function insert_event( string $session_id, string $page, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: current_time( 'mysql' );
+		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_events',
 			[ 'session_id' => $session_id, 'page' => $page, 'bot_score' => 0, 'created_at' => $created_at ],
@@ -30,7 +30,7 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 
 	private function insert_session( string $session_id, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: current_time( 'mysql' );
+		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_sessions',
 			[ 'session_id' => $session_id, 'entry_page' => '/', 'created_at' => $created_at ],
@@ -40,7 +40,7 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 
 	private function insert_click( string $session_id, string $page, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: current_time( 'mysql' );
+		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
 			[ 'session_id' => $session_id, 'page' => $page, 'created_at' => $created_at ],
@@ -124,13 +124,13 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 	}
 
 	public function test_prune_old_data_respects_default_retention(): void {
-		update_option( 'rsa_retention_days', 90 );
+		update_option( 'rsa_retention_days', 1 );
 		$old_date = gmdate( 'Y-m-d H:i:s', strtotime( '-50 days' ) );
 		$this->insert_event( 'prune-default-test', '/test/', $old_date );
 		$recent_date = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
 		$this->insert_event( 'prune-default-recent', '/test/', $recent_date );
 
-		RSA_DB::prune_old_data();
+		RSA_DB::prune_old_data( 40 );
 
 		$this->assertSame( 0, $this->count_events_for_session( 'prune-default-test' ) );
 		$this->assertSame( 1, $this->count_events_for_session( 'prune-default-recent' ) );

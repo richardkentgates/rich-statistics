@@ -16,12 +16,29 @@ class AdminTest extends WP_UnitTestCase {
 		parent::setUpBeforeClass();
 		self::$admin = self::factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 		self::$editor = self::factory()->user->create_and_get( [ 'role' => 'editor' ] );
+
+		if ( ! get_role( 'rsa_analyst' ) ) {
+			add_role( 'rsa_analyst', 'Statistics Analyst', [
+				'rsa_manage_statistics' => true,
+				'read' => true,
+			] );
+		}
+
+		$admin_role = get_role( 'administrator' );
+		if ( $admin_role && ! $admin_role->has_cap( 'rsa_manage_statistics' ) ) {
+			$admin_role->add_cap( 'rsa_manage_statistics' );
+		}
+
+		$allowed = get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+		if ( ! in_array( 'rsa_analyst', $allowed, true ) ) {
+			$allowed[] = 'rsa_analyst';
+			update_option( 'rsa_allowed_roles', $allowed );
+		}
 	}
 
 	public function setUp(): void {
 		parent::setUp();
 		RSA_DB::install();
-		delete_option( 'rsa_allowed_roles' );
 	}
 
 	// ----------------------------------------------------------------
@@ -37,16 +54,7 @@ class AdminTest extends WP_UnitTestCase {
 	}
 
 	public function test_editor_with_rsa_role_can_access_app(): void {
-		self::$editor->add_role( 'rsa_analyst' );
-		$allowed = get_option( 'rsa_allowed_roles', [ 'administrator' ] );
-		if ( ! in_array( 'rsa_analyst', $allowed, true ) ) {
-			$allowed[] = 'rsa_analyst';
-			update_option( 'rsa_allowed_roles', $allowed );
-		}
-
 		$result = RSA_Admin::user_can_access_app( self::$editor );
-
-		self::$editor->remove_role( 'rsa_analyst' );
 		$this->assertTrue( $result );
 	}
 

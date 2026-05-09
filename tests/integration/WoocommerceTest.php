@@ -10,6 +10,10 @@ class WoocommerceTest extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		RSA_DB::install();
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce class not available' );
+		}
 	}
 
 	private function seed_wc_event( array $data ): void {
