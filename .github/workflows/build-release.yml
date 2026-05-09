@@ -253,13 +253,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Stamp version
+        shell: bash
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "")
-          Write-Host "Stamping version: $VERSION"
-          $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
-          $config.version = $VERSION
-          $config | ConvertTo-Json | Set-Content src-tauri/tauri.conf.json
-          (Get-Content src-tauri/Cargo.toml) -replace '^version = "[^"]*"', "version = `"$VERSION`"" | Set-Content src-tauri/Cargo.toml
+          VERSION="${VERSION#v}"
+          python bin/stamp-version.py "$VERSION"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
