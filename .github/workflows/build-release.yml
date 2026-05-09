@@ -292,13 +292,17 @@ jobs:
       - name: Push .exe to app server
         shell: bash
         run: |
+          echo "${{ secrets.APP_SERVER_SSH_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
           EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
-          scp -o StrictHostKeyChecking=no -o IdentitiesOnly=yes "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/rich-statistics-windows.exe"
+          scp -o StrictHostKeyChecking=no -i ~/ssh_key "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app/desktop/rich-statistics-windows.exe"
 
       - name: Update update.json with Windows platform
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes <SSH_USER>@<PWA_SERVER_IP> "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+          echo "${{ secrets.APP_SERVER_SSH_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key <SSH_USER>@<PWA_SERVER_IP> "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
 
   # ---------------------------------------------------------------------------
   # After both .deb builds complete: sync docs/app/ via webhook and write
