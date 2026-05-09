@@ -252,24 +252,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Stamp version
+        shell: bash
         env:
           VERSION: ${{ github.ref_name }}
         run: |
           VERSION="${VERSION#v}"
-          echo 'import json,os;v=os.environ["VERSION"];f=open("src-tauri/tauri.conf.json","r",encoding="utf-8");c=json.load(f);f.close();c["version"]=v;open("src-tauri/tauri.conf.json","w",encoding="utf-8").write(json.dumps(c,indent=2))' > stamp.py
-          VERSION=$VERSION python stamp.py
-          rm stamp.py
-          if [ "$OSTYPE" == "msys" ] || [ -d "/c/Windows" ]; then
-            sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
-          else
-            sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
-          fi
+          python bin/stamp-version.py "$VERSION"
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          echo "Version stamped: $VERSION"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
