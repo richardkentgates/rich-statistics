@@ -258,17 +258,14 @@ jobs:
           python-version: '3.11'
 
       - name: Stamp version
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          $VERSION = "${{ github.ref_name }}".Replace("refs/tags/v", "")
-          python -c "
-import json
-with open('src-tauri/tauri.conf.json', 'r', encoding='utf-8') as f:
-    config = json.load(f)
-config['version'] = '$VERSION'
-with open('src-tauri/tauri.conf.json', 'w', encoding='utf-8') as f:
-    json.dump(config, f, indent=2)
-"
-          (Get-Content "src-tauri\Cargo.toml") -replace '^version = "[^"]+"', "version = `"$VERSION`"" | Set-Content "src-tauri\Cargo.toml"
+          VERSION="${VERSION#v}"
+          echo 'import json,os;v=os.environ["VERSION"];f=open("src-tauri/tauri.conf.json","r",encoding="utf-8");c=json.load(f);f.close();c["version"]=v;open("src-tauri/tauri.conf.json","w",encoding="utf-8").write(json.dumps(c,indent=2))' > stamp.py
+          VERSION=$VERSION python stamp.py
+          rm stamp.py
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
