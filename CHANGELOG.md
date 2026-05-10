@@ -5,6 +5,66 @@ All notable changes to Rich Statistics are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.7] - 2026-05-10
+
+### Changed
+- Server restructured to standard LAMP layout (`public_html/`, `desktop/` renamed to `dist/`)
+- All download URLs updated from `/desktop/` to `/dist/`
+- CORS origin allowlist replaces reflected-origin (security hardening)
+- `$_POST` global now saved/restored in `/track` REST endpoint (was polluting global state)
+- AI API key masked in preferences form (first 8 chars only)
+- AI error responses no longer leak internal details
+
+### Fixed
+- `TrackerRateLimitTest` now handles null `$wp_filter` (BrainMonkey compatibility)
+- CLI export restricts output path to WordPress directory
+- Nonce verification moved before capability check in OTP generator
+- Apache vhost: missing `_deploy/` Alias added (was returning 404)
+- APT repository: ModSecurity exclusion added for directory listing
+- Security headers: X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy
+
+### Security
+- CORS: allowlist-based origin validation (was reflecting arbitrary origins with credentials)
+- `$_POST`: save/restore pattern prevents global state corruption from public endpoint
+- CLI export: path restricted to ABSPATH to prevent arbitrary file writes
+- AI errors: logged server-side; generic message returned to client
+- Branch protection enabled on `main` (PR required, status checks enforced)
+- Server: dist/ directory locked to 755, web root parent permissions restricted
+
+## [2.2.6] - 2026-05-09
+
+### Added
+- Premium feature gating UI in PWA (locked features show upgrade prompt)
+- `Build Dev` workflow for develop branch CI
+
+### Fixed
+- Versioned app snapshot creation in CI desktop build job
+
+## [2.2.5] - 2026-05-09
+
+### Fixed
+- Test isolation in AJAX handler tests (cleanup between test methods)
+
+## [2.2.4] - 2026-05-09
+
+### Fixed
+- OTP rate limiting edge case (IP hash collision handling)
+
+## [2.2.3] - 2026-05-09
+
+### Added
+- PWA version switching in Tauri desktop app
+
+## [2.2.2] - 2026-05-09
+
+### Fixed
+- Chart.js loading in versioned PWA snapshots
+
+## [2.2.1] - 2026-05-09
+
+### Changed
+- PWA UX improvements for mobile viewport
+
 ## [2.1.0] - 2026-05-08
 
 ### Added

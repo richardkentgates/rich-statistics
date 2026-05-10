@@ -87,8 +87,8 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 				<td>
 					<input type="password" id="rsa_ai_api_key" name="rsa_ai_api_key"
 					       class="regular-text"
-					       value="<?php echo esc_attr( get_option( 'rsa_ai_api_key', '' ) ); ?>"
-					       placeholder="sk-...">
+					       value="<?php echo esc_attr( RSA_Admin::mask_api_key( get_option( 'rsa_ai_api_key', '' ) ) ); ?>"
+					       placeholder="sk-..." autocomplete="off">
 					<p class="description"><?php esc_html_e( 'Get your API key at platform.openai.com', 'rich-statistics' ); ?></p>
 				</td>
 			</tr>
