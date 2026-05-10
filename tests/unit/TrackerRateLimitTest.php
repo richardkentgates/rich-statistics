@@ -28,12 +28,17 @@ class TrackerRateLimitTest extends TestCase {
 
 	public function test_first_request_is_not_rate_limited(): void {
 		global $wp_filter;
-		$orig = $wp_filter['pre_get_transient'] ?? null;
+		$hasOrig = array_key_exists( 'pre_get_transient', $GLOBALS['wp_filter'] );
+		$orig    = $hasOrig ? $wp_filter['pre_get_transient'] : null;
 		$wp_filter['pre_get_transient'] = new class {
 			public function __invoke( $pre, string $key ) { return false; }
 		};
 		$result = $this->is_rate_limited( uniqid( 'session-', true ) );
-		$wp_filter['pre_get_transient'] = $orig;
+		if ( $hasOrig ) {
+			$wp_filter['pre_get_transient'] = $orig;
+		} else {
+			unset( $wp_filter['pre_get_transient'] );
+		}
 		$this->assertFalse( $result );
 	}
 
