@@ -44,10 +44,10 @@ class RSA_Pwa_Download {
 	 * Returns JSON: { otp: "482391", expires_in: 900 }.
 	 */
 	public static function handle_generate_otp(): void {
+		check_ajax_referer( 'rsa_generate_otp' );
 		if ( ! RSA_Admin::user_can_access_app() ) {
 			wp_send_json_error( __( 'You do not have permission.', 'rich-statistics' ), 403 );
 		}
-		check_ajax_referer( 'rsa_generate_otp' );
 
 		$otp = self::generate_otp( get_current_user_id() );
 		wp_send_json_success( [ 'otp' => $otp, 'expires_in' => 15 * MINUTE_IN_SECONDS ] );
