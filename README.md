@@ -25,9 +25,9 @@
 
 <!-- Platform -->
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
-[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb)
-[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
-[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
+[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb)
+[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb)
+[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe)
 
 <!-- Plugin features -->
 [![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
@@ -87,8 +87,8 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 
 Rich Statistics offers native desktop apps for Linux and Windows:
 
-- **Linux**: Download `.deb` installer for [amd64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) or [arm64](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb)
-- **Windows**: Download `.exe` installer from [rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe](https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe)
+- **Linux**: Download `.deb` installer for [amd64](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) or [arm64](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb)
+- **Windows**: Download `.exe` installer from [rs-app.richardkentgates.com/dist/rich-statistics-windows.exe](https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe)
 
 The apps include automatic update detection via the built-in Tauri updater.
 
@@ -284,8 +284,8 @@ Once enrolled, `sudo apt upgrade` keeps the app up to date like any other packag
 
 | Architecture | Download |
 |---|---|
-| x86_64 (Intel/AMD) | [rich-statistics-linux-amd64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb) |
-| ARM64 (Raspberry Pi / Apple Silicon VM) | [rich-statistics-linux-arm64.deb](https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb) |
+| x86_64 (Intel/AMD) | [rich-statistics-linux-amd64.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) |
+| ARM64 (Raspberry Pi / Apple Silicon VM) | [rich-statistics-linux-arm64.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) |
 
 ```bash
 sudo dpkg -i rich-statistics-linux-*.deb

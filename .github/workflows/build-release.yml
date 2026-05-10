@@ -228,8 +228,8 @@ jobs:
           SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
           SCP="scp -o StrictHostKeyChecking=no"
 
-          $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/desktop"
-          $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/${DEST}"
+          $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/public_html/dist"
+          $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/${DEST}"
 
       - name: Update APT repository
         run: |
@@ -293,7 +293,7 @@ jobs:
         shell: bash
         run: |
           EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
-          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/desktop/"
+          scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/"
 
       - name: Update update.json with Windows platform
         shell: bash

@@ -21,7 +21,7 @@ desktop app (Tauri/.deb) that connect to the plugin via the WordPress REST API.
 |---|---|
 | **WordPress plugin ZIP** | The main PHP plugin, distributed via WordPress.org (free) and Freemius (premium) |
 | **PWA / web app** | Vanilla JS at `docs/app/`, served from `rs-app.richardkentgates.com` |
-| **Linux desktop app** | Tauri-wrapped `.deb` in `src-tauri/`, served from `rs-app.richardkentgates.com/desktop/` |
+| **Linux desktop app** | Tauri-wrapped `.deb` in `src-tauri/`, served from `rs-app.richardkentgates.com/dist/` |
 
 ---
 
@@ -157,7 +157,7 @@ by the tag-triggered CI workflow automatically.
 | Job | What it does |
 |---|---|
 | `build` | Builds plugin ZIP, creates GitHub Release, commits versioned `docs/app/X.Y.Z/` snapshot to `main` |
-| `build-desktop` (amd64 + arm64) | Builds `.deb` via Tauri, SCPs to server's `/var/www/rs-app/desktop/`, runs `rsa-apt-repo-update` on server |
+| `build-desktop` (amd64 + arm64) | Builds `.deb` via Tauri, SCPs to server's `/var/www/rs-app/public_html/dist/`, runs `rsa-apt-repo-update` on server |
 | `ping-deploy` | POSTs to `/_deploy/` webhook; server pulls `docs/app/` from GitHub and goes live |
 
 ---
@@ -169,7 +169,7 @@ by the tag-triggered CI workflow automatically.
 | IP | `104.197.231.120` |
 | User | `richardkentgates` |
 | Local SSH key | `~/.ssh/id_rsa` (only this works — `gcloud_key` and `id_ed25519` are rejected) |
-| Web root | `/var/www/rs-app/` |
+| Web root | `/var/www/rs-app/public_html/` (DocumentRoot); `_deploy/` and `.deployed-version` are at `/var/www/rs-app/` (outside DocumentRoot) |
 | APT repo | `https://rs-app.richardkentgates.com/apt stable main` |
 | APT update script | `/usr/local/bin/rsa-apt-repo-update` |
 | Webhook token file | `/etc/rsa-webhook-token` (chmod 640, chown root:www-data) |

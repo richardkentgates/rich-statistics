@@ -15,8 +15,8 @@
 # =============================================================================
 set -euo pipefail
 
-DEPLOY_DIR="/var/www/rs-app"
-VERSION_FILE="${DEPLOY_DIR}/.deployed-version"
+DEPLOY_DIR="/var/www/rs-app/public_html"
+VERSION_FILE="/var/www/rs-app/.deployed-version"
 REPO="https://github.com/richardkentgates/rich-statistics.git"
 LOG_TAG="rsa-app-update"
 
@@ -52,10 +52,10 @@ fi
 
 # ── Sync to the deploy directory ──────────────────────────────────────────
 # Root-level files: sync with --delete so stale files are removed.
-# Exclude versioned snapshot dirs, desktop dir, and _deploy webhook handler.
+# Exclude versioned snapshot dirs, dist dir, and _deploy webhook handler.
 rsync -a --delete \
     --exclude='[0-9]*.[0-9]*.[0-9]*/' \
-    --exclude='desktop/' \
+    --exclude='dist/' \
     --exclude='_deploy/' \
     "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 

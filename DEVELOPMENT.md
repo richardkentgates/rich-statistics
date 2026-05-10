@@ -131,7 +131,7 @@ GitHub (source + CI)
 
 App server: rs-app.richardkentgates.com  (104.197.231.120)
   ├── /app/              → serves the live PWA (pulled from docs/app/ by webhook)
-  ├── /desktop/          → serves .deb files + update.json (pushed by CI via SSH)
+  ├── /dist/             → serves .deb files + update.json (pushed by CI via SSH)
   └── /_deploy/          → webhook endpoint (PHP, validates X-Deploy-Token header)
 ```
 
@@ -215,7 +215,7 @@ develop  ──[all features / fixes merged here]──►
 | Job | Needs | What it does |
 |---|---|---|
 | `build` | — | Verifies PHP syntax; creates plugin ZIP; uploads as Release artifact; commits versioned `docs/app/{version}/` snapshot to `main` |
-| `build-desktop` | `build` | Matrix: amd64 (ubuntu) + arm64 (ubuntu-24.04-arm). Builds Tauri `.deb`. Uploads to app server: `SCP` → `/var/www/rs-app/desktop/`; writes `update.json` via SSH |
+| `build-desktop` | `build` | Matrix: amd64 (ubuntu) + arm64 (ubuntu-24.04-arm). Builds Tauri `.deb`. Uploads to app server: `SCP` → `/var/www/rs-app/public_html/dist/`; writes `update.json` via SSH |
 | `ping-deploy` | `build-desktop` | `POST /_deploy/` with `X-Deploy-Token` header → triggers `rsa-app-update` on server |
 
 > **Note:** `build-desktop` uses `APP_SERVER_SSH_KEY` for SCP + SSH.
@@ -244,8 +244,8 @@ _deploy/index.php  (from bin/server-webhook.php)
   ▼
 /usr/local/bin/rsa-app-update  (from bin/server-update-webapp.sh)
   │  git sparse-clone: fetches only docs/app/ from the latest tag
-  │  rsync to /var/www/rs-app/
-  │  Preserves: desktop/, _deploy/, versioned dirs
+  │  rsync to /var/www/rs-app/public_html/
+  │  Preserves: dist/, _deploy/, versioned dirs
 ```
 
 **Sudoers rule:** `www-data ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-app-update`
