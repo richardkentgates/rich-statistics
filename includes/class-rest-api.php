@@ -62,6 +62,21 @@ class RSA_Rest_API {
 	}
 
 	/**
+	 * Known origins allowed to make credentialed CORS requests.
+	 * Requests without an Origin header (non-browser) get Access-Control-Allow-Origin: *.
+	 * Keep in sync with the PWA's hosted locations.
+	 */
+	private static function allowed_cors_origins(): array {
+		return [
+			home_url(),
+			'tauri://localhost',
+			'https://rs-app.richardkentgates.com',
+			'https://rs-dev.richardkentgates.com',
+			'https://rs-test.richardkentgates.com',
+		];
+	}
+
+	/**
 	 * Add CORS headers for rsa/v1 routes so the PWA / desktop app (served from
 	 * a different origin, including tauri://localhost) can reach the REST API.
 	 *
@@ -82,15 +97,21 @@ class RSA_Rest_API {
 			return;
 		}
 
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+		$allowed = self::allowed_cors_origins();
+
 		// OPTIONS preflight: answer immediately so WP's serve_request never runs.
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
-			$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-			header( 'Access-Control-Allow-Origin: ' . ( $origin ?: '*' ) );
-			header( 'Access-Control-Allow-Credentials: true' );
+			header( 'Vary: Origin' );
+			if ( $origin && in_array( $origin, $allowed, true ) ) {
+				header( 'Access-Control-Allow-Origin: ' . $origin );
+				header( 'Access-Control-Allow-Credentials: true' );
+			} elseif ( ! $origin ) {
+				header( 'Access-Control-Allow-Origin: *' );
+			}
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
 			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Max-Age: 86400' );
-			header( 'Vary: Origin' );
 			status_header( 204 );
 			exit;
 		}
@@ -115,10 +136,15 @@ class RSA_Rest_API {
 		if ( strpos( $request->get_route(), '/' . self::NS ) !== 0 ) {
 			return $served;
 		}
-		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		header( 'Access-Control-Allow-Origin: ' . ( $origin ?: '*' ) );
-		header( 'Access-Control-Allow-Credentials: true' );
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+		$allowed = self::allowed_cors_origins();
 		header( 'Vary: Origin' );
+		if ( $origin && in_array( $origin, $allowed, true ) ) {
+			header( 'Access-Control-Allow-Origin: ' . $origin );
+			header( 'Access-Control-Allow-Credentials: true' );
+		} elseif ( ! $origin ) {
+			header( 'Access-Control-Allow-Origin: *' );
+		}
 		return $served;
 	}
 
@@ -621,14 +647,14 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 	// ----------------------------------------------------------------
 
 	public static function post_track( WP_REST_Request $r ): WP_REST_Response {
-		// Delegates fully to RSA_Tracker which is AJAX-handler based.
-		// For REST clients we run the same logic but without wp_send_json.
-		// We simply re-use the AJAX action via do_action().
+		// Save and restore $_POST to avoid polluting global state.
+		$saved_post = $_POST;
 		$_POST  = $r->get_params();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
 		// Verify nonce manually (passed as 'nonce' param)
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'rsa_track' ) ) {
+			$_POST = $saved_post;
 			return new WP_REST_Response( [ 'ok' => false, 'error' => 'invalid_nonce' ], 403 );
 		}
 
@@ -639,6 +665,7 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		ob_get_clean();
 		remove_filter( 'wp_doing_ajax', '__return_true' );
 
+		$_POST = $saved_post;
 		return new WP_REST_Response( [ 'ok' => true ], 200 );
 	}
 
@@ -724,12 +751,14 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		] );
 
 		if ( is_wp_error( $response ) ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed: ' . $response->get_error_message() ], 500 );
+			error_log( 'RSA AI error: ' . $response->get_error_message() );
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed.' ], 500 );
 		}
 
 		$status = wp_remote_retrieve_response_code( $response );
 		if ( $status !== 200 ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI API error: HTTP ' . $status ], 500 );
+			error_log( 'RSA AI API HTTP ' . $status . ': ' . wp_remote_retrieve_body( $response ) );
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed.' ], 500 );
 		}
 
 		$body   = json_decode( wp_remote_retrieve_body( $response ), true );
