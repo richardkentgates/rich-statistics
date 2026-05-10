@@ -80,11 +80,11 @@ jobs:
       contents: read
 
     steps:
-      - name: Sync to dev endpoint
+      - name: Sync via deploy webhook
         run: |
           curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_DEV }}" \
-            https://rs-app.richardkentgates.com/_deploy-dev/
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+            https://rs-app.richardkentgates.com/_deploy/
 
   # ---------------------------------------------------------------------------
   # Build desktop apps for dev (no deployment, just artifacts)
@@ -181,8 +181,8 @@ jobs:
       - name: Deploy to test endpoint
         run: |
           curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_TEST }}" \
-            https://rs-app.richardkentgates.com/_deploy-test/
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+            https://rs-app.richardkentgates.com/_deploy/
 
   # ---------------------------------------------------------------------------
   # Run tests on dev branch
