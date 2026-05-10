@@ -559,7 +559,18 @@ class RSA_Admin {
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
 			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
+			'rsa_ai_provider'              => 'sanitize_text_field',
+			'rsa_ai_endpoint'              => 'sanitize_url',
+			'rsa_ai_model'                 => 'sanitize_text_field',
 		];
+
+		if ( isset( $_POST['rsa_ai_api_key'] ) && '' !== $_POST['rsa_ai_api_key'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$raw = sanitize_text_field( wp_unslash( $_POST['rsa_ai_api_key'] ) );
+			if ( preg_match( '/^\*+$/', $raw ) ) {
+				$raw = get_option( 'rsa_ai_api_key', '' );
+			}
+			update_option( 'rsa_ai_api_key', $raw );
+		}
 
 		foreach ( $fields as $key => $sanitizer ) {
 			if ( isset( $_POST[ $key ] ) ) {
@@ -814,6 +825,17 @@ class RSA_Admin {
 
 	public static function page_footer(): void {
 		echo '</div><!-- .rsa-wrap -->';
+	}
+
+	// ----------------------------------------------------------------
+	// API key masking — show only first 8 chars in the form
+	// ----------------------------------------------------------------
+
+	public static function mask_api_key( string $key ): string {
+		if ( strlen( $key ) <= 8 ) {
+			return $key;
+		}
+		return substr( $key, 0, 8 ) . str_repeat( '*', 24 );
 	}
 
 	// ----------------------------------------------------------------
