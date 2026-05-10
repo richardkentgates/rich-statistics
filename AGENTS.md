@@ -17,6 +17,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `includes/class-admin.php` | Admin menus, app page, roles |
 | `includes/class-woocommerce.php` | WooCommerce event tracking |
 | `cli/class-cli.php` | WP-CLI commands (`wp rich-stats`) |
+| `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
 | `tests/integration/` | PHPUnit integration tests (12 files) |
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
@@ -131,6 +132,7 @@ Each branch has its own:
 ## Infrastructure
 
 See `ROADMAP.md` for the full audit of server infrastructure, version compatibility, CI/CD routing, and planned improvements across dev/test/prod environments.
+
 ## Feature Tiers
 
 **Free:** Overview, Pages, Audience, Referrers, Behavior, Campaigns, User Settings
@@ -141,10 +143,27 @@ See `ROADMAP.md` for the full audit of server infrastructure, version compatibil
 
 - Freemius — License management and plugin updates
 - OpenAI/Custom — AI query feature
-- `rs-app.richardkentgates.com` — Hosted PWA and .deb packages
+- `rs-app.richardkentgates.com` — Production PWA, desktop downloads, APT repo
+- `rs-dev.richardkentgates.com` — Dev/bleeding-edge PWA and desktop builds
+- `rs-test.richardkentgates.com` — Test/staging PWA (used for integration testing)
 
 ## Build / Deploy
 
 - No JS build step (vanilla JS)
 - `build.sh` — Downloads Chart.js, creates plugin ZIP
 - `bin/install-wp-tests.sh` — Sets up WordPress test environment
+
+## Remaining Work
+
+See `ROADMAP.md` §6 for the full prioritized list. Verified discrepancies found during audit fix verification:
+
+| Priority | Gap | Environment |
+|----------|-----|-------------|
+| P0 | APT repo missing | Dev |
+| P0 | `dist/update.json` missing | Dev |
+| P1 | `dist/update.json` version stale (2.1.0 vs 2.2.7) | Test |
+| P1 | `v/` version directories incomplete | Dev, Test |
+| P2 | `RSA_APP_URL` hardcoded to production | All |
+| P3 | PHPCS not run in CI | All |
+| P4 | WordPress.org SVN submission | — |
+| P5 | Monitoring, rollback, backup | Prod |
