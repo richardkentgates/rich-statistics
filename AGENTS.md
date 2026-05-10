@@ -22,7 +22,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
-| `docs/app/2.2.7/` | Latest bundled PWA version |
+| `docs/app/v/2.2.7/` | Latest bundled PWA version (canonical: `/v/<version>/`) |
 | `src-tauri/` | Tauri 2 desktop app wrapper |
 
 ## Database Tables (each uses `{$wpdb->prefix}rsa_` prefix)
@@ -82,9 +82,52 @@ composer phpcbf
 3. Add to `premiumFeatures` map in `docs/app/2.2.7/app.js`
 
 ### Creating a new PWA version
-1. Copy the latest version folder under `docs/app/`
+1. Copy the latest version folder under `docs/app/v/`
 2. Update `docs/app/versions.json`
 3. Update the latest folder's files
+
+## Branch Structure
+
+| Branch | Environment | Server | CI Workflow | Branch Type |
+|--------|-------------|--------|-------------|-------------|
+| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged releases) | Stable releases |
+| `develop` | Dev/Beta | `rs-dev.richardkentgates.com` | `build-dev.yml` (push) | Bleeding-edge |
+| `test` | Staging | `rs-test.richardkentgates.com` | `build-dev.yml` (push) | Integration testing |
+
+Each branch has its own:
+- WordPress plugin ZIP (CI artifact)
+- PWA web app (deployed via webhook)
+- Linux `.deb` + Windows `.exe` desktop binaries (pushed to server `dist/`)
+
+## Server Endpoints
+
+| Resource | Production | Dev | Test |
+|----------|-----------|-----|------|
+| PWA origin | `rs-app.richardkentgates.com` | `rs-dev.richardkentgates.com` | `rs-test.richardkentgates.com` |
+| Webhook | `rs-app.richardkentgates.com/_deploy/` | `rs-dev.richardkentgates.com/_deploy/` | `rs-test.richardkentgates.com/_deploy/` |
+| APT repo | `rs-app.richardkentgates.com/apt/` | `rs-dev.richardkentgates.com/apt/` | `rs-test.richardkentgates.com/apt/` |
+| Desktop binaries | `rs-app.richardkentgates.com/dist/` | `rs-dev.richardkentgates.com/dist/` | `rs-test.richardkentgates.com/dist/` |
+| Server path | `/var/www/rs-app/public_html/` | `/var/www/rs-app-dev/` | `/var/www/rs-app-test/` |
+| Git branch (updater) | `main` | `develop` | `test` |
+| Webhook token | `/etc/rsa-webhook-token` | `/etc/rsa-webhook-token-dev` | `/etc/rsa-webhook-token-test` |
+
+## CI Pipelines
+
+### `build-dev.yml` (branches: develop, test)
+- **Trigger**: Push to `develop` or `test`, or `workflow_dispatch`
+- **Build**: Plugin ZIP (PHP syntax check, no tests)
+- **deploy-web-dev**: Syncs PWA to `rs-dev` via webhook (develop push only)
+- **build-desktop-dev**: Builds Linux + Windows desktop binaries, pushes to `rs-dev/dist/` (develop push only)
+- **build-desktop-test**: Builds Linux + Windows desktop binaries, pushes to `rs-test/dist/` (test push only)
+- **deploy-web-test**: Syncs PWA to `rs-test` via webhook (test push only, or manual dispatch)
+- **test**: Runs PHPUnit unit + integration tests
+
+### `build-release.yml` (tagged on main)
+- **Trigger**: Tag push (`v*`)
+- **Build**: Plugin ZIP, versioned PWA snapshot
+- **Ping deploy**: Syncs PWA to `rs-app` via webhook
+- **build-desktop-linux**: Linux `.deb` for amd64 + arm64, pushes to `rs-app/dist/`
+- **build-desktop-windows**: Windows `.exe` installer, pushes to `rs-app/dist/`
 
 ## Infrastructure
 
