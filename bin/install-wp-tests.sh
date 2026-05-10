@@ -24,9 +24,9 @@ WP_CORE_DIR=${WP_CORE_DIR:-/tmp/wordpress}
 download() {
     if [ "$(which curl)" ]; then
         if [ "$2" = "-" ]; then
-            curl -s "$1"
+            curl -sL "$1"
         else
-            curl -s "$1" > "$2"
+            curl -sL "$1" > "$2"
         fi
     elif [ "$(which wget)" ]; then
         if [ "$2" = "-" ]; then
