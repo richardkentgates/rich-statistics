@@ -6,11 +6,45 @@ Thank you for your interest in contributing! This document covers the developmen
 
 ## Table of Contents
 
-1. [Development Setup](#development-setup)
-2. [Coding Standards](#coding-standards)
-3. [Running Tests](#running-tests)
-4. [Submitting a Pull Request](#submitting-a-pull-request)
-5. [Reporting Bugs](#reporting-bugs)
+1. [Branch Structure](#branch-structure)
+2. [Development Setup](#development-setup)
+3. [Coding Standards](#coding-standards)
+4. [Running Tests](#running-tests)
+5. [Submitting a Pull Request](#submitting-a-pull-request)
+6. [Reporting Bugs](#reporting-bugs)
+
+---
+
+## Branch Structure
+
+Rich Statistics uses a three-branch development model corresponding to three server environments:
+
+| Branch | Environment | Subdomain | CI Workflow |
+|--------|-------------|-----------|-------------|
+| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged releases) |
+| `develop` | Dev / Beta | `rs-dev.richardkentgates.com` | `build-dev.yml` (push) |
+| `test` | Staging / QA | `rs-test.richardkentgates.com` | `build-dev.yml` (push) |
+
+- **`main`** — Stable releases only. Merged from `develop` via release PR.
+- **`develop`** — Primary development branch. Base your feature branches here.
+- **`test`** — Integration testing and QA validation. Merged from `develop` for pre-release verification.
+
+Each push to `develop` or `test` triggers the `build-dev.yml` workflow which:
+1. Builds a plugin ZIP
+2. Syncs the PWA web app to the corresponding subdomain via webhook
+3. Builds and pushes Linux `.deb` + Windows `.exe` binaries to the environment's `dist/` directory
+4. Updates the environment's APT repository
+
+Tagged releases on `main` trigger `build-release.yml` which additionally creates versioned PWA snapshots under `docs/app/v/<version>/`.
+
+### Server resource endpoints
+
+| Resource | Production | Dev | Test |
+|----------|-----------|-----|------|
+| PWA web app | `https://rs-app.richardkentgates.com` | `https://rs-dev.richardkentgates.com` | `https://rs-test.richardkentgates.com` |
+| Deploy webhook | `https://rs-app.richardkentgates.com/_deploy/` | `https://rs-dev.richardkentgates.com/_deploy/` | `https://rs-test.richardkentgates.com/_deploy/` |
+| APT repository | `https://rs-app.richardkentgates.com/apt/` | `https://rs-dev.richardkentgates.com/apt/` | `https://rs-test.richardkentgates.com/apt/` |
+| Desktop binaries | `https://rs-app.richardkentgates.com/dist/` | `https://rs-dev.richardkentgates.com/dist/` | `https://rs-test.richardkentgates.com/dist/` |
 
 ---
 
@@ -82,6 +116,14 @@ composer phpcbf
 4. Ensure `composer phpcs` reports no errors
 5. Update `CHANGELOG.md` under **[Unreleased]** describing your change
 6. Open a PR against `develop` — describe the motivation, what changed, and how to test it
+7. After merging, the `develop` branch auto-deploys to the dev environment (`rs-dev.richardkentgates.com`)
+
+### Release process
+
+1. Changes accumulate on `develop` and are verified on `rs-dev.richardkentgates.com`
+2. When ready for pre-release QA, merge `develop` into `test` — the `test` branch auto-deploys to `rs-test.richardkentgates.com`
+3. After QA passes, create a release PR from `test` (or `develop`) into `main`
+4. Tag the merge commit on `main` with `v<version>` — this triggers `build-release.yml` which builds the production plugin ZIP, desktop binaries, and PWA snapshot, then deploys to `rs-app.richardkentgates.com`
 
 ### What we review
 
