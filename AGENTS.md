@@ -17,6 +17,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `includes/class-admin.php` | Admin menus, app page, roles |
 | `includes/class-woocommerce.php` | WooCommerce event tracking |
 | `cli/class-cli.php` | WP-CLI commands (`wp rich-stats`) |
+| `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
 | `tests/integration/` | PHPUnit integration tests (12 files) |
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
@@ -85,6 +86,10 @@ composer phpcbf
 2. Update `docs/app/versions.json`
 3. Update the latest folder's files
 
+## Infrastructure
+
+See `ROADMAP.md` for the full audit of server infrastructure, version compatibility, CI/CD routing, and planned improvements across dev/test/prod environments.
+
 ## Feature Tiers
 
 **Free:** Overview, Pages, Audience, Referrers, Behavior, Campaigns, User Settings
@@ -95,7 +100,9 @@ composer phpcbf
 
 - Freemius — License management and plugin updates
 - OpenAI/Custom — AI query feature
-- `rs-app.richardkentgates.com` — Hosted PWA and .deb packages
+- `rs-app.richardkentgates.com` — Production PWA, desktop downloads, APT repo
+- `rs-dev.richardkentgates.com` — Dev/bleeding-edge PWA and desktop builds
+- `rs-test.richardkentgates.com` — Test/staging PWA (used for integration testing)
 
 ## Build / Deploy
 

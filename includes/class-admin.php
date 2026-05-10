@@ -88,12 +88,14 @@ class RSA_Admin {
 		$current_user  = wp_get_current_user();
 		$is_premium    = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
-			'autoSiteUrl' => $site_url,
-			'appUrl'      => $app_url,
-			'nonce'       => wp_create_nonce( 'wp_rest' ),
-			'autoLabel'   => get_bloginfo( 'name' ),
-			'isPremium'   => $is_premium,
-			'upgradeUrl'  => function_exists( 'rs_fs' ) ? rs_fs()->get_upgrade_url() : '',
+			'autoSiteUrl'   => $site_url,
+			'appUrl'        => $app_url,
+			'nonce'         => wp_create_nonce( 'wp_rest' ),
+			'autoLabel'     => get_bloginfo( 'name' ),
+			'isPremium'     => $is_premium,
+			'upgradeUrl'    => function_exists( 'rs_fs' ) ? rs_fs()->get_upgrade_url() : '',
+			'appVersion'    => RSA_VERSION,
+			'minAppVersion' => RSA_MIN_APP_VERSION,
 		] ) . ';</script>';
 		$html = str_replace( '</head>', $config_script . '</head>', $html );
 

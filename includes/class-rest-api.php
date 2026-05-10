@@ -1,16 +1,14 @@
 <?php
 /**
- * [PREMIUM] REST API
+ * REST API
  *
  * Namespace    : rsa/v1
  * Auth         : WordPress Application Passwords (core, WP 5.6+)
  *                No custom token system — use a WP user account with
  *                the Application Password generated in their profile.
  *
- * @fs_premium_only
- *
  * Notes on security:
- * - All read endpoints require 'manage_options' (admin-level).
+ * - All read endpoints require 'rsa_manage_statistics' capability.
  * - The ingest POST endpoint (/track) is public but nonce-protected.
  * - Rate-limiting on /track mirrors the AJAX handler.
  * - All outputs are wp_json_encode'd via WP_REST_Response; no raw echo.
@@ -354,10 +352,12 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 
 	public static function get_info(): WP_REST_Response {
 		return self::ok( [
-			'version'   => RSA_VERSION,
-			'app_url'   => RSA_APP_URL,
-			'site_name' => get_bloginfo( 'name' ),
-			'site_url'  => get_site_url(),
+			'version'         => RSA_VERSION,
+			'app_version'     => RSA_APP_VERSION,
+			'min_app_version' => RSA_MIN_APP_VERSION,
+			'app_url'         => RSA_APP_URL,
+			'site_name'       => get_bloginfo( 'name' ),
+			'site_url'        => get_site_url(),
 		] );
 	}
 
