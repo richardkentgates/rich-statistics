@@ -167,8 +167,14 @@ class RSA_CLI extends WP_CLI_Command {
 		$data = RSA_Analytics::export_events( $period, $format );
 
 		if ( ! empty( $assoc['output'] ) ) {
-			file_put_contents( $assoc['output'], $data );
-			WP_CLI::success( 'Written to ' . $assoc['output'] );
+			$output = $assoc['output'];
+			$real   = realpath( dirname( $output ) );
+			$abspath = realpath( ABSPATH );
+			if ( ! $real || ! $abspath || strpos( $real, $abspath ) !== 0 ) {
+				WP_CLI::error( 'Output path must be within the WordPress directory.' );
+			}
+			file_put_contents( $output, $data );
+			WP_CLI::success( 'Written to ' . $output );
 		} else {
 			echo $data . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
