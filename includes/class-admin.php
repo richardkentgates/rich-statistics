@@ -70,10 +70,9 @@ class RSA_Admin {
 			exit;
 		}
 
-		// Premium gate — must have an active premium licence
-		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-			wp_die( esc_html__( 'The Rich Statistics App requires a premium licence.', 'rich-statistics' ), 403 );
-		}
+		// App is available to all authenticated users.
+		// Premium features are gated at the REST API level.
+		// Freemius handles license management and provides upgrade prompts.
 
 		$assets_url = RSA_URL . 'docs/app/';
 		$site_url   = get_site_url();
@@ -87,11 +86,14 @@ class RSA_Admin {
 
 		// Inject RSA_CONFIG before </head> so config.js / app.js can read it.
 		$current_user  = wp_get_current_user();
+		$is_premium    = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
 			'autoSiteUrl' => $site_url,
 			'appUrl'      => $app_url,
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'autoLabel'   => get_bloginfo( 'name' ),
+			'isPremium'   => $is_premium,
+			'upgradeUrl'  => function_exists( 'rs_fs' ) ? rs_fs()->get_upgrade_url() : '',
 		] ) . ';</script>';
 		$html = str_replace( '</head>', $config_script . '</head>', $html );
 

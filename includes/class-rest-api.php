@@ -136,21 +136,23 @@ class RSA_Rest_API {
 			],
 		];
 
-		$auth = [ __CLASS__, 'check_auth' ];
+$basic   = [ __CLASS__, 'check_basic_auth' ];
+		$premium = [ __CLASS__, 'check_premium_auth' ];
 
 		// AI conversational endpoint (Premium)
 		register_rest_route( self::NS, '/ai/query', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'ai_query' ],
-			'permission_callback' => $auth,
+			'permission_callback' => $premium,
 			'args'                => [
 				'question' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
 				'period'   => $read_args['period'],
 			],
 		] );
 
-		register_rest_route( self::NS, '/overview',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_overview'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/pages',     [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_pages'     ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		// Free tier endpoints - available to all authenticated users
+		register_rest_route( self::NS, '/overview',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_overview'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/pages',       [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_pages'      ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
 			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
 			'browser'  => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'os'       => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
@@ -158,57 +160,59 @@ class RSA_Rest_API {
 			'sort'     => [ 'type' => 'string',  'default' => 'views', 'enum' => [ 'views', 'avg_time' ] ],
 			'sort_dir' => [ 'type' => 'string',  'default' => 'desc',  'enum' => [ 'asc', 'desc' ] ],
 		] ) ] );
-		register_rest_route( self::NS, '/audience',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_audience'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/referrers', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_referrers' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		register_rest_route( self::NS, '/audience',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_audience'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/referrers',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_referrers'  ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
 			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
 			'ref_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/behavior',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_behavior'  ], 'permission_callback' => $auth, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/clicks',    [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_clicks'    ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		register_rest_route( self::NS, '/behavior',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_behavior'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/campaigns',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_campaigns' ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
+			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
+			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
+		] ) ] );
+		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $basic, 'args' => $read_args ] );
+
+		// Premium-only endpoints
+		register_rest_route( self::NS, '/clicks',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_clicks'    ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
 			'page' => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/heatmap',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_heatmap'   ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		register_rest_route( self::NS, '/heatmap',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_heatmap'   ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
 			'page' => [ 'type' => 'string', 'default' => '/', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/export',    [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_export'    ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		register_rest_route( self::NS, '/export',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_export'    ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
 			'format'    => [ 'type' => 'string', 'default' => 'json',      'enum' => [ 'json', 'csv' ] ],
 			'data_type' => [ 'type' => 'string', 'default' => 'pageviews', 'enum' => [ 'pageviews', 'sessions', 'clicks', 'referrers' ] ],
 			'date_from' => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'date_to'   => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 		] ) ] );
-		register_rest_route( self::NS, '/campaigns', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_campaigns' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
-			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
-			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/woocommerce', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_woocommerce' ], 'permission_callback' => $auth, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/woocommerce', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_woocommerce' ], 'permission_callback' => $premium, 'args' => $read_args ] );
 		$flow_args = array_merge( $read_args, [
 			'entry_source' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'focus_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'min_sessions' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
 			'steps'        => [ 'type' => 'integer', 'default' => 4,  'minimum' => 2, 'maximum' => 5 ],
 		] );
-		register_rest_route( self::NS, '/user-flow',         [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'         ], 'permission_callback' => $auth, 'args' => $flow_args ] );
-		register_rest_route( self::NS, '/user-flow/journey', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_journey' ], 'permission_callback' => $auth, 'args' => array_merge( $read_args, [
+		register_rest_route( self::NS, '/user-flow',         [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'         ], 'permission_callback' => $premium, 'args' => $flow_args ] );
+		register_rest_route( self::NS, '/user-flow/journey', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_journey' ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
 			'from_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'to_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
 			'min_count' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
 			'limit'     => [ 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 250 ],
 			'sort'      => [ 'type' => 'string',  'default' => 'count', 'sanitize_callback' => 'sanitize_text_field' ],
-			'sort_dir'  => [ 'type' => 'string',  'default' => 'desc',  'sanitize_callback' => 'sanitize_text_field' ],
+			'sort_dir'  => [ 'type' => 'string',  'default' => 'desc',  'enum' => [ 'asc', 'desc' ] ],
 		] ) ] );
-		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $auth, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $auth, 'args' => $read_args ] );
+		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $premium, 'args' => $read_args ] );
 
 		register_rest_route( self::NS, '/purge-page', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'purge_page' ],
-			'permission_callback' => $auth,
+			'permission_callback' => $premium,
 			'args'                => [
 				'page' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
 			],
 		] );
 
-		// Plugin info — public, no auth required (version badge + version sync for the PWA)
+// Plugin info — public, no auth required (version badge + version sync for the PWA)
 		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
 
 		// User settings — syncs the site list across devices (metadata only, no credentials)
@@ -216,12 +220,12 @@ class RSA_Rest_API {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ __CLASS__, 'get_user_settings' ],
-				'permission_callback' => $auth,
+				'permission_callback' => $basic,
 			],
 			[
 				'methods'             => 'POST',
 				'callback'            => [ __CLASS__, 'post_user_settings' ],
-				'permission_callback' => $auth,
+				'permission_callback' => $basic,
 				'args'                => [
 					'sites' => [ 'type' => 'array', 'required' => true ],
 				],
@@ -239,7 +243,7 @@ class RSA_Rest_API {
 		register_rest_route( self::NS, '/verify-install', [
 			'methods'             => 'POST',
 			'callback'            => [ __CLASS__, 'post_verify_install' ],
-			'permission_callback' => $auth,
+			'permission_callback' => $premium,
 			'args'                => [
 				'site_token' => [
 					'type'              => 'string',
@@ -265,11 +269,35 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// Permission callback
+	// Permission callbacks
 	// ----------------------------------------------------------------
 
-	public static function check_auth( WP_REST_Request $request ): bool|WP_Error {
-		// Freemius premium gate — app features require active premium licence
+	/**
+	 * Basic auth - available to all authenticated users (free tier)
+	 */
+	public static function check_basic_auth( WP_REST_Request $request ): bool|WP_Error {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
+				[ 'status' => 403 ]
+			);
+		}
+		if ( ! RSA_Admin::user_can_access_app() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to access Rich Statistics data.', 'rich-statistics' ),
+				[ 'status' => 403 ]
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Premium auth - requires active premium licence
+	 */
+	public static function check_premium_auth( WP_REST_Request $request ): bool|WP_Error {
+		// Freemius premium gate — gated features require active premium licence
 		if ( function_exists( 'rs_fs' ) && ! rs_fs()->can_use_premium_code__premium_only() ) {
 			return new WP_Error(
 				'rest_forbidden',
