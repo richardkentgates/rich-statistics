@@ -39,6 +39,8 @@
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
+		isPremium   : false,     // from RSA_CONFIG.isPremium
+		upgradeUrl  : '',        // Freemius upgrade URL
 	};
 
 	// -----------------------------------------------------------------------
@@ -46,6 +48,12 @@
 	// -----------------------------------------------------------------------
 	document.addEventListener( 'DOMContentLoaded', function () {
 		loadStoredSites();
+
+		// Load premium status from RSA_CONFIG (injected by WordPress)
+		if ( window.RSA_CONFIG ) {
+			state.isPremium  = window.RSA_CONFIG.isPremium  || false;
+			state.upgradeUrl = window.RSA_CONFIG.upgradeUrl || '';
+		}
 
 		var nonceAuth = !! ( window.RSA_CONFIG && window.RSA_CONFIG.nonce && state.siteUrl );
 		if ( ( state.siteUrl && state.credentials ) || nonceAuth ) {
@@ -898,44 +906,61 @@
 		bindSiteSwitcher();
 	}
 
-	function switchView( view ) {
-		// Deactivate old view
-		var oldEl = document.getElementById( 'rsa-view-' + state.view );
-		if ( oldEl ) oldEl.hidden = true;
-
-		// Deactivate old nav link
-		var oldLink = document.querySelector( '.rsa-nav-link.rsa-active' );
-		if ( oldLink ) oldLink.classList.remove( 'rsa-active' );
-
-		state.view = view;
-
-		// Activate new view
-		var newEl = document.getElementById( 'rsa-view-' + view );
-		if ( newEl ) newEl.hidden = false;
-
-		// Activate new nav link
-		var newLink = document.querySelector( '.rsa-nav-link[data-view="' + view + '"]' );
-		if ( newLink ) newLink.classList.add( 'rsa-active' );
-
-		// Update top bar title
-		var titles = {
-			overview    : 'Overview',
-			pages       : 'Top Pages',
-			audience    : 'Audience',
-			referrers   : 'Referrers',
-			behavior    : 'Behavior',
-			campaigns   : 'Campaigns',
-			'user-flow' : 'User Flow',
-			clicks      : 'Click Tracking',
-			heatmap     : 'Heatmap',
-			export      : 'Export',
-			woocommerce : 'WooCommerce',
-			install     : 'Install',
+	var premiumFeatures = {
+			'user-flow'  : 'User Flow',
+			clicks       : 'Click Tracking',
+			heatmap      : 'Heatmap',
+			export       : 'Export',
+			woocommerce  : 'WooCommerce',
 		};
-		document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
-		renderView( view );
-	}
+		function switchView( view ) {
+			// Deactivate old view
+			var oldEl = document.getElementById( 'rsa-view-' + state.view );
+			if ( oldEl ) oldEl.hidden = true;
+
+			// Deactivate old nav link
+			var oldLink = document.querySelector( '.rsa-nav-link.rsa-active' );
+			if ( oldLink ) oldLink.classList.remove( 'rsa-active' );
+
+			state.view = view;
+
+			// Activate new view
+			var newEl = document.getElementById( 'rsa-view-' + view );
+			if ( newEl ) newEl.hidden = false;
+
+			// Activate new nav link
+			var newLink = document.querySelector( '.rsa-nav-link[data-view="' + view + '"]' );
+			if ( newLink ) newLink.classList.add( 'rsa-active' );
+
+			// Update top bar title
+			var titles = {
+				overview    : 'Overview',
+				pages       : 'Top Pages',
+				audience    : 'Audience',
+				referrers   : 'Referrers',
+				behavior    : 'Behavior',
+				campaigns   : 'Campaigns',
+				'user-flow' : 'User Flow',
+				clicks      : 'Click Tracking',
+				heatmap     : 'Heatmap',
+				export      : 'Export',
+				woocommerce : 'WooCommerce',
+				install     : 'Install',
+			};
+			document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
+
+			// Check premium gate before rendering
+			if ( ! state.isPremium && premiumFeatures[ view ] ) {
+				var container = document.getElementById( 'rsa-view-' + view );
+				if ( container ) {
+					showUpgradeOverlay( container, premiumFeatures[ view ] );
+					return;
+				}
+			}
+
+			renderView( view );
+		}
 
 	function bindPeriodSelect() {
 		var periodSel     = document.getElementById( 'rsa-period-select' );
@@ -2708,6 +2733,21 @@
 	}
 
 	// -----------------------------------------------------------------------
+	// Premium feature lock
+	function showUpgradeOverlay( container, featureName ) {
+		container.innerHTML =
+			'<div class="rsa-premium-notice" style="text-align:center;padding:60px 20px;">' +
+				'<div style="font-size:48px;margin-bottom:16px;">🔒</div>' +
+				'<h3 style="margin-bottom:8px;">' + esc( featureName ) + ' is Premium</h3>' +
+				'<p style="color:#666;margin-bottom:24px;">Unlock this feature with a premium licence.</p>' +
+				( state.upgradeUrl
+					? '<a href="' + esc( state.upgradeUrl ) + '" class="button button-primary button-hero" target="_blank">Upgrade Now</a>'
+					: '<p style="color:#999;font-size:12px;">Contact the site administrator to upgrade.</p>'
+				) +
+			'</div>';
+		setLoading( false );
+	}
+
 	// Formatters
 	// -----------------------------------------------------------------------
 	function fmt( n ) {
