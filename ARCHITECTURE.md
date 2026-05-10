@@ -417,14 +417,14 @@ navigator.serviceWorker.addEventListener('message', function (event) {
 The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
 - `/app/` — live canonical PWA (GitHub Pages mirror)
 - `/app/{version}/` — versioned snapshots referenced by `versions.json`
-- `/desktop/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
-- `/desktop/rich-statistics-linux-arm64.deb` — latest arm64 `.deb`
+- `/dist/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
+- `/dist/rich-statistics-linux-arm64.deb` — latest arm64 `.deb`
 - `/apt/` — Debian APT repository (see below)
 
 **Webhook deploy flow:**
 1. CI `ping-deploy` job POSTs to `/_deploy/` with `DEPLOY_WEBHOOK_TOKEN`
-2. Server runs `/usr/local/bin/rsa-app-update` which pulls `docs/app/` from GitHub and syncs to `/var/www/rs-app/`
-3. `.deployed-version` file on the server records the last deployed version
+2. Server runs `/usr/local/bin/rsa-app-update` which pulls `docs/app/` from GitHub and syncs to `/var/www/rs-app/public_html/`
+3. `.deployed-version` file on the server (outside `public_html/`) records the last deployed version
 
 **SSH access:** `<SSH_USER>@<PWA_SERVER_IP>` using `~/.ssh/id_rsa`
 
@@ -466,7 +466,7 @@ GPG fingerprint: `7528670109B7907492528C2F7F1EA217D64A5134`
 ```
 
 **How CI updates the repo:**
-1. `build-desktop` job builds `.deb` for each arch and SCPs to `/var/www/rs-app/desktop/`
+1. `build-desktop` job builds `.deb` for each arch and SCPs to `/var/www/rs-app/public_html/dist/`
 2. CI then calls `sudo /usr/local/bin/rsa-apt-repo-update <arch> <version>` via SSH
 3. The script copies the `.deb` into `pool/`, regenerates `Packages`/`Release`/`InRelease`, and GPG-signs using the key stored in root's keyring on the server
 

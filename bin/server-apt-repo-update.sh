@@ -4,7 +4,7 @@
 # signed package metadata.
 #
 # Called by the CI build-desktop job via SSH immediately after each .deb is
-# uploaded to /var/www/rs-app/desktop/.
+# uploaded to /var/www/rs-app/public_html/dist/.
 #
 # Usage:
 #   sudo /usr/local/bin/rsa-apt-repo-update <arch> <version>
@@ -13,7 +13,7 @@
 #   sudo /usr/local/bin/rsa-apt-repo-update arm64 1.4.8
 #
 # What this does:
-#   1. Copies the uploaded .deb from /var/www/rs-app/desktop/ into the pool
+#   1. Copies the uploaded .deb from /var/www/rs-app/public_html/dist/ into the pool
 #      with the standard versioned name  (rich-statistics_<ver>_<arch>.deb)
 #   2. Regenerates the Packages / Packages.gz file for every architecture
 #   3. Regenerates the Release file via apt-ftparchive
@@ -27,7 +27,7 @@
 set -euo pipefail
 
 APT_DIR="/var/www/rs-app/apt"
-DESKTOP_DIR="/var/www/rs-app/desktop"
+DESKTOP_DIR="/var/www/rs-app/public_html/dist"
 KEY_UID="Rich Statistics APT Signing Key <apt@rs-app.richardkentgates.com>"
 LOG_TAG="rsa-apt-repo-update"
 
