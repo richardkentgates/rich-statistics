@@ -152,3 +152,18 @@ See `ROADMAP.md` for the full audit of server infrastructure, version compatibil
 - No JS build step (vanilla JS)
 - `build.sh` — Downloads Chart.js, creates plugin ZIP
 - `bin/install-wp-tests.sh` — Sets up WordPress test environment
+
+## Remaining Work
+
+See `ROADMAP.md` §6 for the full prioritized list. Verified discrepancies found during audit fix verification:
+
+| Priority | Gap | Environment |
+|----------|-----|-------------|
+| P0 | APT repo missing | Dev |
+| P0 | `dist/update.json` missing | Dev |
+| P1 | `dist/update.json` version stale (2.1.0 vs 2.2.7) | Test |
+| P1 | `v/` version directories incomplete | Dev, Test |
+| P2 | `RSA_APP_URL` hardcoded to production | All |
+| P3 | PHPCS not run in CI | All |
+| P4 | WordPress.org SVN submission | — |
+| P5 | Monitoring, rollback, backup | Prod |
