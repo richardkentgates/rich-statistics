@@ -289,6 +289,16 @@ jobs:
           EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
           scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app-test/dist/"
 
+      - name: Update test APT repository (Linux only)
+        if: matrix.platform != 'windows'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          ARCH=${PLATFORM#linux-}
+          VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          ssh -o StrictHostKeyChecking=no richardkentgates@104.197.231.120 \
+            "sudo /usr/local/bin/rsa-apt-repo-update-test ${ARCH} ${VERSION}"
+
   # ---------------------------------------------------------------------------
   # Deploy web app to test endpoint (from test branch).
   # Requires secret: DEPLOY_WEBHOOK_TOKEN_TEST
