@@ -1,9 +1,10 @@
-name: Build Dev
+name: Build Dev & Test
 
 on:
   push:
     branches:
       - develop
+      - test
   workflow_dispatch:
 
 jobs:
@@ -63,7 +64,7 @@ jobs:
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rich-statistics-dev-${{ steps.version.outputs.version }}
+          name: rich-statistics-${{ github.ref_name }}-${{ steps.version.outputs.version }}
           path: build/rich-statistics-*.zip
           retention-days: 1
 
@@ -75,7 +76,7 @@ jobs:
     name: Deploy web app to dev
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref_name == 'develop'
     permissions:
       contents: read
 
@@ -83,8 +84,8 @@ jobs:
       - name: Sync via deploy webhook
         run: |
           curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
-            https://rs-app.richardkentgates.com/_deploy/
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_DEV }}" \
+            https://rs-dev.richardkentgates.com/_deploy/
 
   # ---------------------------------------------------------------------------
   # Build desktop apps for dev (no deployment, just artifacts)
@@ -93,7 +94,7 @@ jobs:
     name: Build desktop dev artifacts
     runs-on: ${{ matrix.runner }}
     needs: build
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    if: github.ref_name == 'develop' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     strategy:
       fail-fast: false
       matrix:
@@ -162,30 +163,150 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 1
 
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Push .deb to dev server
+        if: matrix.platform != 'windows'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          ARCH=${PLATFORM#linux-}
+          DEST="rich-statistics-linux-${ARCH}.deb"
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
+          $SSH <SSH_USER>@<PWA_SERVER_IP> "mkdir -p /var/www/rs-app-dev/dist"
+          $SCP "${DEB}" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app-dev/dist/${DEST}"
+
+      - name: Push .exe to dev server
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
+          scp -o StrictHostKeyChecking=no "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app-dev/dist/"
+
   # ---------------------------------------------------------------------------
-  # Build and deploy web app to test endpoint (from main branch).
-  # This is a separate staging environment for integration testing.
-  # Requires secret: DEPLOY_WEBHOOK_TOKEN_TEST
+  # Build desktop apps for test — pushes binaries to test server.
   # ---------------------------------------------------------------------------
-  deploy-web-test:
-    name: Deploy web app to test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: read
+  build-desktop-test:
+    name: Build desktop test artifacts
+    runs-on: ${{ matrix.runner }}
+    needs: build
+    if: github.ref_name == 'test' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux-amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux-arm64
+          - runner: windows-latest
+            platform: windows
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to test endpoint
+      - name: Install system dependencies
+        if: matrix.platform != 'windows'
         run: |
-          curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
-            https://rs-app.richardkentgates.com/_deploy/
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libssl-dev \
+            librsvg2-dev \
+            patchelf \
+            file
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@^2
+
+      - name: Build .deb (Linux)
+        if: matrix.platform != 'windows'
+        run: tauri build
+        working-directory: src-tauri
+        env:
+          CI: true
+
+      - name: Build .exe (Windows)
+        if: matrix.platform == 'windows'
+        run: tauri build
+        working-directory: src-tauri
+        env:
+          CI: true
+
+      - name: Upload Linux artifact
+        if: matrix.platform != 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rich-statistics-test-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle/deb/*.deb
+          retention-days: 1
+
+      - name: Upload Windows artifact
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rich-statistics-test-windows
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 1
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Push .deb to test server
+        if: matrix.platform != 'windows'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
+          ARCH=${PLATFORM#linux-}
+          DEST="rich-statistics-linux-${ARCH}.deb"
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
+          $SSH <SSH_USER>@<PWA_SERVER_IP> "mkdir -p /var/www/rs-app-test/dist"
+          $SCP "${DEB}" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app-test/dist/${DEST}"
+
+      - name: Push .exe to test server
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
+          scp -o StrictHostKeyChecking=no "$EXE" "<SSH_USER>@<PWA_SERVER_IP>:/var/www/rs-app-test/dist/"
 
   # ---------------------------------------------------------------------------
-  # Run tests on dev branch
+  # Deploy web app to test endpoint (from test branch).
+  # Requires secret: DEPLOY_WEBHOOK_TOKEN_TEST
+  # ---------------------------------------------------------------------------
+  deploy-web-test:
+    name: Deploy web app to test
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'test' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Sync via deploy webhook
+        run: |
+          curl -fsS -X POST \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_TEST }}" \
+            https://rs-test.richardkentgates.com/_deploy/
+
+  # ---------------------------------------------------------------------------
+  # Run tests on dev and test branches
   # ---------------------------------------------------------------------------
   test:
     name: Run tests
