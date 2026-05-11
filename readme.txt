@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.2.7
+Stable tag: 2.2.9
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,20 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 5. PWA Web App (Premium) — mobile analytics dashboard
 
 == Changelog ==
+
+= 2.2.9 =
+* Coding standards cleanup: zero PHPCS errors across entire codebase
+* CI workflow refactoring: reusable sub-workflows reduce duplication by 70%
+* Webhook token sync: dev/test deploy now functional
+* Windows desktop push fixed (shell: bash on PowerShell runners)
+
+= 2.2.8 =
+* Documentation overhaul across all 6 doc files
+* Env-aware PWA config.js + config-dev.js/index-dev.html
+* Removed dead /verify-install endpoint
+* Premium admin gating (require_premium_or_exit)
+* Tracker session total_time NULL-coercion fix
+* Migration test coverage (9 new tests) + env detection tests (10 new)
 
 = 2.2.7 =
 * Security audit: CORS allowlist, $_POST save/restore, AI error masking, branch protection
