@@ -8,7 +8,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'User Flow', 'rich-statistics' ) );
@@ -118,6 +118,7 @@ $common_params = array_filter(
 	<?php endif; ?>
 
 	<?php if ( $sources ) : ?>
+	<label for="entry_source" class="screen-reader-text"><?php esc_html_e( 'Filter by entry source', 'rich-statistics' ); ?></label>
 	<select name="entry_source">
 		<option value=""><?php esc_html_e( 'All entry sources', 'rich-statistics' ); ?></option>
 		<option value="(direct)" <?php selected( $f_source, '(direct)' ); ?>><?php esc_html_e( '(direct)', 'rich-statistics' ); ?></option>
@@ -127,6 +128,7 @@ $common_params = array_filter(
 	</select>
 	<?php endif; ?>
 
+	<label for="focus_page" class="screen-reader-text"><?php esc_html_e( 'Filter by focus page', 'rich-statistics' ); ?></label>
 	<select name="focus_page">
 		<option value=""><?php esc_html_e( 'Any page', 'rich-statistics' ); ?></option>
 		<?php foreach ( $trackable_pages as $page_path2 => $plabel ) : ?>

@@ -1,6 +1,6 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
@@ -43,6 +43,7 @@ $base = admin_url( 'admin.php' );
 	<?php endif; ?>
 
 	<?php if ( $opts['pages'] ) : ?>
+	<label for="ref_page" class="screen-reader-text"><?php esc_html_e( 'Filter by landing page', 'rich-statistics' ); ?></label>
 	<select name="ref_page">
 		<option value=""><?php esc_html_e( 'All landing pages', 'rich-statistics' ); ?></option>
 		<?php foreach ( $opts['pages'] as $p ) : ?>
