@@ -171,7 +171,8 @@ jobs:
             echo "No snapshot changes to commit."
           else
             git commit -m "chore: add versioned PWA snapshot v${VERSION} [skip ci]"
-            git push origin main
+            git fetch origin main
+            git push origin HEAD:main
           fi
 
   # ── Linux Desktop (.deb for amd64 + arm64) ──────────────────────────────
