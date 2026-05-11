@@ -75,7 +75,7 @@ All four phases are implemented:
 | `dist/update.json` | ✅ Present (version 2.2.7) | ❌ **Missing** | ❌ **Stale** (shows 2.1.0) |
 | `v/` version snapshots | ✅ Complete (2.0.0–2.2.7) | ❌ **Incomplete** (missing 2.1.2+) | ❌ **Outdated** (pre-2.0 relics, missing 2.1.1+) |
 | Git branch (updater) | `main` | `develop` | `test` |
-| Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-dev.yml` | ✅ `build-dev.yml` |
+| Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
 
 ### Open infrastructure issues
 
@@ -93,14 +93,14 @@ All four phases are implemented:
 
 | Ref | Workflow | Job | Status | Notes |
 |-----|----------|-----|--------|-------|
-| CI1 | `build-dev.yml` | `deploy-web-dev` | ✅ Resolved | Sends to `rs-dev.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV`, scoped to `develop` branch |
-| CI2 | `build-dev.yml` | `deploy-web-test` | ✅ Resolved | Sends to `rs-test.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST`, scoped to `test` branch |
-| CI3 | `build-dev.yml` | `build-desktop-dev` | ✅ Resolved | Pushes Linux + Windows binaries to dev server `dist/` |
-| CI4 | `build-release.yml` | `build-desktop-linux` | ✅ Resolved | Pushes to `public_html/dist/` |
-| CI5 | `build-release.yml` | `ping-deploy` | ✅ Resolved | Hits production webhook (correct) |
-| — | `build-release.yml` | `build-desktop-windows` | ✅ Resolved | Pushes `.exe` to `public_html/dist/` |
-| — | `build-dev.yml` | `build-desktop-test` | ✅ Done | Added — pushes to test server, updates APT repo |
-| — | `build-release.yml` | Prune old snapshots | ✅ Done | Keeps latest 3 versions before `tauri build` |
+| CI1 | `build-develop.yml` | `deploy-web` | ✅ Resolved | Sends to `rs-dev.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV` |
+| CI2 | `build-test.yml` | `deploy-web` | ✅ Resolved | Sends to `rs-test.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST` |
+| CI3 | `build-develop.yml` | `build-desktop` | ✅ Resolved | Pushes Linux + Windows (signed) binaries + `.sig` to dev server `dist/`, regenerates `update.json` |
+| CI4 | `build-release.yml` | `build-desktop-linux` | ✅ Resolved | Pushes signed `.deb` + `.sig` to `public_html/dist/`, updates APT repo |
+| CI5 | `build-release.yml` | `ping-deploy` | ✅ Resolved | Deterministic webhook call to production `/_deploy/` |
+| — | `build-release.yml` | `build-desktop-windows` | ✅ Resolved | Pushes signed `.exe` + `.sig` to `public_html/dist/`, regenerates `update.json` |
+| — | `build-test.yml` | `build-desktop` | ✅ Done | Pushes signed binaries + `.sig` to test server `dist/`, regenerates `update.json` |
+| — | `build-release.yml` | Prune old snapshots | ✅ Done | Keeps latest 3 versioned PWA snapshots in `docs/app/` |
 
 ### CI gaps
 
@@ -109,7 +109,6 @@ All four phases are implemented:
 | PHPCS in CI | Coding standards not checked automatically on push |
 | E2E tests | No browser-based testing for PWA or admin interface |
 | Upgrade/migration tests | DB migrations between versions not tested in CI |
-| Desktop update signatures | Tauri updater supports signed `update.json` but CI doesn't generate signatures |
 
 ---
 
@@ -150,7 +149,6 @@ These are discrepancies discovered during verification of the initial audit fixe
 1. Add PHPCS check to CI workflows
 2. Add E2E test pipeline
 3. Add upgrade/migration test coverage
-4. Generate desktop update signatures in CI
 
 ### P4: WordPress.org
 
