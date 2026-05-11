@@ -34,7 +34,7 @@ This single repository produces **three deliverables**:
 |---|---|---|
 | **WordPress plugin ZIP** | The installable plugin (`rich-statistics-x.y.z.zip`) | GitHub Release → uploaded to Freemius for premium users; WordPress.org for free users |
 | **PWA / companion app** | Installable web app (vanilla JS) served from `docs/app/` | Hosted at `https://rs-app.richardkentgates.com/app/` |
-| **Linux desktop app** | Tauri-wrapped `.deb` for amd64 and arm64 | Served from `https://rs-app.richardkentgates.com/desktop/` |
+| **Linux desktop app** | Tauri-wrapped `.deb` for amd64 and arm64 | Served from `https://rs-app.richardkentgates.com/dist/` |
 
 ---
 
@@ -59,11 +59,12 @@ rich-statistics/
 │   │                     Ships inside the plugin ZIP. See §9.
 │   └── (everything else) PHPUnit, Brain Monkey, etc. — dev-only, excluded from ZIP.
 │
-├── docs/                 GitHub Pages site — NOT shipped in the plugin ZIP
-│   ├── index.html        Project landing page (rs-app.richardkentgates.com root)
-│   ├── app/              Current live PWA — the app server pulls this on deploy
-│   │   └── {version}/    Versioned snapshot copied automatically on each tag
-│   └── wiki/             Plugin documentation (wiki.html pages)
+├── docs/                 PWA frontend — NOT shipped in the plugin ZIP
+│   ├── app/              Current live PWA served from app server
+│   │   ├── index.html    Root-level JS/CSS (live canonical copy)
+│   │   ├── v/            Versioned snapshots (copied by CI on each tag)
+│   │   └── config-dev.js / config-test.js / index-dev.html / index-test.html
+│   └── versions.json     JSON array of all published semver strings
 │
 ├── bin/                  Operational scripts — NOT shipped in the plugin ZIP
 │   ├── setup-app-server.sh       Provisions a fresh Debian 12 app server from scratch
@@ -72,7 +73,7 @@ rich-statistics/
 │   └── install-wp-tests.sh       Sets up the WordPress integration test environment
 │
 ├── tests/                PHPUnit unit + integration tests
-├── .github/workflows/    CI/CD: tests.yml, build-release.yml
+├── .github/workflows/    CI/CD: tests.yml, build-develop.yml, build-test.yml, build-release.yml
 ├── .distignore           Controls what is excluded by `wp dist-zip` (WP.org deploy)
 ├── ARCHITECTURE.md       Plugin internals and design decisions
 ├── CONTRIBUTING.md       Local dev setup and PR process
@@ -154,14 +155,15 @@ All three secrets must be set in the GitHub repository settings before a release
 Releases follow a strict flow. CI handles everything after the tag is pushed.
 
 ```
-develop  ──[all features / fixes merged here]──►
-           │
-           └─ release/1.x.x  (stabilisation branch — optional for larger releases)
-                 │
-                 ▼
-               main  ──[merge via PR or fast-forward]──►
-                 │
-                 └─ Tag: v1.x.x  ──► triggers build-release.yml
+feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+                        │
+                   merge PR
+                        ↓
+                      test ──push──→ auto-deploy: rs-test
+                        │
+                   merge PR
+                        ↓
+                      main ──tag v*──→ build-release.yml → rs-app
 ```
 
 ### Step-by-step
@@ -171,32 +173,34 @@ develop  ──[all features / fixes merged here]──►
 2. **Update version numbers** — change `RSA_VERSION` constant and `Version:` header in
    `rich-statistics.php`, and the `Stable tag:` in `readme.txt`.
 
-3. **Update CHANGELOG.md** — move the `[Unreleased]` block to a dated `[1.x.x] — YYYY-MM-DD`
+3. **Update CHANGELOG.md** — move the `[Unreleased]` block to a dated `[x.y.z] — YYYY-MM-DD`
    entry.
 
-4. **Merge to main**
+4. **Merge to test for QA**
    ```bash
-   git checkout main && git merge --no-ff develop
+   git checkout test && git merge --no-ff develop && git push origin test
    ```
+   CI auto-deploys to `rs-test.richardkentgates.com`.
 
-5. **Create an annotated tag on main**
+5. **After QA passes, merge to main and tag**
    ```bash
-   git tag -a v1.x.x -m "Release v1.x.x"
+   git checkout main && git merge --no-ff test
+   git tag -a v2.x.x -m "Release v2.x.x"
    git push origin main --tags
    ```
 
 6. **CI takes over** (`build-release.yml`):
    - Builds and uploads the plugin ZIP as a GitHub Release artifact.
    - Builds `.deb` files for amd64 and arm64 via Tauri; uploads to app server via SSH.
-   - Commits a versioned `docs/app/{version}/` snapshot to `main`.
+   - Commits a versioned `docs/app/v/{version}/` snapshot to `main`.
    - Pings the webhook — app server pulls latest `docs/app/` and goes live.
 
 7. **Upload to Freemius** — download the ZIP from the GitHub Release and upload it at
    `https://dashboard.freemius.com → Plugin → Versions → Add New Version`.
    Freemius delivers the update to premium users automatically.
 
-8. **WordPress.org** — the `deploy-wporg.yml` workflow (pending WP.org submission approval — see §11) will push
-   to the SVN repository automatically when a version tag is detected.
+8. **WordPress.org** — run `bash bin/deploy-wporg.sh <svn-username>` after the release.
+   Requires screenshots in `wporg-assets/` (see ROADMAP §6 P4.2).
 
 ---
 
@@ -325,46 +329,37 @@ The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pu
 - **PWA**: vanilla JS, no build step — edit `docs/app/` directly.
 - **Desktop app**: `src-tauri/` contains the Tauri 2 config and Rust glue.
   The CI installs Tauri, runs `tauri build`, and uploads the resulting binaries.
-- **Auto-update**: The PWA detects new plugin versions via `update.json`.
-  The desktop app uses Tauri's built-in updater (reads `update.json` from `/desktop/`).
+- **Auto-update**: The PWA detects new plugin versions via the `/info` REST endpoint.
+  The desktop app uses Tauri's built-in updater (reads `update.json` from `/dist/`).
 - **`update.json`** (on the app server):
   ```json
   {
-    "version": "1.4.4",
-    "pub_date": "2025-06-15T12:00:00Z",
+    "version": "2.2.7",
+    "pub_date": "2026-05-10T12:00:00Z",
     "notes": "",
     "platforms": {
       "linux-x86_64": {
-        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb",
+        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb",
         "signature": ""
       },
       "linux-aarch64": {
-        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb",
+        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb",
         "signature": ""
       },
       "windows-x86_64": {
-        "url": "https://rs-app.richardkentgates.com/desktop/rich-statistics-windows.exe",
+        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe",
         "signature": ""
       }
     }
   }
   ```
-webapp/                   ← Tauri source (wraps the PWA in a native GTK window)
-  app.html / app.js …       Kept in sync with docs/app/ manually
-
-docs/app/                 ← The live web app (served at /app/)
-  index.html, app.js …     Updated by CI: webhook pulls latest on each release
-  {version}/              ← Versioned snapshots (copied by CI on each tag)
-    1.4.2/                  Tauri uses these to serve the correct app version
-    ...                     to the installed desktop app
-```
 
 ### Desktop auto-updates
 
-The desktop app checks `https://rs-app.richardkentgates.com/desktop/update.json`
+The desktop app checks `https://rs-app.richardkentgates.com/dist/update.json`
 for new versions. The CI `build-desktop` job writes this file via SSH after
 building each `.deb`. Updates are signed with `TAURI_SIGNING_PRIVATE_KEY`;
-the matching public key is in `src-tauri/tauri.conf.json` (or `src-tauri/tauri.conf.json`).
+the matching public key is in `src-tauri/tauri.conf.json`.
 
 ### Authentication
 
