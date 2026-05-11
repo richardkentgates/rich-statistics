@@ -7,12 +7,26 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g. 1.0.1) — leave blank to use tag'
+        description: 'Version to build (e.g. 2.2.8) — leave blank to use tag'
         required: false
+      setup_webhook:
+        description: 'Set to "true" to bootstrap production webhook on server (one-time)'
+        required: false
+        default: 'false'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Production release pipeline: triggered by v*.*.* tags on main.
+# Builds WordPress plugin ZIP, versioned PWA snapshot, and desktop binaries
+# for Linux (amd64 + arm64) and Windows. Pushes all artifacts to:
+#   https://rs-app.richardkentgates.com/dist/
+#   https://rs-app.richardkentgates.com/v/<version>/
+#   https://rs-app.richardkentgates.com/apt/
+# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
+  # ── Plugin ZIP + GitHub Release + Versioned PWA Snapshot ────────────────
   build:
-    name: Build plugin ZIP
+    name: Plugin ZIP + PWA snapshot
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,7 +63,6 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           ZIP_NAME="rich-statistics-${VERSION}.zip"
           mkdir -p build
-
           zip -r "build/${ZIP_NAME}" . \
             --exclude="*.git*" \
             --exclude="*.github*" \
@@ -60,6 +73,7 @@ jobs:
             --exclude="composer.json" \
             --exclude="composer.lock" \
             --exclude="phpunit.xml.dist" \
+            --exclude="phpcs.xml.dist" \
             --exclude=".gitignore" \
             --exclude=".gitattributes" \
             --exclude="*.gitkeep" \
@@ -67,10 +81,7 @@ jobs:
             --exclude="CONTRIBUTING.md" \
             --exclude="SECURITY.md" \
             --exclude="README.md"
-
           echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
-          echo "ZIP created: build/${ZIP_NAME}"
-          unzip -l "build/${ZIP_NAME}" | tail -20
         id: zip
 
       - name: Upload ZIP artifact
@@ -89,20 +100,20 @@ jobs:
           body: |
             ## Rich Statistics ${{ steps.version.outputs.version }}
 
-            See [CHANGELOG.md](https://github.com/richardkentgates/rich-statistics/blob/main/CHANGELOG.md) for details.
+            See [CHANGELOG.md](CHANGELOG.md) for details.
 
             ### Upload to Freemius
             Download the ZIP above and upload it at:
             https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
 
-      - name: Create versioned web app snapshot
+      # ── Versioned PWA Snapshot ──────────────────────────────────────────
+      # Snapshot the current PWA files so desktop app users pinned to this
+      # version always get matching UI. Stored under docs/app/v/<version>/.
+      # Pushed back to main so the server webhook picks it up.
+      - name: Create versioned PWA snapshot
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout -B main origin/main
           APP_VERSIONED="docs/app/v/${VERSION}"
           if [ ! -d "$APP_VERSIONED" ]; then
             mkdir -p "$APP_VERSIONED"
@@ -111,28 +122,50 @@ jobs:
             done
             [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
           fi
-          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v=sorted(set(v+[sys.argv[1]]),key=lambda x:list(map(int,x.split('.')))); p.write_text(json.dumps(v))" "${VERSION}"
+
+      - name: Update versions.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python3 -c "import json,pathlib; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v=sorted(set(v+['${{ steps.version.outputs.version }}']),key=lambda x:list(map(int,x.split('.')))); p.write_text(json.dumps(v))"
+
+      - name: Prune old snapshot directories (keep 3 latest)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python3 << 'PYEOF'
+          import json, shutil, pathlib
+
+          p = pathlib.Path('docs/app/versions.json')
+          all_v = sorted(json.loads(p.read_text()), key=lambda x: list(map(int, x.split('.'))))
+          keep = set(all_v[-3:])
+
+          for d in pathlib.Path('docs/app').iterdir():
+              if d.is_dir() and d.name.count('.') >= 2 and d.name not in keep:
+                  shutil.rmtree(d)
+                  print(f"pruned {d}")
+
+          v_dir = pathlib.Path('docs/app/v')
+          if v_dir.exists():
+              for d in v_dir.iterdir():
+                  if d.is_dir() and d.name not in keep:
+                      shutil.rmtree(d)
+                      print(f"pruned {d}")
+          PYEOF
+
+      - name: Commit and push snapshot back to main
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/app/
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No snapshot changes to commit."
           else
-            git commit -m "chore: add versioned web app snapshot v${VERSION} [skip ci]"
+            git commit -m "chore: add versioned PWA snapshot v${VERSION} [skip ci]"
             git push origin main
           fi
 
-  # ---------------------------------------------------------------------------
-  # Ping the app server webhook to pull & deploy docs/app/ from GitHub.
-  # No SSH key needed — server pulls public repo itself.
-  # Requires GitHub secret: DEPLOY_WEBHOOK_TOKEN  (a random string you choose,
-  # e.g.  openssl rand -hex 32)
-  # The same string must be stored on the server in /etc/rsa-webhook-token
-  # (chmod 640, chown root:www-data).
-  # ---------------------------------------------------------------------------
-  # ---------------------------------------------------------------------------
-  # Build native Linux desktop app (.deb) for amd64 and arm64.
-  # Tauri wraps the existing PWA (docs/app/) in a native WebKitGTK window.
-  # Artifacts are renamed to stable filenames so /releases/latest/download/ URLs work.
-  # ---------------------------------------------------------------------------
+  # ── Linux Desktop (.deb for amd64 + arm64) ──────────────────────────────
   build-desktop-linux:
     name: Linux desktop (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
@@ -159,42 +192,6 @@ jobs:
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" src-tauri/tauri.conf.json
           sed -i "s/^version = \"[^\"]*\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
 
-      - name: Add version to bundled versions.json
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          python3 -c "import json,pathlib,sys; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v.append(sys.argv[1]) if sys.argv[1] not in v else None; p.write_text(json.dumps(sorted(set(v),key=lambda x:list(map(int,x.split('.'))))))" "${VERSION}"
-      - name: Create versioned app snapshot
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          APP_VERSIONED="docs/app/v/${VERSION}"
-          if [ ! -d "$APP_VERSIONED" ]; then
-            mkdir -p "$APP_VERSIONED"
-            for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
-              [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
-            done
-            [ -d "docs/app/icons" ] && cp -r "docs/app/icons" "$APP_VERSIONED/icons"
-          fi
-      - name: Prune old version snapshots
-        run: |
-          python3 << 'PYEOF'
-          import json, shutil, pathlib
-
-          p = pathlib.Path('docs/app/versions.json')
-          all_v = sorted(json.loads(p.read_text()), key=lambda x: list(map(int, x.split('.'))))
-          keep = set(all_v[-3:])  # latest 3 versions
-
-          for d in pathlib.Path('docs/app').iterdir():
-              if d.is_dir() and d.name.count('.') >= 2 and d.name not in keep:
-                  shutil.rmtree(d)
-                  print(f"pruned {d}")
-
-          v_dir = pathlib.Path('docs/app/v')
-          if v_dir.exists():
-              for d in v_dir.iterdir():
-                  if d.is_dir() and d.name not in keep:
-                      shutil.rmtree(d)
-                      print(f"pruned {d}")
-          PYEOF
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -222,6 +219,8 @@ jobs:
         working-directory: src-tauri
         env:
           CI: true
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
       - name: Patch .desktop in .deb
         run: |
@@ -240,17 +239,18 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
 
-      - name: Push .deb to app server
+      - name: Push .deb and .sig to production server
         run: |
           DEB=$(ls src-tauri/target/release/bundle/deb/*.deb | head -1)
-          SIG=$(ls src-tauri/target/release/bundle/deb/*.deb.sig 2>/dev/null | head -1)
-          DEST="rich-statistics-linux-${{ matrix.arch }}.deb"
-
+          SIG=$(ls src-tauri/target/release/bundle/deb/*.deb.sig 2>/dev/null | head -1 || true)
+          DEST="rich-statistics-linux-${{ matrix.arch }}"
           SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
           SCP="scp -o StrictHostKeyChecking=no"
-
           $SSH richardkentgates@104.197.231.120 "mkdir -p /var/www/rs-app/public_html/dist"
-          $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/${DEST}"
+          $SCP "${DEB}" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/${DEST}.deb"
+          if [ -n "${SIG}" ]; then
+            $SCP "${SIG}" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/${DEST}.deb.sig"
+          fi
 
       - name: Update APT repository
         run: |
@@ -259,9 +259,7 @@ jobs:
           $SSH richardkentgates@104.197.231.120 \
             "sudo /usr/local/bin/rsa-apt-repo-update ${{ matrix.arch }} ${VERSION}"
 
-  # ---------------------------------------------------------------------------
-  # Build native Windows desktop app (.exe installer via NSIS)
-  # ---------------------------------------------------------------------------
+  # ── Windows Desktop (.exe installer via NSIS) ──────────────────────────
   build-desktop-windows:
     name: Windows desktop
     runs-on: windows-latest
@@ -269,6 +267,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -292,40 +291,21 @@ jobs:
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@^2
 
-      - name: Prune old version snapshots
-        shell: bash
-        run: |
-          python3 << 'PYEOF'
-          import json, shutil, pathlib
-
-          p = pathlib.Path('docs/app/versions.json')
-          all_v = sorted(json.loads(p.read_text()), key=lambda x: list(map(int, x.split('.'))))
-          keep = set(all_v[-3:])
-
-          for d in pathlib.Path('docs/app').iterdir():
-              if d.is_dir() and d.name.count('.') >= 2 and d.name not in keep:
-                  shutil.rmtree(d)
-                  print(f"pruned {d}")
-
-          v_dir = pathlib.Path('docs/app/v')
-          if v_dir.exists():
-              for d in v_dir.iterdir():
-                  if d.is_dir() and d.name not in keep:
-                      shutil.rmtree(d)
-                      print(f"pruned {d}")
-          PYEOF
-
       - name: Build .exe installer
         run: tauri build
         working-directory: src-tauri
         env:
           CI: true
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: rich-statistics-windows
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.exe.sig
           retention-days: 30
 
       - name: Load SSH key
@@ -333,31 +313,88 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
 
-      - name: Push .exe to app server
+      - name: Push .exe and .sig to production server
         shell: bash
         run: |
           EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
+          SIG=$(ls src-tauri/target/release/bundle/nsis/*.exe.sig 2>/dev/null | head -1 || true)
           scp -o StrictHostKeyChecking=no "$EXE" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/"
+          if [ -n "${SIG}" ]; then
+            scp -o StrictHostKeyChecking=no "$SIG" "richardkentgates@104.197.231.120:/var/www/rs-app/public_html/dist/"
+          fi
 
-      - name: Update update.json with Windows platform
+      - name: Regenerate update.json with platform signatures
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no richardkentgates@104.197.231.120 "sudo /usr/local/bin/rsa-update-windows ${GITHUB_REF_NAME#v}"
+          ssh -o StrictHostKeyChecking=no richardkentgates@104.197.231.120 \
+            "sudo /usr/local/bin/rsa-gen-update-json ${GITHUB_REF_NAME#v} rs-app.richardkentgates.com /var/www/rs-app/public_html/dist"
 
-  # ---------------------------------------------------------------------------
-  # After both .deb builds complete: sync docs/app/ via webhook and write
-  # update.json directly on the app server.
-  # Requires secrets: DEPLOY_WEBHOOK_TOKEN, APP_SERVER_SSH_KEY
-  # ---------------------------------------------------------------------------
+  # ── Trigger PWA sync on production server ──────────────────────────────
   ping-deploy:
-    name: Trigger web app update
+    name: Deploy PWA to production
     runs-on: ubuntu-latest
     needs: [build, build-desktop-linux, build-desktop-windows]
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Sync docs/app/ via webhook
+      - name: Sync docs/app/ via deploy webhook
         run: |
           curl -fsS -X POST \
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
             https://rs-app.richardkentgates.com/_deploy/
+
+  # ── One-time webhook setup (manual trigger only) ───────────────────────
+  # This job is only available via workflow_dispatch. It deploys the
+  # server-webhook.php and server-update-webapp.sh to the production server
+  # so that future releases can use the webhook-based PWA deploy.
+  # Run this once after initial server setup:
+  #   gh workflow run build-release.yml --ref v2.2.7 -f setup_webhook=true
+  setup-webhook:
+    name: Setup production webhook
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.setup_webhook == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Deploy webhook handler and update script
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
+
+          # Create _deploy directory and install webhook handler
+          $SSH richardkentgates@104.197.231.120 "sudo mkdir -p /var/www/rs-app/public_html/_deploy"
+          $SCP bin/server-webhook.php /tmp/rsa-webhook-index.php
+          $SSH richardkentgates@104.197.231.120 \
+            "sudo cp /tmp/rsa-webhook-index.php /var/www/rs-app/public_html/_deploy/index.php && \
+             sudo chown www-data:www-data /var/www/rs-app/public_html/_deploy/index.php"
+
+          # Install update script
+          $SCP bin/server-update-webapp.sh /tmp/rsa-app-update
+          $SSH richardkentgates@104.197.231.120 \
+            "sudo cp /tmp/rsa-app-update /usr/local/bin/rsa-app-update && \
+             sudo chmod +x /usr/local/bin/rsa-app-update && \
+             echo 'www-data ALL=(ALL) NOPASSWD: /usr/local/bin/rsa-app-update' | \
+               sudo tee /etc/sudoers.d/rsa-app-update"
+
+      - name: Reminder to create webhook token
+        run: |
+          echo "============================================================"
+          echo "  WEBHOOK SETUP REQUIRES ONE MORE STEP"
+          echo "============================================================"
+          echo "  SSH into the server and run:"
+          echo ""
+          echo "  sudo sh -c 'openssl rand -hex 32 > /etc/rsa-webhook-token'"
+          echo "  sudo chmod 640 /etc/rsa-webhook-token"
+          echo "  sudo chown root:www-data /etc/rsa-webhook-token"
+          echo ""
+          echo "  Then add the token as a GitHub secret:"
+          echo "  Name:  DEPLOY_WEBHOOK_TOKEN"
+          echo "  Value: \$(cat /etc/rsa-webhook-token)"
+          echo "============================================================"
