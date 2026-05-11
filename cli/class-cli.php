@@ -47,23 +47,23 @@ class RSA_CLI extends WP_CLI_Command {
 	 */
 	public function overview( array $args, array $assoc ): void {
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
-			WP_CLI::error( 'You do not have permission to use Rich Statistics commands.' );
+			WP_CLI::error( __( 'You do not have permission to use Rich Statistics commands.', 'rich-statistics' ) );
 		}
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$this->maybe_switch_blog( $assoc );
 
 		$data = RSA_Analytics::get_overview( $period );
 
-		WP_CLI::line( WP_CLI::colorize( '%BSite:%n ' . get_bloginfo( 'name' ) ) );
-		WP_CLI::line( WP_CLI::colorize( '%BPeriod:%n ' . $period ) );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Site:', 'rich-statistics' ) . '%n ' . get_bloginfo( 'name' ) ) );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Period:', 'rich-statistics' ) . '%n ' . $period ) );
 		WP_CLI::line( '' );
 
 		$items = [
-			[ 'Metric', 'Value' ],
-			[ 'Page Views', number_format( $data['pageviews'] ) ],
-			[ 'Sessions', number_format( $data['sessions'] ) ],
-			[ 'Avg Time', $this->format_seconds( $data['avg_time'] ) ],
-			[ 'Bounce Rate', $data['bounce_rate'] . '%' ],
+			[ __( 'Metric', 'rich-statistics' ), __( 'Value', 'rich-statistics' ) ],
+			[ __( 'Page Views', 'rich-statistics' ), number_format( $data['pageviews'] ) ],
+			[ __( 'Sessions', 'rich-statistics' ), number_format( $data['sessions'] ) ],
+			[ __( 'Avg Time', 'rich-statistics' ), $this->format_seconds( $data['avg_time'] ) ],
+			[ __( 'Bounce Rate', 'rich-statistics' ), $data['bounce_rate'] . '%' ],
 		];
 		$this->cli_table( $items );
 	}
@@ -96,11 +96,11 @@ class RSA_CLI extends WP_CLI_Command {
 		$rows = RSA_Analytics::get_top_pages( $period, $limit );
 
 		if ( empty( $rows ) ) {
-			WP_CLI::warning( 'No page data found.' );
+			WP_CLI::warning( __( 'No page data found.', 'rich-statistics' ) );
 			return;
 		}
 
-		$items = [ [ '#', 'Page', 'Views', 'Avg Time' ] ];
+		$items = [ [ '#', __( 'Page', 'rich-statistics' ), __( 'Views', 'rich-statistics' ), __( 'Avg Time', 'rich-statistics' ) ] ];
 		foreach ( $rows as $i => $r ) {
 			$items[] = [
 				$i + 1,
@@ -136,17 +136,17 @@ class RSA_CLI extends WP_CLI_Command {
 		$data = RSA_Analytics::get_audience( $period );
 
 		foreach ( [
-			'os'       => 'OS',
-			'browser'  => 'Browser',
-			'language' => 'Language',
+			'os'       => __( 'OS', 'rich-statistics' ),
+			'browser'  => __( 'Browser', 'rich-statistics' ),
+			'language' => __( 'Language', 'rich-statistics' ),
 		] as $key => $label ) {
 			WP_CLI::line( '' );
-			WP_CLI::line( WP_CLI::colorize( "%B{$label}%n" ) );
+			WP_CLI::line( WP_CLI::colorize( '%B' . $label . '%n' ) );
 			if ( empty( $data[ $key ] ) ) {
-				WP_CLI::line( '  (no data)' );
+				WP_CLI::line( '  ' . __( '(no data)', 'rich-statistics' ) );
 				continue;
 			}
-			$items = [ [ 'Label', 'Count' ] ];
+			$items = [ [ __( 'Label', 'rich-statistics' ), __( 'Count', 'rich-statistics' ) ] ];
 			foreach ( array_slice( $data[ $key ], 0, 8 ) as $r ) {
 				$items[] = [ $r['label'], number_format( $r['count'] ) ];
 			}
@@ -182,18 +182,18 @@ class RSA_CLI extends WP_CLI_Command {
 		$format = in_array( $assoc['format'] ?? 'json', [ 'json', 'csv' ], true ) ? ( $assoc['format'] ?? 'json' ) : 'json';
 		$this->maybe_switch_blog( $assoc );
 
-		WP_CLI::line( 'Exporting (' . $period . ', ' . $format . ')…' );
+		WP_CLI::line( sprintf( __( 'Exporting (%1$s, %2$s)…', 'rich-statistics' ), $period, $format ) );
 		$data = RSA_Analytics::export_events( $period, $format );
 
 		if ( ! empty( $assoc['output'] ) ) {
 			$output  = $assoc['output'];
 			$real    = realpath( dirname( $output ) );
 			$abspath = realpath( ABSPATH );
-			if ( ! $real || ! $abspath || strpos( $real, $abspath ) !== 0 ) {
-				WP_CLI::error( 'Output path must be within the WordPress directory.' );
+			if ( ! $real || ! $abspath || 0 !== strpos( $real . '/', trailingslashit( $abspath ) ) ) {
+				WP_CLI::error( __( 'Output path must be within the WordPress directory.', 'rich-statistics' ) );
 			}
 			file_put_contents( $output, $data );
-			WP_CLI::success( 'Written to ' . $output );
+			WP_CLI::success( sprintf( __( 'Written to %s', 'rich-statistics' ), $output ) );
 		} else {
 			echo $data . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
@@ -225,18 +225,18 @@ class RSA_CLI extends WP_CLI_Command {
 		$this->maybe_switch_blog( $assoc );
 
 		if ( $dry_run ) {
-			WP_CLI::line( 'Dry run — no data will be deleted.' );
+			WP_CLI::line( __( 'Dry run — no data will be deleted.', 'rich-statistics' ) );
 			// Just count.
 			global $wpdb;
 			$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( '-' . ( $days ?? get_option( 'rsa_retention_days', 90 ) ) . ' days' ) );
 			$et     = RSA_DB::events_table();
 			$count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$et}` WHERE created_at < %s", $cutoff ) ); // phpcs:ignore
-			WP_CLI::line( "Would delete approximately {$count} event rows." );
+			WP_CLI::line( sprintf( __( 'Would delete approximately %d event rows.', 'rich-statistics' ), $count ) );
 			return;
 		}
 
 		$deleted = RSA_DB::prune_old_data( $days );
-		WP_CLI::success( "Pruned {$deleted} records." );
+		WP_CLI::success( sprintf( __( 'Pruned %d records.', 'rich-statistics' ), $deleted ) );
 	}
 
 	// ----------------------------------------------------------------
@@ -259,7 +259,7 @@ class RSA_CLI extends WP_CLI_Command {
 	public function email_test( array $args, array $assoc ): void {
 		$recipient = sanitize_email( $assoc['recipient'] ?? get_option( 'admin_email' ) );
 		if ( ! is_email( $recipient ) ) {
-			WP_CLI::error( 'Invalid email address.' );
+			WP_CLI::error( __( 'Invalid email address.', 'rich-statistics' ) );
 		}
 
 		// Temporarily override the recipient option.
@@ -271,9 +271,9 @@ class RSA_CLI extends WP_CLI_Command {
 		update_option( 'rsa_email_digest_recipients', $original );
 
 		if ( $sent ) {
-			WP_CLI::success( "Test digest sent to {$recipient}." );
+			WP_CLI::success( sprintf( __( 'Test digest sent to %s.', 'rich-statistics' ), $recipient ) );
 		} else {
-			WP_CLI::error( 'Failed to send. Check WordPress mail settings.' );
+			WP_CLI::error( __( 'Failed to send. Check WordPress mail settings.', 'rich-statistics' ) );
 		}
 	}
 
@@ -292,22 +292,22 @@ class RSA_CLI extends WP_CLI_Command {
 	public function status( array $args, array $assoc ): void {
 		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 
-		WP_CLI::line( WP_CLI::colorize( '%BRich Statistics Status%n' ) );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Rich Statistics Status', 'rich-statistics' ) . '%n' ) );
 		WP_CLI::line( '' );
 
 		$next_cron   = wp_next_scheduled( 'rsa_daily_maintenance' );
 		$next_digest = wp_next_scheduled( 'rsa_send_digest' );
 
 		$items = [
-			[ 'Setting', 'Value' ],
-			[ 'Version', RSA_VERSION ],
-			[ 'Tier', $is_premium ? 'Premium' : 'Free' ],
-			[ 'Retention (days)', get_option( 'rsa_retention_days', 90 ) ],
-			[ 'Bot threshold', get_option( 'rsa_bot_score_threshold', 3 ) ],
-			[ 'Email digest enabled', get_option( 'rsa_email_digest_enabled' ) ? 'Yes' : 'No' ],
-			[ 'Email frequency', get_option( 'rsa_email_digest_frequency', 'weekly' ) ],
-			[ 'Next maintenance', $next_cron ? gmdate( 'Y-m-d H:i T', $next_cron ) : 'not scheduled' ],
-			[ 'Next digest', $next_digest ? gmdate( 'Y-m-d H:i T', $next_digest ) : 'not scheduled' ],
+			[ __( 'Setting', 'rich-statistics' ), __( 'Value', 'rich-statistics' ) ],
+			[ __( 'Version', 'rich-statistics' ), RSA_VERSION ],
+			[ __( 'Tier', 'rich-statistics' ), $is_premium ? __( 'Premium', 'rich-statistics' ) : __( 'Free', 'rich-statistics' ) ],
+			[ __( 'Retention (days)', 'rich-statistics' ), get_option( 'rsa_retention_days', 90 ) ],
+			[ __( 'Bot threshold', 'rich-statistics' ), get_option( 'rsa_bot_score_threshold', 3 ) ],
+			[ __( 'Email digest enabled', 'rich-statistics' ), get_option( 'rsa_email_digest_enabled' ) ? __( 'Yes', 'rich-statistics' ) : __( 'No', 'rich-statistics' ) ],
+			[ __( 'Email frequency', 'rich-statistics' ), get_option( 'rsa_email_digest_frequency', 'weekly' ) ],
+			[ __( 'Next maintenance', 'rich-statistics' ), $next_cron ? gmdate( 'Y-m-d H:i T', $next_cron ) : __( 'not scheduled', 'rich-statistics' ) ],
+			[ __( 'Next digest', 'rich-statistics' ), $next_digest ? gmdate( 'Y-m-d H:i T', $next_digest ) : __( 'not scheduled', 'rich-statistics' ) ],
 		];
 		$this->cli_table( $items );
 	}
@@ -342,7 +342,7 @@ class RSA_CLI extends WP_CLI_Command {
 	 */
 	public function clicks( array $args, array $assoc ): void {
 		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-			WP_CLI::error( 'Click tracking requires a Rich Statistics Premium licence.' );
+			WP_CLI::error( __( 'Click tracking requires a Rich Statistics Premium licence.', 'rich-statistics' ) );
 		}
 
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
@@ -353,11 +353,11 @@ class RSA_CLI extends WP_CLI_Command {
 		$rows = array_slice( RSA_Analytics::get_click_map( $period, $page ), 0, $limit );
 
 		if ( empty( $rows ) ) {
-			WP_CLI::warning( 'No click data found for this period.' );
+			WP_CLI::warning( __( 'No click data found for this period.', 'rich-statistics' ) );
 			return;
 		}
 
-		$items = [ [ 'Protocol', 'Destination', 'Tag', 'Text', 'Clicks' ] ];
+		$items = [ [ __( 'Protocol', 'rich-statistics' ), __( 'Destination', 'rich-statistics' ), __( 'Tag', 'rich-statistics' ), __( 'Text', 'rich-statistics' ), __( 'Clicks', 'rich-statistics' ) ] ];
 		foreach ( $rows as $r ) {
 			$items[] = [
 				$r['protocol'] ? $r['protocol'] : '—',
@@ -397,10 +397,10 @@ class RSA_CLI extends WP_CLI_Command {
 	 */
 	public function woocommerce( array $args, array $assoc ): void {
 		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-			WP_CLI::error( 'WooCommerce analytics requires a Rich Statistics Premium licence.' );
+			WP_CLI::error( __( 'WooCommerce analytics requires a Rich Statistics Premium licence.', 'rich-statistics' ) );
 		}
 		if ( ! class_exists( 'WooCommerce' ) ) {
-			WP_CLI::error( 'WooCommerce is not active on this site.' );
+			WP_CLI::error( __( 'WooCommerce is not active on this site.', 'rich-statistics' ) );
 		}
 
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
@@ -415,26 +415,26 @@ class RSA_CLI extends WP_CLI_Command {
 		];
 
 		WP_CLI::line( '' );
-		WP_CLI::line( WP_CLI::colorize( '%BFunnel%n' ) );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Funnel', 'rich-statistics' ) . '%n' ) );
 		$this->cli_table(
 			[
-				[ 'Event', 'Count' ],
-				[ 'Product Views', number_format( $funnel['views'] ) ],
-				[ 'Add to Cart', number_format( $funnel['cart'] ) ],
-				[ 'Orders', number_format( $funnel['orders'] ) ],
+				[ __( 'Event', 'rich-statistics' ), __( 'Count', 'rich-statistics' ) ],
+				[ __( 'Product Views', 'rich-statistics' ), number_format( $funnel['views'] ) ],
+				[ __( 'Add to Cart', 'rich-statistics' ), number_format( $funnel['cart'] ) ],
+				[ __( 'Orders', 'rich-statistics' ), number_format( $funnel['orders'] ) ],
 			]
 		);
 
 		WP_CLI::line( '' );
-		WP_CLI::line( WP_CLI::colorize( '%BRevenue%n' ) );
-		WP_CLI::line( '  Total orders:  ' . number_format( $data['orders_count'] ?? 0 ) );
-		WP_CLI::line( '  Total revenue: $' . number_format( (float) ( $data['revenue_total'] ?? 0 ), 2 ) );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Revenue', 'rich-statistics' ) . '%n' ) );
+		WP_CLI::line( '  ' . sprintf( __( 'Total orders: %s', 'rich-statistics' ), number_format( $data['orders_count'] ?? 0 ) ) );
+		WP_CLI::line( '  ' . sprintf( __( 'Total revenue: $%s', 'rich-statistics' ), number_format( (float) ( $data['revenue_total'] ?? 0 ), 2 ) ) );
 
 		$viewed = array_slice( $data['top_products_viewed'] ?? [], 0, $limit );
 		if ( ! empty( $viewed ) ) {
 			WP_CLI::line( '' );
-			WP_CLI::line( WP_CLI::colorize( '%BTop Viewed Products%n' ) );
-			$items = [ [ '#', 'Product', 'Views' ] ];
+			WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Top Viewed Products', 'rich-statistics' ) . '%n' ) );
+			$items = [ [ '#', __( 'Product', 'rich-statistics' ), __( 'Views', 'rich-statistics' ) ] ];
 			foreach ( $viewed as $i => $p ) {
 				$items[] = [ $i + 1, mb_strimwidth( $p['product_name'], 0, 50, '\u2026' ), number_format( $p['views'] ) ];
 			}
@@ -444,8 +444,8 @@ class RSA_CLI extends WP_CLI_Command {
 		$top_cart = array_slice( $data['top_products_cart'] ?? [], 0, $limit );
 		if ( ! empty( $top_cart ) ) {
 			WP_CLI::line( '' );
-			WP_CLI::line( WP_CLI::colorize( '%BTop Add-to-Cart%n' ) );
-			$items = [ [ '#', 'Product', 'Events' ] ];
+			WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Top Add-to-Cart', 'rich-statistics' ) . '%n' ) );
+			$items = [ [ '#', __( 'Product', 'rich-statistics' ), __( 'Events', 'rich-statistics' ) ] ];
 			foreach ( $top_cart as $i => $p ) {
 				$items[] = [ $i + 1, mb_strimwidth( $p['product_name'], 0, 50, '\u2026' ), number_format( $p['events'] ) ];
 			}
@@ -489,9 +489,9 @@ class RSA_CLI extends WP_CLI_Command {
 			$blog_id = (int) $assoc['blog-id'];
 			if ( get_site( $blog_id ) ) {
 				switch_to_blog( $blog_id );
-				WP_CLI::line( "Switched to blog {$blog_id}." );
+				WP_CLI::line( sprintf( __( 'Switched to blog %d.', 'rich-statistics' ), $blog_id ) );
 			} else {
-				WP_CLI::error( "Blog {$blog_id} not found." );
+				WP_CLI::error( sprintf( __( 'Blog %d not found.', 'rich-statistics' ), $blog_id ) );
 			}
 		}
 	}

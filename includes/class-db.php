@@ -266,7 +266,7 @@ class RSA_DB {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" );
 
 		$wpdb->query(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'rsa_%'"
+			$wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", 'rsa_%' )
 		);
 	}
 

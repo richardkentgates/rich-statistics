@@ -155,8 +155,8 @@ class RSA_Admin {
 
 		$manifest = [
 			'name'             => get_bloginfo( 'name' ) . ' — Statistics',
-			'short_name'       => 'Rich Stats',
-			'description'      => 'Privacy-first analytics for your WordPress site.',
+			'short_name'       => __( 'Rich Stats', 'rich-statistics' ),
+			'description'      => __( 'Privacy-first analytics for your WordPress site.', 'rich-statistics' ),
 			'start_url'        => $app_url,
 			'scope'            => $app_url,
 			'display'          => 'standalone',
@@ -1088,9 +1088,9 @@ class RSA_Admin {
 		$html         .= '<form method="get" action="' . esc_url( $url ) . '" class="rsa-custom-range-form">';
 		$html         .= '<input type="hidden" name="page" value="' . esc_attr( $page ) . '">';
 		$html         .= '<input type="hidden" name="period" value="custom">';
-		$html         .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html         .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '" aria-label="' . esc_attr__( 'From date', 'rich-statistics' ) . '">';
 		$html         .= '<span class="rsa-date-sep">' . esc_html__( 'to', 'rich-statistics' ) . '</span>';
-		$html         .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html         .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '" aria-label="' . esc_attr__( 'To date', 'rich-statistics' ) . '">';
 		$html         .= '<button type="submit" class="rsa-period-btn' . $custom_active . '">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
 		$html         .= '</form>';
 		$html         .= '</div>';
@@ -1115,7 +1115,7 @@ class RSA_Admin {
 		<div class="wrap rsa-wrap">
 			<div class="rsa-header">
 				<h1 class="rsa-title">
-					<span class="rsa-logo">📊</span>
+					<span class="rsa-logo" aria-hidden="true">📊</span>
 					<?php echo esc_html( $title ); ?>
 				</h1>
 				<?php echo self::period_selector( $period ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -1150,10 +1150,10 @@ class RSA_Admin {
 	 * @return string Masked API key.
 	 */
 	public static function mask_api_key( string $key ): string {
-		if ( strlen( $key ) <= 8 ) {
-			return $key;
+		if ( '' === $key ) {
+			return '';
 		}
-		return substr( $key, 0, 8 ) . str_repeat( '*', 24 );
+		return substr( $key, 0, 4 ) . str_repeat( '*', max( 0, strlen( $key ) - 4 ) );
 	}
 
 	// ----------------------------------------------------------------
