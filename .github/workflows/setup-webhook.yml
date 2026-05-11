@@ -1,0 +1,85 @@
+name: Setup Webhook
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to set up {production|dev|test}'
+        required: true
+        default: production
+
+jobs:
+  setup-webhook:
+    name: Setup ${{ github.event.inputs.environment }} webhook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
+
+      - name: Install webhook handler
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
+          SCP="scp -o StrictHostKeyChecking=no"
+
+          ENV="${{ github.event.inputs.environment }}"
+          case "$ENV" in
+            production)
+              WEBROOT="/var/www/rs-app/public_html"
+              TOKEN_FILE="/etc/rsa-webhook-token"
+              UPDATE_SCRIPT="/usr/local/bin/rsa-app-update"
+              SUDOERS_FILE="/etc/sudoers.d/rsa-app-update"
+              UPDATE_SOURCE="bin/server-update-webapp.sh"
+              ;;
+            dev)
+              WEBROOT="/var/www/rs-app-dev"
+              TOKEN_FILE="/etc/rsa-webhook-token-dev"
+              UPDATE_SCRIPT="/usr/local/bin/rsa-app-update-dev"
+              SUDOERS_FILE="/etc/sudoers.d/rsa-app-update-dev"
+              UPDATE_SOURCE="bin/server-update-webapp-dev.sh"
+              ;;
+            test)
+              WEBROOT="/var/www/rs-app-test"
+              TOKEN_FILE="/etc/rsa-webhook-token-test"
+              UPDATE_SCRIPT="/usr/local/bin/rsa-app-update-test"
+              SUDOERS_FILE="/etc/sudoers.d/rsa-app-update-test"
+              UPDATE_SOURCE="bin/server-update-webapp-test.sh"
+              ;;
+            *)
+              echo "Unknown environment: $ENV"
+              exit 1
+              ;;
+          esac
+
+          $SSH <SSH_USER>@<PWA_SERVER_IP> "sudo mkdir -p ${WEBROOT}/_deploy"
+          $SCP bin/server-webhook.php /tmp/rsa-webhook-index.php
+          $SSH <SSH_USER>@<PWA_SERVER_IP> \
+            "sudo cp /tmp/rsa-webhook-index.php ${WEBROOT}/_deploy/index.php && \
+             sudo chown www-data:www-data ${WEBROOT}/_deploy/index.php"
+
+          $SCP "${UPDATE_SOURCE}" /tmp/rsa-app-update
+          $SSH <SSH_USER>@<PWA_SERVER_IP> \
+            "sudo cp /tmp/rsa-app-update ${UPDATE_SCRIPT} && \
+             sudo chmod +x ${UPDATE_SCRIPT} && \
+             echo 'www-data ALL=(ALL) NOPASSWD: ${UPDATE_SCRIPT}' | \
+               sudo tee ${SUDOERS_FILE}"
+
+          echo ""
+          echo "============================================================"
+          echo "  WEBHOOK SETUP REQUIRES ONE MORE STEP"
+          echo "============================================================"
+          echo "  SSH into the server and run:"
+          echo ""
+          echo "  sudo sh -c 'openssl rand -hex 32 > ${TOKEN_FILE}'"
+          echo "  sudo chmod 640 ${TOKEN_FILE}"
+          echo "  sudo chown root:www-data ${TOKEN_FILE}"
+          echo ""
+          echo "  Then add the token as a GitHub secret:"
+          echo "  Name:  DEPLOY_WEBHOOK_TOKEN_$(echo "$ENV" | tr '[:lower:]' '[:upper:]')"
+          echo "  Value: \$(cat ${TOKEN_FILE})"
+          echo "============================================================"
