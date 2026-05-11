@@ -3,15 +3,15 @@
  * [PREMIUM] Heatmap — aggregation scheduling and data ops.
  * The canvas overlay renderer is in assets/js/heatmap-overlay.js.
  *
+ * @package RichStatistics
  * @fs_premium_only
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_Heatmap {
 
 	public static function init(): void {
-		// Aggregation is handled in RSA_DB::daily_maintenance()
-		// This class manages CSS enqueue for the admin heatmap page.
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_heatmap_assets' ] );
 	}
 

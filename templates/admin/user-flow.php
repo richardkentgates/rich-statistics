@@ -3,9 +3,13 @@
  * Premium: User Flow template.
  *
  * @fs_premium_only
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'User Flow', 'rich-statistics' ) );
 	?>
@@ -24,46 +28,61 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 }
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
 // Unified filters — shared by Path Explorer and Journey Table
 $f_source  = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
-$f_focus   = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
+$f_focus   = sanitize_text_field( wp_unslash( $_GET['focus_page'] ?? '' ) );
 $f_min_s   = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
 $f_steps   = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
-$view_type = in_array( $_GET['view_type'] ?? 'explorer', [ 'explorer', 'table' ], true )
+$view_type = in_array( $_GET['view_type'] ?? 'explorer', array( 'explorer', 'table' ), true )
 	? sanitize_key( $_GET['view_type'] ?? 'explorer' ) : 'explorer';
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-$path_flow = RSA_Analytics::get_path_flow( $period, [
-	'date_from'    => $date_from,
-	'date_to'      => $date_to,
-	'entry_source' => $f_source,
-	'focus_page'   => $f_focus,
-	'min_sessions' => $f_min_s,
-	'steps'        => $f_steps,
-] );
-$flow         = RSA_Analytics::get_user_flow( $period, [
-	'date_from' => $date_from,
-	'date_to'   => $date_to,
-	'from_page' => $f_focus,
-	'min_count' => $f_min_s,
-	'sort'      => 'count',
-	'sort_dir'  => 'desc',
-	'limit'     => 250,
-] );
-$sources      = RSA_Analytics::get_entry_sources( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
-$pages        = RSA_Admin::get_trackable_pages();
-$grouped_flow = [];
+$path_flow       = RSA_Analytics::get_path_flow(
+	$period,
+	array(
+		'date_from'    => $date_from,
+		'date_to'      => $date_to,
+		'entry_source' => $f_source,
+		'focus_page'   => $f_focus,
+		'min_sessions' => $f_min_s,
+		'steps'        => $f_steps,
+	)
+);
+$flow            = RSA_Analytics::get_user_flow(
+	$period,
+	array(
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+		'from_page' => $f_focus,
+		'min_count' => $f_min_s,
+		'sort'      => 'count',
+		'sort_dir'  => 'desc',
+		'limit'     => 250,
+	)
+);
+$sources         = RSA_Analytics::get_entry_sources(
+	$period,
+	array(
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+	)
+);
+$trackable_pages = RSA_Admin::get_trackable_pages();
+$grouped_flow    = array();
 foreach ( $flow as $row ) {
 	$grouped_flow[ $row['from_page'] ][] = $row;
 }
@@ -74,16 +93,18 @@ $base      = admin_url( 'admin.php' );
 $page_slug = 'rich-statistics-user-flow';
 
 // Helper: build filter-preserving URLs for toggle + clear links
-$common_params = array_filter( [
-	'page'         => $page_slug,
-	'period'       => $period,
-	'date_from'    => $period === 'custom' ? $date_from : '',
-	'date_to'      => $period === 'custom' ? $date_to   : '',
-	'entry_source' => $f_source,
-	'focus_page'   => $f_focus,
-	'min_sessions' => $f_min_s > 1 ? (string) $f_min_s : '',
-	'steps'        => $f_steps !== 4 ? (string) $f_steps : '',
-] );
+$common_params = array_filter(
+	array(
+		'page'         => $page_slug,
+		'period'       => $period,
+		'date_from'    => $period === 'custom' ? $date_from : '',
+		'date_to'      => $period === 'custom' ? $date_to : '',
+		'entry_source' => $f_source,
+		'focus_page'   => $f_focus,
+		'min_sessions' => $f_min_s > 1 ? (string) $f_min_s : '',
+		'steps'        => $f_steps !== 4 ? (string) $f_steps : '',
+	)
+);
 ?>
 
 <!-- Filter bar -->
@@ -108,8 +129,8 @@ $common_params = array_filter( [
 
 	<select name="focus_page">
 		<option value=""><?php esc_html_e( 'Any page', 'rich-statistics' ); ?></option>
-		<?php foreach ( $pages as $path => $plabel ) : ?>
-		<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $f_focus, $path ); ?>><?php echo esc_html( $plabel ); ?></option>
+		<?php foreach ( $trackable_pages as $page_path2 => $plabel ) : ?>
+		<option value="<?php echo esc_attr( $page_path2 ); ?>" <?php selected( $f_focus, $page_path2 ); ?>><?php echo esc_html( $plabel ); ?></option>
 		<?php endforeach; ?>
 	</select>
 
@@ -121,23 +142,36 @@ $common_params = array_filter( [
 	<label class="rsa-filter-inline-label">
 		<?php esc_html_e( 'Steps', 'rich-statistics' ); ?>
 		<select name="steps">
-			<?php foreach ( [ 2, 3, 4, 5 ] as $s ) : ?>
-			<option value="<?php echo absint( $s ); ?>" <?php selected( $f_steps, $s ); ?>><?php echo absint( $s ); ?></option>
+			<?php foreach ( array( 2, 3, 4, 5 ) as $step ) : ?>
+			<option value="<?php echo absint( $step ); ?>" <?php selected( $f_steps, $step ); ?>><?php echo absint( $step ); ?></option>
 			<?php endforeach; ?>
 		</select>
 	</label>
 
 	<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
 	<?php if ( $f_source || $f_focus || $f_min_s > 1 || $f_steps !== 4 ) : ?>
-	<a href="<?php echo esc_url( add_query_arg( [ 'page' => $page_slug, 'period' => $period, 'view_type' => $view_type ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
+	<a href="
+		<?php
+		echo esc_url(
+			add_query_arg(
+				array(
+					'page'      => $page_slug,
+					'period'    => $period,
+					'view_type' => $view_type,
+				),
+				$base
+			)
+		);
+		?>
+				" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 	<?php endif; ?>
 </form>
 
 <!-- View toggle -->
 <div class="rsa-view-toggle" style="margin-bottom:16px">
 	<?php
-	$explorer_url = add_query_arg( array_merge( $common_params, [ 'view_type' => 'explorer' ] ), $base );
-	$table_url    = add_query_arg( array_merge( $common_params, [ 'view_type' => 'table'    ] ), $base );
+	$explorer_url = add_query_arg( array_merge( $common_params, array( 'view_type' => 'explorer' ) ), $base );
+	$table_url    = add_query_arg( array_merge( $common_params, array( 'view_type' => 'table' ) ), $base );
 	?>
 	<a href="<?php echo esc_url( $explorer_url ); ?>" class="button <?php echo $view_type === 'explorer' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Path Explorer', 'rich-statistics' ); ?></a>
 	<a href="<?php echo esc_url( $table_url ); ?>" class="button <?php echo $view_type === 'table' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Journey Table', 'rich-statistics' ); ?></a>
@@ -145,12 +179,12 @@ $common_params = array_filter( [
 
 <?php
 $pf_sessions  = (int) ( $path_flow['total_sessions'] ?? 0 );
-$pf_steps_cnt = count( $path_flow['steps'] ?? [] );
-$pf_entry_pgs = count( array_filter( $path_flow['steps'][1] ?? [], fn( $p ) => $p['page'] !== '(exit)' ) );
-$pf_exits     = array_sum( array_column( array_filter( $path_flow['links'] ?? [], fn( $l ) => $l['to'] === '(exit)' ), 'count' ) );
+$pf_steps_cnt = count( $path_flow['steps'] ?? array() );
+$pf_entry_pgs = count( array_filter( $path_flow['steps'][1] ?? array(), fn( $p ) => $p['page'] !== '(exit)' ) );
+$pf_exits     = array_sum( array_column( array_filter( $path_flow['links'] ?? array(), fn( $l ) => $l['to'] === '(exit)' ), 'count' ) );
 $pf_exit_rate = $pf_sessions > 0 ? round( $pf_exits / $pf_sessions * 100, 1 ) : 0;
 if ( $pf_sessions > 0 ) :
-?>
+	?>
 <!-- Metrics summary -->
 <div class="rsa-kpi-row">
 	<div class="rsa-kpi-card">
@@ -204,12 +238,14 @@ if ( $pf_sessions > 0 ) :
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $grouped_flow as $from_page => $destinations ) :
+			<?php
+			foreach ( $grouped_flow as $from_page => $destinations ) :
 				$group_total = array_sum( array_column( $destinations, 'count' ) );
-			?>
-			<?php foreach ( $destinations as $di => $row ) :
-				$pct = $group_total > 0 ? round( $row['count'] / $group_total * 100, 1 ) : 0;
-			?>
+				?>
+				<?php
+				foreach ( $destinations as $di => $row ) :
+					$pct = $group_total > 0 ? round( $row['count'] / $group_total * 100, 1 ) : 0;
+					?>
 			<tr<?php echo $di === 0 ? ' class="rsa-group-first"' : ''; ?>>
 				<td class="rsa-td-group-label"><?php echo $di === 0 ? esc_html( $from_page ) : ''; ?></td>
 				<td class="rsa-td-page"><?php echo esc_html( $row['to_page'] ); ?></td>
@@ -221,7 +257,7 @@ if ( $pf_sessions > 0 ) :
 					</div>
 				</td>
 			</tr>
-			<?php endforeach; ?>
+				<?php endforeach; ?>
 			<tr class="rsa-group-spacer"><td colspan="4"></td></tr>
 			<?php endforeach; ?>
 		</tbody>

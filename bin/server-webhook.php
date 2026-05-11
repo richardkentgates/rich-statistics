@@ -1,10 +1,9 @@
-<?php
+<?php // phpcs:ignoreFile -- standalone server script, not a plugin file
 /**
  * Rich Statistics — web app deploy webhook
  *
  * Called by GitHub Actions on every release tag. Verifies a shared secret
- * token and kicks off the update script asynchronously so the HTTP response
- * is returned immediately.
+ * token and kicks off the update script asynchronously.
  *
  * INSTALLATION (one-time, as root on the app server):
  * -------------------------------------------------------
@@ -39,14 +38,14 @@ $given       = $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
 
 // Reject missing or mismatched tokens (constant-time compare).
 if ( ! $expected || ! hash_equals( $expected, $given ) ) {
-    http_response_code( 401 );
-    exit;
+	http_response_code( 401 );
+	exit;
 }
 
 // Only accept POST.
 if ( ( $_SERVER['REQUEST_METHOD'] ?? '' ) !== 'POST' ) {
-    http_response_code( 405 );
-    exit;
+	http_response_code( 405 );
+	exit;
 }
 
 // Fire the update script asynchronously so the webhook response is instant.

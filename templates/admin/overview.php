@@ -3,14 +3,17 @@
  * Overview dashboard template.
  *
  * @var string $period  Current period (set via $_GET['period'] or default).
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) );
 }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
 if ( ! in_array( $period, $allowed, true ) ) {
 	$period = '30d';
 }
@@ -18,13 +21,18 @@ if ( ! in_array( $period, $allowed, true ) ) {
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-$date_filters = [ 'date_from' => $date_from, 'date_to' => $date_to ];
-$data = RSA_Analytics::get_overview( $period, $date_filters );
+$date_filters = array(
+	'date_from' => $date_from,
+	'date_to'   => $date_to,
+);
+$data         = RSA_Analytics::get_overview( $period, $date_filters );
 
 RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 ?>
@@ -44,7 +52,8 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 		<div class="rsa-kpi-value">
 			<?php
 			$secs = (int) $data['avg_time'];
-			echo esc_html( $secs >= 60
+			echo esc_html(
+				$secs >= 60
 				? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's'
 				: $secs . 's'
 			);
@@ -73,12 +82,12 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 		<div class="rsa-card-header">
 			<h2><?php esc_html_e( 'Top Pages', 'rich-statistics' ); ?></h2>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=rich-statistics-pages&period=' . $period ) ); ?>"
-			   class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
+				class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
 		</div>
 		<?php
 		$top_pages = RSA_Analytics::get_top_pages( $period, 5, $date_filters );
 		if ( $top_pages ) :
-		?>
+			?>
 		<table class="rsa-table">
 			<thead>
 				<tr>
@@ -105,12 +114,12 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 		<div class="rsa-card-header">
 			<h2><?php esc_html_e( 'Top Referrers', 'rich-statistics' ); ?></h2>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=rich-statistics-referrers&period=' . $period ) ); ?>"
-			   class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
+				class="rsa-see-all"><?php esc_html_e( 'See all', 'rich-statistics' ); ?></a>
 		</div>
 		<?php
 		$referrers = RSA_Analytics::get_referrers( $period, 5, $date_filters );
 		if ( $referrers ) :
-		?>
+			?>
 		<table class="rsa-table">
 			<thead>
 				<tr>

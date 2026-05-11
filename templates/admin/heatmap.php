@@ -4,41 +4,48 @@
  * Dark canvas heatmap with hotspot tooltips and click-element table — no iframe.
  *
  * @fs_premium_only
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ) );
-?>
+	RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ) );
+	?>
 <div class="rsa-upsell-notice">
 <h2><?php esc_html_e( 'Heatmap is a Premium Feature', 'rich-statistics' ); ?></h2>
 <p><?php esc_html_e( 'Visualise scroll depth and engagement intensity across any page with a real-time heatmap — no external service required.', 'rich-statistics' ); ?></p>
-<?php if ( function_exists( 'rs_fs' ) ) : ?>
+	<?php if ( function_exists( 'rs_fs' ) ) : ?>
 <a href="<?php echo esc_url( rs_fs()->get_upgrade_url() ); ?>" class="button button-primary button-hero">
-<?php esc_html_e( 'Upgrade to Unlock Heatmap', 'rich-statistics' ); ?>
+		<?php esc_html_e( 'Upgrade to Unlock Heatmap', 'rich-statistics' ); ?>
 </a>
 <?php endif; ?>
 </div>
-<?php
-return;
+	<?php
+	return;
 }
 
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- display filter only
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
-$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
-$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
-if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
-if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
+	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = ''; }
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = ''; }
 }
 
 $page_path = sanitize_text_field( wp_unslash( $_GET['hm_page'] ?? '/' ) );
 if ( ! preg_match( '#^/#', $page_path ) ) {
-$page_path = '/';
+	$page_path = '/';
 }
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -55,21 +62,21 @@ RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ), $period );
 <input type="hidden" name="period" value="<?php echo esc_attr( $period ); ?>">
 <?php if ( $period === 'custom' && $date_from ) : ?>
 <input type="hidden" name="date_from" value="<?php echo esc_attr( $date_from ); ?>">
-<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to   ); ?>">
+<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
 <?php endif; ?>
 <label for="hm_page"><?php esc_html_e( 'Page:', 'rich-statistics' ); ?></label>
 <?php $trackable = RSA_Admin::get_trackable_pages(); ?>
 <?php if ( $trackable ) : ?>
 <select id="hm_page" name="hm_page">
-<?php foreach ( $trackable as $path => $label ) : ?>
-<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $page_path, $path ); ?>><?php echo esc_html( $label ); ?></option>
+	<?php foreach ( $trackable as $page_path2 => $label ) : ?>
+<option value="<?php echo esc_attr( $page_path2 ); ?>" <?php selected( $page_path, $page_path2 ); ?>><?php echo esc_html( $label ); ?></option>
 <?php endforeach; ?>
 </select>
 <?php else : ?>
 <input type="text" id="hm_page" name="hm_page"
-       value="<?php echo esc_attr( $page_path ); ?>"
-       placeholder="/example-page/"
-       class="regular-text">
+		value="<?php echo esc_attr( $page_path ); ?>"
+		placeholder="/example-page/"
+		class="regular-text">
 <?php endif; ?>
 <button type="submit" class="button button-primary"><?php esc_html_e( 'Load Heatmap', 'rich-statistics' ); ?></button>
 </form>
@@ -82,11 +89,11 @@ RSA_Admin::page_header( __( 'Heatmap', 'rich-statistics' ), $period );
 <div class="rsa-hm-admin-head">
 <span class="rsa-hm-admin-path"><?php echo esc_html( $page_path ); ?></span>
 <span class="rsa-hm-admin-meta">
-<?php
-$total = (int) array_sum( array_column( $heatmap_data, 'weight' ) );
-/* translators: 1: formatted interaction count, 2: plural suffix 's' or empty string */
-printf( esc_html__( '%1$s interaction%2$s', 'rich-statistics' ), number_format( $total ), 1 !== $total ? 's' : '' );
-?>
+	<?php
+	$total = (int) array_sum( array_column( $heatmap_data, 'weight' ) );
+	/* translators: 1: formatted interaction count, 2: plural suffix 's' or empty string */
+	printf( esc_html__( '%1$s interaction%2$s', 'rich-statistics' ), number_format( $total ), 1 !== $total ? 's' : '' );
+	?>
 </span>
 </div>
 
@@ -105,16 +112,18 @@ printf( esc_html__( '%1$s interaction%2$s', 'rich-statistics' ), number_format( 
 
 <script>
 window.RSA_HEATMAP = <?php echo wp_json_encode( array_values( $heatmap_data ) ); ?>;
-window.RSA_CLICKS  = <?php echo wp_json_encode( array_values( $click_data  ) ); ?>;
+window.RSA_CLICKS  = <?php echo wp_json_encode( array_values( $click_data ) ); ?>;
 </script>
 
 <?php else : ?>
 <p class="rsa-empty">
-<?php printf(
-/* translators: %s: page path */
-esc_html__( 'No heatmap data yet for %s. Data is aggregated nightly from click events.', 'rich-statistics' ),
-'<code>' . esc_html( $page_path ) . '</code>'
-); ?>
+	<?php
+	printf(
+	/* translators: %s: page path */
+		esc_html__( 'No heatmap data yet for %s. Data is aggregated nightly from click events.', 'rich-statistics' ),
+		'<code>' . esc_html( $page_path ) . '</code>'
+	);
+	?>
 </p>
 <?php endif; ?>
 </div>

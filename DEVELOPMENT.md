@@ -206,24 +206,43 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 
 ## 7. CI / CD Pipeline
 
-### `tests.yml` — runs on every push/PR to `main` or `develop`
+All three build workflows share reusable sub-workflows for common tasks.
+
+### Reusable workflows
+
+| Workflow | Purpose |
+|----------|---------|
+| `job-build-zip.yml` | PHP syntax check, composer install, PHPCS, create plugin ZIP, upload artifact |
+| `job-build-desktop.yml` | Tauri build for Linux amd64 + arm64 + Windows, push binaries to server, update APT repo + update.json |
+
+### `tests.yml` — runs on every push/PR to `main`, `develop`, or `test`
 
 | Job | Matrix | What it does |
 |---|---|---|
-| `unit` | PHP 8.1, 8.2, 8.3 | Runs `tests/unit/` — no WordPress install needed, fast |
-| `integration` | PHP 8.1/8.2 × WP latest/6.4 | Installs WordPress test suite, runs `tests/integration/` |
-| `lint` | PHP 8.2 | `composer phpcs` — checks WordPress Coding Standards |
+| `unit` | PHP 8.1, 8.2, 8.3 | Unit tests (BrainMonkey, no WP install) |
+| `integration` | PHP 8.1/8.2 × WP latest/6.4 | Full integration test suite with MySQL |
+| `lint` | PHP 8.2 | PHP syntax check (`php -l` on all files) |
+| `phpcs` | PHP 8.2 | WordPress Coding Standards check |
 
-### `build-release.yml` — runs only on `v*.*.*` tags (or `workflow_dispatch`)
+### `build-develop.yml` — push to `develop`
 
-| Job | Needs | What it does |
-|---|---|---|
-| `build` | — | Verifies PHP syntax; creates plugin ZIP; uploads as Release artifact; commits versioned `docs/app/{version}/` snapshot to `main` |
-| `build-desktop` | `build` | Matrix: amd64 (ubuntu) + arm64 (ubuntu-24.04-arm). Builds Tauri `.deb`. Uploads to app server: `SCP` → `/var/www/rs-app/public_html/dist/`; writes `update.json` via SSH |
-| `ping-deploy` | `build-desktop` | `POST /_deploy/` with `X-Deploy-Token` header → triggers `rsa-app-update` on server |
+Calls `job-build-zip` (version: `dev.<#run>`) and `job-build-desktop` (pushes to `rs-dev`).
 
-> **Note:** `build-desktop` uses `APP_SERVER_SSH_KEY` for SCP + SSH.
-> `ping-deploy` uses `DEPLOY_WEBHOOK_TOKEN`. `build` uses neither.
+### `build-test.yml` — push to `test`
+
+Calls `job-build-zip` (version: `test.<#run>`) and `job-build-desktop` (pushes to `rs-test`).
+
+### `build-release.yml` — tag `v*.*.*` on `main`
+
+| Job | What it does |
+|---|---|
+| `build` (inline) | PHP syntax + PHPCS, creates plugin ZIP, GitHub Release, versioned `docs/app/v/{version}/` snapshot, commits to main |
+| `build-desktop` (reusable) | Calls `job-build-desktop` with `stamp-version: true`, pushes to production server |
+| `ping-deploy` | `POST /_deploy/` → triggers `rsa-app-update` on production server |
+
+### `setup-webhook.yml` — manual `workflow_dispatch`
+
+Bootstraps the `/_deploy/` webhook handler and `rsa-app-update*` script on any environment. One-time per server setup.
 
 ---
 
