@@ -108,4 +108,102 @@ class DbTest extends WP_UnitTestCase {
 		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_clicks`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$this->assertContains( 'href_value', $columns, "Expected href_value column in {$table}" );
 	}
+
+	// ----------------------------------------------------------------
+	// Migration / idempotency tests
+	// ----------------------------------------------------------------
+
+	public function test_install_is_idempotent(): void {
+		RSA_DB::install();
+		$this->expectNotToPerformAssertions();
+	}
+
+	public function test_data_survives_reinstall(): void {
+		global $wpdb;
+		$table = $wpdb->prefix . 'rsa_events';
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$table,
+			[ 'session_id' => 'migration-test-uuid', 'page' => '/test', 'created_at' => current_time( 'mysql' ) ]
+		);
+		$before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+
+		RSA_DB::install();
+
+		$after = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$this->assertSame( $before, $after, 'Data count should not change after install()' );
+	}
+
+	public function test_schema_version_option_matches_constant(): void {
+		$this->assertSame( (string) RSA_DB::SCHEMA_VERSION, get_option( RSA_DB::OPTION_KEY ) );
+	}
+
+	public function test_events_table_has_all_expected_columns(): void {
+		global $wpdb;
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = [ 'id', 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'utm_source', 'utm_medium', 'utm_campaign', 'created_at' ];
+		foreach ( $expected as $col ) {
+			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_events" );
+		}
+	}
+
+	public function test_sessions_table_has_all_expected_columns(): void {
+		global $wpdb;
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_sessions`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = [ 'id', 'session_id', 'pages_viewed', 'total_time', 'entry_page', 'exit_page', 'os', 'browser', 'language', 'timezone', 'created_at', 'updated_at' ];
+		foreach ( $expected as $col ) {
+			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_sessions" );
+		}
+	}
+
+	public function test_wc_events_table_has_all_expected_columns(): void {
+		global $wpdb;
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_wc_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = [ 'id', 'session_id', 'event_type', 'product_id', 'product_name', 'product_sku', 'quantity', 'order_total', 'order_currency', 'created_at' ];
+		foreach ( $expected as $col ) {
+			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_wc_events" );
+		}
+	}
+
+	public function test_clicks_table_has_all_expected_columns(): void {
+		global $wpdb;
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_clicks`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = [ 'id', 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'href_value', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
+		foreach ( $expected as $col ) {
+			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_clicks" );
+		}
+	}
+
+	public function test_heatmap_table_has_all_expected_columns(): void {
+		global $wpdb;
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_heatmap`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = [ 'id', 'page', 'x_pct', 'y_pct', 'weight', 'date_bucket' ];
+		foreach ( $expected as $col ) {
+			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_heatmap" );
+		}
+	}
+
+	public function test_install_preserves_existing_options(): void {
+		update_option( 'rsa_retention_days', 30 );
+		RSA_DB::install();
+		$this->assertSame( 30, (int) get_option( 'rsa_retention_days' ), 'install() should not overwrite existing option values' );
+	}
+
+	public function test_all_options_seeded_after_install(): void {
+		$options = [
+			'rsa_retention_days',
+			'rsa_bot_score_threshold',
+			'rsa_remove_data_on_uninstall',
+			'rsa_track_protocol_tel',
+			'rsa_track_protocol_mailto',
+			'rsa_track_protocol_geo',
+			'rsa_track_protocol_sms',
+			'rsa_track_protocol_download',
+			'rsa_email_digest_enabled',
+			'rsa_email_digest_frequency',
+			'rsa_woocommerce_enabled',
+		];
+		foreach ( $options as $key ) {
+			$this->assertNotFalse( get_option( $key ), "Option {$key} should exist after install" );
+		}
+	}
 }

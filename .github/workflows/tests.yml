@@ -132,3 +132,38 @@ jobs:
                -not -path "./vendor/*" \
                -not -path "./freemius/*" \
                | xargs -I{} php -l "{}"
+
+  # -----------------------------------------------------------------------
+  # PHPCS coding standards
+  # -----------------------------------------------------------------------
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: cs2pr
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-phpcs-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-phpcs-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPCS
+        run: composer phpcs -- --report-full --report-checkstyle=./phpcs-report.xml
+
+      - name: Show PHPCS report
+        if: failure()
+        run: cat ./phpcs-report.xml 2>/dev/null || true

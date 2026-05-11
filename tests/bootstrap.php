@@ -49,13 +49,15 @@ $wp_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
 
 if ( is_dir( $wp_tests_dir ) ) {
 	// RSA plugin URL constants are needed when class files are loaded.
-	define( 'RSA_VERSION',    '1.1.0' );
-	define( 'RSA_URL',        'http://example.com/wp-content/plugins/rich-statistics/' );
-	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-	define( 'RSA_APP_URL',    'https://rs-app.richardkentgates.com/' );
-	define( 'RSA_APP_ENV',    'test' );
-	define( 'RSA_MIN_WP',     '6.0' );
-	define( 'RSA_MIN_PHP',    '8.0' );
+	define( 'RSA_VERSION',         '1.1.0' );
+	define( 'RSA_URL',             'http://example.com/wp-content/plugins/rich-statistics/' );
+	define( 'RSA_ASSETS_URL',      RSA_URL . 'assets/' );
+	define( 'RSA_APP_URL',         'https://rs-test.richardkentgates.com/' );
+	define( 'RSA_APP_ENV',         'test' );
+	define( 'RSA_APP_VERSION',     RSA_VERSION );
+	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
+	define( 'RSA_MIN_WP',          '6.0' );
+	define( 'RSA_MIN_PHP',         '8.0' );
 
 	if ( ! defined( 'WP_TESTS_CONFIG_FILE_PATH' ) ) {
 		define( 'WP_TESTS_CONFIG_FILE_PATH', $wp_tests_dir . '/wp-tests-config.php' );
@@ -126,12 +128,15 @@ if ( is_dir( $wp_tests_dir ) ) {
 // -----------------------------------------------------------------------
 
 define( 'ABSPATH',        sys_get_temp_dir() . '/' );
-define( 'RSA_VERSION',    '1.1.0' );
-define( 'RSA_URL',        'http://example.com/wp-content/plugins/rich-statistics/' );
-define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-define( 'RSA_APP_URL',    'https://rs-app.richardkentgates.com/' );
-define( 'RSA_MIN_WP',     '6.0' );
-define( 'RSA_MIN_PHP',    '8.0' );
+define( 'RSA_VERSION',         '1.1.0' );
+define( 'RSA_URL',             'http://example.com/wp-content/plugins/rich-statistics/' );
+define( 'RSA_ASSETS_URL',      RSA_URL . 'assets/' );
+define( 'RSA_APP_URL',         'https://rs-test.richardkentgates.com/' );
+define( 'RSA_APP_ENV',         'test' );
+define( 'RSA_APP_VERSION',     RSA_VERSION );
+define( 'RSA_MIN_APP_VERSION', '2.0.0' );
+define( 'RSA_MIN_WP',          '6.0' );
+define( 'RSA_MIN_PHP',         '8.0' );
 
 // For unit tests, we intentionally do NOT define WordPress function stubs
 // in bootstrap.php. Plugin classes are loaded inside each test file's setUp(),
