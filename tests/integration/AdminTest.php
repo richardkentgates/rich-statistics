@@ -4,7 +4,6 @@
  *
  * @package RichStatistics\Tests
  */
-
 class AdminTest extends WP_UnitTestCase {
 
 	/** @var WP_User */
@@ -14,14 +13,18 @@ class AdminTest extends WP_UnitTestCase {
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
-		self::$admin = self::factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		self::$editor = self::factory()->user->create_and_get( [ 'role' => 'editor' ] );
+		self::$admin  = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
+		self::$editor = self::factory()->user->create_and_get( array( 'role' => 'editor' ) );
 
 		if ( ! get_role( 'rsa_analyst' ) ) {
-			add_role( 'rsa_analyst', 'Statistics Analyst', [
-				'rsa_manage_statistics' => true,
-				'read' => true,
-			] );
+			add_role(
+				'rsa_analyst',
+				'Statistics Analyst',
+				array(
+					'rsa_manage_statistics' => true,
+					'read'                  => true,
+				)
+			);
 		}
 
 		$admin_role = get_role( 'administrator' );
@@ -29,7 +32,7 @@ class AdminTest extends WP_UnitTestCase {
 			$admin_role->add_cap( 'rsa_manage_statistics' );
 		}
 
-		$allowed = get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+		$allowed = get_option( 'rsa_allowed_roles', array( 'administrator' ) );
 		if ( ! in_array( 'rsa_analyst', $allowed, true ) ) {
 			$allowed[] = 'rsa_analyst';
 			update_option( 'rsa_allowed_roles', $allowed );
@@ -41,10 +44,11 @@ class AdminTest extends WP_UnitTestCase {
 		RSA_DB::install();
 	}
 
-	// ----------------------------------------------------------------
-	// user_can_access_app()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * user_can_access_app()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_admin_always_has_app_access(): void {
 		$this->assertTrue( RSA_Admin::user_can_access_app( self::$admin ) );
 	}
@@ -73,18 +77,19 @@ class AdminTest extends WP_UnitTestCase {
 	}
 
 	public function test_subscriber_not_in_allowed_roles_cannot_access(): void {
-		$sub = self::factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
-		update_option( 'rsa_allowed_roles', [ 'editor' ] );
+		$sub = self::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_option( 'rsa_allowed_roles', array( 'editor' ) );
 
 		$result = RSA_Admin::user_can_access_app( $sub );
 
 		$this->assertFalse( $result );
 	}
 
-	// ----------------------------------------------------------------
-	// get_trackable_pages()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * get_trackable_pages()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_get_trackable_pages_returns_array(): void {
 		$result = RSA_Admin::get_trackable_pages();
 		$this->assertIsArray( $result );
@@ -98,14 +103,15 @@ class AdminTest extends WP_UnitTestCase {
 
 	public function test_get_trackable_pages_home_is_first(): void {
 		$result = RSA_Admin::get_trackable_pages();
-		$keys = array_keys( $result );
+		$keys   = array_keys( $result );
 		$this->assertSame( '/', $keys[0] );
 	}
 
-	// ----------------------------------------------------------------
-	// role setup — rsa_analyst role
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * role setup — rsa_analyst role
+	 * ----------------------------------------------------------------
+	 */
 	public function test_rsa_analyst_role_has_correct_capability(): void {
 		$role = get_role( 'rsa_analyst' );
 		$this->assertNotNull( $role );
@@ -118,10 +124,11 @@ class AdminTest extends WP_UnitTestCase {
 		$this->assertTrue( $admin->has_cap( 'rsa_manage_statistics' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// RSA_DB table helpers
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * RSA_DB table helpers
+	 * ----------------------------------------------------------------
+	 */
 	public function test_events_table_helper(): void {
 		global $wpdb;
 		$this->assertSame( $wpdb->prefix . 'rsa_events', RSA_DB::events_table() );

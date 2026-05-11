@@ -3,9 +3,13 @@
  * Premium: Export — download stats as CSV.
  *
  * @fs_premium_only
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 	?>
@@ -48,17 +52,17 @@ RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 				<th><?php esc_html_e( 'Date range', 'rich-statistics' ); ?></th>
 				<td>
 					<?php
-					$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
+					$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- export form display; GET param populates pre-selected period only
-				$period  = in_array( $_GET['period'] ?? '30d', $allowed, true ) ? sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ) : '30d';
-					$labels  = [
-						'7d'        => __( 'Last 7 days',  'rich-statistics' ),
+					$period = in_array( $_GET['period'] ?? '30d', $allowed, true ) ? sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ) : '30d';
+					$labels = array(
+						'7d'        => __( 'Last 7 days', 'rich-statistics' ),
 						'30d'       => __( 'Last 30 days', 'rich-statistics' ),
 						'90d'       => __( 'Last 90 days', 'rich-statistics' ),
-						'thismonth' => __( 'This month',   'rich-statistics' ),
-						'lastmonth' => __( 'Last month',   'rich-statistics' ),
+						'thismonth' => __( 'This month', 'rich-statistics' ),
+						'lastmonth' => __( 'Last month', 'rich-statistics' ),
 						'custom'    => __( 'Custom range', 'rich-statistics' ),
-					];
+					);
 					?>
 					<select name="period" id="rsa_export_period" onchange="document.getElementById('rsa-custom-dates').style.display=this.value==='custom'?'':'none'">
 						<?php foreach ( $labels as $val => $label ) : ?>

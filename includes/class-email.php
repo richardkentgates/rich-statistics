@@ -3,24 +3,25 @@
  * Email digest — scheduling, composition, and delivery.
  * Uses wp_mail exclusively. No SMTP panel — site owners can
  * use WP Mail SMTP or similar if needed.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_Email {
 
 	public static function init(): void {
-		add_action( 'rsa_send_digest',        [ __CLASS__, 'send_digest' ] );
+		add_action( 'rsa_send_digest', [ __CLASS__, 'send_digest' ] );
 		add_action( 'admin_post_rsa_save_settings', [ __CLASS__, 'reschedule_on_save' ] );
 		add_action( 'admin_post_rsa_send_test_email', [ __CLASS__, 'handle_test_send' ] );
 
-		// Schedule if not yet scheduled and digest is enabled
 		add_action( 'init', [ __CLASS__, 'maybe_schedule' ] );
 	}
 
-	// ----------------------------------------------------------------
-	// Scheduling
-	// ----------------------------------------------------------------
-
+	/**
+	 * Schedule the digest if not already scheduled.
+	 */
 	public static function maybe_schedule(): void {
 		if ( ! get_option( 'rsa_email_digest_enabled' ) ) {
 			return;
@@ -44,7 +45,7 @@ class RSA_Email {
 		$offset = match ( $freq ) {
 			'daily'   => DAY_IN_SECONDS,
 			'monthly' => 30 * DAY_IN_SECONDS,
-			default   => WEEK_IN_SECONDS,  // weekly
+			default   => WEEK_IN_SECONDS,
 		};
 
 		wp_schedule_single_event( time() + $offset, 'rsa_send_digest' );
@@ -57,12 +58,11 @@ class RSA_Email {
 		self::schedule_next();
 	}
 
-	// ----------------------------------------------------------------
-	// Digest sending
-	// ----------------------------------------------------------------
-
 	/**
 	 * Builds and sends the digest email to all configured recipients.
+	 *
+	 * @param string $period Period key (7d, 30d, 90d, thismonth, lastmonth).
+	 * @return bool True if the mail was sent successfully.
 	 */
 	public static function send_digest( string $period = '' ): bool {
 		if ( ! $period ) {
@@ -76,13 +76,21 @@ class RSA_Email {
 
 		$recipients_raw = get_option( 'rsa_email_digest_recipients', get_option( 'admin_email' ) );
 
-		// Role-based recipients: find all WP users with an allowed role.
 		if ( get_option( 'rsa_email_digest_use_roles' ) ) {
 			$allowed_roles = (array) get_option( 'rsa_allowed_roles', [ 'administrator' ] );
-			$role_users    = get_users( [ 'role__in' => $allowed_roles, 'fields' => [ 'user_email' ] ] );
-			$recipients    = array_values( array_unique( array_filter(
-				array_map( fn( $u ) => sanitize_email( $u->user_email ), $role_users )
-			) ) );
+			$role_users    = get_users(
+				[
+					'role__in' => $allowed_roles,
+					'fields'   => [ 'user_email' ],
+				]
+			);
+			$recipients    = array_values(
+				array_unique(
+					array_filter(
+						array_map( fn( $u ) => sanitize_email( $u->user_email ), $role_users )
+					)
+				)
+			);
 		} else {
 			$recipients = array_filter(
 				array_map( 'sanitize_email', array_map( 'trim', explode( ',', $recipients_raw ) ) )
@@ -102,7 +110,7 @@ class RSA_Email {
 			? RSA_Analytics::get_woocommerce( $period )
 			: null;
 
-		$subject  = sprintf(
+		$subject = sprintf(
 			/* translators: %s: site name */
 			__( '[%s] Analytics Digest', 'rich-statistics' ),
 			get_bloginfo( 'name' )
@@ -117,16 +125,14 @@ class RSA_Email {
 
 		$result = wp_mail( $recipients, $subject, $body, $headers );
 
-		// Re-schedule next send
 		self::schedule_next();
 
 		return (bool) $result;
 	}
 
-	// ----------------------------------------------------------------
-	// Test email handler
-	// ----------------------------------------------------------------
-
+	/**
+	 * Handle test email send request.
+	 */
 	public static function handle_test_send(): void {
 		check_admin_referer( 'rsa_test_email' );
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -134,29 +140,43 @@ class RSA_Email {
 		}
 		$sent = self::send_digest( '30d' );
 		$msg  = $sent ? 'test_sent' : 'test_failed';
-		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', $msg => '1' ], admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'page' => 'rich-statistics-preferences',
+					$msg   => '1',
+				],
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
-	// ----------------------------------------------------------------
-	// HTML email builder
-	// ----------------------------------------------------------------
-
+	/**
+	 * Build the HTML email body.
+	 *
+	 * @param array      $overview  Overview data.
+	 * @param array      $pages     Top pages data.
+	 * @param array      $referrers Referrer data.
+	 * @param array|null $wc_data   WooCommerce data or null.
+	 * @param string     $period    Period key.
+	 * @return string HTML email body.
+	 */
 	private static function build_html( array $overview, array $pages, array $referrers, ?array $wc_data, string $period ): string {
 		$period_labels = [
-			'7d'        => __( 'last 7 days',   'rich-statistics' ),
-			'30d'       => __( 'last 30 days',  'rich-statistics' ),
-			'90d'       => __( 'last 90 days',  'rich-statistics' ),
-			'thismonth' => __( 'this month',    'rich-statistics' ),
-			'lastmonth' => __( 'last month',    'rich-statistics' ),
+			'7d'        => __( 'last 7 days', 'rich-statistics' ),
+			'30d'       => __( 'last 30 days', 'rich-statistics' ),
+			'90d'       => __( 'last 90 days', 'rich-statistics' ),
+			'thismonth' => __( 'this month', 'rich-statistics' ),
+			'lastmonth' => __( 'last month', 'rich-statistics' ),
 		];
-		$period_label = $period_labels[ $period ] ?? $period;
-		$site_name    = esc_html( get_bloginfo( 'name' ) );
-		$site_url     = esc_url( home_url() );
-		$dash_url     = esc_url( admin_url( 'admin.php?page=rich-statistics' ) );
+		$period_label  = $period_labels[ $period ] ?? $period;
+		$site_name     = esc_html( get_bloginfo( 'name' ) );
+		$site_url      = esc_url( home_url() );
+		$dash_url      = esc_url( admin_url( 'admin.php?page=rich-statistics' ) );
 
-		$secs     = (int) $overview['avg_time'];
-		$avg_fmt  = $secs >= 60
+		$secs    = (int) $overview['avg_time'];
+		$avg_fmt = $secs >= 60
 			? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's'
 			: $secs . 's';
 
@@ -164,7 +184,6 @@ class RSA_Email {
 		include RSA_DIR . 'templates/email/digest.php';
 		$html = ob_get_clean();
 
-		// Inject dynamic values
 		$replacements = [
 			'{{SITE_NAME}}'    => $site_name,
 			'{{SITE_URL}}'     => $site_url,
@@ -175,8 +194,8 @@ class RSA_Email {
 			'{{AVG_TIME}}'     => esc_html( $avg_fmt ),
 			'{{BOUNCE_RATE}}'  => esc_html( $overview['bounce_rate'] . '%' ),
 			'{{TOP_PAGES}}'    => self::build_pages_rows( $pages ),
-			'{{REFERRERS}}'   => self::build_referrers_section( $referrers ),
-			'{{WC_SECTION}}'  => self::build_wc_section( $wc_data ),
+			'{{REFERRERS}}'    => self::build_referrers_section( $referrers ),
+			'{{WC_SECTION}}'   => self::build_wc_section( $wc_data ),
 			'{{YEAR}}'         => esc_html( gmdate( 'Y' ) ),
 		];
 
@@ -189,10 +208,10 @@ class RSA_Email {
 		}
 		$rows = '';
 		foreach ( $pages as $i => $row ) {
-			$bg     = $i % 2 === 0 ? '#f8fafc' : '#ffffff';
-			$secs   = (int) $row['avg_time'];
-			$time   = $secs >= 60 ? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's' : $secs . 's';
-			$rows  .= '<tr style="background:' . $bg . '">'
+			$bg    = $i % 2 === 0 ? '#f8fafc' : '#ffffff';
+			$secs  = (int) $row['avg_time'];
+			$time  = $secs >= 60 ? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's' : $secs . 's';
+			$rows .= '<tr style="background:' . $bg . '">'
 				. '<td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#334155;">' . esc_html( $row['page'] ) . '</td>'
 				. '<td style="padding:8px 12px;text-align:center;color:#1e293b;">' . esc_html( number_format( $row['views'] ) ) . '</td>'
 				. '<td style="padding:8px 12px;text-align:center;color:#64748b;">' . esc_html( $time ) . '</td>'
@@ -243,24 +262,24 @@ class RSA_Email {
 			. '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">'
 			. '<tr>'
 			. '<td width="33%" style="text-align:center;padding:0 8px;">'
-			.   '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Orders</div>'
-			.   '<div style="font-size:24px;font-weight:800;color:#6366f1;">' . esc_html( number_format( $wc['orders_count'] ) ) . '</div>'
+			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Orders</div>'
+			. '<div style="font-size:24px;font-weight:800;color:#6366f1;">' . esc_html( number_format( $wc['orders_count'] ) ) . '</div>'
 			. '</td>'
 			. '<td width="33%" style="text-align:center;padding:0 8px;border-left:1px solid #e2e8f0;">'
-			.   '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Revenue</div>'
-			.   '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( $revenue ) . '</div>'
+			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Revenue</div>'
+			. '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( $revenue ) . '</div>'
 			. '</td>'
 			. '<td width="33%" style="text-align:center;padding:0 8px;border-left:1px solid #e2e8f0;">'
-			.   '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Add to Cart</div>'
-			.   '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( number_format( $wc['funnel']['cart'] ) ) . '</div>'
+			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Add to Cart</div>'
+			. '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( number_format( $wc['funnel']['cart'] ) ) . '</div>'
 			. '</td>'
 			. '</tr></table>'
 			. ( $top_rows
 				? '<table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">'
-				  . '<thead><tr style="background:#f8fafc;">'
-				  . '<th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">Top Product</th>'
-				  . '<th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">Views</th>'
-				  . '</tr></thead><tbody>' . $top_rows . '</tbody></table>'
+					. '<thead><tr style="background:#f8fafc;">'
+					. '<th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">Top Product</th>'
+					. '<th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">Views</th>'
+					. '</tr></thead><tbody>' . $top_rows . '</tbody></table>'
 				: '' )
 			. '</td></tr>';
 	}

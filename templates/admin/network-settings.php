@@ -1,7 +1,10 @@
 <?php
 /**
  * Network Settings page — shown in the Network Admin for multisite.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 if ( ! current_user_can( 'manage_network_options' ) ) {
@@ -10,7 +13,7 @@ if ( ! current_user_can( 'manage_network_options' ) ) {
 
 // Handle save
 $saved   = false;
-$updated = [];
+$updated = array();
 
 if ( isset( $_POST['rsa_network_save'] ) ) {
 	check_admin_referer( 'rsa_network_settings_save' );
@@ -24,8 +27,8 @@ if ( isset( $_POST['rsa_network_save'] ) ) {
 	$saved = true;
 }
 
-$default_retention     = (int) get_site_option( 'rsa_default_retention_days', 90 );
-$network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0 );
+$default_retention = (int) get_site_option( 'rsa_default_retention_days', 90 );
+$network_disable   = (int) get_site_option( 'rsa_network_disable_tracker', 0 );
 ?>
 <div class="wrap rsa-wrap">
 	<h1>
@@ -53,12 +56,12 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 				</th>
 				<td>
 					<input type="number"
-					       id="rsa-default-retention"
-					       name="rsa_default_retention_days"
-					       value="<?php echo esc_attr( $default_retention ); ?>"
-					       min="1"
-					       max="730"
-					       class="small-text">
+							id="rsa-default-retention"
+							name="rsa_default_retention_days"
+							value="<?php echo esc_attr( $default_retention ); ?>"
+							min="1"
+							max="730"
+							class="small-text">
 					<p class="description">
 						<?php esc_html_e( 'Applied to new sites. Existing sites keep their own setting.', 'rich-statistics' ); ?>
 					</p>
@@ -71,9 +74,9 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 				<td>
 					<label>
 						<input type="checkbox"
-						       name="rsa_network_disable_tracker"
-						       value="1"
-						       <?php checked( $network_disable, 1 ); ?>>
+								name="rsa_network_disable_tracker"
+								value="1"
+								<?php checked( $network_disable, 1 ); ?>>
 						<?php esc_html_e( 'Stop collecting analytics data on all sub-sites', 'rich-statistics' ); ?>
 					</label>
 					<p class="description">
@@ -92,7 +95,13 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 	<p><?php esc_html_e( 'Per-site analytics for the last 30 days. Click the site name to view its full dashboard.', 'rich-statistics' ); ?></p>
 
 	<?php
-	$sites = get_sites( [ 'number' => 100, 'orderby' => 'id', 'order' => 'ASC' ] );
+	$sites = get_sites(
+		array(
+			'number'  => 100,
+			'orderby' => 'id',
+			'order'   => 'ASC',
+		)
+	);
 	if ( $sites ) :
 		global $wpdb;
 		$now   = current_time( 'mysql' );
@@ -110,7 +119,8 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $sites as $site ) :
+			<?php
+			foreach ( $sites as $site ) :
 				switch_to_blog( $site->blog_id );
 				$has_table  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . 'rsa_events' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog table check
 				$retention  = (int) get_option( 'rsa_retention_days', $default_retention );
@@ -123,7 +133,7 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 					$pageviews = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog stats
 						$wpdb->prepare( "SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d", $start, $now, $bt )
 					);
-					$sessions = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog stats
+					$sessions  = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- multisite per-blog stats
 						$wpdb->prepare( "SELECT COUNT(*) FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s", $start, $now )
 					);
 				}
@@ -136,12 +146,15 @@ $network_disable       = (int) get_site_option( 'rsa_network_disable_tracker', 0
 					<td><a href="<?php echo esc_url( $dashboard_url ); ?>"><?php echo esc_html( $site_details->blogname ); ?></a></td>
 					<td><?php echo (int) $site->blog_id; ?></td>
 					<td><?php echo $has_table ? esc_html( number_format( $pageviews ) ) : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
-					<td><?php echo $has_table ? esc_html( number_format( $sessions ) )  : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
+					<td><?php echo $has_table ? esc_html( number_format( $sessions ) ) : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
 					<td><?php echo (int) $retention; ?></td>
-					<td><?php echo $tracker_on && $has_table
+					<td>
+					<?php
+					echo $tracker_on && $has_table
 						? '<span style="color:#10b981">&#10003; ' . esc_html__( 'Yes', 'rich-statistics' ) . '</span>'
 						: '<span style="color:#ef4444">&#10007; ' . esc_html__( 'No', 'rich-statistics' ) . '</span>';
-					?></td>
+					?>
+					</td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
