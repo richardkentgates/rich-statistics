@@ -1,6 +1,6 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
