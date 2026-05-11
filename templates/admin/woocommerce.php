@@ -6,7 +6,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) ); }
 
 RSA_Admin::page_header( __( 'WooCommerce', 'rich-statistics' ) );

@@ -8,7 +8,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'Campaigns', 'rich-statistics' ) );
@@ -67,6 +67,7 @@ $base = admin_url( 'admin.php' );
 	<?php endif; ?>
 
 	<?php if ( $mediums ) : ?>
+	<label for="utm_medium" class="screen-reader-text"><?php esc_html_e( 'Filter by UTM medium', 'rich-statistics' ); ?></label>
 	<select name="utm_medium">
 		<option value=""><?php esc_html_e( 'All mediums', 'rich-statistics' ); ?></option>
 		<?php foreach ( $mediums as $medium ) : ?>

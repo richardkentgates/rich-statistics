@@ -1,6 +1,6 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
@@ -79,6 +79,7 @@ $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) 
 	<?php endif; ?>
 
 	<?php if ( $opts['pages'] ) : ?>
+	<label for="path" class="screen-reader-text"><?php esc_html_e( 'Filter by page', 'rich-statistics' ); ?></label>
 	<select name="path">
 		<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
 		<?php foreach ( $opts['pages'] as $p ) : ?>
@@ -88,6 +89,7 @@ $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) 
 	<?php endif; ?>
 
 	<?php if ( $opts['browsers'] ) : ?>
+	<label for="browser" class="screen-reader-text"><?php esc_html_e( 'Filter by browser', 'rich-statistics' ); ?></label>
 	<select name="browser">
 		<option value=""><?php esc_html_e( 'All Browsers', 'rich-statistics' ); ?></option>
 		<?php foreach ( $opts['browsers'] as $b ) : ?>
@@ -97,6 +99,7 @@ $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) 
 	<?php endif; ?>
 
 	<?php if ( $opts['os'] ) : ?>
+	<label for="os" class="screen-reader-text"><?php esc_html_e( 'Filter by operating system', 'rich-statistics' ); ?></label>
 	<select name="os">
 		<option value=""><?php esc_html_e( 'All OS', 'rich-statistics' ); ?></option>
 		<?php foreach ( $opts['os'] as $o ) : ?>
