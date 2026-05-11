@@ -90,9 +90,9 @@ composer phpcbf
 
 | Branch | Environment | Server | CI Workflow | Branch Type |
 |--------|-------------|--------|-------------|-------------|
-| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged releases) | Stable releases |
-| `develop` | Dev/Beta | `rs-dev.richardkentgates.com` | `build-dev.yml` (push) | Bleeding-edge |
-| `test` | Staging | `rs-test.richardkentgates.com` | `build-dev.yml` (push) | Integration testing |
+| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
+| `develop` | Dev/Beta | `rs-dev.richardkentgates.com` | `build-develop.yml` (push) | Bleeding-edge |
+| `test` | Staging | `rs-test.richardkentgates.com` | `build-test.yml` (push) | Integration testing |
 
 Each branch has its own:
 - WordPress plugin ZIP (CI artifact)
@@ -113,21 +113,26 @@ Each branch has its own:
 
 ## CI Pipelines
 
-### `build-dev.yml` (branches: develop, test)
-- **Trigger**: Push to `develop` or `test`, or `workflow_dispatch`
-- **Build**: Plugin ZIP (PHP syntax check, no tests)
-- **deploy-web-dev**: Syncs PWA to `rs-dev` via webhook (develop push only)
-- **build-desktop-dev**: Builds Linux + Windows desktop binaries, pushes to `rs-dev/dist/` (develop push only)
-- **build-desktop-test**: Builds Linux + Windows desktop binaries, pushes to `rs-test/dist/` (test push only)
-- **deploy-web-test**: Syncs PWA to `rs-test` via webhook (test push only, or manual dispatch)
-- **test**: Runs PHPUnit unit + integration tests
+### `build-develop.yml` (branch: develop)
+- **Trigger**: Push to `develop`, or `workflow_dispatch`
+- **Build**: Plugin ZIP (PHP syntax check)
+- **deploy-web**: Syncs PWA to `rs-dev` via webhook
+- **build-desktop**: Builds Linux + Windows desktop binaries (signed), pushes to `rs-dev/dist/`, regenerates `update.json` with signatures
+- **test**: Runs PHPUnit unit + integration tests (via `tests.yml`)
+
+### `build-test.yml` (branch: test)
+- **Trigger**: Push to `test`, or `workflow_dispatch`
+- **Build**: Plugin ZIP (PHP syntax check)
+- **deploy-web**: Syncs PWA to `rs-test` via webhook
+- **build-desktop**: Builds Linux + Windows desktop binaries (signed), pushes to `rs-test/dist/`, regenerates `update.json` with signatures
 
 ### `build-release.yml` (tagged on main)
-- **Trigger**: Tag push (`v*`)
-- **Build**: Plugin ZIP, versioned PWA snapshot
-- **Ping deploy**: Syncs PWA to `rs-app` via webhook
-- **build-desktop-linux**: Linux `.deb` for amd64 + arm64, pushes to `rs-app/dist/`
-- **build-desktop-windows**: Windows `.exe` installer, pushes to `rs-app/dist/`
+- **Trigger**: Tag push (`v*`), or `workflow_dispatch` with optional `setup_webhook=true`
+- **Build**: Plugin ZIP, versioned PWA snapshot, GitHub Release
+- **build-desktop-linux**: Linux `.deb` for amd64 + arm64 (signed), pushes to `rs-app/dist/`, updates APT repo
+- **build-desktop-windows**: Windows `.exe` installer (signed), pushes to `rs-app/dist/`, regenerates `update.json` with all platform signatures
+- **ping-deploy**: Syncs PWA to `rs-app` via webhook
+- **setup-webhook** (manual only): One-time bootstrap of webhook handler on fresh server
 
 ## Infrastructure
 
