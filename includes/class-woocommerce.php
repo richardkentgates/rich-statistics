@@ -2,7 +2,10 @@
 /**
  * WooCommerce integration — tracks product views, add-to-cart, and orders
  * as events in the rsa_events table, gated on WooCommerce being active.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_Woocommerce {
@@ -12,79 +15,90 @@ class RSA_Woocommerce {
 			return;
 		}
 
-		// Product page view — fires after WC product is set up on single-product pages
 		add_action( 'woocommerce_before_single_product', [ __CLASS__, 'track_product_view' ] );
 
-		// Add to cart — fires server-side for classic forms (non-AJAX)
 		add_action( 'woocommerce_add_to_cart', [ __CLASS__, 'track_add_to_cart' ], 10, 6 );
 
-		// AJAX add to cart — fires after WC processes the request
 		add_action( 'woocommerce_ajax_added_to_cart', [ __CLASS__, 'track_add_to_cart_ajax' ] );
 
-		// Order completed (payment received)
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'track_order_complete' ] );
 		add_action( 'woocommerce_order_status_processing', [ __CLASS__, 'track_order_complete' ] );
 	}
 
-	// ----------------------------------------------------------------
-	// Track product page view
-	// ----------------------------------------------------------------
-
+	/**
+	 * Track a product page view.
+	 */
 	public static function track_product_view(): void {
 		global $product;
 		if ( ! $product instanceof WC_Product ) {
 			return;
 		}
 
-		self::insert_event( 'wc_product_view', [
-			'product_id'   => $product->get_id(),
-			'product_name' => $product->get_name(),
-			'product_sku'  => $product->get_sku(),
-		] );
+		self::insert_event(
+			'wc_product_view',
+			[
+				'product_id'   => $product->get_id(),
+				'product_name' => $product->get_name(),
+				'product_sku'  => $product->get_sku(),
+			]
+		);
 	}
 
-	// ----------------------------------------------------------------
-	// Track add-to-cart (classic form)
-	// ----------------------------------------------------------------
-
+	/**
+	 * Track an add-to-cart event from a classic form.
+	 *
+	 * @param string $cart_item_key   Cart item key.
+	 * @param int    $product_id      Product ID.
+	 * @param int    $quantity        Quantity added.
+	 * @param int    $variation_id    Variation ID.
+	 * @param array  $variation       Variation attributes.
+	 * @param array  $cart_item_data  Cart item data.
+	 */
 	public static function track_add_to_cart( string $cart_item_key, int $product_id, int $quantity, int $variation_id, array $variation, array $cart_item_data ): void {
-		$product = wc_get_product( $variation_id ?: $product_id );
+		$product = wc_get_product( $variation_id ? $variation_id : $product_id );
 		if ( ! $product ) {
 			return;
 		}
 
-		self::insert_event( 'wc_add_to_cart', [
-			'product_id'   => $product->get_id(),
-			'product_name' => $product->get_name(),
-			'product_sku'  => $product->get_sku(),
-			'quantity'     => $quantity,
-		] );
+		self::insert_event(
+			'wc_add_to_cart',
+			[
+				'product_id'   => $product->get_id(),
+				'product_name' => $product->get_name(),
+				'product_sku'  => $product->get_sku(),
+				'quantity'     => $quantity,
+			]
+		);
 	}
 
-	// ----------------------------------------------------------------
-	// Track add-to-cart (AJAX)
-	// ----------------------------------------------------------------
-
+	/**
+	 * Track an add-to-cart event from AJAX.
+	 *
+	 * @param int $product_id Product ID.
+	 */
 	public static function track_add_to_cart_ajax( int $product_id ): void {
 		$product = wc_get_product( $product_id );
 		if ( ! $product ) {
 			return;
 		}
 
-		self::insert_event( 'wc_add_to_cart', [
-			'product_id'   => $product->get_id(),
-			'product_name' => $product->get_name(),
-			'product_sku'  => $product->get_sku(),
-			'quantity'     => 1,
-		] );
+		self::insert_event(
+			'wc_add_to_cart',
+			[
+				'product_id'   => $product->get_id(),
+				'product_name' => $product->get_name(),
+				'product_sku'  => $product->get_sku(),
+				'quantity'     => 1,
+			]
+		);
 	}
 
-	// ----------------------------------------------------------------
-	// Track order completion
-	// ----------------------------------------------------------------
-
+	/**
+	 * Track an order completion.
+	 *
+	 * @param int $order_id Order ID.
+	 */
 	public static function track_order_complete( int $order_id ): void {
-		// Avoid double-tracking if both hooks fire for the same order
 		if ( get_post_meta( $order_id, '_rsa_tracked', true ) ) {
 			return;
 		}
@@ -100,18 +114,23 @@ class RSA_Woocommerce {
 			$items[] = $item->get_name() . ' x' . $item->get_quantity();
 		}
 
-		self::insert_event( 'wc_order_complete', [
-			'order_id' => $order_id,
-			'total'    => (float) $order->get_total(),
-			'items'    => implode( '; ', $items ),
-			'currency' => $order->get_currency(),
-		] );
+		self::insert_event(
+			'wc_order_complete',
+			[
+				'order_id' => $order_id,
+				'total'    => (float) $order->get_total(),
+				'items'    => implode( '; ', $items ),
+				'currency' => $order->get_currency(),
+			]
+		);
 	}
 
-	// ----------------------------------------------------------------
-	// Internal: insert a WooCommerce event into rsa_wc_events
-	// ----------------------------------------------------------------
-
+	/**
+	 * Insert a WooCommerce event into rsa_wc_events.
+	 *
+	 * @param string $event_type The event type.
+	 * @param array  $meta       Event metadata.
+	 */
 	private static function insert_event( string $event_type, array $meta ): void {
 		global $wpdb;
 
@@ -163,7 +182,7 @@ class RSA_Woocommerce {
 	 * No cookies — session ID originates from sessionStorage (JS only).
 	 */
 	private static function session_id(): string {
-		$sid = sanitize_text_field( wp_unslash( $_POST['rsa_sid'] ?? '' ) );
+		$sid = sanitize_text_field( wp_unslash( $_POST['rsa_sid'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified upstream
 		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
 			return $sid;
 		}
@@ -171,10 +190,10 @@ class RSA_Woocommerce {
 	}
 
 	private static function generate_uuid(): string {
-		$hex = bin2hex( random_bytes( 16 ) );
-		$hex = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
+		$hex      = bin2hex( random_bytes( 16 ) );
+		$hex      = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
 		$variants = [ '8', '9', 'a', 'b' ];
-		$hex = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
+		$hex      = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
 		return sprintf(
 			'%s-%s-%s-%s-%s',
 			substr( $hex, 0, 8 ),

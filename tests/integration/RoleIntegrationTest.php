@@ -8,15 +8,19 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
-		
+
 		// Create the role as plugin would
 		if ( ! get_role( 'rsa_analyst' ) ) {
-			add_role( 'rsa_analyst', 'Statistics Analyst', [
-				'rsa_manage_statistics' => true,
-				'read' => true,
-			] );
+			add_role(
+				'rsa_analyst',
+				'Statistics Analyst',
+				array(
+					'rsa_manage_statistics' => true,
+					'read'                  => true,
+				)
+			);
 		}
-		
+
 		// Ensure admin has the cap
 		$admin_role = get_role( 'administrator' );
 		if ( $admin_role && ! isset( $admin_role->capabilities['rsa_manage_statistics'] ) ) {
@@ -24,7 +28,7 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 		}
 
 		// Add rsa_analyst to allowed roles
-		$allowed = get_option( 'rsa_allowed_roles', [ 'administrator' ] );
+		$allowed = get_option( 'rsa_allowed_roles', array( 'administrator' ) );
 		if ( ! in_array( 'rsa_analyst', $allowed, true ) ) {
 			$allowed[] = 'rsa_analyst';
 			update_option( 'rsa_allowed_roles', $allowed );
@@ -38,7 +42,7 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		parent::tearDown();
 		// Clean up test users
-		$users = get_users( [ 'role' => 'rsa_analyst' ] );
+		$users = get_users( array( 'role' => 'rsa_analyst' ) );
 		foreach ( $users as $user ) {
 			wp_delete_user( $user->ID );
 		}
@@ -67,7 +71,7 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 	 * Test that a user with Statistics Analyst role can access plugin.
 	 */
 	public function test_analyst_can_access_plugin(): void {
-		$user = self::factory()->user->create_and_get( [ 'role' => 'rsa_analyst' ] );
+		$user = self::factory()->user->create_and_get( array( 'role' => 'rsa_analyst' ) );
 		$this->assertTrue( user_can( $user, 'rsa_manage_statistics' ), 'Analyst should have rsa_manage_statistics' );
 	}
 
@@ -75,7 +79,7 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 	 * Test that a subscriber cannot access plugin.
 	 */
 	public function test_subscriber_cannot_access_plugin(): void {
-		$user = self::factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
+		$user = self::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		$this->assertFalse( user_can( $user, 'rsa_manage_statistics' ), 'Subscriber should not have rsa_manage_statistics' );
 	}
 
@@ -88,13 +92,13 @@ class RoleIntegrationTest extends WP_UnitTestCase {
 		}
 
 		// Create analyst user
-		$analyst = self::factory()->user->create_and_get( [ 'role' => 'rsa_analyst' ] );
-		
+		$analyst = self::factory()->user->create_and_get( array( 'role' => 'rsa_analyst' ) );
+
 		// Create admin user
-		$admin = self::factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		
+		$admin = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
+
 		// Create subscriber
-		$subscriber = self::factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
+		$subscriber = self::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 
 		$this->assertTrue( RSA_Admin::user_can_access_app( $analyst ), 'Analyst should access app' );
 		$this->assertTrue( RSA_Admin::user_can_access_app( $admin ), 'Admin should access app' );

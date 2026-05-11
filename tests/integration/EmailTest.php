@@ -4,7 +4,6 @@
  *
  * @package RichStatistics\Tests
  */
-
 class EmailTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
@@ -19,10 +18,11 @@ class EmailTest extends WP_UnitTestCase {
 		update_option( 'rsa_email_digest_frequency', 'weekly' );
 	}
 
-	// ----------------------------------------------------------------
-	// maybe_schedule()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * maybe_schedule()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_maybe_schedule_does_nothing_when_digest_disabled(): void {
 		update_option( 'rsa_email_digest_enabled', 0 );
 		wp_clear_scheduled_hook( 'rsa_send_digest' );
@@ -41,10 +41,11 @@ class EmailTest extends WP_UnitTestCase {
 		$this->assertNotFalse( wp_next_scheduled( 'rsa_send_digest' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// schedule_next()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * schedule_next()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_schedule_next_clears_existing_hook(): void {
 		update_option( 'rsa_email_digest_enabled', 1 );
 		wp_schedule_single_event( time() + 3600, 'rsa_send_digest' );
@@ -73,7 +74,7 @@ class EmailTest extends WP_UnitTestCase {
 		RSA_Email::schedule_next();
 
 		$scheduled = wp_next_scheduled( 'rsa_send_digest' );
-		$diff = $scheduled - time();
+		$diff      = $scheduled - time();
 		$this->assertGreaterThanOrEqual( DAY_IN_SECONDS - 5, $diff );
 		$this->assertLessThanOrEqual( DAY_IN_SECONDS + 5, $diff );
 	}
@@ -86,7 +87,7 @@ class EmailTest extends WP_UnitTestCase {
 		RSA_Email::schedule_next();
 
 		$scheduled = wp_next_scheduled( 'rsa_send_digest' );
-		$diff = $scheduled - time();
+		$diff      = $scheduled - time();
 		$this->assertGreaterThanOrEqual( WEEK_IN_SECONDS - 5, $diff );
 		$this->assertLessThanOrEqual( WEEK_IN_SECONDS + 5, $diff );
 	}
@@ -99,14 +100,15 @@ class EmailTest extends WP_UnitTestCase {
 		RSA_Email::schedule_next();
 
 		$scheduled = wp_next_scheduled( 'rsa_send_digest' );
-		$diff = $scheduled - time();
+		$diff      = $scheduled - time();
 		$this->assertGreaterThanOrEqual( 28 * DAY_IN_SECONDS, $diff );
 	}
 
-	// ----------------------------------------------------------------
-	// send_digest()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * send_digest()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_send_digest_returns_false_when_no_recipients(): void {
 		update_option( 'rsa_email_digest_recipients', '' );
 		update_option( 'rsa_email_digest_use_roles', 0 );
@@ -136,10 +138,11 @@ class EmailTest extends WP_UnitTestCase {
 		$this->assertNotFalse( wp_next_scheduled( 'rsa_send_digest' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// reschedule_on_save()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * reschedule_on_save()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_reschedule_on_save_schedules_when_enabled(): void {
 		update_option( 'rsa_email_digest_enabled', 1 );
 		update_option( 'rsa_email_digest_frequency', 'daily' );
@@ -150,10 +153,11 @@ class EmailTest extends WP_UnitTestCase {
 		$this->assertNotFalse( wp_next_scheduled( 'rsa_send_digest' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// period mapping from frequency
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * period mapping from frequency
+	 * ----------------------------------------------------------------
+	 */
 	public function test_period_default_is_30d(): void {
 		update_option( 'rsa_email_digest_recipients', 'admin@test.com' );
 		update_option( 'rsa_email_digest_use_roles', 0 );

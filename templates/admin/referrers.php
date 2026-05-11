@@ -1,28 +1,36 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display template; GET params control display filters only
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-$f_page  = sanitize_text_field( wp_unslash( $_GET['ref_page'] ?? '' ) );
+$f_page = sanitize_text_field( wp_unslash( $_GET['ref_page'] ?? '' ) );
 // phpcs:enable WordPress.Security.NonceVerification.Recommended
-$filters = [ 'page' => $f_page, 'date_from' => $date_from, 'date_to' => $date_to ];
+$filters = array(
+	'page'      => $f_page,
+	'date_from' => $date_from,
+	'date_to'   => $date_to,
+);
 $rows    = RSA_Analytics::get_referrers( $period, 100, $filters );
 $opts    = RSA_Analytics::get_filter_options( $period, $filters );
 
 RSA_Admin::page_header( __( 'Referrers', 'rich-statistics' ), $period );
 
-$base    = admin_url( 'admin.php' );
+$base = admin_url( 'admin.php' );
 ?>
 
 <!-- Filter bar -->
@@ -45,7 +53,19 @@ $base    = admin_url( 'admin.php' );
 
 	<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
 	<?php if ( $f_page ) : ?>
-	<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-referrers', 'period' => $period ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
+	<a href="
+		<?php
+		echo esc_url(
+			add_query_arg(
+				array(
+					'page'   => 'rich-statistics-referrers',
+					'period' => $period,
+				),
+				$base
+			)
+		);
+		?>
+				" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 	<?php endif; ?>
 </form>
 
@@ -59,9 +79,10 @@ $base    = admin_url( 'admin.php' );
 
 <!-- Table -->
 <div class="rsa-card rsa-card-full">
-	<?php if ( $rows ) :
+	<?php
+	if ( $rows ) :
 		$total = array_sum( array_column( $rows, 'visits' ) );
-	?>
+		?>
 	<table class="rsa-table rsa-table--full">
 		<thead>
 			<tr>
@@ -73,13 +94,14 @@ $base    = admin_url( 'admin.php' );
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $rows as $i => $row ) :
+			<?php
+			foreach ( $rows as $i => $row ) :
 				$share = $total > 0 ? round( ( $row['visits'] / $total ) * 100, 1 ) : 0;
-			?>
+				?>
 			<tr>
 				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
 				<td><span class="rsa-referrer-domain"><?php echo esc_html( $row['domain'] ); ?></span></td>
-				<td class="rsa-td-page"><?php echo esc_html( $row['top_page'] ?: '—' ); ?></td>
+				<td class="rsa-td-page"><?php echo esc_html( $row['top_page'] ? $row['top_page'] : '—' ); ?></td>
 				<td><?php echo esc_html( number_format( $row['visits'] ) ); ?></td>
 				<td>
 					<div class="rsa-bar-cell">
