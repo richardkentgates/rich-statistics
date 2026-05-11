@@ -263,19 +263,7 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 			'permission_callback' => '__return_true',
 		] );
 
-		// Install token verification — authenticated, single-use (legacy)
-		register_rest_route( self::NS, '/verify-install', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'post_verify_install' ],
-			'permission_callback' => $premium,
-			'args'                => [
-				'site_token' => [
-					'type'              => 'string',
-					'required'          => true,
-					'sanitize_callback' => 'sanitize_text_field',
-				],
-			],
-		] );
+
 
 		// OTP site-pairing — public, single-use, rate-limited per IP
 		register_rest_route( self::NS, '/verify-otp', [
@@ -553,39 +541,6 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 			'date_to'   => (string) ( $r['date_to']   ?? '' ),
 		];
 		return self::ok( [ 'sources' => RSA_Analytics::get_entry_sources( $r['period'], $filters ) ] );
-	}
-
-	// ----------------------------------------------------------------
-	// Install token verification
-	// ----------------------------------------------------------------
-
-	/**
-	 * Consume the single-use install token embedded in a personalised PWA
-	 * download.  Called on the first successful login from that device.
-	 * Fails silently in the app — app functionality is never gated on this.
-	 */
-	public static function post_verify_install( WP_REST_Request $r ): WP_REST_Response|WP_Error {
-		$user_id = get_current_user_id();
-		$stored  = get_user_meta( $user_id, 'rsa_install_token', true );
-
-		if ( empty( $stored ) || ! is_array( $stored ) ) {
-			return new WP_Error( 'no_token', __( 'No pending install token for this user.', 'rich-statistics' ), [ 'status' => 404 ] );
-		}
-
-		if ( time() > (int) $stored['expires'] ) {
-			delete_user_meta( $user_id, 'rsa_install_token' );
-			return new WP_Error( 'token_expired', __( 'Install token has expired. Download a fresh copy from your profile.', 'rich-statistics' ), [ 'status' => 410 ] );
-		}
-
-		// Constant-time comparison prevents timing side-channel
-		if ( ! hash_equals( (string) $stored['token'], (string) $r['site_token'] ) ) {
-			return new WP_Error( 'invalid_token', __( 'Invalid install token.', 'rich-statistics' ), [ 'status' => 403 ] );
-		}
-
-		// Token consumed — delete so replay on a second device fails
-		delete_user_meta( $user_id, 'rsa_install_token' );
-
-		return self::ok( [ 'verified' => true ] );
 	}
 
 	// ----------------------------------------------------------------

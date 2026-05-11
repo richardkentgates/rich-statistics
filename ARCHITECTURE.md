@@ -47,7 +47,7 @@ rich-statistics/
 │   ├── class-bot-detection.php  Two-layer bot scorer (JS bitmask + server UA)
 │   ├── class-analytics.php   All read queries (overview, pages, audience…)
 │   ├── class-admin.php       Admin menus, asset enqueueing, page rendering
-│   ├── class-rest-api.php    Premium REST API (rsa/v1/*)
+│   ├── class-rest-api.php    REST API (rsa/v1/*) — free + premium endpoints
 │   ├── class-click-tracking.php  Premium click event handler + admin page
 │   ├── class-heatmap.php     Premium heatmap aggregation + display
 │   ├── class-email.php       Scheduled HTML digest emails
@@ -75,25 +75,24 @@ rich-statistics/
 │   ├── heatmap.php            Premium
 │   ├── preferences.php
 │   ├── export.php
-│   ├── email-settings.php
-│   ├── data-settings.php
+│   ├── ai-chat.php
 │   └── network-settings.php
 ├── templates/email/           HTML email digest template
 ├── src-tauri/               Tauri 2 desktop app wrapper (Rust) — wraps docs/app/
-├── docs/                      GitHub Pages site + wiki (not shipped in dist ZIP)
+├── docs/                      PWA + versioned snapshots (not shipped in dist ZIP)
 │   └── app/                  PWA frontend (vanilla JS, no build step)
 ├── tests/                     PHPUnit unit + integration tests
-├── cli/                       WP-CLI command class
 ├── languages/                 POT file for i18n
 ├── vendor/                    Composer dev dependencies (not shipped in dist ZIP)
-└── .github/workflows/         CI: tests.yml, build-release.yml
+└── .github/workflows/         CI: tests.yml, build-develop.yml, build-test.yml, build-release.yml
 ```
 
 ---
 
-## Database Schema (v9)
+## Database Schema (v1)
 
 All tables use `{$wpdb->prefix}rsa_` prefix. Each WordPress subsite gets its own tables (standard multisite behaviour).
+Schema is applied via `dbDelta()` — no incremental migration steps. The `SCHEMA_VERSION` constant is stored per-site in `rsa_db_version` option.
 
 ### `{prefix}rsa_events`
 
@@ -273,18 +272,31 @@ All premium feature classes check `rs_fs()->can_use_premium_code__premium_only()
 ## Branching Strategy
 
 ```
-main         ← tagged releases only (v1.x.x)
-  └── develop ← integration branch; all features merge here first
-        └── feature/* ← short-lived feature branches (PR → develop)
-        └── fix/*     ← bug-fix branches (PR → develop)
-        └── release/* ← stabilisation branch cut from develop before tagging
+feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+                        │
+                   merge PR
+                        ↓
+                      test ──push──→ auto-deploy: rs-test
+                        │
+                   merge PR
+                        ↓
+                      main ──tag v*──→ build-release.yml → rs-app
 ```
 
-- **`main`** is always in a releasable state and matches the latest tag
-- **`develop`** is the target for all PRs
-- Tags (`v1.x.x`) are applied to `main` after `release/*` merges in
-- CI (`tests.yml`) runs on push/PR to both `main` and `develop`
-- The release build (`build-release.yml`) triggers on `v*.*.*` tags
+**Repository structure:**
+```
+main         ← tagged releases only (v2.x.x)
+  └── test   ← QA/staging branch; pre-release verification
+        └── develop ← integration branch; all features merge here first
+              └── feature/* ← short-lived feature branches (PR → develop)
+              └── fix/*     ← bug-fix branches (PR → develop)
+```
+
+- **`main`** is always in a releasable state and matches the latest tag.
+- **`develop`** is the target for all PRs. Feature/bug branches branch from and PR into `develop`.
+- **`test`** receives merges from `develop` for pre-release QA. After sign-off, `test` merges into `main`.
+- Tags (`v2.x.x`) are applied to `main` after the release PR merges. The tag triggers `build-release.yml`.
+- CI (`tests.yml`) runs on push/PR to `main`, `develop`, and `test`.
 
 ---
 
@@ -292,31 +304,30 @@ main         ← tagged releases only (v1.x.x)
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `tests.yml` | push/PR to `main` or `develop` | Unit tests (PHP 8.1–8.3), integration tests (PHP 8.1–8.2 × WP latest/6.4), PHP lint |
-| `build-release.yml` | push of `v*.*.*` tag | Creates plugin ZIP, uploads as GitHub Release artifact |
+| `tests.yml` | push/PR to `main`, `develop`, or `test` | Unit tests (PHP 8.1–8.3), integration tests (PHP 8.1–8.2 × WP latest/6.4), PHP lint |
+| `build-develop.yml` | push to `develop` | Builds plugin ZIP, deploys PWA to `rs-dev`, builds desktop binaries, updates dev APT repo |
+| `build-test.yml` | push to `test` | Builds plugin ZIP, deploys PWA to `rs-test`, builds desktop binaries, updates test APT repo |
+| `build-release.yml` | push of `v*.*.*` tag | Creates plugin ZIP, versioned PWA snapshot, GitHub Release, desktop builds, APT update, deploys to `rs-app` |
 
 ---
 
 ## Schema Migrations
 
-`RSA_DB::maybe_upgrade()` is called from `install()` on every activation/upgrade. It runs a series of `INFORMATION_SCHEMA` checks followed by `ALTER TABLE … ADD COLUMN IF NOT EXISTS`-style operations (explicit per-column, not dynamic). The `SCHEMA_VERSION` constant acts as documentation of the highest migration and is asserted in the unit tests.
+`RSA_DB::install()` applies the full schema via `dbDelta()`. The `SCHEMA_VERSION` constant is asserted in tests.
 
 | Version | Change |
 |---|---|
-| 6 | Added `matched_rule` to `rsa_clicks` |
-| 7 | Added `href_value` to `rsa_clicks` |
-| 8 | Added `utm_source`, `utm_medium`, `utm_campaign` to `rsa_events` |
-| 9 | Added `rsa_wc_events` table (WooCommerce event tracking, Premium) |
+| 1 | Current schema — all 5 tables (events, sessions, clicks, heatmap, wc_events) with full column set. Schema is applied atomically via `dbDelta()`; no incremental migration history maintained. |
 
 ---
 
 ## PWA / Desktop App Architecture
 
-The companion app is served from GitHub Pages at `rs-app.richardkentgates.com/app/` and is also bundled inside the Tauri-wrapped Linux desktop app (`.deb`).
+The companion app is served from the application server at `rs-app.richardkentgates.com` (synced via deploy webhook from GitHub) and is also bundled inside the Tauri-wrapped Linux desktop app (`.deb`).
 
 ### Versioned Snapshot Folder Layout
 
-Every release bakes a frozen snapshot of the app files into `docs/app/{version}/`:
+Every release bakes a frozen snapshot of the app files into `docs/app/v/{version}/`:
 
 ```
 docs/app/
@@ -329,12 +340,14 @@ docs/app/
 ├── manifest.json
 ├── icons/
 ├── versions.json     ← JSON array of all published semver strings
-├── 1.4.6/            ← frozen snapshot at that release
-│   ├── index.html
-│   ├── app.js
-│   └── ...
-├── 1.4.7/
-└── 1.4.8/
+├── config-dev.js     ← env-specific config (optional override)
+├── config-test.js
+├── index-dev.html    ← env-specific HTML entry points
+├── index-test.html
+└── v/                ← versioned snapshots (server serves under /v/<version>/)
+    ├── 2.0.0/
+    ├── 2.0.1/
+    └── ...
 ```
 
 The `build-release.yml` CI workflow creates the snapshot in its **`build`** job (web app, pushed to `main`) and again in the **`build-desktop`** job (bundled into the `.deb` before `tauri build` runs).
@@ -415,8 +428,8 @@ navigator.serviceWorker.addEventListener('message', function (event) {
 ## App Server
 
 The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
-- `/app/` — live canonical PWA (GitHub Pages mirror)
-- `/app/{version}/` — versioned snapshots referenced by `versions.json`
+- `/` — live canonical PWA
+- `/v/{version}/` — versioned snapshots referenced by `versions.json`
 - `/dist/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
 - `/dist/rich-statistics-linux-arm64.deb` — latest arm64 `.deb`
 - `/apt/` — Debian APT repository (see below)

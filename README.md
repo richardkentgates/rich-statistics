@@ -4,9 +4,9 @@
 
 <!-- Status -->
 [![CI](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/richardkentgates/rich-statistics/actions/workflows/tests.yml)
-[![Build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
-[![Dev build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-dev.yml/badge.svg?branch=develop)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-dev.yml)
-[![Test build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-dev.yml/badge.svg?branch=test)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-dev.yml?query=branch%3Atest)
+[![Release build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml/badge.svg)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-release.yml)
+[![Dev build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-develop.yml/badge.svg?branch=develop)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-develop.yml)
+[![Test build](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-test.yml/badge.svg?branch=test)](https://github.com/richardkentgates/rich-statistics/actions/workflows/build-test.yml?query=branch%3Atest)
 [![Release](https://img.shields.io/github/v/release/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 [![Open Issues](https://img.shields.io/github/issues/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics/issues)

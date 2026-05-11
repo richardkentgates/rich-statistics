@@ -102,52 +102,98 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 
 == Changelog ==
 
+= 2.2.7 =
+* Security audit: CORS allowlist, $_POST save/restore, AI error masking, branch protection
+* Infrastructure: production/dev/test environments operational with CI/CD
+* Documentation: ROADMAP.md, AGENTS.md, README.md, CONTRIBUTING.md updated with all environments
+
+= 2.2.6 =
+* Premium feature gating UI in PWA (locked views show upgrade overlay)
+* Build Dev workflow for develop branch CI
+
+= 2.2.5 =
+* Test isolation fix in AJAX handler tests
+
+= 2.2.4 =
+* OTP rate limiting edge case fix (IP hash collision handling)
+
+= 2.2.3 =
+* PWA version switching in Tauri desktop app (versioned snapshot navigation)
+
+= 2.2.2 =
+* Chart.js loading fix in versioned PWA snapshots
+
+= 2.2.1 =
+* PWA UX improvements for mobile viewport
+
+= 2.1.0 =
+* Windows desktop app support (`.exe` installer via NSIS)
+* Windows platform added to update.json for automatic updates
+* CSV export: UTF-8 BOM for Excel compatibility, consistent quoting
+
+= 2.0.2 =
+* PWA service worker cache invalidation on version change
+* OTP site-pairing rate-limiting properly resets on success
+
+= 2.0.1 =
+* WooCommerce analytics (funnel, revenue, top products)
+* UTM campaign tracking
+
+= 2.0.0 =
+* Complete rewrite with privacy-first architecture
+* Progressive Web App (PWA) for mobile/desktop
+* Linux desktop app (`.deb` for amd64/arm64 via Tauri 2)
+* OTP-based site pairing (replaces file import)
+* Click tracking with heatmap visualization
+* User flow analysis (entry sources, journey mapping)
+* Email digest reports (scheduled)
+* Switched from cookie-based to cookieless tracking
+* Bot detection now two-layer (client + server-side)
+
 = 1.4.2 =
 * Added Linux desktop app with auto-update support via Tauri
 * Added "Desktop App" download link in the web app nav (Linux only)
 
 = 1.4.1 =
-* Fixed mobile hamburger menu not opening (click was bubbling to main content and re-closing the nav)
-* Fixed heatmap too tall on desktop (now height-capped to fit within the viewport)
+* Fixed mobile hamburger menu not opening
+* Fixed heatmap height on desktop
 
 = 1.4.0 =
-* Admin heatmap redesigned as self-contained dark canvas — replaced iframe approach. Scroll-depth guides, fold marker, radial heat dots, side panel with top-clicked elements, and hotspot tooltips
-* Custom date range selector added to heatmap, export, and all period selectors
-* Heatmap REST API now accepts date_from and date_to parameters
+* Admin heatmap redesigned as self-contained dark canvas
+* Custom date range selector added to all views
+* Heatmap REST API date_from/date_to parameters
 
 = 1.3.0 =
-* Added UTM campaign tracking (utm_source, utm_medium, utm_campaign) — auto-captured and attributed to full session
-* Added Campaigns admin page with source/medium/campaign breakdown and session/pageview counts
-* Replaced Sankey User Flow with Path Explorer: Miller columns, drop-off funnel, Journey Table
-* Added REST API endpoints: /campaigns, /user-flow, /user-flow/journey
+* UTM campaign tracking (capture and session attribution)
+* Campaigns admin page with source/medium/campaign breakdown
+* Path Explorer User Flow (Miller columns, drop-off funnel)
+* REST API: /campaigns, /user-flow endpoints
 
 = 1.2.0 =
-* Added PWA OTP pairing: "Generate App Code" button on the user profile page issues a 6-digit HMAC-signed code (valid 15 min) for secure app connection without manual credential entry
-* Added `rsa/v1/verify-otp` REST endpoint that validates the code and returns the verified username
-* Added two-step app connection flow in the PWA dashboard (OTP verify → Application Password)
-* Added hosted PWA at rs-app.richardkentgates.com — install directly from any browser without visiting the WordPress admin
-* Added "Get the App" section to the plugin website landing page
-* Fixed: Rich Statistics App profile section now appears before Application Passwords (correct reading order)
+* PWA OTP pairing: 6-digit HMAC-signed code for secure app connection
+* /verify-otp REST endpoint
+* Hosted PWA at rs-app.richardkentgates.com
 
 = 1.1.0 =
-* Added click destination capture: phone numbers, email addresses, SMS numbers, geo coordinates, and download file URLs are now recorded per click event
-* Added Destination column to Click Tracking admin table
-* Added `wp rich-stats clicks` WP-CLI command (Premium)
-* Fixed REST API response shapes for all PWA endpoints
-* PWA service worker cache bumped to force refresh
+* Click destination capture (phone, email, geo, SMS, download URLs)
+* WP-CLI clicks command (Premium)
+* REST API response shape fixes
 
 = 1.0.1 =
-* Fixed timezone detection (IANA names instead of UTC offset)
+* Timezone detection fix (IANA names instead of UTC offset)
 * Renamed admin menu to Analytics
-* Redesigned User Flow chart as step-based Sankey diagram
-* Added WooCommerce page tracking
-* Added Multisite support improvements
-* Fixed CSV export formula injection escaping
+* WooCommerce page tracking
 
 = 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.2.7 =
+Security hardening release. Schema unchanged. Update is safe without manual action.
+
+= 2.0.0 =
+Major rewrite — schema upgraded to v9 (adds wc_events table). Update is automatic on activation.
 
 = 1.2.0 =
 No database schema changes. Update is safe to apply without any manual action.

@@ -258,12 +258,14 @@ class RSA_Admin {
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+			$pages['ai-chat']   = [ 'title' => __( 'AI Assistant',   'rich-statistics' ), 'label' => __( 'AI Assistant',   'rich-statistics' ), 'cap' => 'manage_options' ];
 		} else {
 			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
 			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+			$pages['ai-chat']   = [ 'title' => __( 'AI Assistant',   'rich-statistics' ), 'label' => __( 'AI Assistant',   'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
 		}
 		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
 		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
@@ -409,14 +411,21 @@ class RSA_Admin {
 	public static function page_referrers():      void { self::render( 'referrers' ); }
 	public static function page_campaigns():      void { self::render( 'campaigns' ); }
 	public static function page_behavior():       void { self::render( 'behavior' ); }
-	public static function page_user_flow():      void { self::render( 'user-flow' ); }
-	public static function page_click_map():      void { self::render( 'click-map' ); }
-	public static function page_heatmap():        void { self::render( 'heatmap' ); }
+	public static function page_user_flow():      void { self::require_premium_or_exit(); self::render( 'user-flow' ); }
+	public static function page_click_map():      void { self::require_premium_or_exit(); self::render( 'click-map' ); }
+	public static function page_heatmap():        void { self::require_premium_or_exit(); self::render( 'heatmap' ); }
 	public static function page_preferences():      void { self::render( 'preferences' ); }
 	public static function page_maintenance():       void { self::render( 'maintenance' ); }
-	public static function page_export():           void { self::render( 'export' ); }
-	public static function page_woocommerce():      void { self::render( 'woocommerce' ); }
+	public static function page_export():           void { self::require_premium_or_exit(); self::render( 'export' ); }
+	public static function page_woocommerce():      void { self::require_premium_or_exit(); self::render( 'woocommerce' ); }
 	public static function page_network_settings(): void { self::render( 'network-settings' ); }
+	public static function page_ai_chat():          void { self::require_premium_or_exit(); self::render( 'ai-chat' ); }
+
+	private static function require_premium_or_exit(): void {
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+			wp_die( esc_html__( 'This feature requires a premium licence.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
+	}
 
 	private static function render( string $template ): void {
 		$file = RSA_DIR . 'templates/admin/' . $template . '.php';
