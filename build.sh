@@ -99,7 +99,7 @@ INCLUDE_FILES=(
     readme.txt
     LICENSE
     CHANGELOG.md
-)
+);
 
 # Copy directories
 for dir in "${INCLUDE_DIRS[@]}"; do
@@ -136,8 +136,17 @@ find "$STAGE_DIR" \( \
 # Remove Freemius dev tools from the bundled SDK
 rm -rf "$STAGE_DIR/vendor/freemius/languages" || true
 
-# Remove vendor README (not user-facing)
-rm -f "$STAGE_DIR/vendor/README.md"
+# Remove development artefacts from staged copy
+rm -f "$STAGE_DIR/phpunit.xml.dist"
+rm -f "$STAGE_DIR/phpcs.xml.dist"
+rm -f "$STAGE_DIR/.distignore"
+rm -f "$STAGE_DIR/build.sh"
+
+# Strip dev-only vendor packages — keep only Freemius SDK and autoloader
+find "$STAGE_DIR/vendor" -mindepth 1 -maxdepth 1 -type d ! -name "freemius" ! -name "composer" -exec rm -rf {} + 2>/dev/null
+# Remove any PHPUnit, BrainMonkey, Mockery, WPCS config files left in vendor root
+find "$STAGE_DIR/vendor" -name "phpunit.xml*" -delete 2>/dev/null
+find "$STAGE_DIR/vendor" -name "README.md" -delete 2>/dev/null
 
 # -----------------------------------------------------------------------
 # Create ZIP
