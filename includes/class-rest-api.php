@@ -1204,7 +1204,7 @@ class RSA_Rest_API {
 			return new WP_REST_Response(
 				[
 					'ok'    => false,
-					'error' => 'AI request failed.',
+					'error' => __( 'AI request failed.', 'rich-statistics' ),
 				],
 				500
 			);
@@ -1216,14 +1216,14 @@ class RSA_Rest_API {
 			return new WP_REST_Response(
 				[
 					'ok'    => false,
-					'error' => 'AI request failed.',
+					'error' => __( 'AI request failed.', 'rich-statistics' ),
 				],
 				500
 			);
 		}
 
 		$body   = json_decode( wp_remote_retrieve_body( $response ), true );
-		$answer = $body['choices'][0]['message']['content'] ?? 'Unable to generate response.';
+		$answer = $body['choices'][0]['message']['content'] ?? __( 'Unable to generate response.', 'rich-statistics' );
 
 		return self::ok(
 			[

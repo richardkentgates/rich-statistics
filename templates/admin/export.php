@@ -8,7 +8,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
@@ -64,15 +64,18 @@ RSA_Admin::page_header( __( 'Export', 'rich-statistics' ) );
 						'custom'    => __( 'Custom range', 'rich-statistics' ),
 					);
 					?>
-					<select name="period" id="rsa_export_period" onchange="document.getElementById('rsa-custom-dates').style.display=this.value==='custom'?'':'none'">
+					<label for="rsa_export_period" class="screen-reader-text"><?php esc_html_e( 'Select period', 'rich-statistics' ); ?></label>
+				<select name="period" id="rsa_export_period" onchange="document.getElementById('rsa-custom-dates').style.display=this.value==='custom'?'':'none'">
 						<?php foreach ( $labels as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $period, $val ); ?>><?php echo esc_html( $label ); ?></option>
 						<?php endforeach; ?>
 					</select>
 					<span id="rsa-custom-dates" style="display:<?php echo $period === 'custom' ? '' : 'none'; ?>;margin-left:8px;">
-					<input type="date" name="date_from" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
-					<span style="margin:0 4px"><?php esc_html_e( 'to', 'rich-statistics' ); ?></span>
-					<input type="date" name="date_to" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
+				<label for="date_from" class="screen-reader-text"><?php esc_html_e( 'Date from', 'rich-statistics' ); ?></label>
+				<input type="date" name="date_from" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
+				<span style="margin:0 4px"><?php esc_html_e( 'to', 'rich-statistics' ); ?></span>
+				<label for="date_to" class="screen-reader-text"><?php esc_html_e( 'Date to', 'rich-statistics' ); ?></label>
+				<input type="date" name="date_to" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
 					</span>
 				</td>
 			</tr>

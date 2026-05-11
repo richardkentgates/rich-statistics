@@ -7,7 +7,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 
 RSA_Admin::page_header( __( 'AI Analytics Assistant', 'rich-statistics' ) );
@@ -39,8 +39,8 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 			<div style="flex:1;background:#fff;border:1px solid #ccc;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:600px;">
 				<div style="padding:16px;border-bottom:1px solid #ccc;background:#f8f9fa;display:flex;justify-content:space-between;align-items:center;">
 					<div>
-						<h3 style="margin:0;font-size:16px;">AI Analytics Assistant</h3>
-						<span style="font-size:12px;color:#666;" id="rsa-admin-chat-status">Ready</span>
+						<h3 style="margin:0;font-size:16px;"><?php esc_html_e( 'AI Analytics Assistant', 'rich-statistics' ); ?></h3>
+						<span style="font-size:12px;color:#666;" id="rsa-admin-chat-status"><?php esc_html_e( 'Ready', 'rich-statistics' ); ?></span>
 					</div>
 					<div style="font-size:12px;color:#666;">
 						<?php echo esc_html( ucfirst( $provider ) ); ?> 
@@ -49,19 +49,20 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 				</div>
 				<div id="rsa-admin-chat-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;">
 					<div style="text-align:center;padding:20px;color:#666;font-size:13px;">
-						<p><strong>Ask questions about your analytics in plain English!</strong></p>
-						<p style="font-size:11px;color:#999;">Examples:</p>
-						<p style="font-size:11px;color:#999;">• "What's my top page this month?"</p>
-						<p style="font-size:11px;color:#999;">• "Show me visitor trends"</p>
-						<p style="font-size:11px;color:#999;">• "Which campaigns are working?"</p>
-						<p style="font-size:11px;color:#999;">• "How many WooCommerce orders this week?"</p>
+						<p><strong><?php esc_html_e( 'Ask questions about your analytics in plain English!', 'rich-statistics' ); ?></strong></p>
+						<p style="font-size:11px;color:#999;"><?php esc_html_e( 'Examples:', 'rich-statistics' ); ?></p>
+						<p style="font-size:11px;color:#999;"><?php esc_html_e( '• "What\'s my top page this month?"', 'rich-statistics' ); ?></p>
+						<p style="font-size:11px;color:#999;"><?php esc_html_e( '• "Show me visitor trends"', 'rich-statistics' ); ?></p>
+						<p style="font-size:11px;color:#999;"><?php esc_html_e( '• "Which campaigns are working?"', 'rich-statistics' ); ?></p>
+						<p style="font-size:11px;color:#999;"><?php esc_html_e( '• "How many WooCommerce orders this week?"', 'rich-statistics' ); ?></p>
 					</div>
 				</div>
 				<div style="padding:12px;border-top:1px solid #ccc;background:#fff;">
 					<div style="display:flex;gap:8px;">
-						<input type="text" id="rsa-admin-chat-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" 
-							placeholder="Ask about your analytics...">
-						<button onclick="sendAdminMessage()" style="padding:10px 20px;background:#0073aa;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>
+				<label for="rsa-admin-chat-input" class="screen-reader-text"><?php esc_html_e( 'Chat message', 'rich-statistics' ); ?></label>
+				<input type="text" id="rsa-admin-chat-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" 
+					placeholder="<?php esc_attr_e( 'Ask about your analytics...', 'rich-statistics' ); ?>">
+						<button onclick="sendAdminMessage()" style="padding:10px 20px;background:#0073aa;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;"><?php esc_html_e( 'Send', 'rich-statistics' ); ?></button>
 					</div>
 				</div>
 			</div>
@@ -69,18 +70,18 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 			<!-- Info Panel -->
 			<div style="width:300px;">
 				<div class="rsa-card" style="margin-bottom:16px;">
-					<div class="rsa-card-header"><h3 style="margin:0;font-size:14px;">How it works</h3></div>
+					<div class="rsa-card-header"><h3 style="margin:0;font-size:14px;"><?php esc_html_e( 'How it works', 'rich-statistics' ); ?></h3></div>
 					<div style="padding:12px;font-size:13px;line-height:1.6;">
 						<p><?php esc_html_e( 'The AI assistant analyzes your analytics data and provides conversational insights.', 'rich-statistics' ); ?></p>
 						<p><strong><?php esc_html_e( 'Privacy-first:', 'rich-statistics' ); ?></strong><br>
 						<?php esc_html_e( 'Only aggregate data is shared. No personal info leaves your site.', 'rich-statistics' ); ?></p>
 						<p><strong><?php esc_html_e( 'Provider:', 'rich-statistics' ); ?></strong><br>
-						<?php echo esc_html( $provider === 'openai' ? 'OpenAI (cloud)' : 'Custom/Local LLM' ); ?></p>
+						<?php echo esc_html( $provider === 'openai' ? __( 'OpenAI (cloud)', 'rich-statistics' ) : __( 'Custom/Local LLM', 'rich-statistics' ) ); ?></p>
 					</div>
 				</div>
 				
 				<div class="rsa-card">
-					<div class="rsa-card-header"><h3 style="margin:0;font-size:14px;">Tips</h3></div>
+					<div class="rsa-card-header"><h3 style="margin:0;font-size:14px;"><?php esc_html_e( 'Tips', 'rich-statistics' ); ?></h3></div>
 					<div style="padding:12px;font-size:13px;line-height:1.6;">
 						<ul style="margin:0;padding-left:20px;">
 							<li><?php esc_html_e( 'Be specific with time periods', 'rich-statistics' ); ?></li>
@@ -99,10 +100,8 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 		(function() {
 			'use strict';
 			
-			var siteUrl  = '<?php echo esc_js( home_url() ); ?>';
-			var nonce    = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
-			var userName = '<?php echo esc_js( wp_get_current_user()->user_login ); ?>';
-			var appPass = ''; // Will be prompted if not stored.
+			var siteUrl = '<?php echo esc_js( home_url() ); ?>';
+			var rsaAiNonce = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
 			
 			// Send message.
 			window.sendAdminMessage = function() {
@@ -114,24 +113,11 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 				input.value = '';
 				document.getElementById( 'rsa-admin-chat-status' ).textContent = 'Thinking...';
 				
-				// Get Application Password if not available.
-				if ( ! appPass ) {
-					appPass = prompt( 'Enter your WordPress Application Password:\n(Generate one in Users → Profile → Application Passwords)' );
-					if ( ! appPass ) {
-						addAdminMessage( 'AI', 'Application Password required for API access.', 'ai' );
-						document.getElementById( 'rsa-admin-chat-status' ).textContent = 'Error';
-						return;
-					}
-				}
-				
-				var credentials = btoa( userName + ':' + appPass );
-				
 				fetch( siteUrl + '/wp-json/rsa/v1/ai/query', {
 					method: 'POST',
 					headers: {
-						'Authorization': 'Basic ' + credentials,
 						'Content-Type': 'application/json',
-						'X-WP-Nonce': nonce
+						'X-WP-Nonce': rsaAiNonce
 					},
 					body: JSON.stringify( { question: msg, period: '<?php echo esc_js( sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ) ); ?>' } )
 				})
