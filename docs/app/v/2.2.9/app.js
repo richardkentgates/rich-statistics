@@ -487,7 +487,7 @@
 	 */
 	function getVersionedAppBase() {
 		var href = window.location.href;
-		var m = href.match( /^(https?:\/\/[^/]+(?:\/[^/]+)*\/app\/)([0-9]+\.[0-9]+\.[0-9]+)\// );
+		var m = href.match( /^(https?:\/\/[^/]+(?:\/[^/]+)*\/v\/)([0-9]+\.[0-9]+\.[0-9]+)\// );
 		if ( m ) return { base: m[1], current: m[2] };
 		return null;
 	}
@@ -505,7 +505,7 @@
 	 * http://tauri.localhost/1.4.1/  →  "1.4.1", or null if at root.
 	 */
 	function getTauriCurrentVersion() {
-		var m = window.location.pathname.match( /^\/([0-9]+\.[0-9]+\.[0-9]+)\// );
+		var m = window.location.pathname.match( /^\/(?:v\/)?([0-9]+\.[0-9]+\.[0-9]+)\// );
 		return m ? m[1] : null;
 	}
 
@@ -528,10 +528,10 @@
 					// Verify the versioned folder is actually present before navigating.
 					// versions.json may list the version while the snapshot folder was
 					// not included in this particular Tauri build.
-					fetch( '/' + pluginVersion + '/index.html', { method: 'HEAD' } )
+					fetch( '/v/' + pluginVersion + '/index.html', { method: 'HEAD' } )
 						.then( function ( r ) {
 							if ( r.ok ) {
-								window.location.href = '/' + pluginVersion + '/';
+								window.location.href = '/v/' + pluginVersion + '/';
 							}
 							// Folder absent — stay at current location silently.
 						} )
@@ -550,7 +550,7 @@
 						return 0;
 					} )[ 0 ];
 					if ( latest && current !== latest ) {
-						window.location.href = '/' + latest + '/';
+						window.location.href = '/v/' + latest + '/';
 					}
 				}
 			} )
@@ -906,13 +906,16 @@
 		bindSiteSwitcher();
 	}
 
-	var premiumFeatures = {
+		var premiumFeatures = {
 			'user-flow'  : 'User Flow',
 			clicks       : 'Click Tracking',
 			heatmap      : 'Heatmap',
 			export       : 'Export',
 			woocommerce  : 'WooCommerce',
 		};
+
+		// Also gate AI chat in the PWA (view may be added in future)
+		premiumFeatures['ai-chat'] = 'AI Assistant';
 
 		function switchView( view ) {
 			// Deactivate old view
