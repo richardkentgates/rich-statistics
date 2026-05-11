@@ -27,6 +27,7 @@ src-tauri/Cargo.lock
 /.phpunit.cache/
 /tests/_output/
 /tests/tmp/
+/tests/e2e/
 /wordpress-tests-lib/
 /tmp/
 
@@ -61,3 +62,9 @@ yarn-error.log
 .env
 .env.local
 wp-tests-config.php
+
+# -------------------------------------------------------------------------
+# WordPress.org assets (screenshots, banners) — local only
+# -------------------------------------------------------------------------
+/wporg-assets/
+

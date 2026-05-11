@@ -17,25 +17,29 @@ Thank you for your interest in contributing! This document covers the developmen
 
 ## Branch Structure
 
-Rich Statistics uses a three-branch development model corresponding to three server environments:
+```
+feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+                        │
+                   merge PR
+                        ↓
+                      test ──push──→ auto-deploy: rs-test
+                        │
+                   merge PR
+                        ↓
+                      main ──tag v*──→ build-release.yml → rs-app
+```
 
-| Branch | Environment | Subdomain | CI Workflow |
-|--------|-------------|-----------|-------------|
-| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged releases) |
-| `develop` | Dev / Beta | `rs-dev.richardkentgates.com` | `build-dev.yml` (push) |
-| `test` | Staging / QA | `rs-test.richardkentgates.com` | `build-dev.yml` (push) |
+| Branch | Environment | Subdomain | CI Workflow | Branch Type |
+|--------|-------------|-----------|-------------|-------------|
+| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged) | Stable releases |
+| `develop` | Dev / Beta | `rs-dev.richardkentgates.com` | `build-develop.yml` (push) | Bleeding-edge |
+| `test` | Staging / QA | `rs-test.richardkentgates.com` | `build-test.yml` (push) | Integration testing |
 
-- **`main`** — Stable releases only. Merged from `develop` via release PR.
+- **`main`** — Stable releases only. Merged from `test` via release PR, then tagged.
 - **`develop`** — Primary development branch. Base your feature branches here.
 - **`test`** — Integration testing and QA validation. Merged from `develop` for pre-release verification.
 
-Each push to `develop` or `test` triggers the `build-dev.yml` workflow which:
-1. Builds a plugin ZIP
-2. Syncs the PWA web app to the corresponding subdomain via webhook
-3. Builds and pushes Linux `.deb` + Windows `.exe` binaries to the environment's `dist/` directory
-4. Updates the environment's APT repository
-
-Tagged releases on `main` trigger `build-release.yml` which additionally creates versioned PWA snapshots under `docs/app/v/<version>/`.
+Each push to `develop` triggers `build-develop.yml`; pushes to `test` trigger `build-test.yml`. Both build a plugin ZIP, sync PWA via webhook, and push desktop binaries to the environment's `dist/` directory. Tagged releases on `main` trigger `build-release.yml` which additionally creates versioned PWA snapshots.
 
 ### Server resource endpoints
 
@@ -118,12 +122,24 @@ composer phpcbf
 6. Open a PR against `develop` — describe the motivation, what changed, and how to test it
 7. After merging, the `develop` branch auto-deploys to the dev environment (`rs-dev.richardkentgates.com`)
 
-### Release process
+### Push Flow
 
-1. Changes accumulate on `develop` and are verified on `rs-dev.richardkentgates.com`
-2. When ready for pre-release QA, merge `develop` into `test` — the `test` branch auto-deploys to `rs-test.richardkentgates.com`
-3. After QA passes, create a release PR from `test` (or `develop`) into `main`
-4. Tag the merge commit on `main` with `v<version>` — this triggers `build-release.yml` which builds the production plugin ZIP, desktop binaries, and PWA snapshot, then deploys to `rs-app.richardkentgates.com`
+```
+feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+                        │
+                   merge PR
+                        ↓
+                      test ──push──→ auto-deploy: rs-test
+                        │
+                   merge PR
+                        ↓
+                      main ──tag v*──→ build-release.yml → rs-app
+```
+
+1. **Feature work:** Branch from `develop`, PR back into `develop`. CI runs `tests.yml` + `build-develop.yml`.
+2. **Dev deploy:** Every push to `develop` auto-deploys PWA + desktop to `rs-dev.richardkentgates.com`.
+3. **QA / Staging:** Merge `develop` → `test` via PR. Push to `test` auto-deploys to `rs-test.richardkentgates.com`.
+4. **Production release:** After QA passes on `test`, merge `test` → `main` via PR. Tag the merge commit `v<version>`. The tag triggers `build-release.yml` which builds the production ZIP, versioned PWA snapshot, desktop binaries, and deploys to `rs-app.richardkentgates.com`.
 
 ### What we review
 

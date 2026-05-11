@@ -134,7 +134,7 @@ class RSA_Email {
 		}
 		$sent = self::send_digest( '30d' );
 		$msg  = $sent ? 'test_sent' : 'test_failed';
-		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-email-settings', $msg => '1' ], admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', $msg => '1' ], admin_url( 'admin.php' ) ) );
 		exit;
 	}
 

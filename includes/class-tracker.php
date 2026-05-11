@@ -183,22 +183,17 @@ class RSA_Tracker {
 		);
 
 		if ( $existing ) {
-			$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker; session data must be updated immediately
-				$wpdb->prefix . 'rsa_sessions',
-				[
-					'pages_viewed' => (int) $existing->pages_viewed + 1,
-					'exit_page'    => $page,
-					'total_time'   => $payload['time_on_page'] > 0
-					? (int) $wpdb->get_var( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker
-						"SELECT total_time FROM `{$wpdb->prefix}rsa_sessions` WHERE session_id = %s",
-							$payload['session_id']
-						) ) + (int) $payload['time_on_page']
-						: null,
-				],
-				[ 'session_id' => $payload['session_id'] ],
-				[ '%d', '%s', '%d' ],
-				[ '%s' ]
-			);
+			if ( $payload['time_on_page'] > 0 ) {
+				$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker
+					"UPDATE `{$wpdb->prefix}rsa_sessions` SET pages_viewed = pages_viewed + 1, exit_page = %s, total_time = COALESCE(total_time, 0) + %d WHERE session_id = %s",
+					$page, (int) $payload['time_on_page'], $payload['session_id']
+				) );
+			} else {
+				$wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time tracker
+					"UPDATE `{$wpdb->prefix}rsa_sessions` SET pages_viewed = pages_viewed + 1, exit_page = %s WHERE session_id = %s",
+					$page, $payload['session_id']
+				) );
+			}
 		} else {
 			$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- real-time tracker session creation
 				$wpdb->prefix . 'rsa_sessions',
