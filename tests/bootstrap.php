@@ -53,6 +53,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 	define( 'RSA_URL',        'http://example.com/wp-content/plugins/rich-statistics/' );
 	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 	define( 'RSA_APP_URL',    'https://rs-app.richardkentgates.com/' );
+	define( 'RSA_APP_ENV',    'test' );
 	define( 'RSA_MIN_WP',     '6.0' );
 	define( 'RSA_MIN_PHP',    '8.0' );
 
