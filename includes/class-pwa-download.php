@@ -24,20 +24,18 @@
  *     fail counter for that IP.
  *   • The generic ZIP contains no credentials, no site URL, and no token.
  *
+ * @package RichStatistics
  * @fs_premium_only
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_Pwa_Download {
 
 	public static function init(): void {
-		add_action( 'wp_ajax_rsa_download_pwa',  [ __CLASS__, 'handle_download'      ] );
-		add_action( 'wp_ajax_rsa_generate_otp',  [ __CLASS__, 'handle_generate_otp'  ] );
+		add_action( 'wp_ajax_rsa_download_pwa', [ __CLASS__, 'handle_download' ] );
+		add_action( 'wp_ajax_rsa_generate_otp', [ __CLASS__, 'handle_generate_otp' ] );
 	}
-
-	// ----------------------------------------------------------------
-	// OTP site-pairing (replaces .rsasite file)
-	// ----------------------------------------------------------------
 
 	/**
 	 * AJAX handler — generates a 6-digit OTP for the current admin user.
@@ -50,13 +48,19 @@ class RSA_Pwa_Download {
 		}
 
 		$otp = self::generate_otp( get_current_user_id() );
-		wp_send_json_success( [ 'otp' => $otp, 'expires_in' => 15 * MINUTE_IN_SECONDS ] );
+		wp_send_json_success(
+			[
+				'otp'        => $otp,
+				'expires_in' => 15 * MINUTE_IN_SECONDS,
+			]
+		);
 	}
 
 	/**
 	 * Generate a cryptographically-random 6-digit OTP and store its hash
 	 * as a transient that auto-expires after 15 minutes.
 	 *
+	 * @param int $user_id The user ID for whom the OTP is generated.
 	 * @return string 6-digit zero-padded code (plain, never stored).
 	 */
 	public static function generate_otp( int $user_id ): string {
@@ -78,10 +82,9 @@ class RSA_Pwa_Download {
 		return $otp;
 	}
 
-	// ----------------------------------------------------------------
-	// Generic app ZIP (download once, install once)
-	// ----------------------------------------------------------------
-
+	/**
+	 * Handle the PWA ZIP download request.
+	 */
 	public static function handle_download(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to download the Rich Statistics Web App.', 'rich-statistics' ), 403 );
@@ -90,10 +93,9 @@ class RSA_Pwa_Download {
 		self::stream_zip();
 	}
 
-	// ----------------------------------------------------------------
-	// Per-site .rsasite config file
-	// ----------------------------------------------------------------
-
+	/**
+	 * Handle the per-site .rsasite config file download.
+	 */
 	public static function handle_site_config(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission.', 'rich-statistics' ), 403 );
@@ -104,14 +106,17 @@ class RSA_Pwa_Download {
 		$site_url = rtrim( get_site_url(), '/' );
 		$token    = self::issue_token( $user->ID, $site_url );
 
-		$payload = wp_json_encode( [
-			'rsaVersion' => 1,
-			'siteLabel'  => wp_parse_url( $site_url, PHP_URL_HOST ),
-			'siteUrl'    => $site_url,
-			'username'   => $user->user_login,
-			'siteToken'  => $token,
-			'generated'  => gmdate( 'Y-m-d\TH:i:s\Z' ),
-		], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		$payload = wp_json_encode(
+			[
+				'rsaVersion' => 1,
+				'siteLabel'  => wp_parse_url( $site_url, PHP_URL_HOST ),
+				'siteUrl'    => $site_url,
+				'username'   => $user->user_login,
+				'siteToken'  => $token,
+				'generated'  => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			],
+			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+		);
 
 		$host     = wp_parse_url( $site_url, PHP_URL_HOST ) ?? 'site';
 		$filename = sanitize_file_name( $host . '.rsasite' );
@@ -127,10 +132,13 @@ class RSA_Pwa_Download {
 		exit;
 	}
 
-	// ----------------------------------------------------------------
-	// Token helpers (retained for any existing .rsasite installs)
-	// ----------------------------------------------------------------
-
+	/**
+	 * Issue an install token for the given user and site.
+	 *
+	 * @param int    $user_id  The user ID.
+	 * @param string $site_url The site URL.
+	 * @return string The issued token.
+	 */
 	private static function issue_token( int $user_id, string $site_url ): string {
 		$token = hash_hmac(
 			'sha256',
@@ -138,18 +146,21 @@ class RSA_Pwa_Download {
 			wp_salt( 'auth' )
 		);
 
-		update_user_meta( $user_id, 'rsa_install_token', [
-			'token'   => $token,
-			'expires' => time() + ( 30 * DAY_IN_SECONDS ),
-		] );
+		update_user_meta(
+			$user_id,
+			'rsa_install_token',
+			[
+				'token'   => $token,
+				'expires' => time() + ( 30 * DAY_IN_SECONDS ),
+			]
+		);
 
 		return $token;
 	}
 
-	// ----------------------------------------------------------------
-	// Generic ZIP builder + streamer
-	// ----------------------------------------------------------------
-
+	/**
+	 * Build and stream a generic app ZIP.
+	 */
 	private static function stream_zip(): void {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			wp_die( esc_html__( 'The ZipArchive PHP extension is required to generate the download. Please ask your host to enable it.', 'rich-statistics' ) );

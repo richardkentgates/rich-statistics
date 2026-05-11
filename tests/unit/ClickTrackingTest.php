@@ -19,11 +19,12 @@ class ClickTrackingTest extends TestCase {
 		require_once RSA_DIR . 'includes/class-db.php';
 	}
 
-	// ----------------------------------------------------------------
-	// RSA_DB::SCHEMA_VERSION — bump this comment when the version changes
-	// v1: initial release schema (rsa_events, rsa_sessions, rsa_clicks, rsa_heatmap)
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * RSA_DB::SCHEMA_VERSION — bump this comment when the version changes
+	 * v1: initial release schema (rsa_events, rsa_sessions, rsa_clicks, rsa_heatmap)
+	 * ----------------------------------------------------------------
+	 */
 	public function test_schema_version_constant(): void {
 		$this->assertSame( 1, RSA_DB::SCHEMA_VERSION );
 	}
@@ -32,20 +33,22 @@ class ClickTrackingTest extends TestCase {
 		$this->assertSame( 'rsa_db_version', RSA_DB::OPTION_KEY );
 	}
 
-	// ----------------------------------------------------------------
-	// href_value sanitization — mirrors handle_click() logic
-	// (sanitize_text_field + substr(…, 0, 512))
-	// ----------------------------------------------------------------
+	/**
+	 * ----------------------------------------------------------------
+	 * href_value sanitization — mirrors handle_click() logic
+	 * (sanitize_text_field + substr(…, 0, 512))
+	 * ----------------------------------------------------------------
+	 */
 
 	/**
 	 * Reproduce the sanitization that handle_click() applies to href_value.
 	 *
-	 * @param string $raw Raw input value
-	 * @return string|null Sanitized value, or null when empty
+	 * @param string $raw Raw input value.
+	 * @return string|null Sanitized value, or null when empty.
 	 */
 	private function sanitize_href_value( string $raw ): ?string {
 		$v = substr( sanitize_text_field( $raw ), 0, 512 );
-		return $v ?: null;
+		return $v ? $v : null;
 	}
 
 	public function test_plain_phone_number_passes_through(): void {
@@ -88,12 +91,17 @@ class ClickTrackingTest extends TestCase {
 		$this->assertNull( $this->sanitize_href_value( '   ' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// x_pct / y_pct clamping — mirrors handle_click() clamp logic
-	// ----------------------------------------------------------------
+	/**
+	 * ----------------------------------------------------------------
+	 * x_pct / y_pct clamping — mirrors handle_click() clamp logic
+	 * ----------------------------------------------------------------
+	 */
 
 	/**
 	 * Reproduce the x/y percentage clamping from handle_click().
+	 *
+	 * @param mixed $raw Raw input value.
+	 * @return float Clamped value.
 	 */
 	private function clamp_pct( mixed $raw ): float {
 		return round( min( 100, max( 0, (float) $raw ) ), 2 );

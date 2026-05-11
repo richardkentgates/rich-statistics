@@ -2,27 +2,35 @@
 /**
  * Admin class: registers menus, enqueues admin assets,
  * renders the dashboard, and handles the Settings page.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_Admin {
 
+	/** Initialize admin hooks, capabilities, and rewrite rules. */
 	public static function init(): void {
-		add_action( 'admin_menu',             [ __CLASS__, 'register_menus' ] );
-		add_action( 'network_admin_menu',     [ __CLASS__, 'register_network_menus' ] );
-		add_action( 'admin_enqueue_scripts',  [ __CLASS__, 'enqueue_assets' ] );
+		add_action( 'admin_menu', [ __CLASS__, 'register_menus' ] );
+		add_action( 'network_admin_menu', [ __CLASS__, 'register_network_menus' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		add_action( 'admin_post_rsa_save_settings', [ __CLASS__, 'save_settings' ] );
-		add_action( 'admin_post_rsa_export_csv',    [ __CLASS__, 'handle_export_csv' ] );
-		add_action( 'current_screen',        [ __CLASS__, 'register_help_tabs' ] );
+		add_action( 'admin_post_rsa_export_csv', [ __CLASS__, 'handle_export_csv' ] );
+		add_action( 'current_screen', [ __CLASS__, 'register_help_tabs' ] );
 
-		// Register custom role and capability on init
+		// Register custom role and capability on init.
 		if ( ! get_role( 'rsa_analyst' ) ) {
-			add_role( 'rsa_analyst', __( 'Statistics Analyst', 'rich-statistics' ), [
-				'rsa_manage_statistics' => true,
-				'read' => true,
-			] );
+			add_role(
+				'rsa_analyst',
+				__( 'Statistics Analyst', 'rich-statistics' ),
+				[
+					'rsa_manage_statistics' => true,
+					'read'                  => true,
+				]
+			);
 		}
-		// Ensure administrator has the custom capability too
+		// Ensure administrator has the custom capability too.
 		$admin = get_role( 'administrator' );
 		if ( $admin && ! isset( $admin->capabilities['rsa_manage_statistics'] ) ) {
 			$admin->add_cap( 'rsa_manage_statistics' );
@@ -30,23 +38,29 @@ class RSA_Admin {
 
 		// Priority 1 ensures RSA section appears first among plugin sections,
 		// placing it directly after WP's built-in Application Passwords block.
-		add_action( 'show_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
-		add_action( 'edit_user_profile',     [ __CLASS__, 'profile_webapp_section' ], 1 );
+		add_action( 'show_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
+		add_action( 'edit_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
 
-		// Serve the PWA at yoursite.com/rs-app/
-		add_action( 'init',              [ __CLASS__, 'register_app_rewrite' ] );
-		add_filter( 'query_vars',        [ __CLASS__, 'add_app_query_var' ] );
+		// Serve the PWA at yoursite.com/rs-app/.
+		add_action( 'init', [ __CLASS__, 'register_app_rewrite' ] );
+		add_filter( 'query_vars', [ __CLASS__, 'add_app_query_var' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_app' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'serve_manifest' ] );
+	}
 
-		}
-
+	/** Register rewrite rules for the PWA app. */
 	public static function register_app_rewrite(): void {
-		add_rewrite_rule( '^rs-app/?$',              'index.php?rsa_app=1',      'top' );
+		add_rewrite_rule( '^rs-app/?$', 'index.php?rsa_app=1', 'top' );
 		add_rewrite_rule( '^rs-app/manifest\.json$', 'index.php?rsa_manifest=1', 'top' );
 	}
 
+	/**
+	 * Add custom query variables for the PWA app.
+	 *
+	 * @param array $vars Query variables.
+	 * @return array Modified query variables.
+	 */
 	public static function add_app_query_var( array $vars ): array {
 		$vars[] = 'rsa_app';
 		$vars[] = 'rsa_manifest';
@@ -87,18 +101,20 @@ class RSA_Admin {
 		// Inject RSA_CONFIG before </head> so config.js / app.js can read it.
 		$current_user  = wp_get_current_user();
 		$is_premium    = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
-		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
-			'autoSiteUrl'   => $site_url,
-			'appUrl'        => $app_url,
-			'env'           => RSA_APP_ENV,
-			'nonce'         => wp_create_nonce( 'wp_rest' ),
-			'autoLabel'     => get_bloginfo( 'name' ),
-			'isPremium'     => $is_premium,
-			'upgradeUrl'    => function_exists( 'rs_fs' ) ? rs_fs()->get_upgrade_url() : '',
-			'appVersion'    => RSA_VERSION,
-			'minAppVersion' => RSA_MIN_APP_VERSION,
-		] ) . ';</script>';
-		$html = str_replace( '</head>', $config_script . '</head>', $html );
+		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode(
+			[
+				'autoSiteUrl'   => $site_url,
+				'appUrl'        => $app_url,
+				'env'           => RSA_APP_ENV,
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'autoLabel'     => get_bloginfo( 'name' ),
+				'isPremium'     => $is_premium,
+				'upgradeUrl'    => function_exists( 'rs_fs' ) ? rs_fs()->get_upgrade_url() : '',
+				'appVersion'    => RSA_VERSION,
+				'minAppVersion' => RSA_MIN_APP_VERSION,
+			]
+		) . ';</script>';
+		$html          = str_replace( '</head>', $config_script . '</head>', $html );
 
 		// Rewrite relative asset src/href to absolute plugin URLs.
 		// Append ?v=RSA_VERSION so browsers fetch fresh assets after each plugin update.
@@ -107,15 +123,15 @@ class RSA_Admin {
 			[ 'href="app.css"', 'src="./chart.min.js"', 'src="config.js"', 'src="app.js"', "register( 'sw.js' )" ],
 			[
 				'href="' . esc_url( $assets_url . 'app.css?v=' . $v ) . '"',
-				'src="'  . esc_url( $assets_url . 'chart.min.js?v=' . $v ) . '"',
-				'src="'  . esc_url( $assets_url . 'config.js?v=' . $v ) . '"',
-				'src="'  . esc_url( $assets_url . 'app.js?v=' . $v ) . '"',
+				'src="' . esc_url( $assets_url . 'chart.min.js?v=' . $v ) . '"',
+				'src="' . esc_url( $assets_url . 'config.js?v=' . $v ) . '"',
+				'src="' . esc_url( $assets_url . 'app.js?v=' . $v ) . '"',
 				"register( '" . esc_url( $assets_url . 'sw.js?v=' . $v ) . "' )",
 			],
 			$html
 		);
 
-		// Manifest and icons
+		// Manifest and icons.
 		$html = str_replace(
 			[ 'href="manifest.json"', 'href="icons/icon-192.png"', 'href="icons/icon-64.png"', 'src="icons/icon-192.png"', 'src="icons/icon-64.png"' ],
 			[ 'href="' . esc_url( home_url( 'rs-app/manifest.json' ) ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'href="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-192.png' ) . '"', 'src="' . esc_url( $assets_url . 'icons/icon-64.png' ) . '"' ],
@@ -148,8 +164,18 @@ class RSA_Admin {
 			'theme_color'      => '#2e6f8e',
 			'background_color' => '#f0f6fa',
 			'icons'            => [
-				[ 'src' => $assets_url . 'icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
-				[ 'src' => $assets_url . 'icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+				[
+					'src'     => $assets_url . 'icons/icon-192.png',
+					'sizes'   => '192x192',
+					'type'    => 'image/png',
+					'purpose' => 'any maskable',
+				],
+				[
+					'src'     => $assets_url . 'icons/icon-512.png',
+					'sizes'   => '512x512',
+					'type'    => 'image/png',
+					'purpose' => 'any maskable',
+				],
 			],
 			'categories'       => [ 'productivity', 'utilities' ],
 			'lang'             => 'en',
@@ -163,6 +189,8 @@ class RSA_Admin {
 
 	/**
 	 * Enqueue the small OTP script only on the user profile / user-edit screen.
+	 *
+	 * @param string $hook The current admin page hook.
 	 */
 	public static function enqueue_profile_assets( string $hook ): void {
 		if ( ! in_array( $hook, [ 'profile.php', 'user-edit.php' ], true ) ) {
@@ -179,20 +207,25 @@ class RSA_Admin {
 			(string) ( file_exists( $js_file ) ? filemtime( $js_file ) : RSA_VERSION ),
 			true
 		);
-		wp_localize_script( 'rsa-profile-otp', 'rsaOtp', [
-			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-			'nonce'          => wp_create_nonce( 'rsa_generate_otp' ),
-			'generateLabel'  => __( 'Generate App Code', 'rich-statistics' ),
-			'generating'     => __( 'Generating…',     'rich-statistics' ),
-			'regenerateLabel'=> __( 'New Code',           'rich-statistics' ),
-			'copyLabel'      => __( 'Copy',               'rich-statistics' ),
-			'copiedMsg'      => __( 'Copied!',            'rich-statistics' ),
-			'expiredMsg'     => __( 'Expired',            'rich-statistics' ),
-			'errorMsg'       => __( 'Could not generate a code. Please try again.', 'rich-statistics' ),
-		] );
+		wp_localize_script(
+			'rsa-profile-otp',
+			'rsaOtp',
+			[
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'rsa_generate_otp' ),
+				'generateLabel'   => __( 'Generate App Code', 'rich-statistics' ),
+				'generating'      => __( 'Generating…', 'rich-statistics' ),
+				'regenerateLabel' => __( 'New Code', 'rich-statistics' ),
+				'copyLabel'       => __( 'Copy', 'rich-statistics' ),
+				'copiedMsg'       => __( 'Copied!', 'rich-statistics' ),
+				'expiredMsg'      => __( 'Expired', 'rich-statistics' ),
+				'errorMsg'        => __( 'Could not generate a code. Please try again.', 'rich-statistics' ),
+			]
+		);
 	}
 
 
+	/** Register the admin menu and submenu pages. */
 	public static function register_menus(): void {
 		add_menu_page(
 			__( 'Rich Statistics', 'rich-statistics' ),
@@ -211,16 +244,17 @@ class RSA_Admin {
 				$page['title'] . ' — ' . __( 'Rich Statistics', 'rich-statistics' ),
 				$page['label'],
 				$page['cap'],
-				'rich-statistics' . ( $slug === 'overview' ? '' : '-' . $slug ),
+				'rich-statistics' . ( 'overview' === $slug ? '' : '-' . $slug ),
 				[ __CLASS__, 'page_' . str_replace( '-', '_', $slug ) ]
 			);
 		}
 	}
 
+	/** Register the network admin menu page. */
 	public static function register_network_menus(): void {
 		add_menu_page(
 			__( 'Rich Statistics (Network)', 'rich-statistics' ),
-				__( 'Rich Statistics', 'rich-statistics' ),
+			__( 'Rich Statistics', 'rich-statistics' ),
 			'manage_network_options',
 			'rich-statistics-network',
 			[ __CLASS__, 'page_network_settings' ],
@@ -229,14 +263,39 @@ class RSA_Admin {
 		);
 	}
 
+	/**
+	 * Get the list of submenu pages.
+	 *
+	 * @return array Submenu pages configuration.
+	 */
 	private static function get_sub_pages(): array {
-		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
-		$pages = [
-			'overview'  => [ 'title' => __( 'Overview',  'rich-statistics' ), 'label' => __( 'Overview',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
-			'pages'     => [ 'title' => __( 'Pages',     'rich-statistics' ), 'label' => __( 'Pages',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
-			'audience'  => [ 'title' => __( 'Audience',  'rich-statistics' ), 'label' => __( 'Audience',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
-			'referrers' => [ 'title' => __( 'Referrers',  'rich-statistics' ), 'label' => __( 'Referrers',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
-			'behavior'  => [ 'title' => __( 'Behavior',   'rich-statistics' ), 'label' => __( 'Behavior',   'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ],
+		$is_premium    = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
+		$pages         = [
+			'overview'  => [
+				'title' => __( 'Overview', 'rich-statistics' ),
+				'label' => __( 'Overview', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			],
+			'pages'     => [
+				'title' => __( 'Pages', 'rich-statistics' ),
+				'label' => __( 'Pages', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			],
+			'audience'  => [
+				'title' => __( 'Audience', 'rich-statistics' ),
+				'label' => __( 'Audience', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			],
+			'referrers' => [
+				'title' => __( 'Referrers', 'rich-statistics' ),
+				'label' => __( 'Referrers', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			],
+			'behavior'  => [
+				'title' => __( 'Behavior', 'rich-statistics' ),
+				'label' => __( 'Behavior', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			],
 		];
 		$upgrade_label = function_exists( 'rs_fs' )
 			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
@@ -245,45 +304,114 @@ class RSA_Admin {
 			if ( $is_premium ) {
 				// Premium: only add the menu item when tracking is enabled; disabled = hidden entirely.
 				if ( get_option( 'rsa_woocommerce_enabled', 1 ) ) {
-					$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+					$pages['woocommerce'] = [
+						'title' => __( 'WooCommerce', 'rich-statistics' ),
+						'label' => __( 'WooCommerce', 'rich-statistics' ),
+						'cap'   => 'rsa_manage_statistics',
+					];
 				}
 			} else {
 				// Not premium — show with upgrade prompt.
-				$pages['woocommerce'] = [ 'title' => __( 'WooCommerce', 'rich-statistics' ), 'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
+				$pages['woocommerce'] = [
+					'title' => __( 'WooCommerce', 'rich-statistics' ),
+					'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label,
+					'cap'   => 'rsa_manage_statistics',
+				];
 			}
 		}
 		if ( $is_premium ) {
-			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-			$pages['ai-chat']   = [ 'title' => __( 'AI Assistant',   'rich-statistics' ), 'label' => __( 'AI Assistant',   'rich-statistics' ), 'cap' => 'manage_options' ];
+			$pages['campaigns'] = [
+				'title' => __( 'Campaigns', 'rich-statistics' ),
+				'label' => __( 'Campaigns', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['user-flow'] = [
+				'title' => __( 'User Flow', 'rich-statistics' ),
+				'label' => __( 'User Flow', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['click-map'] = [
+				'title' => __( 'Click Tracking', 'rich-statistics' ),
+				'label' => __( 'Click Tracking', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['heatmap']   = [
+				'title' => __( 'Heatmap', 'rich-statistics' ),
+				'label' => __( 'Heatmap', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['export']    = [
+				'title' => __( 'Export', 'rich-statistics' ),
+				'label' => __( 'Export', 'rich-statistics' ),
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['ai-chat']   = [
+				'title' => __( 'AI Assistant', 'rich-statistics' ),
+				'label' => __( 'AI Assistant', 'rich-statistics' ),
+				'cap'   => 'manage_options',
+			];
 		} else {
-			$pages['campaigns'] = [ 'title' => __( 'Campaigns',     'rich-statistics' ), 'label' => __( 'Campaigns',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
-			$pages['user-flow'] = [ 'title' => __( 'User Flow',     'rich-statistics' ), 'label' => __( 'User Flow',     'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
-			$pages['click-map'] = [ 'title' => __( 'Click Tracking', 'rich-statistics' ), 'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
-			$pages['heatmap']   = [ 'title' => __( 'Heatmap',        'rich-statistics' ), 'label' => __( 'Heatmap',        'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
-			$pages['export']    = [ 'title' => __( 'Export',          'rich-statistics' ), 'label' => __( 'Export',          'rich-statistics' ) . $upgrade_label, 'cap' => 'rsa_manage_statistics' ];
-			$pages['ai-chat']   = [ 'title' => __( 'AI Assistant',   'rich-statistics' ), 'label' => __( 'AI Assistant',   'rich-statistics' ) . $upgrade_label, 'cap' => 'manage_options' ];
+			$pages['campaigns'] = [
+				'title' => __( 'Campaigns', 'rich-statistics' ),
+				'label' => __( 'Campaigns', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['user-flow'] = [
+				'title' => __( 'User Flow', 'rich-statistics' ),
+				'label' => __( 'User Flow', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['click-map'] = [
+				'title' => __( 'Click Tracking', 'rich-statistics' ),
+				'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['heatmap']   = [
+				'title' => __( 'Heatmap', 'rich-statistics' ),
+				'label' => __( 'Heatmap', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['export']    = [
+				'title' => __( 'Export', 'rich-statistics' ),
+				'label' => __( 'Export', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'rsa_manage_statistics',
+			];
+			$pages['ai-chat']   = [
+				'title' => __( 'AI Assistant', 'rich-statistics' ),
+				'label' => __( 'AI Assistant', 'rich-statistics' ) . $upgrade_label,
+				'cap'   => 'manage_options',
+			];
 		}
-		$pages['preferences']  = [ 'title' => __( 'Preferences',  'rich-statistics' ), 'label' => __( 'Preferences',  'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
-		$pages['maintenance']  = [ 'title' => __( 'Maintenance',   'rich-statistics' ), 'label' => __( 'Maintenance',   'rich-statistics' ), 'cap' => 'rsa_manage_statistics' ];
+		$pages['preferences'] = [
+			'title' => __( 'Preferences', 'rich-statistics' ),
+			'label' => __( 'Preferences', 'rich-statistics' ),
+			'cap'   => 'rsa_manage_statistics',
+		];
+		$pages['maintenance'] = [
+			'title' => __( 'Maintenance', 'rich-statistics' ),
+			'label' => __( 'Maintenance', 'rich-statistics' ),
+			'cap'   => 'rsa_manage_statistics',
+		];
 		return $pages;
 	}
 
 	// ----------------------------------------------------------------
-	// Asset enqueuing
+	// Asset enqueuing.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Enqueue admin scripts and styles.
+	 *
+	 * @param string $hook The current admin page hook.
+	 */
 	public static function enqueue_assets( string $hook ): void {
-		// Only load on our own pages
-		if ( strpos( $hook, 'rich-statistics' ) === false
-		     && strpos( $hook, 'rich-stats' ) === false ) {
+		// Only load on our own pages.
+		if ( false === strpos( $hook, 'rich-statistics' )
+			&& false === strpos( $hook, 'rich-stats' ) ) {
 			return;
 		}
 
-		// Chart.js (bundled — no CDN)
+		// Chart.js (bundled — no CDN).
 		wp_enqueue_script(
 			'rsa-chartjs',
 			RSA_ASSETS_URL . '../vendor/chart.min.js',
@@ -309,34 +437,42 @@ class RSA_Admin {
 			true
 		);
 
-		// Expose PHP data for the current page
+		// Expose PHP data for the current page.
 		$page_data = self::get_page_data_for_current_screen( $hook );
 		wp_localize_script( 'rsa-admin-charts', 'RSA_DATA', $page_data );
 	}
 
+	/**
+	 * Get page data for the current admin screen.
+	 *
+	 * @param string $hook The current admin page hook.
+	 * @return array Page data for the view.
+	 */
 	private static function get_page_data_for_current_screen( string $hook ): array {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- admin display page; GET params control display filters only, no state changes
-		$period = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
+		$period          = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) );
 		$allowed_periods = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
 		if ( ! in_array( $period, $allowed_periods, true ) ) {
 			$period = '30d';
 		}
 
 		$date_from = $date_to = '';
-		if ( $period === 'custom' ) {
+		if ( 'custom' === $period ) {
 			$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
-			$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
-			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+			$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+				$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+				$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		}
 
 		$page_filters = [
-			'browser'   => sanitize_text_field( wp_unslash( $_GET['browser']  ?? '' ) ),
-			'os'        => sanitize_text_field( wp_unslash( $_GET['os']       ?? '' ) ),
-			'search'    => sanitize_text_field( wp_unslash( $_GET['search']   ?? '' ) ),
+			'browser'   => sanitize_text_field( wp_unslash( $_GET['browser'] ?? '' ) ),
+			'os'        => sanitize_text_field( wp_unslash( $_GET['os'] ?? '' ) ),
+			'search'    => sanitize_text_field( wp_unslash( $_GET['search'] ?? '' ) ),
 			'page'      => sanitize_text_field( wp_unslash( $_GET['ref_page'] ?? '' ) ),
 			'sort'      => in_array( $_GET['sort'] ?? '', [ 'views', 'avg_time' ], true ) ? sanitize_key( $_GET['sort'] ) : 'views',
-			'sort_dir'  => ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) === 'asc' ) ? 'asc' : 'desc',
+			'sort_dir'  => ( 'asc' === sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) ) ? 'asc' : 'desc',
 			'date_from' => $date_from,
 			'date_to'   => $date_to,
 		];
@@ -344,18 +480,34 @@ class RSA_Admin {
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-pages' ) ) {
 			$pf         = $page_filters;
 			$pf['page'] = sanitize_text_field( wp_unslash( $_GET['path'] ?? '' ) );
-			return [ 'view' => 'pages', 'data' => RSA_Analytics::get_top_pages( $period, 20, $pf ), 'period' => $period ];
+			return [
+				'view'   => 'pages',
+				'data'   => RSA_Analytics::get_top_pages( $period, 20, $pf ),
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-audience' ) ) {
-			return [ 'view' => 'audience', 'data' => RSA_Analytics::get_audience( $period, $page_filters ), 'period' => $period ];
+			return [
+				'view'   => 'audience',
+				'data'   => RSA_Analytics::get_audience( $period, $page_filters ),
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-referrers' ) ) {
 			$ref_filters = [ 'page' => $page_filters['page'] ];
-			return [ 'view' => 'referrers', 'data' => RSA_Analytics::get_referrers( $period, 20, $ref_filters ), 'period' => $period ];
+			return [
+				'view'   => 'referrers',
+				'data'   => RSA_Analytics::get_referrers( $period, 20, $ref_filters ),
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-campaigns' ) ) {
-			$medium = sanitize_text_field( wp_unslash( $_GET['utm_medium'] ?? '' ) );
-			$cam_filters = [ 'medium' => $medium, 'date_from' => $date_from, 'date_to' => $date_to ];
+			$medium      = sanitize_text_field( wp_unslash( $_GET['utm_medium'] ?? '' ) );
+			$cam_filters = [
+				'medium'    => $medium,
+				'date_from' => $date_from,
+				'date_to'   => $date_to,
+			];
 			return [
 				'view'    => 'campaigns',
 				'data'    => RSA_Analytics::get_campaigns( $period, 100, $cam_filters ),
@@ -364,69 +516,141 @@ class RSA_Admin {
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-behavior' ) ) {
-			$beh_filters = [ 'browser' => $page_filters['browser'], 'os' => $page_filters['os'], 'date_from' => $date_from, 'date_to' => $date_to ];
+			$beh_filters = [
+				'browser'   => $page_filters['browser'],
+				'os'        => $page_filters['os'],
+				'date_from' => $date_from,
+				'date_to'   => $date_to,
+			];
 			$beh_data    = RSA_Analytics::get_behavior( $period, $beh_filters );
-			return [ 'view' => 'behavior', 'data' => $beh_data, 'period' => $period ];
+			return [
+				'view'   => 'behavior',
+				'data'   => $beh_data,
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-user-flow' ) ) {
 			$entry_source = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
-			$focus_page   = sanitize_text_field( wp_unslash( $_GET['focus_page']   ?? '' ) );
+			$focus_page   = sanitize_text_field( wp_unslash( $_GET['focus_page'] ?? '' ) );
 			$min_sessions = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
 			$steps        = min( 5, max( 2, absint( $_GET['steps'] ?? 4 ) ) );
 			return [
 				'view'   => 'user-flow',
 				'data'   => [
-					'path_flow' => RSA_Analytics::get_path_flow( $period, [
-						'date_from'    => $date_from,
-						'date_to'      => $date_to,
-						'entry_source' => $entry_source,
-						'focus_page'   => $focus_page,
-						'min_sessions' => $min_sessions,
-						'steps'        => $steps,
-					] ),
+					'path_flow' => RSA_Analytics::get_path_flow(
+						$period,
+						[
+							'date_from'    => $date_from,
+							'date_to'      => $date_to,
+							'entry_source' => $entry_source,
+							'focus_page'   => $focus_page,
+							'min_sessions' => $min_sessions,
+							'steps'        => $steps,
+						]
+					),
 				],
 				'period' => $period,
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
 			$page = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) );
-			return [ 'view' => 'click-map', 'data' => RSA_Analytics::get_click_map( $period, $page ), 'period' => $period ];
+			return [
+				'view'   => 'click-map',
+				'data'   => RSA_Analytics::get_click_map( $period, $page ),
+				'period' => $period,
+			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-woocommerce' ) ) {
-			return [ 'view' => 'woocommerce', 'data' => RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] ), 'period' => $period ];
+			return [
+				'view'   => 'woocommerce',
+				'data'   => RSA_Analytics::get_woocommerce(
+					$period,
+					[
+						'date_from' => $date_from,
+						'date_to'   => $date_to,
+					]
+				),
+				'period' => $period,
+			];
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		// Default: overview
-		return [ 'view' => 'overview', 'data' => RSA_Analytics::get_overview( $period, $page_filters ), 'period' => $period ];
+		// Default: overview.
+		return [
+			'view'   => 'overview',
+			'data'   => RSA_Analytics::get_overview( $period, $page_filters ),
+			'period' => $period,
+		];
 	}
 
 	// ----------------------------------------------------------------
-	// Page renderers — each delegates to a template partial
+	// Page renderers — each delegates to a template partial.
 	// ----------------------------------------------------------------
 
-	public static function page_overview():       void { self::render( 'overview' ); }
-	public static function page_pages():          void { self::render( 'pages' ); }
-	public static function page_audience():       void { self::render( 'audience' ); }
-	public static function page_referrers():      void { self::render( 'referrers' ); }
-	public static function page_campaigns():      void { self::render( 'campaigns' ); }
-	public static function page_behavior():       void { self::render( 'behavior' ); }
-	public static function page_user_flow():      void { self::require_premium_or_exit(); self::render( 'user-flow' ); }
-	public static function page_click_map():      void { self::require_premium_or_exit(); self::render( 'click-map' ); }
-	public static function page_heatmap():        void { self::require_premium_or_exit(); self::render( 'heatmap' ); }
-	public static function page_preferences():      void { self::render( 'preferences' ); }
-	public static function page_maintenance():       void { self::render( 'maintenance' ); }
-	public static function page_export():           void { self::require_premium_or_exit(); self::render( 'export' ); }
-	public static function page_woocommerce():      void { self::require_premium_or_exit(); self::render( 'woocommerce' ); }
-	public static function page_network_settings(): void { self::render( 'network-settings' ); }
-	public static function page_ai_chat():          void { self::require_premium_or_exit(); self::render( 'ai-chat' ); }
+	/** Render the overview page. */
+	public static function page_overview(): void {
+		self::render( 'overview' ); }
+	/** Render the pages view. */
+	public static function page_pages(): void {
+		self::render( 'pages' ); }
+	/** Render the audience view. */
+	public static function page_audience(): void {
+		self::render( 'audience' ); }
+	/** Render the referrers view. */
+	public static function page_referrers(): void {
+		self::render( 'referrers' ); }
+	/** Render the campaigns view. */
+	public static function page_campaigns(): void {
+		self::render( 'campaigns' ); }
+	/** Render the behavior view. */
+	public static function page_behavior(): void {
+		self::render( 'behavior' ); }
+	/** Render the user flow view. */
+	public static function page_user_flow(): void {
+		self::require_premium_or_exit();
+		self::render( 'user-flow' ); }
+	/** Render the click map view. */
+	public static function page_click_map(): void {
+		self::require_premium_or_exit();
+		self::render( 'click-map' ); }
+	/** Render the heatmap view. */
+	public static function page_heatmap(): void {
+		self::require_premium_or_exit();
+		self::render( 'heatmap' ); }
+	/** Render the preferences page. */
+	public static function page_preferences(): void {
+		self::render( 'preferences' ); }
+	/** Render the maintenance page. */
+	public static function page_maintenance(): void {
+		self::render( 'maintenance' ); }
+	/** Render the export page. */
+	public static function page_export(): void {
+		self::require_premium_or_exit();
+		self::render( 'export' ); }
+	/** Render the WooCommerce page. */
+	public static function page_woocommerce(): void {
+		self::require_premium_or_exit();
+		self::render( 'woocommerce' ); }
+	/** Render the network settings page. */
+	public static function page_network_settings(): void {
+		self::render( 'network-settings' ); }
+	/** Render the AI chat page. */
+	public static function page_ai_chat(): void {
+		self::require_premium_or_exit();
+		self::render( 'ai-chat' ); }
 
+	/** Require a premium license or exit with an error. */
 	private static function require_premium_or_exit(): void {
 		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
 			wp_die( esc_html__( 'This feature requires a premium licence.', 'rich-statistics' ), '', [ 'response' => 403 ] );
 		}
 	}
 
+	/**
+	 * Render an admin template.
+	 *
+	 * @param string $template Template slug.
+	 */
 	private static function render( string $template ): void {
 		$file = RSA_DIR . 'templates/admin/' . $template . '.php';
 		if ( file_exists( $file ) ) {
@@ -435,9 +659,14 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Page dropdown helper — all public WordPress content
+	// Page dropdown helper — all public WordPress content.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Get all trackable public pages.
+	 *
+	 * @return array Associative array of path => title.
+	 */
 	public static function get_trackable_pages(): array {
 		// All public post types, all non-trash statuses — same source used
 		// for purge eligibility checks so the two stay in sync automatically.
@@ -446,25 +675,30 @@ class RSA_Admin {
 			[ 'attachment' ]
 		);
 
-		$posts = get_posts( [
-			'post_type'     => $post_types,
-			'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
-			'numberposts'   => -1,
-			'no_found_rows' => true,
-			'orderby'       => 'post_title',
-			'order'         => 'ASC',
-		] );
+		$posts = get_posts(
+			[
+				'post_type'     => $post_types,
+				'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
+				'numberposts'   => -1,
+				'no_found_rows' => true,
+				'orderby'       => 'post_title',
+				'order'         => 'ASC',
+			]
+		);
 
 		// Home is always pinned first.
 		$pages = [ '/' => __( 'Home', 'rich-statistics' ) ];
 
 		foreach ( $posts as $post ) {
-			$url  = get_permalink( $post );
-			if ( ! $url ) { continue; }
+			$url = get_permalink( $post );
+			if ( ! $url ) {
+				continue; }
 			$path = wp_make_link_relative( $url );
 			// Skip query-string-only URLs (e.g. ?p=123 for un-slugged drafts).
-			if ( ! $path || $path[0] !== '/' || strpos( $path, '?' ) !== false ) { continue; }
-			if ( $path === '/' ) { continue; } // home already added
+			if ( ! $path || '/' !== $path[0] || false !== strpos( $path, '?' ) ) {
+				continue; }
+			if ( '/' === $path ) {
+				continue; } // home already added
 			$pages[ $path ] = get_the_title( $post );
 		}
 
@@ -476,9 +710,10 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// CSV Export handler
+	// CSV Export handler.
 	// ----------------------------------------------------------------
 
+	/** Handle CSV export request. */
 	public static function handle_export_csv(): void {
 		check_admin_referer( 'rsa_export_csv' );
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
@@ -490,43 +725,64 @@ class RSA_Admin {
 		$data_type = sanitize_key( wp_unslash( $_POST['data_type'] ?? 'pageviews' ) );
 		$period    = sanitize_text_field( wp_unslash( $_POST['period'] ?? '30d' ) );
 		$allowed   = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-		if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+		if ( ! in_array( $period, $allowed, true ) ) {
+			$period = '30d'; }
 
 		$date_from = sanitize_text_field( wp_unslash( $_POST['date_from'] ?? '' ) );
-		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to']   ?? '' ) );
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = ''; }
+		$date_to   = sanitize_text_field( wp_unslash( $_POST['date_to'] ?? '' ) );
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+			$date_from = ''; }
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+			$date_to = ''; }
 
 		$range = RSA_Analytics::period_range( $period, $date_from, $date_to );
 		$bt    = (int) get_option( 'rsa_bot_score_threshold', 5 );
 
 		switch ( $data_type ) {
 			case 'sessions':
-				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
-					"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
-					$range['start'], $range['end']
-				), ARRAY_A );
+				$rows    = $wpdb->get_results(
+					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+						"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
+						$range['start'],
+						$range['end']
+					),
+					ARRAY_A
+				);
 				$headers = [ 'session_id', 'entry_page', 'exit_page', 'pages_viewed', 'total_time', 'browser', 'os', 'language', 'timezone', 'created_at' ];
 				break;
 			case 'clicks':
-				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
-					"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
-					$range['start'], $range['end']
-				), ARRAY_A );
+				$rows    = $wpdb->get_results(
+					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+						"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
+						$range['start'],
+						$range['end']
+					),
+					ARRAY_A
+				);
 				$headers = [ 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
 				break;
 			case 'referrers':
-				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
-					"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
-					$range['start'], $range['end'], $bt
-				), ARRAY_A );
+				$rows    = $wpdb->get_results(
+					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+						"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
+						$range['start'],
+						$range['end'],
+						$bt
+					),
+					ARRAY_A
+				);
 				$headers = [ 'referrer_domain', 'pageviews', 'sessions' ];
 				break;
 			default: // pageviews
-				$rows = $wpdb->get_results( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
-					"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
-					$range['start'], $range['end'], $bt
-				), ARRAY_A );
+				$rows    = $wpdb->get_results(
+					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
+						"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
+						$range['start'],
+						$range['end'],
+						$bt
+					),
+					ARRAY_A
+				);
 				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
 		}
 
@@ -546,9 +802,10 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Settings save handler
+	// Settings save handler.
 	// ----------------------------------------------------------------
 
+	/** Save plugin settings. */
 	public static function save_settings(): void {
 		check_admin_referer( 'rsa_settings_save' );
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
@@ -559,13 +816,13 @@ class RSA_Admin {
 			'rsa_retention_days'           => 'absint',
 			'rsa_bot_score_threshold'      => 'absint',
 			'rsa_remove_data_on_uninstall' => 'absint',
-			'rsa_track_protocol_tel'          => 'absint',
-			'rsa_track_protocol_mailto'       => 'absint',
-			'rsa_track_protocol_geo'          => 'absint',
-			'rsa_track_protocol_sms'          => 'absint',
-			'rsa_track_protocol_download'     => 'absint',
-			'rsa_click_track_ids'             => 'sanitize_text_field',
-			'rsa_click_track_classes'         => 'sanitize_text_field',
+			'rsa_track_protocol_tel'       => 'absint',
+			'rsa_track_protocol_mailto'    => 'absint',
+			'rsa_track_protocol_geo'       => 'absint',
+			'rsa_track_protocol_sms'       => 'absint',
+			'rsa_track_protocol_download'  => 'absint',
+			'rsa_click_track_ids'          => 'sanitize_text_field',
+			'rsa_click_track_classes'      => 'sanitize_text_field',
 			'rsa_email_digest_enabled'     => 'absint',
 			'rsa_email_digest_frequency'   => 'sanitize_text_field',
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
@@ -587,21 +844,21 @@ class RSA_Admin {
 		foreach ( $fields as $key => $sanitizer ) {
 			if ( isset( $_POST[ $key ] ) ) {
 				$value = $sanitizer( wp_unslash( $_POST[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- $sanitizer is a sanitization callback from the $fields map
-				// Clamp numeric values
-				if ( $key === 'rsa_retention_days' ) {
+				// Clamp numeric values.
+				if ( 'rsa_retention_days' === $key ) {
 					$value = max( 1, min( 730, $value ) );
 				}
-				if ( $key === 'rsa_bot_score_threshold' ) {
+				if ( 'rsa_bot_score_threshold' === $key ) {
 					$value = max( 1, min( 10, $value ) );
 				}
 				update_option( $key, $value );
 			} elseif ( in_array( $sanitizer, [ 'absint' ], true ) ) {
-				// Checkboxes: unchecked = 0
+				// Checkboxes: unchecked = 0.
 				update_option( $key, 0 );
 			}
 		}
 
-		// Custom post types array — sanitize each slug
+		// Custom post types array — sanitize each slug.
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- array is unslashed and each element sanitized via array_map below
 		$raw_cpts = isset( $_POST['rsa_enabled_post_types'] ) && is_array( $_POST['rsa_enabled_post_types'] )
 			? array_map( 'wp_unslash', $_POST['rsa_enabled_post_types'] )
@@ -612,32 +869,46 @@ class RSA_Admin {
 
 		// Allowed roles for app access (REST API + profile OTP).
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw_roles  = isset( $_POST['rsa_allowed_roles'] ) && is_array( $_POST['rsa_allowed_roles'] )
+		$raw_roles = isset( $_POST['rsa_allowed_roles'] ) && is_array( $_POST['rsa_allowed_roles'] )
 			? array_map( 'wp_unslash', $_POST['rsa_allowed_roles'] )
 			: [];
 		// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$valid_roles = array_keys( wp_roles()->roles );
-		$safe_roles  = array_values( array_filter(
-			array_map( 'sanitize_key', $raw_roles ),
-			function ( $r ) use ( $valid_roles ) { return in_array( $r, $valid_roles, true ); }
-		) );
+		$safe_roles  = array_values(
+			array_filter(
+				array_map( 'sanitize_key', $raw_roles ),
+				function ( $r ) use ( $valid_roles ) {
+					return in_array( $r, $valid_roles, true ); }
+			)
+		);
 		if ( ! in_array( 'administrator', $safe_roles, true ) ) {
 			$safe_roles[] = 'administrator';
 		}
 		update_option( 'rsa_allowed_roles', $safe_roles );
 
-		wp_safe_redirect( add_query_arg( [ 'page' => 'rich-statistics-preferences', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'page'  => 'rich-statistics-preferences',
+					'saved' => '1',
+				],
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
 	// ----------------------------------------------------------------
-	// App access: per-role permission check
+	// App access: per-role permission check.
 	// ----------------------------------------------------------------
 
 	/**
 	 * Returns true when the given user (default: current user) has a role
 	 * that is permitted to use the Rich Statistics App (REST API + OTP).
 	 * Administrators are always allowed regardless of the stored option.
+	 *
+	 * @param ?WP_User $user Optional. User object to check. Defaults to current user.
+	 * @return bool True if the user can access the app.
 	 */
 	public static function user_can_access_app( ?WP_User $user = null ): bool {
 		if ( ! $user ) {
@@ -659,12 +930,14 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Profile: Rich Statistics App section (before Application Passwords)
+	// Profile: Rich Statistics App section (before Application Passwords).
 	// ----------------------------------------------------------------
 
 	/**
 	 * Output a full profile section. Hooks show_user_profile / edit_user_profile
 	 * fire outside any table context, so we provide the <h2> + table wrapper.
+	 *
+	 * @param WP_User $profile_user The user being edited.
 	 */
 	public static function profile_webapp_section( WP_User $profile_user ): void {
 		// Show only if the profile user's role is permitted to use the app.
@@ -683,7 +956,13 @@ class RSA_Admin {
 		<?php
 	}
 
-	/** @internal Called from profile_webapp_section(); also used standalone in unit tests. */
+	/**
+	 * Render the web app button in the user profile.
+	 *
+	 * @internal Called from profile_webapp_section(); also used standalone in unit tests.
+	 *
+	 * @param WP_User $profile_user The user being edited.
+	 */
 	public static function profile_webapp_button( WP_User $profile_user ): void {
 		if ( ! self::user_can_access_app( $profile_user ) ) {
 			return;
@@ -718,10 +997,10 @@ class RSA_Admin {
 					<?php esc_html_e( 'Generate App Code', 'rich-statistics' ); ?>
 				</button>
 				<a href="<?php echo esc_url( $app_url ); ?>"
-				   class="button"
-				   target="_blank"
-				   rel="noopener"
-				   style="margin-left:8px;">
+					class="button"
+					target="_blank"
+					rel="noopener"
+					style="margin-left:8px;">
 					<?php esc_html_e( 'Open App', 'rich-statistics' ); ?>
 				</a>
 
@@ -729,7 +1008,7 @@ class RSA_Admin {
 					<p style="margin:0 0 4px;display:flex;align-items:center;gap:10px;">
 						<strong><?php esc_html_e( 'App Code:', 'rich-statistics' ); ?></strong>
 						<span id="rsa-otp-code"
-						      style="font-family:monospace;font-size:1.6em;letter-spacing:.12em;"
+								style="font-family:monospace;font-size:1.6em;letter-spacing:.12em;"
 						></span>
 						<button type="button" id="rsa-otp-copy" class="button button-small">
 							<?php esc_html_e( 'Copy', 'rich-statistics' ); ?>
@@ -755,52 +1034,66 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Shared: period selector HTML (used by templates)
+	// Shared: period selector HTML (used by templates).
 	// ----------------------------------------------------------------
 
+	/**
+	 * Render the period selector HTML.
+	 *
+	 * @param string $current Current period value.
+	 * @return string Period selector HTML.
+	 */
 	public static function period_selector( string $current = '30d' ): string {
 		$options = [
-			'7d'        => __( 'Last 7 days',   'rich-statistics' ),
-			'30d'       => __( 'Last 30 days',  'rich-statistics' ),
-			'90d'       => __( 'Last 90 days',  'rich-statistics' ),
-			'thismonth' => __( 'This month',    'rich-statistics' ),
-			'lastmonth' => __( 'Last month',    'rich-statistics' ),
+			'7d'        => __( 'Last 7 days', 'rich-statistics' ),
+			'30d'       => __( 'Last 30 days', 'rich-statistics' ),
+			'90d'       => __( 'Last 90 days', 'rich-statistics' ),
+			'thismonth' => __( 'This month', 'rich-statistics' ),
+			'lastmonth' => __( 'Last month', 'rich-statistics' ),
 		];
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- period_selector only reads GET params for display; no state changes
 		$page      = sanitize_text_field( wp_unslash( $_GET['page'] ?? 'rich-statistics' ) );
 		$url       = admin_url( 'admin.php' );
-		$is_custom = ( $current === 'custom' );
-		// Always populate dates so the inputs are pre-filled regardless of mode
+		$is_custom = ( 'custom' === $current );
+		// Always populate dates so the inputs are pre-filled regardless of mode.
 		$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
-		$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) );
+		$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = gmdate( 'Y-m-d' ); }
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+			$date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+			$date_to = gmdate( 'Y-m-d' ); }
 
 		$html = '<div class="rsa-period-controls">';
 
-		// Preset period buttons (navigational links)
+		// Preset period buttons (navigational links).
 		$html .= '<div class="rsa-period-selector">';
 		foreach ( $options as $val => $label ) {
-			$href   = add_query_arg( [ 'page' => $page, 'period' => $val ], $url );
+			$href   = add_query_arg(
+				[
+					'page'   => $page,
+					'period' => $val,
+				],
+				$url
+			);
 			$active = $val === $current ? ' rsa-period-active' : '';
 			$html  .= '<a href="' . esc_url( $href ) . '" class="rsa-period-btn' . $active . '">' . esc_html( $label ) . '</a>';
 		}
 		$html .= '</div>';
 
-		// Custom date range — always visible, no JS toggle
+		// Custom date range — always visible, no JS toggle.
 		$custom_active = $is_custom ? ' rsa-period-active' : '';
-		$html .= '<div class="rsa-custom-range">';
-		$html .= '<form method="get" action="' . esc_url( $url ) . '" class="rsa-custom-range-form">';
-		$html .= '<input type="hidden" name="page" value="' . esc_attr( $page ) . '">';
-		$html .= '<input type="hidden" name="period" value="custom">';
-		$html .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
-		$html .= '<span class="rsa-date-sep">' . esc_html__( 'to', 'rich-statistics' ) . '</span>';
-		$html .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
-		$html .= '<button type="submit" class="rsa-period-btn' . $custom_active . '">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
-		$html .= '</form>';
-		$html .= '</div>';
+		$html         .= '<div class="rsa-custom-range">';
+		$html         .= '<form method="get" action="' . esc_url( $url ) . '" class="rsa-custom-range-form">';
+		$html         .= '<input type="hidden" name="page" value="' . esc_attr( $page ) . '">';
+		$html         .= '<input type="hidden" name="period" value="custom">';
+		$html         .= '<input type="date" name="date_from" value="' . esc_attr( $date_from ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html         .= '<span class="rsa-date-sep">' . esc_html__( 'to', 'rich-statistics' ) . '</span>';
+		$html         .= '<input type="date" name="date_to" value="' . esc_attr( $date_to ) . '" max="' . esc_attr( gmdate( 'Y-m-d' ) ) . '">';
+		$html         .= '<button type="submit" class="rsa-period-btn' . $custom_active . '">' . esc_html__( 'Apply', 'rich-statistics' ) . '</button>';
+		$html         .= '</form>';
+		$html         .= '</div>';
 
 		$html .= '</div>'; // .rsa-period-controls
 
@@ -808,9 +1101,15 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Shared: page header (used by templates)
+	// Shared: page header (used by templates).
 	// ----------------------------------------------------------------
 
+	/**
+	 * Render the page header with title and period selector.
+	 *
+	 * @param string $title  Page title.
+	 * @param string $period Current period.
+	 */
 	public static function page_header( string $title, string $period = '30d' ): void {
 		?>
 		<div class="wrap rsa-wrap">
@@ -835,14 +1134,21 @@ class RSA_Admin {
 		<?php
 	}
 
+	/** Render the page footer. */
 	public static function page_footer(): void {
 		echo '</div><!-- .rsa-wrap -->';
 	}
 
 	// ----------------------------------------------------------------
-	// API key masking — show only first 8 chars in the form
+	// API key masking — show only first 8 chars in the form.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Mask an API key showing only the first 8 characters.
+	 *
+	 * @param string $key The API key.
+	 * @return string Masked API key.
+	 */
 	public static function mask_api_key( string $key ): string {
 		if ( strlen( $key ) <= 8 ) {
 			return $key;
@@ -851,16 +1157,17 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// Help tabs — appear in the upper-right "Help" dropdown on each page
+	// Help tabs — appear in the upper-right "Help" dropdown on each page.
 	// ----------------------------------------------------------------
 
+	/** Register help tabs for the admin screens. */
 	public static function register_help_tabs(): void {
 		$screen = get_current_screen();
-		if ( ! $screen || strpos( $screen->id, 'rich-statistics' ) === false ) {
+		if ( ! $screen || false === strpos( $screen->id, 'rich-statistics' ) ) {
 			return;
 		}
 
-		// Sidebar shown on all Rich Stats pages
+		// Sidebar shown on all Rich Stats pages.
 		$screen->set_help_sidebar(
 			'<p><strong>' . esc_html__( 'For more information:', 'rich-statistics' ) . '</strong></p>' .
 			'<p><a href="https://statistics.richardkentgates.com" target="_blank" rel="noopener">' .
@@ -871,20 +1178,22 @@ class RSA_Admin {
 			esc_html__( 'Report an issue', 'rich-statistics' ) . '</a></p>'
 		);
 
-		// Shared tab: Privacy
-		$screen->add_help_tab( [
-			'id'      => 'rsa-privacy',
-			'title'   => __( 'Privacy', 'rich-statistics' ),
-			'content' =>
-				'<h2>' . esc_html__( 'Privacy by Design', 'rich-statistics' ) . '</h2>' .
-				'<p>' . esc_html__( 'Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only.', 'rich-statistics' ) . '</p>' .
-				'<p>' . esc_html__( 'If a visitor\'s browser has Do Not Track (DNT) or Global Privacy Control (GPC) enabled, the tracker exits immediately — no session is created and no data is sent.', 'rich-statistics' ) . '</p>' .
-				'<p>' . esc_html__( 'Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation.', 'rich-statistics' ) . '</p>',
-		] );
+		// Shared tab: Privacy.
+		$screen->add_help_tab(
+			[
+				'id'      => 'rsa-privacy',
+				'title'   => __( 'Privacy', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'Privacy by Design', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'If a visitor\'s browser has Do Not Track (DNT) or Global Privacy Control (GPC) enabled, the tracker exits immediately — no session is created and no data is sent.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation.', 'rich-statistics' ) . '</p>',
+			]
+		);
 
-		// Page-specific help tab content
+		// Page-specific help tab content.
 		$page_help = [
-			'toplevel_page_rich-statistics' => [
+			'toplevel_page_rich-statistics'                => [
 				'id'      => 'rsa-overview-help',
 				'title'   => __( 'Overview', 'rich-statistics' ),
 				'content' =>
@@ -893,7 +1202,7 @@ class RSA_Admin {
 					'<p>' . esc_html__( 'Use the period selector (top right) to switch between Last 7 days, Last 30 days, Last 90 days, This month, and Last month.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Bounce rate', 'rich-statistics' ) . '</strong> ' . esc_html__( 'is calculated as the percentage of sessions that viewed only a single page.', 'rich-statistics' ) . '</p>',
 			],
-			'rich-statistics_page_rich-statistics-pages' => [
+			'rich-statistics_page_rich-statistics-pages'   => [
 				'id'      => 'rsa-pages-help',
 				'title'   => __( 'Pages', 'rich-statistics' ),
 				'content' =>
@@ -969,7 +1278,7 @@ class RSA_Admin {
 					'<p>' . esc_html__( 'No customer data is stored — events are linked to anonymous session IDs only. Order totals are recorded in the store currency but no customer name, address, or email is retained.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'WooCommerce tracking can be toggled on or off from Rich Statistics → Preferences.', 'rich-statistics' ) . '</p>',
 			],
-			'rich-statistics_page_rich-statistics-export' => [
+			'rich-statistics_page_rich-statistics-export'  => [
 				'id'      => 'rsa-export-help',
 				'title'   => __( 'Export (Premium)', 'rich-statistics' ),
 				'content' =>

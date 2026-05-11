@@ -1,4 +1,5 @@
-<?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
+<?php if ( ! defined( 'ABSPATH' ) ) {
+	exit;} ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,7 +83,7 @@
 		<tr>
 			<td style="padding:28px 36px;text-align:center;">
 				<a href="{{DASH_URL}}"
-				   style="display:inline-block;padding:12px 28px;background:#6366f1;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
+					style="display:inline-block;padding:12px 28px;background:#6366f1;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
 					View Full Dashboard →
 				</a>
 			</td>

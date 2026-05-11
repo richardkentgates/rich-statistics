@@ -15,11 +15,15 @@ require_once RSA_DIR . 'includes/class-tracker.php';
 
 class TrackerRateLimitTest extends TestCase {
 
-	// ----------------------------------------------------------------
-	// is_rate_limited() — transient-based session rate limiting
-	// No WordPress mocking needed: uses get_transient/set_transient directly
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * is_rate_limited() — transient-based session rate limiting
+	 * No WordPress mocking needed: uses get_transient/set_transient directly
+	 * ----------------------------------------------------------------
+	 *
+	 * @param string $session_id The session ID to check.
+	 * @return bool True if rate limited.
+	 */
 	private function is_rate_limited( string $session_id ): bool {
 		$method = new ReflectionMethod( RSA_Tracker::class, 'is_rate_limited' );
 		$method->setAccessible( true );
@@ -28,13 +32,14 @@ class TrackerRateLimitTest extends TestCase {
 
 	public function test_first_request_is_not_rate_limited(): void {
 		global $wp_filter;
-		$hasOrig = isset( $wp_filter['pre_get_transient'] );
-		$orig    = $hasOrig ? $wp_filter['pre_get_transient'] : null;
-		$wp_filter['pre_get_transient'] = new class {
-			public function __invoke( $pre, string $key ) { return false; }
+		$has_orig                       = isset( $wp_filter['pre_get_transient'] );
+		$orig                           = $has_orig ? $wp_filter['pre_get_transient'] : null;
+		$wp_filter['pre_get_transient'] = new class() {
+			public function __invoke( $pre, string $key ) {
+				return false; }
 		};
-		$result = $this->is_rate_limited( uniqid( 'session-', true ) );
-		if ( $hasOrig ) {
+		$result                         = $this->is_rate_limited( uniqid( 'session-', true ) );
+		if ( $has_orig ) {
 			$wp_filter['pre_get_transient'] = $orig;
 		} else {
 			unset( $wp_filter['pre_get_transient'] );
@@ -47,21 +52,25 @@ class TrackerRateLimitTest extends TestCase {
 	}
 
 	public function test_rate_limit_key_uses_md5_prefix(): void {
-		$session_id = 'test-md5-session';
+		$session_id      = 'test-md5-session';
 		$expected_suffix = substr( md5( $session_id ), 0, 16 );
 
 		$result = $this->is_rate_limited( $session_id );
 
-		$this->assertFalse( $result, "Fresh session should not be rate-limited (key format: rsa_rl_{md5_prefix})" );
+		$this->assertFalse( $result, 'Fresh session should not be rate-limited (key format: rsa_rl_{md5_prefix})' );
 		$this->assertNotEmpty( $expected_suffix );
 		$this->assertSame( 16, strlen( $expected_suffix ) );
 	}
 
-	// ----------------------------------------------------------------
-	// sanitize_page() — query param edge cases
-	// Uses reflection, no WP mocking needed
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * sanitize_page() — query param edge cases
+	 * Uses reflection, no WP mocking needed
+	 * ----------------------------------------------------------------
+	 *
+	 * @param string $raw Raw page URL.
+	 * @return string Sanitized page path.
+	 */
 	private function sanitize_page( string $raw ): string {
 		$method = new ReflectionMethod( RSA_Tracker::class, 'sanitize_page' );
 		$method->setAccessible( true );

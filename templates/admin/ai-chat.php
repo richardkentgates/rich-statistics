@@ -2,15 +2,19 @@
 /**
  * AI Chat — WordPress admin page.
  * Premium only, requires AI configured in Preferences.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 
 RSA_Admin::page_header( __( 'AI Analytics Assistant', 'rich-statistics' ) );
 
-// Check if AI is configured
+// Check if AI is configured.
 $provider = get_option( 'rsa_ai_provider', 'openai' );
-$has_ai  = false;
+$has_ai   = false;
 if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 	if ( $provider === 'openai' && get_option( 'rsa_ai_api_key', '' ) ) {
 		$has_ai = true;
@@ -35,7 +39,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 			<div style="flex:1;background:#fff;border:1px solid #ccc;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:600px;">
 				<div style="padding:16px;border-bottom:1px solid #ccc;background:#f8f9fa;display:flex;justify-content:space-between;align-items:center;">
 					<div>
-						<h3 style="margin:0;font-size:16px;">🤖 AI Analytics Assistant</h3>
+						<h3 style="margin:0;font-size:16px;">AI Analytics Assistant</h3>
 						<span style="font-size:12px;color:#666;" id="rsa-admin-chat-status">Ready</span>
 					</div>
 					<div style="font-size:12px;color:#666;">
@@ -96,11 +100,11 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 			'use strict';
 			
 			var siteUrl  = '<?php echo esc_js( home_url() ); ?>';
-			var nonce    = '<?php echo wp_create_nonce( 'wp_rest' ); ?>';
+			var nonce    = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
 			var userName = '<?php echo esc_js( wp_get_current_user()->user_login ); ?>';
-			var appPass = ''; // Will be prompted if not stored
+			var appPass = ''; // Will be prompted if not stored.
 			
-			// Send message
+			// Send message.
 			window.sendAdminMessage = function() {
 				var input = document.getElementById( 'rsa-admin-chat-input' );
 				var msg   = input.value.trim();
@@ -110,7 +114,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 				input.value = '';
 				document.getElementById( 'rsa-admin-chat-status' ).textContent = 'Thinking...';
 				
-				// Get Application Password if not available
+				// Get Application Password if not available.
 				if ( ! appPass ) {
 					appPass = prompt( 'Enter your WordPress Application Password:\n(Generate one in Users → Profile → Application Passwords)' );
 					if ( ! appPass ) {
@@ -129,7 +133,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': nonce
 					},
-					body: JSON.stringify( { question: msg, period: '<?php echo esc_js( $_GET['period'] ?? '30d' ); ?>' } )
+					body: JSON.stringify( { question: msg, period: '<?php echo esc_js( sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ) ); ?>' } )
 				})
 				.then( r => r.json() )
 				.then( data => {
@@ -146,7 +150,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 				} );
 			};
 			
-			// Add message to chat
+			// Add message to chat.
 			function addAdminMessage( who, text, cls ) {
 				var div  = document.getElementById( 'rsa-admin-chat-messages' );
 				var msg  = document.createElement( 'div' );
@@ -165,14 +169,14 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 				div.scrollTop = div.scrollHeight;
 			}
 			
-			// Utility: escape HTML
+			// Utility: escape HTML.
 			function escapeHtml( text ) {
 				var div = document.createElement( 'div' );
 				div.textContent = text;
 				return div.innerHTML;
 			}
 			
-			// Listen for Enter key
+			// Listen for Enter key.
 			document.addEventListener( 'keypress', function( e ) {
 				if ( e.key === 'Enter' && document.getElementById( 'rsa-admin-chat-input' ) === document.activeElement ) {
 					e.preventDefault();

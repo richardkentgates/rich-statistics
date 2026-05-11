@@ -52,37 +52,52 @@
  *   Server-side (RSA_Bot_Detection): UA pattern matching + header analysis
  *   Threshold: configurable, default excludes score >= 10
  *   NO IP address ever passed to bot scorer.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_DB {
 
-	// Schema version stored per-site
 	const SCHEMA_VERSION = 1;
 	const OPTION_KEY     = 'rsa_db_version';
 
-	// ----------------------------------------------------------------
-	// Table name helpers (always call these — never hardcode prefixes)
-	// ----------------------------------------------------------------
-
+	/**
+	 * Get a prefixed table name.
+	 *
+	 * @param string $name Table suffix.
+	 * @return string Full table name with prefix.
+	 */
 	public static function table( string $name ): string {
 		global $wpdb;
 		return $wpdb->prefix . 'rsa_' . $name;
 	}
 
-	public static function events_table(): string   { return self::table( 'events' ); }
-	public static function sessions_table(): string { return self::table( 'sessions' ); }
-	public static function clicks_table(): string   { return self::table( 'clicks' ); }
-	public static function heatmap_table(): string    { return self::table( 'heatmap' ); }
-	public static function wc_events_table(): string  { return self::table( 'wc_events' ); }
+	public static function events_table(): string {
+		return self::table( 'events' ); }
+	public static function sessions_table(): string {
+		return self::table( 'sessions' ); }
+	public static function clicks_table(): string {
+		return self::table( 'clicks' ); }
+	public static function heatmap_table(): string {
+		return self::table( 'heatmap' ); }
+	public static function wc_events_table(): string {
+		return self::table( 'wc_events' ); }
 
-	// ----------------------------------------------------------------
-	// Activation
-	// ----------------------------------------------------------------
-
+	/**
+	 * Activate the plugin on a single site or network-wide.
+	 *
+	 * @param bool $network_wide Whether the plugin was network-activated.
+	 */
 	public static function activate( bool $network_wide = false ): void {
 		if ( is_multisite() && $network_wide ) {
-			$sites = get_sites( [ 'fields' => 'ids', 'number' => 0 ] );
+			$sites = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => 0,
+				]
+			);
 			foreach ( $sites as $blog_id ) {
 				switch_to_blog( $blog_id );
 				self::install();
@@ -96,6 +111,8 @@ class RSA_DB {
 	/**
 	 * Called when a new subsite is created on a network where the plugin is
 	 * network-activated.
+	 *
+	 * @param int $blog_id The new blog ID.
 	 */
 	public static function on_new_blog( int $blog_id ): void {
 		switch_to_blog( $blog_id );
@@ -103,16 +120,15 @@ class RSA_DB {
 		restore_current_blog();
 	}
 
-	// ----------------------------------------------------------------
-	// Schema install / upgrade
-	// ----------------------------------------------------------------
-
+	/**
+	 * Install or upgrade the database schema.
+	 */
 	public static function install(): void {
 		global $wpdb;
 
 		$charset = $wpdb->get_charset_collate();
 
-		$events = "CREATE TABLE " . self::events_table() . " (
+		$events = 'CREATE TABLE ' . self::events_table() . " (
 			id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			session_id    VARCHAR(36)         NOT NULL,
 			page          VARCHAR(512)        NOT NULL,
@@ -137,7 +153,7 @@ class RSA_DB {
 			KEY utm_campaign (utm_campaign(191))
 		) $charset;";
 
-		$sessions = "CREATE TABLE " . self::sessions_table() . " (
+		$sessions = 'CREATE TABLE ' . self::sessions_table() . " (
 			id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			session_id    VARCHAR(36)         NOT NULL,
 			pages_viewed  SMALLINT UNSIGNED   DEFAULT 1,
@@ -155,7 +171,7 @@ class RSA_DB {
 			KEY created_at (created_at)
 		) $charset;";
 
-		$clicks = "CREATE TABLE " . self::clicks_table() . " (
+		$clicks = 'CREATE TABLE ' . self::clicks_table() . " (
 			id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			session_id      VARCHAR(36)         NOT NULL,
 			page            VARCHAR(512)        NOT NULL,
@@ -175,7 +191,7 @@ class RSA_DB {
 			KEY created_at  (created_at)
 		) $charset;";
 
-		$heatmap = "CREATE TABLE " . self::heatmap_table() . " (
+		$heatmap = 'CREATE TABLE ' . self::heatmap_table() . " (
 			id          BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			page        VARCHAR(512)        NOT NULL,
 			x_pct       DECIMAL(5,2)        NOT NULL,
@@ -186,7 +202,7 @@ class RSA_DB {
 			KEY page_date (page(191), date_bucket)
 		) $charset;";
 
-		$wc_events = "CREATE TABLE " . self::wc_events_table() . " (
+		$wc_events = 'CREATE TABLE ' . self::wc_events_table() . " (
 			id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			session_id      VARCHAR(36)         NOT NULL,
 			event_type      VARCHAR(32)         NOT NULL,
@@ -212,33 +228,28 @@ class RSA_DB {
 
 		update_option( self::OPTION_KEY, self::SCHEMA_VERSION, false );
 
-		// Seed default options if not present
 		self::seed_defaults();
 
-		// Schedule maintenance cron
 		if ( ! wp_next_scheduled( 'rsa_daily_maintenance' ) ) {
 			wp_schedule_event( time(), 'daily', 'rsa_daily_maintenance' );
 		}
 	}
 
-	// ----------------------------------------------------------------
-	// Default option seeding
-
-
-	// ----------------------------------------------------------------
-
+	/**
+	 * Seed default plugin options.
+	 */
 	private static function seed_defaults(): void {
 		$defaults = [
-			'rsa_retention_days'              => 90,
-			'rsa_bot_score_threshold'         => 5,
-			'rsa_remove_data_on_uninstall'    => 0,
-			'rsa_track_protocol_tel'          => 1,
-			'rsa_track_protocol_mailto'       => 1,
-			'rsa_track_protocol_geo'          => 1,
-			'rsa_track_protocol_sms'          => 1,
-			'rsa_track_protocol_download'     => 1,
-			'rsa_click_track_ids'             => '',
-			'rsa_click_track_classes'         => '',
+			'rsa_retention_days'           => 90,
+			'rsa_bot_score_threshold'      => 5,
+			'rsa_remove_data_on_uninstall' => 0,
+			'rsa_track_protocol_tel'       => 1,
+			'rsa_track_protocol_mailto'    => 1,
+			'rsa_track_protocol_geo'       => 1,
+			'rsa_track_protocol_sms'       => 1,
+			'rsa_track_protocol_download'  => 1,
+			'rsa_click_track_ids'          => '',
+			'rsa_click_track_classes'      => '',
 			'rsa_email_digest_enabled'     => 0,
 			'rsa_email_digest_frequency'   => 'weekly',
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
@@ -253,19 +264,15 @@ class RSA_DB {
 		}
 	}
 
-	// ----------------------------------------------------------------
-	// Deactivation
-	// ----------------------------------------------------------------
-
+	/**
+	 * Deactivate the plugin.
+	 */
 	public static function deactivate(): void {
 		wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
 	}
 
-	// ----------------------------------------------------------------
-	// Uninstall (called from uninstall.php)
 	/**
 	 * Purge all analytics data for one specific page path.
-	 * Removes matching rows from events, clicks, and heatmap tables.
 	 *
 	 * @param string $page Exact page path as stored (e.g. '/about/').
 	 * @return int Total rows deleted.
@@ -273,17 +280,17 @@ class RSA_DB {
 	public static function purge_page_data( string $page ): int {
 		global $wpdb;
 		$deleted  = 0;
-		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+		$deleted += (int) $wpdb->delete(
 			$wpdb->prefix . 'rsa_events',
 			[ 'page' => $page ],
 			[ '%s' ]
 		);
-		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+		$deleted += (int) $wpdb->delete(
 			$wpdb->prefix . 'rsa_clicks',
 			[ 'page' => $page ],
 			[ '%s' ]
 		);
-		$deleted += (int) $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- intentional purge
+		$deleted += (int) $wpdb->delete(
 			$wpdb->prefix . 'rsa_heatmap',
 			[ 'page' => $page ],
 			[ '%s' ]
@@ -291,8 +298,9 @@ class RSA_DB {
 		return $deleted;
 	}
 
-	// ----------------------------------------------------------------
-
+	/**
+	 * Remove all plugin data on uninstall if configured.
+	 */
 	public static function maybe_remove_data(): void {
 		if ( ! get_option( 'rsa_remove_data_on_uninstall' ) ) {
 			return;
@@ -300,23 +308,23 @@ class RSA_DB {
 
 		global $wpdb;
 
-		// Drop tables
-		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_events`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
-		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_sessions`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
-		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_clicks`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
-		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
-		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_events`" );
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_sessions`" );
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_clicks`" );
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" );
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" );
 
-		// Remove all plugin options
-		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup
+		$wpdb->query(
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'rsa_%'"
 		);
 	}
 
-	// ----------------------------------------------------------------
-	// Maintenance: prune old rows
-	// ----------------------------------------------------------------
-
+	/**
+	 * Prune old data based on the retention setting.
+	 *
+	 * @param int|null $days Number of days to retain. Defaults to the configured retention.
+	 * @return int Total rows deleted.
+	 */
 	public static function prune_old_data( ?int $days = null ): int {
 		global $wpdb;
 
@@ -324,48 +332,59 @@ class RSA_DB {
 		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
 
-		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
-			"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000", $cutoff
-		) );
+		$result   = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000",
+				$cutoff
+			)
+		);
 		$deleted += (int) $result;
 
-		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
-			"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000", $cutoff
-		) );
+		$result   = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000",
+				$cutoff
+			)
+		);
 		$deleted += (int) $result;
 
-		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
-			"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000", $cutoff
-		) );
+		$result   = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000",
+				$cutoff
+			)
+		);
 		$deleted += (int) $result;
 
-		// Prune heatmap date buckets older than the retention window
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
-		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
-			"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000", $cutoff_date
-		) );
-		$deleted += (int) $result;
+		$result      = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000",
+				$cutoff_date
+			)
+		);
+		$deleted    += (int) $result;
 
-		$result = $wpdb->query( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scheduled maintenance
-			"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000", $cutoff
-		) );
+		$result   = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000",
+				$cutoff
+			)
+		);
 		$deleted += (int) $result;
 
 		return $deleted;
 	}
 
-	// ----------------------------------------------------------------
-	// Heatmap aggregation: rolls up raw clicks into heatmap buckets
-	// Called nightly via cron.
-	// ----------------------------------------------------------------
-
+	/**
+	 * Aggregate raw clicks into heatmap buckets.
+	 */
 	public static function aggregate_heatmap(): void {
 		global $wpdb;
 
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 
-		// Pull yesterday's clicks
-		$rows  = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- nightly maintenance cron; caching a batch aggregation step is inappropriate
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT page, x_pct, y_pct FROM `{$wpdb->prefix}rsa_clicks` WHERE DATE(created_at) = %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL",
 				$yesterday
@@ -377,18 +396,17 @@ class RSA_DB {
 			return;
 		}
 
-		// Bucket into 2% grid for efficient rendering
 		$buckets = [];
 		foreach ( $rows as $row ) {
-			$x   = round( (float) $row['x_pct'] / 2 ) * 2;
-			$y   = round( (float) $row['y_pct'] / 2 ) * 2;
-			$key = $row['page'] . '|' . $x . '|' . $y;
+			$x               = round( (float) $row['x_pct'] / 2 ) * 2;
+			$y               = round( (float) $row['y_pct'] / 2 ) * 2;
+			$key             = $row['page'] . '|' . $x . '|' . $y;
 			$buckets[ $key ] = ( $buckets[ $key ] ?? 0 ) + 1;
 		}
 
 		foreach ( $buckets as $key => $weight ) {
 			[ $page, $x, $y ] = explode( '|', $key, 3 );
-			$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- nightly aggregation cron
+			$wpdb->query(
 				$wpdb->prepare(
 					"INSERT INTO `{$wpdb->prefix}rsa_heatmap` (page, x_pct, y_pct, weight, date_bucket)
 					 VALUES (%s, %f, %f, %d, %s)
@@ -403,13 +421,17 @@ class RSA_DB {
 		}
 	}
 
-	// ----------------------------------------------------------------
-	// Cron handler
-	// ----------------------------------------------------------------
-
+	/**
+	 * Run daily maintenance tasks.
+	 */
 	public static function daily_maintenance(): void {
 		if ( is_multisite() ) {
-			$sites = get_sites( [ 'fields' => 'ids', 'number' => 0 ] );
+			$sites = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => 0,
+				]
+			);
 			foreach ( $sites as $blog_id ) {
 				switch_to_blog( $blog_id );
 				self::prune_old_data();
@@ -422,13 +444,12 @@ class RSA_DB {
 		}
 	}
 
-	// ----------------------------------------------------------------
-	// Hooks for multisite new blog creation
-	// ----------------------------------------------------------------
-
+	/**
+	 * Register cron and multisite hooks.
+	 */
 	public static function register_hooks(): void {
 		add_action( 'rsa_daily_maintenance', [ __CLASS__, 'daily_maintenance' ] );
-		add_action( 'wp_initialize_site',    [ __CLASS__, 'on_new_blog_event' ] );
+		add_action( 'wp_initialize_site', [ __CLASS__, 'on_new_blog_event' ] );
 	}
 
 	public static function on_new_blog_event( $new_site ): void {
@@ -440,5 +461,4 @@ class RSA_DB {
 	}
 }
 
-// Register cron + multisite hooks immediately when this file is loaded
 RSA_DB::register_hooks();
