@@ -204,4 +204,11 @@ See `ROADMAP.md` §6 for the full prioritized list.
 - F6/F7: Fixed tracker `total_time` NULL-coercion bug + optimized to single query ✅
 - F9: 10 unit tests for `rsa_detect_app_env()` covering all env code paths ✅
 - F10: `build.sh` includes env config files in versioned snapshots ✅
-- F13: Snapshot path standardized to `docs/app/v/{version}/` in both `build.sh` and `build-release.yml` ✅
+- F13: Snapshot path standardized to `docs/app/v/{version}/` ✅
+- CI workflow refactoring: 70% reduction, reusable sub-workflows ✅
+- i18n: CLI, templates, and admin strings translated; POT regenerated ✅
+- a11y: 16 form labels, 13 color contrast fixes, keyboard nav ✅
+- Security: capability mismatch, credential exposure, path traversal fixed ✅
+- Plugin Checker: 0 errors on test server ✅
+- Created uninstall.php (was missing) ✅
+- App server architecture DR documentation ✅

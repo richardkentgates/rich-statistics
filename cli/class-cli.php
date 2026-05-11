@@ -427,7 +427,9 @@ class RSA_CLI extends WP_CLI_Command {
 
 		WP_CLI::line( '' );
 		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Revenue', 'rich-statistics' ) . '%n' ) );
+		/* translators: %s: Total orders count */
 		WP_CLI::line( '  ' . sprintf( __( 'Total orders: %s', 'rich-statistics' ), number_format( $data['orders_count'] ?? 0 ) ) );
+		/* translators: %s: Total revenue amount */
 		WP_CLI::line( '  ' . sprintf( __( 'Total revenue: $%s', 'rich-statistics' ), number_format( (float) ( $data['revenue_total'] ?? 0 ), 2 ) ) );
 
 		$viewed = array_slice( $data['top_products_viewed'] ?? [], 0, $limit );
@@ -489,8 +491,10 @@ class RSA_CLI extends WP_CLI_Command {
 			$blog_id = (int) $assoc['blog-id'];
 			if ( get_site( $blog_id ) ) {
 				switch_to_blog( $blog_id );
+				/* translators: %d: Blog ID */
 				WP_CLI::line( sprintf( __( 'Switched to blog %d.', 'rich-statistics' ), $blog_id ) );
 			} else {
+				/* translators: %d: Blog ID */
 				WP_CLI::error( sprintf( __( 'Blog %d not found.', 'rich-statistics' ), $blog_id ) );
 			}
 		}

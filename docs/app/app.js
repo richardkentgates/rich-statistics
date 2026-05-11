@@ -1132,12 +1132,92 @@
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
 			case 'install'    : renderInstall( container );    break;
+			case 'ai-chat'    : renderAiChat( container );    break;
 			default: setLoading( false );
 		}
 	}
 
 	function setLoading( on ) {
 		document.getElementById( 'rsa-loading' ).hidden = ! on;
+	}
+
+	// -----------------------------------------------------------------------
+	// AI Chat
+	// -----------------------------------------------------------------------
+	function renderAiChat( container ) {
+		setLoading( false );
+		var siteUrl = state.siteUrl;
+		var headers = getAuthHeaders( siteUrl + '/wp-json/rsa/v1/ai/query' );
+		headers['Content-Type'] = 'application/json';
+
+		container.innerHTML =
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
+				'<p style="color:#888;font-size:14px;">Ask questions about your analytics in plain English.</p>' +
+				'<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:500px;">' +
+					'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
+					'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:8px;">' +
+						'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics...">' +
+						'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+
+		addAiMessage( 'ai', 'Hello! Ask me anything about your analytics data.' );
+
+		var input = document.getElementById( 'rsa-ai-input' );
+		var sendBtn = document.getElementById( 'rsa-ai-send' );
+
+		function doSend() {
+			var msg = input.value.trim();
+			if ( ! msg ) return;
+			addAiMessage( 'user', msg );
+			input.value = '';
+			sendBtn.disabled = true;
+			sendBtn.textContent = '...';
+
+			fetch( siteUrl + '/wp-json/rsa/v1/ai/query', {
+				method: 'POST',
+				headers: headers,
+				body: JSON.stringify( { question: msg, period: state.period } )
+			})
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( data ) {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				if ( data.ok ) {
+					addAiMessage( 'ai', data.data.answer );
+				} else {
+					addAiMessage( 'ai', 'Error: ' + ( data.error || 'Unknown error' ) );
+				}
+			} )
+			.catch( function () {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				addAiMessage( 'ai', 'Connection error. Please try again.' );
+			} );
+		}
+
+		sendBtn.addEventListener( 'click', doSend );
+		input.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); }
+		} );
+
+		// Focus input when view becomes visible
+		setTimeout( function () { input.focus(); }, 200 );
+	}
+
+	function addAiMessage( who, text ) {
+		var div = document.getElementById( 'rsa-ai-messages' );
+		if ( ! div ) return;
+		var msg = document.createElement( 'div' );
+		msg.style.cssText = 'margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.5;' +
+			( who === 'user'
+				? 'background:#e3f2fd;margin-left:20%;border:1px solid #90caf9;'
+				: 'background:#fff;margin-right:20%;border:1px solid #e0e0e0;box-shadow:0 1px 2px rgba(0,0,0,0.05);' );
+		msg.innerHTML = '<div>' + esc( text ).replace( /\n/g, '<br>' ) + '</div>';
+		div.appendChild( msg );
+		div.scrollTop = div.scrollHeight;
 	}
 
 	// -----------------------------------------------------------------------
