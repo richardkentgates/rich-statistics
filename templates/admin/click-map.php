@@ -8,7 +8,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) {
+if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'Click Tracking', 'rich-statistics' ) );
@@ -66,8 +66,9 @@ $base = admin_url( 'admin.php' );
 			<input type="hidden" name="date_to"   value="<?php echo esc_attr( $date_to ); ?>">
 			<?php endif; ?>
 			<?php $trackable = RSA_Admin::get_trackable_pages(); ?>
-			<select name="page_filter">
-				<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
+		<label for="page_filter" class="screen-reader-text"><?php esc_html_e( 'Filter by page', 'rich-statistics' ); ?></label>
+		<select name="page_filter">
+			<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
 				<?php foreach ( $trackable as $page_path => $label ) : ?>
 				<option value="<?php echo esc_attr( $page_path ); ?>" <?php selected( $page_filter, $page_path ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>

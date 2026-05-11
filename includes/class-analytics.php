@@ -1152,45 +1152,33 @@ class RSA_Analytics {
 
 		switch ( $data_type ) {
 			case 'sessions':
-				$rows    = $wpdb->get_results(
+				$results = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
 						"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
 						$range['start'],
 						$range['end']
 					),
 					ARRAY_A
-				) ? $wpdb->get_results(
-					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
-						"SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
-						$range['start'],
-						$range['end']
-					),
-					ARRAY_A
-				) : array();
+				);
+				$rows    = $results ? $results : array();
 				$headers = array( 'session_id', 'entry_page', 'exit_page', 'pages_viewed', 'total_time', 'browser', 'os', 'language', 'timezone', 'created_at' );
 				break;
 
 			case 'clicks':
-				$rows    = $wpdb->get_results(
+				$results = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
 						"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
 						$range['start'],
 						$range['end']
 					),
 					ARRAY_A
-				) ? $wpdb->get_results(
-					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
-						"SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC",
-						$range['start'],
-						$range['end']
-					),
-					ARRAY_A
-				) : array();
+				);
+				$rows    = $results ? $results : array();
 				$headers = array( 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'matched_rule', 'x_pct', 'y_pct', 'created_at' );
 				break;
 
 			case 'referrers':
-				$rows    = $wpdb->get_results(
+				$results = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
 						"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
 						$range['start'],
@@ -1198,20 +1186,13 @@ class RSA_Analytics {
 						$bt
 					),
 					ARRAY_A
-				) ? $wpdb->get_results(
-					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
-						"SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC",
-						$range['start'],
-						$range['end'],
-						$bt
-					),
-					ARRAY_A
-				) : array();
+				);
+				$rows    = $results ? $results : array();
 				$headers = array( 'referrer_domain', 'pageviews', 'sessions' );
 				break;
 
 			default: // pageviews.
-				$rows    = $wpdb->get_results(
+				$results = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
 						"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
 						$range['start'],
@@ -1219,15 +1200,8 @@ class RSA_Analytics {
 						$bt
 					),
 					ARRAY_A
-				) ? $wpdb->get_results(
-					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export on demand
-						"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC",
-						$range['start'],
-						$range['end'],
-						$bt
-					),
-					ARRAY_A
-				) : array();
+				);
+				$rows    = $results ? $results : array();
 				$headers = array( 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' );
 		}
 
@@ -1293,37 +1267,25 @@ class RSA_Analytics {
 		$range = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
 		$bt    = self::bot_threshold();
 
-		$browsers = $wpdb->get_col(
+		$browser_results = $wpdb->get_col(
 			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
 				"SELECT DISTINCT `browser` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `browser` IS NOT NULL AND `browser` != '' ORDER BY `browser` ASC LIMIT 50",
 				$range['start'],
 				$range['end'],
 				$bt
 			)
-		) ? $wpdb->get_col(
-			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
-				"SELECT DISTINCT `browser` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `browser` IS NOT NULL AND `browser` != '' ORDER BY `browser` ASC LIMIT 50",
-				$range['start'],
-				$range['end'],
-				$bt
-			)
-		) : array();
+		);
+		$browsers        = $browser_results ? $browser_results : array();
 
-		$os = $wpdb->get_col(
+		$os_results = $wpdb->get_col(
 			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
 				"SELECT DISTINCT `os` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `os` IS NOT NULL AND `os` != '' ORDER BY `os` ASC LIMIT 50",
 				$range['start'],
 				$range['end'],
 				$bt
 			)
-		) ? $wpdb->get_col(
-			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time filter options
-				"SELECT DISTINCT `os` FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d AND `os` IS NOT NULL AND `os` != '' ORDER BY `os` ASC LIMIT 50",
-				$range['start'],
-				$range['end'],
-				$bt
-			)
-		) : array();
+		);
+		$os         = $os_results ? $os_results : array();
 
 		// Pages: all public WordPress content — published + non-trash.
 		// Returned as {value, label} objects so the webapp, REST consumers,
@@ -1498,7 +1460,7 @@ class RSA_Analytics {
 		global $wpdb;
 
 		// Union of distinct page paths across all three tables, with per-table counts.
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance query
+		$results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance query
 			"SELECT page,
 				SUM(ev) AS events,
 				SUM(cl) AS clicks,
@@ -1514,23 +1476,8 @@ class RSA_Analytics {
 			ORDER BY events DESC
 			LIMIT 500",
 			ARRAY_A
-		) ? $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance query
-			"SELECT page,
-				SUM(ev) AS events,
-				SUM(cl) AS clicks,
-				SUM(hm) AS heatmap
-			FROM (
-				SELECT page, COUNT(*) AS ev, 0 AS cl, 0 AS hm FROM `{$wpdb->prefix}rsa_events` WHERE page != '' AND page IS NOT NULL GROUP BY page
-				UNION ALL
-				SELECT page, 0, COUNT(*), 0 FROM `{$wpdb->prefix}rsa_clicks` WHERE page != '' AND page IS NOT NULL GROUP BY page
-				UNION ALL
-				SELECT page, 0, 0, SUM(weight) FROM `{$wpdb->prefix}rsa_heatmap` WHERE page != '' AND page IS NOT NULL GROUP BY page
-			) sub
-			GROUP BY page
-			ORDER BY events DESC
-			LIMIT 500",
-			ARRAY_A
-		) : array();
+		);
+		$rows    = $results ? $results : array();
 
 		// Cross-reference DB paths against all non-trash WP content (any post type,
 		// any non-trash status).  Anything NOT in that set is 'unmatched'.
