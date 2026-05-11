@@ -13,7 +13,10 @@
  *   wp rich-stats status
  *   wp rich-stats clicks [--period=30d] [--limit=20] [--page=/] (Premium)
  *   wp rich-stats woocommerce [--period=30d] [--limit=10] (Premium)
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
 
 class RSA_CLI extends WP_CLI_Command {
@@ -22,7 +25,7 @@ class RSA_CLI extends WP_CLI_Command {
 	// overview
 	// ----------------------------------------------------------------
 
- /**
+	/**
 	 * Show key metrics for a period.
 	 *
 	 * ## OPTIONS
@@ -37,6 +40,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 *     wp rich-stats overview --period=7d
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand overview
 	 */
 	public function overview( array $args, array $assoc ): void {
@@ -48,16 +54,16 @@ class RSA_CLI extends WP_CLI_Command {
 
 		$data = RSA_Analytics::get_overview( $period );
 
-		WP_CLI::line( WP_CLI::colorize( "%BSite:%n " . get_bloginfo( 'name' ) ) );
-		WP_CLI::line( WP_CLI::colorize( "%BPeriod:%n " . $period ) );
+		WP_CLI::line( WP_CLI::colorize( '%BSite:%n ' . get_bloginfo( 'name' ) ) );
+		WP_CLI::line( WP_CLI::colorize( '%BPeriod:%n ' . $period ) );
 		WP_CLI::line( '' );
 
 		$items = [
 			[ 'Metric', 'Value' ],
-			[ 'Page Views',    number_format( $data['pageviews'] ) ],
-			[ 'Sessions',      number_format( $data['sessions'] ) ],
-			[ 'Avg Time',      $this->format_seconds( $data['avg_time'] ) ],
-			[ 'Bounce Rate',   $data['bounce_rate'] . '%' ],
+			[ 'Page Views', number_format( $data['pageviews'] ) ],
+			[ 'Sessions', number_format( $data['sessions'] ) ],
+			[ 'Avg Time', $this->format_seconds( $data['avg_time'] ) ],
+			[ 'Bounce Rate', $data['bounce_rate'] . '%' ],
 		];
 		$this->cli_table( $items );
 	}
@@ -76,6 +82,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--limit=<n>]
 	 * : Number of pages to show. Default: 10.
+	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
 	 *
 	 * @subcommand top-pages
 	 */
@@ -115,6 +124,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--period=<period>]
 	 * : Default: 30d.
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand audience
 	 */
 	public function audience( array $args, array $assoc ): void {
@@ -123,7 +135,11 @@ class RSA_CLI extends WP_CLI_Command {
 
 		$data = RSA_Analytics::get_audience( $period );
 
-		foreach ( [ 'os' => 'OS', 'browser' => 'Browser', 'language' => 'Language' ] as $key => $label ) {
+		foreach ( [
+			'os'       => 'OS',
+			'browser'  => 'Browser',
+			'language' => 'Language',
+		] as $key => $label ) {
 			WP_CLI::line( '' );
 			WP_CLI::line( WP_CLI::colorize( "%B{$label}%n" ) );
 			if ( empty( $data[ $key ] ) ) {
@@ -156,6 +172,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--output=<file>]
 	 * : Path to write data. Defaults to stdout.
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand export
 	 */
 	public function export( array $args, array $assoc ): void {
@@ -167,8 +186,8 @@ class RSA_CLI extends WP_CLI_Command {
 		$data = RSA_Analytics::export_events( $period, $format );
 
 		if ( ! empty( $assoc['output'] ) ) {
-			$output = $assoc['output'];
-			$real   = realpath( dirname( $output ) );
+			$output  = $assoc['output'];
+			$real    = realpath( dirname( $output ) );
 			$abspath = realpath( ABSPATH );
 			if ( ! $real || ! $abspath || strpos( $real, $abspath ) !== 0 ) {
 				WP_CLI::error( 'Output path must be within the WordPress directory.' );
@@ -195,6 +214,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--dry-run]
 	 * : Report count without deleting.
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand purge
 	 */
 	public function purge( array $args, array $assoc ): void {
@@ -204,7 +226,7 @@ class RSA_CLI extends WP_CLI_Command {
 
 		if ( $dry_run ) {
 			WP_CLI::line( 'Dry run — no data will be deleted.' );
-			// Just count
+			// Just count.
 			global $wpdb;
 			$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( '-' . ( $days ?? get_option( 'rsa_retention_days', 90 ) ) . ' days' ) );
 			$et     = RSA_DB::events_table();
@@ -229,6 +251,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--recipient=<email>]
 	 * : Override recipient email. Default: site admin.
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand email-test
 	 */
 	public function email_test( array $args, array $assoc ): void {
@@ -237,7 +262,7 @@ class RSA_CLI extends WP_CLI_Command {
 			WP_CLI::error( 'Invalid email address.' );
 		}
 
-		// Temporarily override the recipient option
+		// Temporarily override the recipient option.
 		$original = get_option( 'rsa_email_digest_recipients' );
 		update_option( 'rsa_email_digest_recipients', $recipient );
 
@@ -259,6 +284,9 @@ class RSA_CLI extends WP_CLI_Command {
 	/**
 	 * Show plugin status, options summary, and cron schedule.
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand status
 	 */
 	public function status( array $args, array $assoc ): void {
@@ -267,19 +295,19 @@ class RSA_CLI extends WP_CLI_Command {
 		WP_CLI::line( WP_CLI::colorize( '%BRich Statistics Status%n' ) );
 		WP_CLI::line( '' );
 
-		$next_cron    = wp_next_scheduled( 'rsa_daily_maintenance' );
-		$next_digest  = wp_next_scheduled( 'rsa_send_digest' );
+		$next_cron   = wp_next_scheduled( 'rsa_daily_maintenance' );
+		$next_digest = wp_next_scheduled( 'rsa_send_digest' );
 
 		$items = [
 			[ 'Setting', 'Value' ],
-			[ 'Version',               RSA_VERSION ],
-			[ 'Tier',                  $is_premium ? 'Premium' : 'Free' ],
-			[ 'Retention (days)',      get_option( 'rsa_retention_days', 90 ) ],
-			[ 'Bot threshold',         get_option( 'rsa_bot_score_threshold', 3 ) ],
-			[ 'Email digest enabled',  get_option( 'rsa_email_digest_enabled' ) ? 'Yes' : 'No' ],
-			[ 'Email frequency',       get_option( 'rsa_email_digest_frequency', 'weekly' ) ],
-			[ 'Next maintenance',      $next_cron  ? gmdate( 'Y-m-d H:i T', $next_cron  ) : 'not scheduled' ],
-			[ 'Next digest',           $next_digest ? gmdate( 'Y-m-d H:i T', $next_digest ) : 'not scheduled' ],
+			[ 'Version', RSA_VERSION ],
+			[ 'Tier', $is_premium ? 'Premium' : 'Free' ],
+			[ 'Retention (days)', get_option( 'rsa_retention_days', 90 ) ],
+			[ 'Bot threshold', get_option( 'rsa_bot_score_threshold', 3 ) ],
+			[ 'Email digest enabled', get_option( 'rsa_email_digest_enabled' ) ? 'Yes' : 'No' ],
+			[ 'Email frequency', get_option( 'rsa_email_digest_frequency', 'weekly' ) ],
+			[ 'Next maintenance', $next_cron ? gmdate( 'Y-m-d H:i T', $next_cron ) : 'not scheduled' ],
+			[ 'Next digest', $next_digest ? gmdate( 'Y-m-d H:i T', $next_digest ) : 'not scheduled' ],
 		];
 		$this->cli_table( $items );
 	}
@@ -307,6 +335,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *     wp rich-stats clicks --period=7d
 	 *     wp rich-stats clicks --period=30d --page=/contact/
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand clicks
 	 */
 	public function clicks( array $args, array $assoc ): void {
@@ -329,10 +360,10 @@ class RSA_CLI extends WP_CLI_Command {
 		$items = [ [ 'Protocol', 'Destination', 'Tag', 'Text', 'Clicks' ] ];
 		foreach ( $rows as $r ) {
 			$items[] = [
-				$r['protocol']   ?: '—',
-				$r['href_value'] ?: '—',
+				$r['protocol'] ? $r['protocol'] : '—',
+				$r['href_value'] ? $r['href_value'] : '—',
 				$r['tag'],
-				mb_strimwidth( $r['text'] ?: '—', 0, 40, '…' ),
+				mb_strimwidth( $r['text'] ? $r['text'] : '—', 0, 40, '…' ),
 				number_format( $r['clicks'] ),
 			];
 		}
@@ -359,6 +390,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *     wp rich-stats woocommerce --period=30d
 	 *     wp rich-stats woocommerce --period=7d --limit=5
 	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
 	 * @subcommand woocommerce
 	 */
 	public function woocommerce( array $args, array $assoc ): void {
@@ -374,16 +408,22 @@ class RSA_CLI extends WP_CLI_Command {
 		$this->maybe_switch_blog( $assoc );
 
 		$data   = RSA_Analytics::get_woocommerce( $period );
-		$funnel = $data['funnel'] ?? [ 'views' => 0, 'cart' => 0, 'orders' => 0 ];
+		$funnel = $data['funnel'] ?? [
+			'views'  => 0,
+			'cart'   => 0,
+			'orders' => 0,
+		];
 
 		WP_CLI::line( '' );
 		WP_CLI::line( WP_CLI::colorize( '%BFunnel%n' ) );
-		$this->cli_table( [
-			[ 'Event', 'Count' ],
-			[ 'Product Views', number_format( $funnel['views']  ) ],
-			[ 'Add to Cart',   number_format( $funnel['cart']   ) ],
-			[ 'Orders',        number_format( $funnel['orders'] ) ],
-		] );
+		$this->cli_table(
+			[
+				[ 'Event', 'Count' ],
+				[ 'Product Views', number_format( $funnel['views'] ) ],
+				[ 'Add to Cart', number_format( $funnel['cart'] ) ],
+				[ 'Orders', number_format( $funnel['orders'] ) ],
+			]
+		);
 
 		WP_CLI::line( '' );
 		WP_CLI::line( WP_CLI::colorize( '%BRevenue%n' ) );
@@ -417,15 +457,33 @@ class RSA_CLI extends WP_CLI_Command {
 	// Private helpers
 	// ----------------------------------------------------------------
 
+	/**
+	 * Validate and normalize a period string.
+	 *
+	 * @param string $p The period string to validate.
+	 * @return string Validated period string.
+	 */
 	private function validate_period( string $p ): string {
 		$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ];
 		return in_array( $p, $allowed, true ) ? $p : '30d';
 	}
 
+	/**
+	 * Format seconds into a human-readable duration.
+	 *
+	 * @param int $secs The number of seconds.
+	 * @return string Formatted duration string.
+	 */
 	private function format_seconds( int $secs ): string {
-		return $secs >= 60 ? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's' : $secs . 's';
+		return 60 <= $secs ? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's' : $secs . 's';
 	}
 
+	/**
+	 * Switch to a different blog in multisite if requested.
+	 *
+	 * @param array $assoc Associative array of CLI arguments.
+	 * @return void
+	 */
 	private function maybe_switch_blog( array $assoc ): void {
 		if ( is_multisite() && ! empty( $assoc['blog-id'] ) ) {
 			$blog_id = (int) $assoc['blog-id'];
@@ -438,14 +496,24 @@ class RSA_CLI extends WP_CLI_Command {
 		}
 	}
 
+	/**
+	 * Render a CLI table with headers and rows.
+	 *
+	 * @param array $rows Array of rows, first being the header row.
+	 * @return void
+	 */
 	private function cli_table( array $rows ): void {
-		if ( count( $rows ) < 2 ) {
+		if ( 2 > count( $rows ) ) {
 			return;
 		}
 		$headers = array_shift( $rows );
-		WP_CLI\Utils\format_items( 'table', array_map(
-			fn( $row ) => array_combine( $headers, $row ),
-			$rows
-		), $headers );
+		WP_CLI\Utils\format_items(
+			'table',
+			array_map(
+				fn( $row ) => array_combine( $headers, $row ),
+				$rows
+			),
+			$headers
+		);
 	}
 }

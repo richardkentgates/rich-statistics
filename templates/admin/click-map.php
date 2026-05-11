@@ -3,9 +3,13 @@
  * Premium: Click Tracking template.
  *
  * @fs_premium_only
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
 	RSA_Admin::page_header( __( 'Click Tracking', 'rich-statistics' ) );
 	?>
@@ -23,19 +27,28 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
 $page_filter = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$opts        = RSA_Analytics::get_filter_options( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
+$opts        = RSA_Analytics::get_filter_options(
+	$period,
+	array(
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+	)
+);
 $rows        = RSA_Analytics::get_click_map( $period, $page_filter );
 
 RSA_Admin::page_header( __( 'Click Tracking', 'rich-statistics' ), $period );
@@ -55,13 +68,25 @@ $base = admin_url( 'admin.php' );
 			<?php $trackable = RSA_Admin::get_trackable_pages(); ?>
 			<select name="page_filter">
 				<option value=""><?php esc_html_e( 'All Pages', 'rich-statistics' ); ?></option>
-				<?php foreach ( $trackable as $path => $label ) : ?>
-				<option value="<?php echo esc_attr( $path ); ?>" <?php selected( $page_filter, $path ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php foreach ( $trackable as $page_path => $label ) : ?>
+				<option value="<?php echo esc_attr( $page_path ); ?>" <?php selected( $page_filter, $page_path ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>
 			</select>
 			<button type="submit" class="button"><?php esc_html_e( 'Filter', 'rich-statistics' ); ?></button>
 			<?php if ( $page_filter ) : ?>
-			<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-click-map', 'period' => $period ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
+			<a href="
+				<?php
+				echo esc_url(
+					add_query_arg(
+						array(
+							'page'   => 'rich-statistics-click-map',
+							'period' => $period,
+						),
+						$base
+					)
+				);
+				?>
+						" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 			<?php endif; ?>
 		</form>
 	</div>
@@ -82,11 +107,14 @@ $base = admin_url( 'admin.php' );
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $rows as $i => $row ) :
+			<?php
+			foreach ( $rows as $i => $row ) :
 				// Build a readable element descriptor
 				$el_label = '<code>' . esc_html( $row['tag'] ) . '</code>';
-				if ( $row['id'] )    { $el_label .= ' <code class="rsa-el-id">#' . esc_html( $row['id'] ) . '</code>'; }
-				if ( $row['class'] ) { $el_label .= ' <span class="rsa-el-class">' . esc_html( $row['class'] ) . '</span>'; }
+				if ( $row['id'] ) {
+					$el_label .= ' <code class="rsa-el-id">#' . esc_html( $row['id'] ) . '</code>'; }
+				if ( $row['class'] ) {
+					$el_label .= ' <span class="rsa-el-class">' . esc_html( $row['class'] ) . '</span>'; }
 				// Trigger: what caused this click to be tracked
 				if ( $row['matched_rule'] ) {
 					$trigger = '<code class="rsa-trigger-rule">' . esc_html( $row['matched_rule'] ) . '</code>';
@@ -95,13 +123,33 @@ $base = admin_url( 'admin.php' );
 				} else {
 					$trigger = '—';
 				}
-			?>
+				?>
 			<tr>
 				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
-				<td><?php echo wp_kses( $el_label, [ 'code' => [ 'class' => [] ], 'span' => [ 'class' => [] ] ] ); ?></td>
-				<td><?php echo wp_kses( $trigger, [ 'code' => [ 'class' => [] ], 'span' => [ 'class' => [] ] ] ); ?></td>
-				<td class="rsa-td-text"><?php echo esc_html( $row['href_value'] ?: '—' ); ?></td>
-				<td class="rsa-td-text"><?php echo esc_html( $row['text'] ?: '—' ); ?></td>
+				<td>
+				<?php
+				echo wp_kses(
+					$el_label,
+					array(
+						'code' => array( 'class' => array() ),
+						'span' => array( 'class' => array() ),
+					)
+				);
+				?>
+					</td>
+				<td>
+				<?php
+				echo wp_kses(
+					$trigger,
+					array(
+						'code' => array( 'class' => array() ),
+						'span' => array( 'class' => array() ),
+					)
+				);
+				?>
+					</td>
+				<td class="rsa-td-text"><?php echo esc_html( $row['href_value'] ? $row['href_value'] : '—' ); ?></td>
+				<td class="rsa-td-text"><?php echo esc_html( $row['text'] ? $row['text'] : '—' ); ?></td>
 				<td><strong><?php echo esc_html( number_format( $row['clicks'] ) ); ?></strong></td>
 			</tr>
 			<?php endforeach; ?>

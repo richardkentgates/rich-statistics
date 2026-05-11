@@ -2,6 +2,8 @@
 /**
  * REST API
  *
+ * @package RichStatistics
+ *
  * Namespace    : rsa/v1
  * Auth         : WordPress Application Passwords (core, WP 5.6+)
  *                No custom token system — use a WP user account with
@@ -13,17 +15,24 @@
  * - Rate-limiting on /track mirrors the AJAX handler.
  * - All outputs are wp_json_encode'd via WP_REST_Response; no raw echo.
  */
+
 defined( 'ABSPATH' ) || exit;
 
-// Ensure admin class is loaded for user_can_access_app()
+// Ensure admin class is loaded for user_can_access_app().
 if ( ! class_exists( 'RSA_Admin' ) && file_exists( __DIR__ . '/class-admin.php' ) ) {
 	require_once __DIR__ . '/class-admin.php';
 }
 
+/**
+ * REST API handler class.
+ */
 class RSA_Rest_API {
 
 	const NS = 'rsa/v1';
 
+	/**
+	 * Initialize the REST API.
+	 */
 	public static function init(): void {
 		add_action( 'rest_api_init', [ __CLASS__, 'register_routes' ] );
 		add_action( 'rest_api_init', [ __CLASS__, 'add_cors_headers' ] );
@@ -41,13 +50,16 @@ class RSA_Rest_API {
 	/**
 	 * Clear cookie-auth errors for rsa/v1 requests that carry an Authorization
 	 * header so Application Password authentication is not blocked.
+	 *
+	 * @param mixed $result The authentication result.
+	 * @return mixed Modified authentication result.
 	 */
 	public static function remove_cookie_auth( $result ) {
 		if ( ! is_wp_error( $result ) ) {
 			return $result;
 		}
 		$route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		if ( strpos( $route, '/rsa/v1/' ) === false ) {
+		if ( false === strpos( $route, '/rsa/v1/' ) ) {
 			return $result;
 		}
 		// Only clear the error if the client is actually providing credentials
@@ -91,11 +103,11 @@ class RSA_Rest_API {
 	public static function add_cors_headers(): void {
 		// Only act on our own namespace.
 		$route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		if ( strpos( $route, '/rsa/v1/' ) === false ) {
+		if ( false === strpos( $route, '/rsa/v1/' ) ) {
 			return;
 		}
 
-		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+		$origin  = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
 		$allowed = self::allowed_cors_origins();
 
 		// OPTIONS preflight: answer immediately so WP's serve_request never runs.
@@ -131,10 +143,10 @@ class RSA_Rest_API {
 	 * @return bool|null Unchanged $served value.
 	 */
 	public static function fix_cors_origin( $served, $result, $request, $server ) {
-		if ( strpos( $request->get_route(), '/' . self::NS ) !== 0 ) {
+		if ( 0 !== strpos( $request->get_route(), '/' . self::NS ) ) {
 			return $served;
 		}
-		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+		$origin  = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
 		$allowed = self::allowed_cors_origins();
 		header( 'Vary: Origin' );
 		if ( $origin && in_array( $origin, $allowed, true ) ) {
@@ -147,9 +159,12 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// Route registration
+	// Route registration.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Register REST API routes.
+	 */
 	public static function register_routes(): void {
 		$read_args = [
 			'period' => [
@@ -160,132 +175,431 @@ class RSA_Rest_API {
 			],
 		];
 
-$basic   = [ __CLASS__, 'check_basic_auth' ];
+		$basic   = [ __CLASS__, 'check_basic_auth' ];
 		$premium = [ __CLASS__, 'check_premium_auth' ];
 
-		// AI conversational endpoint (Premium)
-		register_rest_route( self::NS, '/ai/query', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'ai_query' ],
-			'permission_callback' => $premium,
-			'args'                => [
-				'question' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
-				'period'   => $read_args['period'],
-			],
-		] );
-
-		// Free tier endpoints - available to all authenticated users
-		register_rest_route( self::NS, '/overview',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_overview'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/pages',       [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_pages'      ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
-			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
-			'browser'  => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'os'       => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'path'     => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'sort'     => [ 'type' => 'string',  'default' => 'views', 'enum' => [ 'views', 'avg_time' ] ],
-			'sort_dir' => [ 'type' => 'string',  'default' => 'desc',  'enum' => [ 'asc', 'desc' ] ],
-		] ) ] );
-		register_rest_route( self::NS, '/audience',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_audience'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/referrers',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_referrers'  ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
-			'limit'    => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 100 ],
-			'ref_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/behavior',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_behavior'   ], 'permission_callback' => $basic, 'args' => $read_args ] );
-		register_rest_route( self::NS, '/campaigns',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_campaigns' ], 'permission_callback' => $basic, 'args' => array_merge( $read_args, [
-			'limit'  => [ 'type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500 ],
-			'medium' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/filter-options', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_filter_options' ], 'permission_callback' => $basic, 'args' => $read_args ] );
-
-		// Premium-only endpoints
-		register_rest_route( self::NS, '/clicks',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_clicks'    ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
-			'page' => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/heatmap',  [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_heatmap'   ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
-			'page' => [ 'type' => 'string', 'default' => '/', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/export',   [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_export'    ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
-			'format'    => [ 'type' => 'string', 'default' => 'json',      'enum' => [ 'json', 'csv' ] ],
-			'data_type' => [ 'type' => 'string', 'default' => 'pageviews', 'enum' => [ 'pageviews', 'sessions', 'clicks', 'referrers' ] ],
-			'date_from' => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'date_to'   => [ 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-		] ) ] );
-		register_rest_route( self::NS, '/woocommerce', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_woocommerce' ], 'permission_callback' => $premium, 'args' => $read_args ] );
-		$flow_args = array_merge( $read_args, [
-			'entry_source' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'focus_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'min_sessions' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
-			'steps'        => [ 'type' => 'integer', 'default' => 4,  'minimum' => 2, 'maximum' => 5 ],
-		] );
-		register_rest_route( self::NS, '/user-flow',         [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow'         ], 'permission_callback' => $premium, 'args' => $flow_args ] );
-		register_rest_route( self::NS, '/user-flow/journey', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_journey' ], 'permission_callback' => $premium, 'args' => array_merge( $read_args, [
-			'from_page' => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'to_page'   => [ 'type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field' ],
-			'min_count' => [ 'type' => 'integer', 'default' => 1,  'minimum' => 1 ],
-			'limit'     => [ 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 250 ],
-			'sort'      => [ 'type' => 'string',  'default' => 'count', 'sanitize_callback' => 'sanitize_text_field' ],
-			'sort_dir'  => [ 'type' => 'string',  'default' => 'desc',  'enum' => [ 'asc', 'desc' ] ],
-		] ) ] );
-		register_rest_route( self::NS, '/user-flow/sources', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_user_flow_sources' ], 'permission_callback' => $premium, 'args' => $read_args ] );
-
-		register_rest_route( self::NS, '/purge-page', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'purge_page' ],
-			'permission_callback' => $premium,
-			'args'                => [
-				'page' => [ 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
-			],
-		] );
-
-// Plugin info — public, no auth required (version badge + version sync for the PWA)
-		register_rest_route( self::NS, '/info', [ 'methods' => 'GET', 'callback' => [ __CLASS__, 'get_info' ], 'permission_callback' => '__return_true' ] );
-
-		// User settings — syncs the site list across devices (metadata only, no credentials)
-		register_rest_route( self::NS, '/user-settings', [
-			[
-				'methods'             => 'GET',
-				'callback'            => [ __CLASS__, 'get_user_settings' ],
-				'permission_callback' => $basic,
-			],
+		// AI conversational endpoint (Premium).
+		register_rest_route(
+			self::NS,
+			'/ai/query',
 			[
 				'methods'             => 'POST',
-				'callback'            => [ __CLASS__, 'post_user_settings' ],
-				'permission_callback' => $basic,
+				'callback'            => [ __CLASS__, 'ai_query' ],
+				'permission_callback' => $premium,
 				'args'                => [
-					'sites' => [ 'type' => 'array', 'required' => true ],
+					'question' => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'period'   => $read_args['period'],
 				],
-			],
-		] );
+			]
+		);
 
-		// Ingest endpoint — public (no auth), nonce verified inside
-		register_rest_route( self::NS, '/track', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'post_track' ],
-			'permission_callback' => '__return_true',
-		] );
+		// Free tier endpoints - available to all authenticated users.
+		register_rest_route(
+			self::NS,
+			'/overview',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_overview' ],
+				'permission_callback' => $basic,
+				'args'                => $read_args,
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/pages',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_pages' ],
+				'permission_callback' => $basic,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'limit'    => [
+							'type'    => 'integer',
+							'default' => 100,
+							'minimum' => 1,
+							'maximum' => 100,
+						],
+						'browser'  => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'os'       => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'path'     => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'sort'     => [
+							'type'    => 'string',
+							'default' => 'views',
+							'enum'    => [ 'views', 'avg_time' ],
+						],
+						'sort_dir' => [
+							'type'    => 'string',
+							'default' => 'desc',
+							'enum'    => [ 'asc', 'desc' ],
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/audience',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_audience' ],
+				'permission_callback' => $basic,
+				'args'                => $read_args,
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/referrers',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_referrers' ],
+				'permission_callback' => $basic,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'limit'    => [
+							'type'    => 'integer',
+							'default' => 100,
+							'minimum' => 1,
+							'maximum' => 100,
+						],
+						'ref_page' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/behavior',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_behavior' ],
+				'permission_callback' => $basic,
+				'args'                => $read_args,
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/campaigns',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_campaigns' ],
+				'permission_callback' => $basic,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'limit'  => [
+							'type'    => 'integer',
+							'default' => 100,
+							'minimum' => 1,
+							'maximum' => 500,
+						],
+						'medium' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/filter-options',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_filter_options' ],
+				'permission_callback' => $basic,
+				'args'                => $read_args,
+			]
+		);
 
-
-
-		// OTP site-pairing — public, single-use, rate-limited per IP
-		register_rest_route( self::NS, '/verify-otp', [
-			'methods'             => 'POST',
-			'callback'            => [ __CLASS__, 'post_verify_otp' ],
-			'permission_callback' => '__return_true',
-			'args'                => [
-				'otp' => [
+		// Premium-only endpoints.
+		register_rest_route(
+			self::NS,
+			'/clicks',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_clicks' ],
+				'permission_callback' => $premium,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'page' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/heatmap',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_heatmap' ],
+				'permission_callback' => $premium,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'page' => [
+							'type'              => 'string',
+							'default'           => '/',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/export',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_export' ],
+				'permission_callback' => $premium,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'format'    => [
+							'type'    => 'string',
+							'default' => 'json',
+							'enum'    => [ 'json', 'csv' ],
+						],
+						'data_type' => [
+							'type'    => 'string',
+							'default' => 'pageviews',
+							'enum'    => [ 'pageviews', 'sessions', 'clicks', 'referrers' ],
+						],
+						'date_from' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'date_to'   => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/woocommerce',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_woocommerce' ],
+				'permission_callback' => $premium,
+				'args'                => $read_args,
+			]
+		);
+		$flow_args = array_merge(
+			$read_args,
+			[
+				'entry_source' => [
 					'type'              => 'string',
-					'required'          => true,
+					'default'           => '',
 					'sanitize_callback' => 'sanitize_text_field',
 				],
-			],
-		] );
+				'focus_page'   => [
+					'type'              => 'string',
+					'default'           => '',
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+				'min_sessions' => [
+					'type'    => 'integer',
+					'default' => 1,
+					'minimum' => 1,
+				],
+				'steps'        => [
+					'type'    => 'integer',
+					'default' => 4,
+					'minimum' => 2,
+					'maximum' => 5,
+				],
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/user-flow',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_user_flow' ],
+				'permission_callback' => $premium,
+				'args'                => $flow_args,
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/user-flow/journey',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_user_flow_journey' ],
+				'permission_callback' => $premium,
+				'args'                => array_merge(
+					$read_args,
+					[
+						'from_page' => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'to_page'   => [
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'min_count' => [
+							'type'    => 'integer',
+							'default' => 1,
+							'minimum' => 1,
+						],
+						'limit'     => [
+							'type'    => 'integer',
+							'default' => 50,
+							'minimum' => 1,
+							'maximum' => 250,
+						],
+						'sort'      => [
+							'type'              => 'string',
+							'default'           => 'count',
+							'sanitize_callback' => 'sanitize_text_field',
+						],
+						'sort_dir'  => [
+							'type'    => 'string',
+							'default' => 'desc',
+							'enum'    => [ 'asc', 'desc' ],
+						],
+					]
+				),
+			]
+		);
+		register_rest_route(
+			self::NS,
+			'/user-flow/sources',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_user_flow_sources' ],
+				'permission_callback' => $premium,
+				'args'                => $read_args,
+			]
+		);
+
+		register_rest_route(
+			self::NS,
+			'/purge-page',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'purge_page' ],
+				'permission_callback' => $premium,
+				'args'                => [
+					'page' => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+				],
+			]
+		);
+
+		// Plugin info — public, no auth required (version badge + version sync for the PWA).
+		register_rest_route(
+			self::NS,
+			'/info',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ __CLASS__, 'get_info' ],
+				'permission_callback' => '__return_true',
+			]
+		);
+
+		// User settings — syncs the site list across devices (metadata only, no credentials).
+		register_rest_route(
+			self::NS,
+			'/user-settings',
+			[
+				[
+					'methods'             => 'GET',
+					'callback'            => [ __CLASS__, 'get_user_settings' ],
+					'permission_callback' => $basic,
+				],
+				[
+					'methods'             => 'POST',
+					'callback'            => [ __CLASS__, 'post_user_settings' ],
+					'permission_callback' => $basic,
+					'args'                => [
+						'sites' => [
+							'type'     => 'array',
+							'required' => true,
+						],
+					],
+				],
+			]
+		);
+
+		// Ingest endpoint — public (no auth), nonce verified inside.
+		register_rest_route(
+			self::NS,
+			'/track',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'post_track' ],
+				'permission_callback' => '__return_true',
+			]
+		);
+
+		// OTP site-pairing — public, single-use, rate-limited per IP.
+		register_rest_route(
+			self::NS,
+			'/verify-otp',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'post_verify_otp' ],
+				'permission_callback' => '__return_true',
+				'args'                => [
+					'otp' => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+				],
+			]
+		);
 	}
 
 	// ----------------------------------------------------------------
-	// Permission callbacks
+	// Permission callbacks.
 	// ----------------------------------------------------------------
 
 	/**
 	 * Basic auth - available to all authenticated users (free tier)
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public static function check_basic_auth( WP_REST_Request $request ): bool|WP_Error {
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
@@ -307,9 +621,12 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 
 	/**
 	 * Premium auth - requires active premium licence
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
 	 */
 	public static function check_premium_auth( WP_REST_Request $request ): bool|WP_Error {
-		// Freemius premium gate — gated features require active premium licence
+		// Freemius premium gate — gated features require active premium licence.
 		if ( function_exists( 'rs_fs' ) && ! rs_fs()->can_use_premium_code__premium_only() ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -335,31 +652,49 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 	}
 
 	// ----------------------------------------------------------------
-	// Plugin info (public)
+	// Plugin info (public).
 	// ----------------------------------------------------------------
 
+	/**
+	 * Get plugin info.
+	 *
+	 * @return WP_REST_Response
+	 */
 	public static function get_info(): WP_REST_Response {
-		return self::ok( [
-			'version'         => RSA_VERSION,
-			'app_version'     => RSA_APP_VERSION,
-			'min_app_version' => RSA_MIN_APP_VERSION,
-			'app_url'         => RSA_APP_URL,
-			'env'             => RSA_APP_ENV,
-			'site_name'       => get_bloginfo( 'name' ),
-			'site_url'        => get_site_url(),
-		] );
+		return self::ok(
+			[
+				'version'         => RSA_VERSION,
+				'app_version'     => RSA_APP_VERSION,
+				'min_app_version' => RSA_MIN_APP_VERSION,
+				'app_url'         => RSA_APP_URL,
+				'env'             => RSA_APP_ENV,
+				'site_name'       => get_bloginfo( 'name' ),
+				'site_url'        => get_site_url(),
+			]
+		);
 	}
 
 	// ----------------------------------------------------------------
-	// User settings (site list sync — metadata only, no credentials)
+	// User settings (site list sync — metadata only, no credentials).
 	// ----------------------------------------------------------------
 
+	/**
+	 * Get user settings.
+	 *
+	 * @return WP_REST_Response
+	 */
 	public static function get_user_settings(): WP_REST_Response {
 		$user_id = get_current_user_id();
 		$sites   = get_user_meta( $user_id, 'rsa_app_sites', true );
 		return self::ok( [ 'sites' => is_array( $sites ) ? $sites : [] ] );
 	}
 
+	/**
+	 * Save user settings.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function post_user_settings( WP_REST_Request $r ): WP_REST_Response|WP_Error {
 		$user_id = get_current_user_id();
 		$raw     = $r->get_param( 'sites' );
@@ -372,10 +707,10 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		$sanitized = array_map(
 			function ( $site ) {
 				return [
-					'id'      => sanitize_text_field( (string) ( $site['id']      ?? '' ) ),
-					'label'   => sanitize_text_field( (string) ( $site['label']   ?? '' ) ),
-					'siteUrl' => esc_url_raw(          (string) ( $site['siteUrl'] ?? '' ) ),
-					'appUrl'  => esc_url_raw(          (string) ( $site['appUrl']  ?? '' ) ),
+					'id'      => sanitize_text_field( (string) ( $site['id'] ?? '' ) ),
+					'label'   => sanitize_text_field( (string) ( $site['label'] ?? '' ) ),
+					'siteUrl' => esc_url_raw( (string) ( $site['siteUrl'] ?? '' ) ),
+					'appUrl'  => esc_url_raw( (string) ( $site['appUrl'] ?? '' ) ),
 				];
 			},
 			$raw
@@ -386,78 +721,146 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 	}
 
 	// ----------------------------------------------------------------
-	// Read endpoints
+	// Read endpoints.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Get overview data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_overview( WP_REST_Request $r ): WP_REST_Response {
 		return self::ok( RSA_Analytics::get_overview( $r['period'] ) );
 	}
 
+	/**
+	 * Get pages data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_pages( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [
-			'browser'  => (string) ( $r['browser']  ?? '' ),
-			'os'       => (string) ( $r['os']       ?? '' ),
-			'page'     => (string) ( $r['path']     ?? '' ),
-			'sort'     => (string) ( $r['sort']     ?? 'views' ),
+			'browser'  => (string) ( $r['browser'] ?? '' ),
+			'os'       => (string) ( $r['os'] ?? '' ),
+			'page'     => (string) ( $r['path'] ?? '' ),
+			'sort'     => (string) ( $r['sort'] ?? 'views' ),
 			'sort_dir' => (string) ( $r['sort_dir'] ?? 'desc' ),
 		];
 		return self::ok( [ 'pages' => RSA_Analytics::get_top_pages( $r['period'], (int) $r['limit'], $filters ) ] );
 	}
 
+	/**
+	 * Get audience data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_audience( WP_REST_Request $r ): WP_REST_Response {
 		$d = RSA_Analytics::get_audience( $r['period'] );
-		return self::ok( [
-			'by_os'       => $d['os'],
-			'by_browser'  => $d['browser'],
-			'by_viewport' => $d['viewport'],
-			'by_language' => $d['language'],
-			'by_timezone' => $d['timezone'],
-		] );
+		return self::ok(
+			[
+				'by_os'       => $d['os'],
+				'by_browser'  => $d['browser'],
+				'by_viewport' => $d['viewport'],
+				'by_language' => $d['language'],
+				'by_timezone' => $d['timezone'],
+			]
+		);
 	}
 
+	/**
+	 * Get referrers data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_referrers( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [ 'page' => (string) ( $r['ref_page'] ?? '' ) ];
-		$rows = RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'], $filters );
-		return self::ok( [ 'referrers' => array_map( fn( $row ) => [
-			'domain'    => $row['domain'],
-			'pageviews' => $row['visits'],
-			'top_page'  => $row['top_page'],
-		], $rows ) ] );
+		$rows    = RSA_Analytics::get_referrers( $r['period'], (int) $r['limit'], $filters );
+		return self::ok(
+			[
+				'referrers' => array_map(
+					fn( $row ) => [
+						'domain'    => $row['domain'],
+						'pageviews' => $row['visits'],
+						'top_page'  => $row['top_page'],
+					],
+					$rows
+				),
+			]
+		);
 	}
 
+	/**
+	 * Get behavior data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_behavior( WP_REST_Request $r ): WP_REST_Response {
 		return self::ok( RSA_Analytics::get_behavior( $r['period'] ) );
 	}
 
+	/**
+	 * Get clicks data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_clicks( WP_REST_Request $r ): WP_REST_Response {
 		$rows = RSA_Analytics::get_click_map( $r['period'], $r['page'] );
-		return self::ok( [ 'clicks' => array_map( fn( $row ) => [
-			'href_protocol' => $row['protocol'],
-			'element_tag'   => $row['tag'],
-			'element_text'  => $row['text'],
-			'href_value'    => $row['href_value'],
-			'count'         => $row['clicks'],
-		], $rows ) ] );
+		return self::ok(
+			[
+				'clicks' => array_map(
+					fn( $row ) => [
+						'href_protocol' => $row['protocol'],
+						'element_tag'   => $row['tag'],
+						'element_text'  => $row['text'],
+						'href_value'    => $row['href_value'],
+						'count'         => $row['clicks'],
+					],
+					$rows
+				),
+			]
+		);
 	}
 
+	/**
+	 * Get heatmap data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_heatmap( WP_REST_Request $r ): WP_REST_Response {
 		$date_from = (string) ( $r['date_from'] ?? '' );
-		$date_to   = (string) ( $r['date_to']   ?? '' );
-		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
-		if ( $date_to   && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
-		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ?: '/', $r['period'], $date_from, $date_to ) );
+		$date_to   = (string) ( $r['date_to'] ?? '' );
+		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+			$date_from = ''; }
+		if ( $date_to && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+			$date_to = ''; }
+		return self::ok( RSA_Analytics::get_heatmap( $r['page'] ? $r['page'] : '/', $r['period'], $date_from, $date_to ) );
 	}
 
+	/**
+	 * Get export data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_export( WP_REST_Request $r ): WP_REST_Response {
 		$format    = $r['format'];
 		$period    = $r['period'];
 		$data_type = (string) ( $r['data_type'] ?? 'pageviews' );
 		$date_from = (string) ( $r['date_from'] ?? '' );
-		$date_to   = (string) ( $r['date_to']   ?? '' );
+		$date_to   = (string) ( $r['date_to'] ?? '' );
 
-		// Validate custom date formats
-		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = ''; }
-		if ( $date_to   && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to   ) ) { $date_to   = ''; }
+		// Validate custom date formats.
+		if ( $date_from && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+			$date_from = ''; }
+		if ( $date_to && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+			$date_to = ''; }
 
 		$data = RSA_Analytics::export_data( $data_type, $period, $format, $date_from, $date_to );
 
@@ -484,22 +887,51 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		return self::ok( json_decode( $data, true ) );
 	}
 
+	/**
+	 * Get filter options.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_filter_options( WP_REST_Request $r ): WP_REST_Response {
 		return self::ok( RSA_Analytics::get_filter_options( $r['period'] ) );
 	}
 
+	/**
+	 * Purge page data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function purge_page( WP_REST_Request $r ): WP_REST_Response {
 		$page    = $r->get_param( 'page' );
 		$deleted = RSA_DB::purge_page_data( $page );
-		return self::ok( [ 'deleted' => $deleted, 'page' => $page ] );
+		return self::ok(
+			[
+				'deleted' => $deleted,
+				'page'    => $page,
+			]
+		);
 	}
 
+	/**
+	 * Get campaigns data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_campaigns( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [ 'medium' => (string) ( $r['medium'] ?? '' ) ];
 		$rows    = RSA_Analytics::get_campaigns( $r['period'], (int) $r['limit'], $filters );
 		return self::ok( [ 'campaigns' => $rows ] );
 	}
 
+	/**
+	 * Get WooCommerce data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_woocommerce( WP_REST_Request $r ): WP_REST_Response {
 		$active = class_exists( 'WooCommerce' );
 		if ( ! $active ) {
@@ -509,42 +941,60 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		return self::ok( array_merge( [ 'woocommerce_active' => true ], $data ) );
 	}
 
+	/**
+	 * Get user flow data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [
 			'entry_source' => (string) ( $r['entry_source'] ?? '' ),
-			'focus_page'   => (string) ( $r['focus_page']   ?? '' ),
-			'min_sessions' => (int)    ( $r['min_sessions'] ?? 1  ),
-			'steps'        => (int)    ( $r['steps']        ?? 4  ),
-			'date_from'    => (string) ( $r['date_from']    ?? '' ),
-			'date_to'      => (string) ( $r['date_to']      ?? '' ),
+			'focus_page'   => (string) ( $r['focus_page'] ?? '' ),
+			'min_sessions' => (int) ( $r['min_sessions'] ?? 1 ),
+			'steps'        => (int) ( $r['steps'] ?? 4 ),
+			'date_from'    => (string) ( $r['date_from'] ?? '' ),
+			'date_to'      => (string) ( $r['date_to'] ?? '' ),
 		];
 		return self::ok( RSA_Analytics::get_path_flow( $r['period'], $filters ) );
 	}
 
+	/**
+	 * Get user flow journey data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_user_flow_journey( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [
 			'from_page' => (string) ( $r['from_page'] ?? '' ),
-			'to_page'   => (string) ( $r['to_page']   ?? '' ),
-			'min_count' => (int)    ( $r['min_count'] ?? 1  ),
-			'limit'     => (int)    ( $r['limit']     ?? 50 ),
-			'sort'      => (string) ( $r['sort']      ?? 'count' ),
-			'sort_dir'  => (string) ( $r['sort_dir']  ?? 'desc'  ),
+			'to_page'   => (string) ( $r['to_page'] ?? '' ),
+			'min_count' => (int) ( $r['min_count'] ?? 1 ),
+			'limit'     => (int) ( $r['limit'] ?? 50 ),
+			'sort'      => (string) ( $r['sort'] ?? 'count' ),
+			'sort_dir'  => (string) ( $r['sort_dir'] ?? 'desc' ),
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
-			'date_to'   => (string) ( $r['date_to']   ?? '' ),
+			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
 		return self::ok( [ 'rows' => RSA_Analytics::get_user_flow( $r['period'], $filters ) ] );
 	}
 
+	/**
+	 * Get user flow sources data.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_user_flow_sources( WP_REST_Request $r ): WP_REST_Response {
 		$filters = [
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
-			'date_to'   => (string) ( $r['date_to']   ?? '' ),
+			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
 		return self::ok( [ 'sources' => RSA_Analytics::get_entry_sources( $r['period'], $filters ) ] );
 	}
 
 	// ----------------------------------------------------------------
-	// OTP site-pairing  (POST /rsa/v1/verify-otp — public, rate-limited)
+	// OTP site-pairing  (POST /rsa/v1/verify-otp — public, rate-limited).
 	// ----------------------------------------------------------------
 
 	/**
@@ -556,21 +1006,24 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 	 *   - Per-IP rate-limiting caps incorrect attempts at 5 per 5 minutes.
 	 *   - The OTP is single-use: consumed (deleted) on first successful call.
 	 *   - On success the IP fail-counter is reset.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function post_verify_otp( WP_REST_Request $r ): WP_REST_Response|WP_Error {
-		// Accept digits only; strip spaces/dashes the user may have typed
+		// Accept digits only; strip spaces/dashes the user may have typed.
 		$otp = preg_replace( '/\D/', '', (string) $r['otp'] );
 
-		if ( strlen( $otp ) !== 6 ) {
+		if ( 6 !== strlen( $otp ) ) {
 			return new WP_Error( 'invalid_otp', __( 'Invalid code format. Please enter the 6-digit code from your profile page.', 'rich-statistics' ), [ 'status' => 400 ] );
 		}
 
-		// Per-IP rate-limit — max 5 wrong attempts per 5-minute window
+		// Per-IP rate-limit — max 5 wrong attempts per 5-minute window.
 		$ip_raw = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$ip_key = 'rsa_otp_fail_' . hash( 'sha256', $ip_raw );
 		$fails  = (int) get_transient( $ip_key );
 
-		if ( $fails >= 5 ) {
+		if ( 5 <= $fails ) {
 			return new WP_Error(
 				'too_many_attempts',
 				__( 'Too many incorrect attempts. Please wait a few minutes before trying again.', 'rich-statistics' ),
@@ -581,40 +1034,54 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 		$data = get_transient( 'rsa_otp_' . hash( 'sha256', $otp ) );
 
 		if ( ! $data || ! is_array( $data ) ) {
-			// Increment fail counter; 5-minute window resets automatically
+			// Increment fail counter; 5-minute window resets automatically.
 			set_transient( $ip_key, $fails + 1, 5 * MINUTE_IN_SECONDS );
 			return new WP_Error( 'invalid_otp', __( 'Invalid or expired code.', 'rich-statistics' ), [ 'status' => 403 ] );
 		}
 
-		// Valid — consume (single-use) and reset IP fail counter
+		// Valid — consume (single-use) and reset IP fail counter.
 		delete_transient( 'rsa_otp_' . hash( 'sha256', $otp ) );
 		delete_transient( $ip_key );
 
-		return self::ok( [
-			'verified'   => true,
-			'username'   => (string) $data['username'],
-			'site_label' => (string) $data['site_label'],
-			'site_url'   => (string) $data['site_url'],
-		] );
+		return self::ok(
+			[
+				'verified'   => true,
+				'username'   => (string) $data['username'],
+				'site_label' => (string) $data['site_label'],
+				'site_url'   => (string) $data['site_url'],
+			]
+		);
 	}
 
 	// ----------------------------------------------------------------
-	// Ingest endpoint (mirrors the AJAX handler but via REST)
+	// Ingest endpoint (mirrors the AJAX handler but via REST).
 	// ----------------------------------------------------------------
 
+	/**
+	 * Track pageview.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function post_track( WP_REST_Request $r ): WP_REST_Response {
 		// Save and restore $_POST to avoid polluting global state.
-		$saved_post = $_POST;
-		$_POST  = $r->get_params();
+		$saved_post                = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
+		$_POST                     = $r->get_params();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
-		// Verify nonce manually (passed as 'nonce' param)
+		// Verify nonce manually (passed as 'nonce' param).
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'rsa_track' ) ) {
 			$_POST = $saved_post;
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'invalid_nonce' ], 403 );
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'invalid_nonce',
+				],
+				403
+			);
 		}
 
-		// Delegate to the tracker's handle_ingest — capture wp_send_json call
+		// Delegate to the tracker's handle_ingest — capture wp_send_json call.
 		add_filter( 'wp_doing_ajax', '__return_true' );
 		ob_start();
 		RSA_Tracker::handle_ingest();
@@ -626,33 +1093,50 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 	}
 
 	// ----------------------------------------------------------------
-	// AI conversational endpoint (BYOK + Local LLM support)
+	// AI conversational endpoint (BYOK + Local LLM support).
 	// ----------------------------------------------------------------
 
 	/**
+	 * AI query endpoint.
+	 *
 	 * @fs_premium_only
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
 	 */
 	public static function ai_query( WP_REST_Request $r ): WP_REST_Response {
 		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'Premium feature' ], 403 );
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'Premium feature',
+				],
+				403
+			);
 		}
 
 		$question = sanitize_text_field( $r->get_param( 'question' ) );
-		$period   = $r->get_param( 'period' ) ?: '30d';
+		$period   = $r->get_param( 'period' ) ? $r->get_param( 'period' ) : '30d';
 
-		// Get AI configuration
+		// Get AI configuration.
 		$provider = get_option( 'rsa_ai_provider', 'openai' ); // 'openai' or 'custom'
 		$api_key  = get_option( 'rsa_ai_api_key', '' );
 		$endpoint = get_option( 'rsa_ai_endpoint', 'https://api.openai.com/v1/chat/completions' );
 		$model    = get_option( 'rsa_ai_model', 'gpt-4o-mini' );
 
-		// For custom/local endpoints, key might not be required (local Ollama)
-		if ( $provider === 'openai' && empty( $api_key ) ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI API key not configured' ], 400 );
+		// For custom/local endpoints, key might not be required (local Ollama).
+		if ( 'openai' === $provider && empty( $api_key ) ) {
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'AI API key not configured',
+				],
+				400
+			);
 		}
 
-		// Gather relevant data (privacy: only aggregate data, no PII)
-		$data = [];
+		// Gather relevant data (privacy: only aggregate data, no PII).
+		$data           = [];
 		$question_lower = strtolower( $question );
 
 		if ( str_contains( $question_lower, 'overview' ) || str_contains( $question_lower, 'summary' ) || str_contains( $question_lower, 'total' ) ) {
@@ -677,83 +1161,124 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 			$data['user_flow'] = self::strip_pii( RSA_Analytics::get_user_flow( $period ) );
 		}
 
-		// Build privacy-safe context for AI
-		$system_prompt = "You are a privacy-first analytics assistant. " .
+		// Build privacy-safe context for AI.
+		$system_prompt = 'You are a privacy-first analytics assistant. ' .
 			"Answer the user's question based on the provided aggregate data only. " .
 			"Never invent numbers. Be concise and conversational.\n\n" .
 			"Data:\n" . wp_json_encode( $data, JSON_PRETTY_PRINT );
 
-		// Build request body (OpenAI-compatible format for local LLMs)
+		// Build request body (OpenAI-compatible format for local LLMs).
 		$body = [
-			'model'    => $model,
-			'messages' => [
-				[ 'role' => 'system', 'content' => $system_prompt ],
-				[ 'role' => 'user', 'content' => $question ],
+			'model'      => $model,
+			'messages'   => [
+				[
+					'role'    => 'system',
+					'content' => $system_prompt,
+				],
+				[
+					'role'    => 'user',
+					'content' => $question,
+				],
 			],
 			'max_tokens' => 500,
 		];
 
-		// Add API key header only if provided (local LLMs don't need it)
+		// Add API key header only if provided (local LLMs don't need it).
 		$headers = [ 'Content-Type' => 'application/json' ];
 		if ( ! empty( $api_key ) ) {
 			$headers['Authorization'] = 'Bearer ' . $api_key;
 		}
 
-		// Call AI API
-		$response = wp_remote_post( $endpoint, [
-			'headers' => $headers,
-			'body'    => wp_json_encode( $body ),
-			'timeout' => 30,
-		] );
+		// Call AI API.
+		$response = wp_remote_post(
+			$endpoint,
+			[
+				'headers' => $headers,
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 30,
+			]
+		);
 
 		if ( is_wp_error( $response ) ) {
 			error_log( 'RSA AI error: ' . $response->get_error_message() );
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed.' ], 500 );
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'AI request failed.',
+				],
+				500
+			);
 		}
 
 		$status = wp_remote_retrieve_response_code( $response );
-		if ( $status !== 200 ) {
+		if ( 200 !== $status ) {
 			error_log( 'RSA AI API HTTP ' . $status . ': ' . wp_remote_retrieve_body( $response ) );
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'AI request failed.' ], 500 );
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'AI request failed.',
+				],
+				500
+			);
 		}
 
 		$body   = json_decode( wp_remote_retrieve_body( $response ), true );
 		$answer = $body['choices'][0]['message']['content'] ?? 'Unable to generate response.';
 
-		return self::ok( [
-			'question'  => $question,
-			'answer'    => $answer,
-			'provider'  => $provider,
-			'model'     => $model,
-		] );
+		return self::ok(
+			[
+				'question' => $question,
+				'answer'   => $answer,
+				'provider' => $provider,
+				'model'    => $model,
+			]
+		);
 	}
 
 	/**
 	 * Strip PII from data before sending to AI
+	 *
+	 * @param array $data Data to strip.
+	 * @return array
 	 */
 	private static function strip_pii( array $data ): array {
-		array_walk_recursive( $data, function ( &$value, $key ) {
-			// Remove any email-like strings
-			if ( is_string( $value ) && filter_var( $value, FILTER_VALIDATE_EMAIL ) ) {
-				$value = '[email-redacted]';
+		array_walk_recursive(
+			$data,
+			function ( &$value, $key ) {
+				// Remove any email-like strings.
+				if ( is_string( $value ) && filter_var( $value, FILTER_VALIDATE_EMAIL ) ) {
+					$value = '[email-redacted]';
+				}
+				// Truncate session IDs (first 8 chars only).
+				if ( is_string( $value ) && 32 === strlen( $value ) && ctype_xdigit( $value ) ) {
+					$value = substr( $value, 0, 8 ) . '...';
+				}
+				// Remove IP-like strings.
+				if ( is_string( $value ) && preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $value ) ) {
+					$value = '[ip-redacted]';
+				}
 			}
-			// Truncate session IDs (first 8 chars only)
-			if ( is_string( $value ) && strlen( $value ) === 32 && ctype_xdigit( $value ) ) {
-				$value = substr( $value, 0, 8 ) . '...';
-			}
-			// Remove IP-like strings
-			if ( is_string( $value ) && preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $value ) ) {
-				$value = '[ip-redacted]';
-			}
-		} );
+		);
 		return $data;
 	}
 
 	// ----------------------------------------------------------------
-	// Private helpers
+	// Private helpers.
 	// ----------------------------------------------------------------
 
+	/**
+	 * Return a standard OK response.
+	 *
+	 * @param mixed $data Response data.
+	 * @return WP_REST_Response
+	 */
 	private static function ok( mixed $data ): WP_REST_Response {
-		return new WP_REST_Response( [ 'ok' => true, 'data' => $data ], 200 );
+		return new WP_REST_Response(
+			[
+				'ok'   => true,
+				'data' => $data,
+			],
+			200
+		);
 	}
 }

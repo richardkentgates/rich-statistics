@@ -4,7 +4,6 @@
  *
  * @package RichStatistics\Tests
  */
-
 class DbMaintenanceTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
@@ -20,38 +19,52 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 
 	private function insert_event( string $session_id, string $page, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
+		$created_at = $created_at ? $created_at : gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_events',
-			[ 'session_id' => $session_id, 'page' => $page, 'bot_score' => 0, 'created_at' => $created_at ],
-			[ '%s', '%s', '%d', '%s' ]
+			array(
+				'session_id' => $session_id,
+				'page'       => $page,
+				'bot_score'  => 0,
+				'created_at' => $created_at,
+			),
+			array( '%s', '%s', '%d', '%s' )
 		);
 	}
 
 	private function insert_session( string $session_id, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
+		$created_at = $created_at ? $created_at : gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_sessions',
-			[ 'session_id' => $session_id, 'entry_page' => '/', 'created_at' => $created_at ],
-			[ '%s', '%s', '%s' ]
+			array(
+				'session_id' => $session_id,
+				'entry_page' => '/',
+				'created_at' => $created_at,
+			),
+			array( '%s', '%s', '%s' )
 		);
 	}
 
 	private function insert_click( string $session_id, string $page, ?string $created_at = null ): void {
 		global $wpdb;
-		$created_at = $created_at ?: gmdate( 'Y-m-d H:i:s' );
+		$created_at = $created_at ? $created_at : gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
-			[ 'session_id' => $session_id, 'page' => $page, 'created_at' => $created_at ],
-			[ '%s', '%s', '%s' ]
+			array(
+				'session_id' => $session_id,
+				'page'       => $page,
+				'created_at' => $created_at,
+			),
+			array( '%s', '%s', '%s' )
 		);
 	}
 
-	// ----------------------------------------------------------------
-	// purge_page_data()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * purge_page_data()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_purge_page_data_returns_zero_for_nonexistent_page(): void {
 		$deleted = RSA_DB::purge_page_data( '/nonexistent-page/' );
 		$this->assertSame( 0, $deleted );
@@ -93,10 +106,11 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 		$this->assertSame( 1, $this->count_events_for_session( 'keep-event-test' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// prune_old_data()
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * prune_old_data()
+	 * ----------------------------------------------------------------
+	 */
 	public function test_prune_old_data_respects_custom_retention_days(): void {
 		update_option( 'rsa_retention_days', 7 );
 		$old_date = gmdate( 'Y-m-d H:i:s', strtotime( '-10 days' ) );
@@ -148,10 +162,11 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 		$this->assertSame( 0, $this->count_events_for_session( 'prune-batch-0' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// aggregate_heatmap() — no-op when no data
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * aggregate_heatmap() — no-op when no data
+	 * ----------------------------------------------------------------
+	 */
 	public function test_aggregate_heatmap_does_nothing_when_no_clicks(): void {
 		$this->expectNotToPerformAssertions();
 		RSA_DB::aggregate_heatmap();
@@ -162,75 +177,88 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
-			[
+			array(
 				'session_id' => 'hm-agg-test',
 				'page'       => '/test/',
 				'x_pct'      => 10.4,
 				'y_pct'      => 20.8,
 				'created_at' => $yesterday . ' 12:00:00',
-			],
-			[ '%s', '%s', '%f', '%f', '%s' ]
+			),
+			array( '%s', '%s', '%f', '%f', '%s' )
 		);
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_clicks',
-			[
+			array(
 				'session_id' => 'hm-agg-test',
 				'page'       => '/test/',
 				'x_pct'      => 10.6,
 				'y_pct'      => 20.2,
 				'created_at' => $yesterday . ' 14:00:00',
-			],
-			[ '%s', '%s', '%f', '%f', '%s' ]
+			),
+			array( '%s', '%s', '%f', '%f', '%s' )
 		);
 
 		RSA_DB::aggregate_heatmap();
 
-		$bucket = $wpdb->get_row( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT weight FROM {$wpdb->prefix}rsa_heatmap WHERE page = %s AND x_pct = 10.0 AND y_pct = 20.0",
-			'/test/'
-		) );
+		$bucket = $wpdb->get_row(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT weight FROM {$wpdb->prefix}rsa_heatmap WHERE page = %s AND x_pct = 10.0 AND y_pct = 20.0",
+				'/test/'
+			)
+		);
 		$this->assertNotNull( $bucket );
 		$this->assertSame( 2, (int) $bucket->weight );
 
-		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', [ 'session_id' => 'hm-agg-test' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->delete( $wpdb->prefix . 'rsa_heatmap', [ 'page' => '/test/' ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', array( 'session_id' => 'hm-agg-test' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_heatmap', array( 'page' => '/test/' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
-	// ----------------------------------------------------------------
-	// daily_maintenance() runs both prune and aggregate
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * daily_maintenance() runs both prune and aggregate
+	 * ----------------------------------------------------------------
+	 */
 	public function test_daily_maintenance_does_not_error(): void {
 		update_option( 'rsa_retention_days', 90 );
 		$this->expectNotToPerformAssertions();
 		RSA_DB::daily_maintenance();
 	}
 
-	// ----------------------------------------------------------------
-	// Helpers
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Helpers
+	 * ----------------------------------------------------------------
+	 *
+	 * @param string $session_id The session ID to count.
+	 * @return int Event count.
+	 */
 	private function count_events_for_session( string $session_id ): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_events WHERE session_id = %s",
-			$session_id
-		) );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_events WHERE session_id = %s",
+				$session_id
+			)
+		);
 	}
 
 	private function count_sessions_for_session( string $session_id ): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_sessions WHERE session_id = %s",
-			$session_id
-		) );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_sessions WHERE session_id = %s",
+				$session_id
+			)
+		);
 	}
 
 	private function count_clicks_for_session( string $session_id ): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( $wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_clicks WHERE session_id = %s",
-			$session_id
-		) );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_clicks WHERE session_id = %s",
+				$session_id
+			)
+		);
 	}
 }
