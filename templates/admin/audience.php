@@ -1,10 +1,12 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 // Data is loaded via RSA_DATA JS object (see class-admin.php enqueue)
 RSA_Admin::page_header( __( 'Audience', 'rich-statistics' ), $period );

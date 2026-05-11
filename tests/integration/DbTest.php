@@ -4,7 +4,6 @@
  *
  * @package RichStatistics\Tests
  */
-
 class DbTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
@@ -24,42 +23,44 @@ class DbTest extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	// ----------------------------------------------------------------
-	// Table existence
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Table existence
+	 * ----------------------------------------------------------------
+	 */
 	public function test_events_table_exists(): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'rsa_events';
+		$table  = $wpdb->prefix . 'rsa_events';
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_sessions_table_exists(): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'rsa_sessions';
+		$table  = $wpdb->prefix . 'rsa_sessions';
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_clicks_table_exists(): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'rsa_clicks';
+		$table  = $wpdb->prefix . 'rsa_clicks';
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
 	public function test_heatmap_table_exists(): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'rsa_heatmap';
+		$table  = $wpdb->prefix . 'rsa_heatmap';
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result );
 	}
 
-	// ----------------------------------------------------------------
-	// Default options seeded
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Default options seeded
+	 * ----------------------------------------------------------------
+	 */
 	public function test_retention_days_default_is_ninety(): void {
 		$this->assertSame( 90, (int) get_option( 'rsa_retention_days' ) );
 	}
@@ -72,36 +73,40 @@ class DbTest extends WP_UnitTestCase {
 		$this->assertSame( 0, (int) get_option( 'rsa_email_digest_enabled' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// table() helper
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * table() helper
+	 * ----------------------------------------------------------------
+	 */
 	public function test_table_helper_returns_prefixed_name(): void {
 		global $wpdb;
 		$this->assertSame( $wpdb->prefix . 'rsa_events', RSA_DB::table( 'events' ) );
 	}
 
-	// ----------------------------------------------------------------
-	// prune_old_data() does not error on empty table
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * prune_old_data() does not error on empty table
+	 * ----------------------------------------------------------------
+	 */
 	public function test_prune_runs_without_error_on_empty_tables(): void {
 		$this->expectNotToPerformAssertions();
 		RSA_DB::prune_old_data();
 	}
 
-	// ----------------------------------------------------------------
-	// Schema version
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Schema version
+	 * ----------------------------------------------------------------
+	 */
 	public function test_schema_version_is_one(): void {
 		$this->assertSame( 1, RSA_DB::SCHEMA_VERSION );
 	}
 
-	// ----------------------------------------------------------------
-	// href_value column exists in clicks table
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * href_value column exists in clicks table
+	 * ----------------------------------------------------------------
+	 */
 	public function test_clicks_table_has_href_value_column(): void {
 		global $wpdb;
 		$table   = $wpdb->prefix . 'rsa_clicks';
@@ -109,10 +114,11 @@ class DbTest extends WP_UnitTestCase {
 		$this->assertContains( 'href_value', $columns, "Expected href_value column in {$table}" );
 	}
 
-	// ----------------------------------------------------------------
-	// Migration / idempotency tests
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Migration / idempotency tests
+	 * ----------------------------------------------------------------
+	 */
 	public function test_install_is_idempotent(): void {
 		RSA_DB::install();
 		$this->expectNotToPerformAssertions();
@@ -123,13 +129,17 @@ class DbTest extends WP_UnitTestCase {
 		$table = $wpdb->prefix . 'rsa_events';
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$table,
-			[ 'session_id' => 'migration-test-uuid', 'page' => '/test', 'created_at' => current_time( 'mysql' ) ]
+			array(
+				'session_id' => 'migration-test-uuid',
+				'page'       => '/test',
+				'created_at' => current_time( 'mysql' ),
+			)
 		);
-		$before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		RSA_DB::install();
 
-		$after = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$after = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$this->assertSame( $before, $after, 'Data count should not change after install()' );
 	}
 
@@ -139,8 +149,8 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_events_table_has_all_expected_columns(): void {
 		global $wpdb;
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = [ 'id', 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'utm_source', 'utm_medium', 'utm_campaign', 'created_at' ];
+		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = array( 'id', 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'utm_source', 'utm_medium', 'utm_campaign', 'created_at' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_events" );
 		}
@@ -148,8 +158,8 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_sessions_table_has_all_expected_columns(): void {
 		global $wpdb;
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_sessions`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = [ 'id', 'session_id', 'pages_viewed', 'total_time', 'entry_page', 'exit_page', 'os', 'browser', 'language', 'timezone', 'created_at', 'updated_at' ];
+		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_sessions`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = array( 'id', 'session_id', 'pages_viewed', 'total_time', 'entry_page', 'exit_page', 'os', 'browser', 'language', 'timezone', 'created_at', 'updated_at' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_sessions" );
 		}
@@ -157,8 +167,8 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_wc_events_table_has_all_expected_columns(): void {
 		global $wpdb;
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_wc_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = [ 'id', 'session_id', 'event_type', 'product_id', 'product_name', 'product_sku', 'quantity', 'order_total', 'order_currency', 'created_at' ];
+		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_wc_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = array( 'id', 'session_id', 'event_type', 'product_id', 'product_name', 'product_sku', 'quantity', 'order_total', 'order_currency', 'created_at' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_wc_events" );
 		}
@@ -166,8 +176,8 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_clicks_table_has_all_expected_columns(): void {
 		global $wpdb;
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_clicks`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = [ 'id', 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'href_value', 'matched_rule', 'x_pct', 'y_pct', 'created_at' ];
+		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_clicks`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = array( 'id', 'session_id', 'page', 'element_tag', 'element_id', 'element_class', 'element_text', 'href_protocol', 'href_value', 'matched_rule', 'x_pct', 'y_pct', 'created_at' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_clicks" );
 		}
@@ -175,8 +185,8 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_heatmap_table_has_all_expected_columns(): void {
 		global $wpdb;
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_heatmap`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = [ 'id', 'page', 'x_pct', 'y_pct', 'weight', 'date_bucket' ];
+		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_heatmap`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$expected = array( 'id', 'page', 'x_pct', 'y_pct', 'weight', 'date_bucket' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_heatmap" );
 		}
@@ -189,7 +199,7 @@ class DbTest extends WP_UnitTestCase {
 	}
 
 	public function test_all_options_seeded_after_install(): void {
-		$options = [
+		$options = array(
 			'rsa_retention_days',
 			'rsa_bot_score_threshold',
 			'rsa_remove_data_on_uninstall',
@@ -201,7 +211,7 @@ class DbTest extends WP_UnitTestCase {
 			'rsa_email_digest_enabled',
 			'rsa_email_digest_frequency',
 			'rsa_woocommerce_enabled',
-		];
+		);
 		foreach ( $options as $key ) {
 			$this->assertNotFalse( get_option( $key ), "Option {$key} should exist after install" );
 		}

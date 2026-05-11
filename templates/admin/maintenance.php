@@ -18,10 +18,16 @@ $rows = RSA_Analytics::get_all_tracked_pages();
 // Data retention setting (for context note)
 $retention_days = (int) get_option( 'rsa_data_retention_days', 365 );
 
-$status_labels = [
-	'live'      => [ 'label' => __( 'Live',      'rich-statistics' ), 'class' => 'rsa-badge-green' ],
-	'unmatched' => [ 'label' => __( 'Unmatched', 'rich-statistics' ), 'class' => 'rsa-badge-gray'  ],
-];
+$status_labels = array(
+	'live'      => array(
+		'label' => __( 'Live', 'rich-statistics' ),
+		'class' => 'rsa-badge-green',
+	),
+	'unmatched' => array(
+		'label' => __( 'Unmatched', 'rich-statistics' ),
+		'class' => 'rsa-badge-gray',
+	),
+);
 
 $nonce = wp_create_nonce( 'wp_rest' );
 ?>
@@ -57,18 +63,19 @@ $nonce = wp_create_nonce( 'wp_rest' );
 			<table class="rsa-table" id="rsa-maintenance-table" style="width:100%;border-collapse:collapse">
 				<thead>
 					<tr>
-						<th style="text-align:left;padding:10px 12px"><?php esc_html_e( 'Page Path',   'rich-statistics' ); ?></th>
-						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Pageviews',  'rich-statistics' ); ?></th>
-						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Clicks',     'rich-statistics' ); ?></th>
-						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Heatmap Pts','rich-statistics' ); ?></th>
-						<th style="text-align:center;padding:10px 12px"><?php esc_html_e( 'Status',    'rich-statistics' ); ?></th>
-						<th style="text-align:center;padding:10px 12px"><?php esc_html_e( 'Actions',   'rich-statistics' ); ?></th>
+						<th style="text-align:left;padding:10px 12px"><?php esc_html_e( 'Page Path', 'rich-statistics' ); ?></th>
+						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Pageviews', 'rich-statistics' ); ?></th>
+						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Clicks', 'rich-statistics' ); ?></th>
+						<th style="text-align:right;padding:10px 12px"><?php esc_html_e( 'Heatmap Pts', 'rich-statistics' ); ?></th>
+						<th style="text-align:center;padding:10px 12px"><?php esc_html_e( 'Status', 'rich-statistics' ); ?></th>
+						<th style="text-align:center;padding:10px 12px"><?php esc_html_e( 'Actions', 'rich-statistics' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $rows as $row ) :
+					<?php
+					foreach ( $rows as $row ) :
 						$status_info = $status_labels[ $row['status'] ] ?? $status_labels['unmatched'];
-					?>
+						?>
 					<tr data-page="<?php echo esc_attr( $row['page'] ); ?>"
 						data-status="<?php echo esc_attr( $row['status'] ); ?>">
 						<td style="padding:10px 12px;font-family:monospace;word-break:break-all"><?php echo esc_html( $row['page'] ); ?></td>
@@ -83,10 +90,12 @@ $nonce = wp_create_nonce( 'wp_rest' );
 						<td style="padding:10px 12px;text-align:center">
 							<button class="rsa-btn rsa-btn-danger rsa-purge-row"
 								data-page="<?php echo esc_attr( $row['page'] ); ?>"
-								data-confirm="<?php
+								data-confirm="
+								<?php
 									// translators: %s = page path
 									echo esc_attr( sprintf( __( 'Purge all data for %s? This cannot be undone.', 'rich-statistics' ), $row['page'] ) );
-								?>">
+								?>
+								">
 								<?php esc_html_e( 'Purge', 'rich-statistics' ); ?>
 							</button>
 						</td>

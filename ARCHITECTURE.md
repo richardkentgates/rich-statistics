@@ -84,7 +84,8 @@ rich-statistics/
 ├── tests/                     PHPUnit unit + integration tests
 ├── languages/                 POT file for i18n
 ├── vendor/                    Composer dev dependencies (not shipped in dist ZIP)
-└── .github/workflows/         CI: tests.yml, build-develop.yml, build-test.yml, build-release.yml
+└── .github/workflows/         CI: tests.yml, build-develop.yml, build-test.yml, build-release.yml,
+                               job-build-zip.yml, job-build-desktop.yml, setup-webhook.yml
 ```
 
 ---

@@ -42,7 +42,7 @@ class PwaDownloadTest extends TestCase {
 	}
 
 	public function test_generate_otp_returns_string_type(): void {
-		$method = new ReflectionMethod( RSA_Pwa_Download::class, 'generate_otp' );
+		$method      = new ReflectionMethod( RSA_Pwa_Download::class, 'generate_otp' );
 		$return_type = $method->getReturnType();
 		$this->assertNotNull( $return_type );
 		$this->assertSame( 'string', $return_type->getName() );
@@ -50,7 +50,7 @@ class PwaDownloadTest extends TestCase {
 
 	public function test_generate_otp_docblock_indicates_six_digit_return(): void {
 		$method = new ReflectionMethod( RSA_Pwa_Download::class, 'generate_otp' );
-		$doc = $method->getDocComment();
+		$doc    = $method->getDocComment();
 		$this->assertStringContainsString( '6-digit', $doc );
 	}
 

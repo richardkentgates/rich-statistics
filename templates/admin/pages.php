@@ -1,36 +1,67 @@
 <?php
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die(); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die(); }
 
-$period   = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
-$allowed  = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-$f_browser  = sanitize_text_field( wp_unslash( $_GET['browser']  ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$f_os       = sanitize_text_field( wp_unslash( $_GET['os']       ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$f_page     = sanitize_text_field( wp_unslash( $_GET['path']     ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$sort       = in_array( sanitize_key( wp_unslash( $_GET['sort'] ?? '' ) ), [ 'views', 'avg_time' ], true ) ? sanitize_key( wp_unslash( $_GET['sort'] ) ) : 'views'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$sort_dir   = ( ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) ) === 'asc' ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$f_browser = sanitize_text_field( wp_unslash( $_GET['browser'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$f_os      = sanitize_text_field( wp_unslash( $_GET['os'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$f_page    = sanitize_text_field( wp_unslash( $_GET['path'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$sort      = in_array( sanitize_key( wp_unslash( $_GET['sort'] ?? '' ) ), array( 'views', 'avg_time' ), true ) ? sanitize_key( wp_unslash( $_GET['sort'] ) ) : 'views'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$sort_dir  = ( ( sanitize_key( wp_unslash( $_GET['sort_dir'] ?? 'desc' ) ) ) === 'asc' ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-$filters    = [ 'browser' => $f_browser, 'os' => $f_os, 'page' => $f_page, 'sort' => $sort, 'sort_dir' => $sort_dir, 'date_from' => $date_from, 'date_to' => $date_to ];
-$rows       = RSA_Analytics::get_top_pages( $period, 100, $filters );
-$opts       = RSA_Analytics::get_filter_options( $period, $filters );
+$filters = array(
+	'browser'   => $f_browser,
+	'os'        => $f_os,
+	'page'      => $f_page,
+	'sort'      => $sort,
+	'sort_dir'  => $sort_dir,
+	'date_from' => $date_from,
+	'date_to'   => $date_to,
+);
+$rows    = RSA_Analytics::get_top_pages( $period, 100, $filters );
+$opts    = RSA_Analytics::get_filter_options( $period, $filters );
 
 RSA_Admin::page_header( __( 'Pages', 'rich-statistics' ), $period );
 
 $base      = admin_url( 'admin.php' );
-$keep      = array_filter( [ 'page' => 'rich-statistics-pages', 'period' => $period, 'browser' => $f_browser, 'os' => $f_os, 'path' => $f_page, 'date_from' => $date_from, 'date_to' => $date_to ] );
+$keep      = array_filter(
+	array(
+		'page'      => 'rich-statistics-pages',
+		'period'    => $period,
+		'browser'   => $f_browser,
+		'os'        => $f_os,
+		'path'      => $f_page,
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+	)
+);
 $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) {
 	$new_dir = ( $sort === $field && $sort_dir === 'desc' ) ? 'asc' : 'desc';
-	$url     = add_query_arg( array_merge( $keep, [ 'sort' => $field, 'sort_dir' => $new_dir ] ), $base );
+	$url     = add_query_arg(
+		array_merge(
+			$keep,
+			array(
+				'sort'     => $field,
+				'sort_dir' => $new_dir,
+			)
+		),
+		$base
+	);
 	$arrow   = $sort === $field ? ( $sort_dir === 'desc' ? ' &#8595;' : ' &#8593;' ) : '';
 	return '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . $arrow . '</a>';
 };
@@ -76,7 +107,19 @@ $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) 
 
 	<?php submit_button( __( 'Filter', 'rich-statistics' ), 'secondary', '', false ); ?>
 	<?php if ( $f_browser || $f_os || $f_page ) : ?>
-	<a href="<?php echo esc_url( add_query_arg( [ 'page' => 'rich-statistics-pages', 'period' => $period ], $base ) ); ?>" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
+	<a href="
+		<?php
+		echo esc_url(
+			add_query_arg(
+				array(
+					'page'   => 'rich-statistics-pages',
+					'period' => $period,
+				),
+				$base
+			)
+		);
+		?>
+				" class="button"><?php esc_html_e( 'Clear', 'rich-statistics' ); ?></a>
 	<?php endif; ?>
 </form>
 
@@ -103,10 +146,11 @@ $sort_link = function ( $field, $label ) use ( $sort, $sort_dir, $keep, $base ) 
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $rows as $i => $row ) :
+			<?php
+			foreach ( $rows as $i => $row ) :
 				$secs     = (int) $row['avg_time'];
 				$time_fmt = $secs >= 60 ? floor( $secs / 60 ) . 'm ' . ( $secs % 60 ) . 's' : $secs . 's';
-			?>
+				?>
 			<tr>
 				<td class="rsa-td-rank"><?php echo esc_html( $i + 1 ); ?></td>
 				<td class="rsa-td-page"><?php echo esc_html( $row['page'] ); ?></td>

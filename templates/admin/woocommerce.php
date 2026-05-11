@@ -1,9 +1,13 @@
 <?php
 /**
  * WooCommerce analytics — product views, add-to-cart events, orders, and revenue.
+ *
+ * @package RichStatistics
  */
+
 defined( 'ABSPATH' ) || exit;
-if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) ); }
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) ); }
 
 RSA_Admin::page_header( __( 'WooCommerce', 'rich-statistics' ) );
 
@@ -23,18 +27,27 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 }
 
 $period  = sanitize_text_field( wp_unslash( $_GET['period'] ?? '30d' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display filter
-$allowed = [ '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' ];
-if ( ! in_array( $period, $allowed, true ) ) { $period = '30d'; }
+$allowed = array( '7d', '30d', '90d', 'thismonth', 'lastmonth', 'custom' );
+if ( ! in_array( $period, $allowed, true ) ) {
+	$period = '30d'; }
 
 $date_from = $date_to = '';
 if ( $period === 'custom' ) {
 	$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to']   ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) { $date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) )   { $date_to   = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
+		$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
+		$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 }
 
-$data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'date_to' => $date_to ] );
+$data = RSA_Analytics::get_woocommerce(
+	$period,
+	array(
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+	)
+);
 ?>
 
 <!-- KPI Cards -->
@@ -63,11 +76,11 @@ $data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'd
 	<div class="rsa-card">
 		<div class="rsa-card-header"><h2><?php esc_html_e( 'Conversion Funnel', 'rich-statistics' ); ?></h2></div>
 		<?php
-		$funnel_steps = [
+		$funnel_steps = array(
 			__( 'Product Views', 'rich-statistics' ) => $data['funnel']['views'],
-			__( 'Add to Cart',   'rich-statistics' ) => $data['funnel']['cart'],
-			__( 'Orders',        'rich-statistics' ) => $data['funnel']['orders'],
-		];
+			__( 'Add to Cart', 'rich-statistics' )   => $data['funnel']['cart'],
+			__( 'Orders', 'rich-statistics' )        => $data['funnel']['orders'],
+		);
 		?>
 		<table class="widefat striped rsa-table">
 			<thead>
@@ -87,7 +100,7 @@ $data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'd
 					$rate_str = $prev > 0 ? round( ( $count / $prev ) * 100, 1 ) . '%' : '0%';
 				}
 				$prev = $count;
-			?>
+				?>
 			<tr>
 				<td><?php echo esc_html( $label ); ?></td>
 				<td><?php echo esc_html( number_format( $count ) ); ?></td>
@@ -127,7 +140,7 @@ $data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'd
 			<tbody>
 			<?php foreach ( $data['top_products_viewed'] as $row ) : ?>
 			<tr>
-				<td><?php echo esc_html( $row['product_name'] ?: '#' . $row['product_id'] ); ?></td>
+				<td><?php echo esc_html( $row['product_name'] ? $row['product_name'] : '#' . $row['product_id'] ); ?></td>
 				<td><?php echo esc_html( number_format( (int) $row['views'] ) ); ?></td>
 			</tr>
 			<?php endforeach; ?>
@@ -152,7 +165,7 @@ $data = RSA_Analytics::get_woocommerce( $period, [ 'date_from' => $date_from, 'd
 			<tbody>
 			<?php foreach ( $data['top_products_cart'] as $row ) : ?>
 			<tr>
-				<td><?php echo esc_html( $row['product_name'] ?: '#' . $row['product_id'] ); ?></td>
+				<td><?php echo esc_html( $row['product_name'] ? $row['product_name'] : '#' . $row['product_id'] ); ?></td>
 				<td><?php echo esc_html( number_format( (int) $row['events'] ) ); ?></td>
 				<td><?php echo esc_html( number_format( (int) $row['total_qty'] ) ); ?></td>
 			</tr>

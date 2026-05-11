@@ -125,26 +125,36 @@ Each branch has its own:
 
 ## CI Pipelines
 
+All three build workflows share reusable sub-workflows for ZIP and desktop builds, keeping each pipeline concise.
+
+### Reusable workflows (`.github/workflows/job-*.yml`)
+
+| Workflow | Purpose |
+|----------|---------|
+| `job-build-zip.yml` | PHP syntax check, composer install, PHPCS, create plugin ZIP, upload artifact |
+| `job-build-desktop.yml` | Tauri build for Linux amd64 + arm64 + Windows, push binaries, update APT repo + update.json |
+
 ### `build-develop.yml` (branch: develop)
 - **Trigger**: Push to `develop`, or `workflow_dispatch`
-- **Build**: Plugin ZIP (PHP syntax check)
+- **build-zip**: Plugin ZIP via `job-build-zip` (version: `dev.<run_number>`)
 - **deploy-web**: Syncs PWA to `rs-dev` via webhook
-- **build-desktop**: Builds Linux + Windows desktop binaries (signed), pushes to `rs-dev/dist/`, regenerates `update.json` with signatures
-- **test**: Runs PHPUnit unit + integration tests (via `tests.yml`)
+- **build-desktop**: Desktop binaries via `job-build-desktop`, pushed to `rs-dev/dist/`
 
 ### `build-test.yml` (branch: test)
 - **Trigger**: Push to `test`, or `workflow_dispatch`
-- **Build**: Plugin ZIP (PHP syntax check)
+- **build-zip**: Plugin ZIP via `job-build-zip` (version: `test.<run_number>`)
 - **deploy-web**: Syncs PWA to `rs-test` via webhook
-- **build-desktop**: Builds Linux + Windows desktop binaries (signed), pushes to `rs-test/dist/`, regenerates `update.json` with signatures
+- **build-desktop**: Desktop binaries via `job-build-desktop`, pushed to `rs-test/dist/`
 
 ### `build-release.yml` (tagged on main)
-- **Trigger**: Tag push (`v*`), or `workflow_dispatch` with optional `setup_webhook=true`
-- **Build**: Plugin ZIP, versioned PWA snapshot, GitHub Release
-- **build-desktop-linux**: Linux `.deb` for amd64 + arm64 (signed), pushes to `rs-app/dist/`, updates APT repo
-- **build-desktop-windows**: Windows `.exe` installer (signed), pushes to `rs-app/dist/`, regenerates `update.json` with all platform signatures
+- **Trigger**: Tag push (`v*`), or `workflow_dispatch`
+- **build**: Plugin ZIP, versioned PWA snapshot (`docs/app/v/<version>/`), GitHub Release
+- **build-desktop**: Desktop binaries via `job-build-desktop` with `stamp-version: true`, pushed to `rs-app/dist/`
 - **ping-deploy**: Syncs PWA to `rs-app` via webhook
-- **setup-webhook** (manual only): One-time bootstrap of webhook handler on fresh server
+
+### `setup-webhook.yml` (manual only)
+- **Trigger**: `workflow_dispatch` with environment choice
+- **Purpose**: One-time bootstrap of webhook handler + update script on any environment (production/dev/test)
 
 ## Infrastructure
 

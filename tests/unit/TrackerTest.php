@@ -26,10 +26,14 @@ class TrackerTest extends TestCase {
 		parent::tearDown();
 	}
 
-	// ----------------------------------------------------------------
-	// sanitize_page() — public via reflection
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * sanitize_page() — public via reflection
+	 * ----------------------------------------------------------------
+	 *
+	 * @param string $raw Raw page URL.
+	 * @return string Sanitized page path.
+	 */
 	private function sanitize_page( string $raw ): string {
 		$method = new ReflectionMethod( RSA_Tracker::class, 'sanitize_page' );
 		$method->setAccessible( true );
@@ -47,7 +51,7 @@ class TrackerTest extends TestCase {
 
 	public function test_long_query_value_stripped(): void {
 		// >40 chars should be dropped
-		$long = str_repeat( 'x', 41 );
+		$long   = str_repeat( 'x', 41 );
 		$result = $this->sanitize_page( '/page/?token=' . $long );
 		$this->assertStringNotContainsString( 'token=', $result );
 	}
@@ -58,8 +62,8 @@ class TrackerTest extends TestCase {
 	}
 
 	public function test_multiple_query_params_filtered_correctly(): void {
-		$long  = str_repeat( 'a', 45 );
-		$input = '/page/?id=42&token=' . $long . '&s=hello';
+		$long   = str_repeat( 'a', 45 );
+		$input  = '/page/?id=42&token=' . $long . '&s=hello';
 		$result = $this->sanitize_page( $input );
 		$this->assertStringContainsString( 'id=42', $result );
 		$this->assertStringContainsString( 's=hello', $result );
@@ -76,12 +80,13 @@ class TrackerTest extends TestCase {
 		$this->assertStringNotContainsString( 'example.com', $result );
 	}
 
-	// ----------------------------------------------------------------
-	// Bot signal bitmask sanity — ensure RSA_Bot_Detection constants match
-	// ----------------------------------------------------------------
-
+	/**
+	 * ----------------------------------------------------------------
+	 * Bot signal bitmask sanity — ensure RSA_Bot_Detection constants match
+	 * ----------------------------------------------------------------
+	 */
 	public function test_bot_signal_constants_are_powers_of_two(): void {
-		$flags = [
+		$flags = array(
 			RSA_Bot_Detection::CS_WEBDRIVER,
 			RSA_Bot_Detection::CS_NO_PLUGINS,
 			RSA_Bot_Detection::CS_NO_LANGUAGES,
@@ -92,10 +97,10 @@ class TrackerTest extends TestCase {
 			RSA_Bot_Detection::CS_HIDDEN_ON_ARRIVAL,
 			RSA_Bot_Detection::CS_NO_HUMAN_EVENT,
 			RSA_Bot_Detection::CS_CHROME_MISSING_OBJ,
-		];
+		);
 
 		// Each flag must be a distinct power of 2 (no overlaps)
-		$seen = [];
+		$seen = array();
 		foreach ( $flags as $flag ) {
 			$this->assertTrue( ( $flag & ( $flag - 1 ) ) === 0, "Not a power of 2: $flag" );
 			$this->assertNotContains( $flag, $seen, "Duplicate flag: $flag" );
