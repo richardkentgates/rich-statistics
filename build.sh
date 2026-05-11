@@ -90,7 +90,6 @@ INCLUDE_DIRS=(
     includes
     templates
     vendor
-    webapp
 )
 
 # Root files to include
@@ -161,7 +160,7 @@ info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
 # caches it forever and app.js redirects there automatically on plugin
 # update — no cache clearing, no sign-out.
 APP_SRC="docs/app"
-APP_VERSIONED="docs/app/${VERSION}"
+APP_VERSIONED="docs/app/v/${VERSION}"
 
 if [ -d "$APP_VERSIONED" ]; then
     warn "Versioned app folder already exists: ${APP_VERSIONED} — skipping."
@@ -169,6 +168,9 @@ else
     info "Publishing versioned app snapshot: ${APP_VERSIONED}/"
     mkdir -p "$APP_VERSIONED"
     for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${APP_VERSIONED}/${f}"
+    done
+    for f in index-dev.html index-test.html config-dev.js config-test.js; do
         [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${APP_VERSIONED}/${f}"
     done
     [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${APP_VERSIONED}/icons"
