@@ -22,6 +22,39 @@ if ( function_exists( 'rs_fs' ) ) {
 	rs_fs()->set_basename( true, __FILE__ );
 } else {
 	// --------------------------------------------------------------------
+	// Environment helpers (must be functions, not closures, for constant defs)
+	// --------------------------------------------------------------------
+
+	if ( ! function_exists( 'rsa_detect_app_env' ) ) {
+		function rsa_detect_app_env(): string {
+			$host = wp_parse_url( get_site_url(), PHP_URL_HOST );
+			if ( ! $host ) {
+				return 'production';
+			}
+			if ( str_contains( $host, 'rs-dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
+				return 'development';
+			}
+			if ( str_contains( $host, 'rs-test.' ) ) {
+				return 'test';
+			}
+			return 'production';
+		}
+	}
+
+	if ( ! function_exists( 'rsa_detect_app_url' ) ) {
+		function rsa_detect_app_url(): string {
+			$env = rsa_detect_app_env();
+			if ( 'development' === $env ) {
+				return 'https://rs-dev.richardkentgates.com/';
+			}
+			if ( 'test' === $env ) {
+				return 'https://rs-test.richardkentgates.com/';
+			}
+			return 'https://rs-app.richardkentgates.com/';
+		}
+	}
+
+	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
 	define( 'RSA_VERSION',         '2.2.7' );
@@ -31,9 +64,10 @@ if ( function_exists( 'rs_fs' ) ) {
 	define( 'RSA_ASSETS_URL',      RSA_URL . 'assets/' );
 	define( 'RSA_MIN_WP',          '6.0' );
 	define( 'RSA_MIN_PHP',         '8.0' );
-	define( 'RSA_APP_URL',         'https://rs-app.richardkentgates.com/' );
 	define( 'RSA_APP_VERSION',     RSA_VERSION );
 	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
+	define( 'RSA_APP_URL',         rsa_detect_app_url() );
+	define( 'RSA_APP_ENV',         rsa_detect_app_env() );
 
 	/**
 	 * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
