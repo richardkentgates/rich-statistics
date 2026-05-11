@@ -413,9 +413,12 @@
 
 				var item = document.createElement( 'div' );
 				item.className = 'rsa-explorer-item'
-					+ ( isActive ? ' is-selected' : '' )
-					+ ( isExit   ? ' is-exit'     : '' )
+					+ ( colIdx > 0 ? ' rsa-explorer-item-indent' : '' )
 					+ ( hasNext  ? ' is-clickable' : '' );
+				if ( hasNext ) {
+					item.setAttribute( 'tabindex', '0' );
+					item.setAttribute( 'role', 'button' );
+				}
 
 				var bar = document.createElement( 'div' );
 				bar.className  = 'rsa-explorer-item-bar';
@@ -443,6 +446,16 @@
 							selected[ ci ] = page;
 							renderCol( ci, pages, tot );
 							cascade( ci );
+						};
+					}( pg.page, colIdx, pageList, colTotal ) ) );
+					item.addEventListener( 'keydown', ( function ( page, ci, pages, tot ) {
+						return function ( e ) {
+							if ( e.key === 'Enter' || e.key === ' ' ) {
+								e.preventDefault();
+								selected[ ci ] = page;
+								renderCol( ci, pages, tot );
+								cascade( ci );
+							}
 						};
 					}( pg.page, colIdx, pageList, colTotal ) ) );
 				}
