@@ -90,6 +90,7 @@ class RSA_Admin {
 		$config_script = '<script>window.RSA_CONFIG = ' . wp_json_encode( [
 			'autoSiteUrl'   => $site_url,
 			'appUrl'        => $app_url,
+			'env'           => RSA_APP_ENV,
 			'nonce'         => wp_create_nonce( 'wp_rest' ),
 			'autoLabel'     => get_bloginfo( 'name' ),
 			'isPremium'     => $is_premium,

@@ -356,6 +356,7 @@ $basic   = [ __CLASS__, 'check_basic_auth' ];
 			'app_version'     => RSA_APP_VERSION,
 			'min_app_version' => RSA_MIN_APP_VERSION,
 			'app_url'         => RSA_APP_URL,
+			'env'             => RSA_APP_ENV,
 			'site_name'       => get_bloginfo( 'name' ),
 			'site_url'        => get_site_url(),
 		] );
