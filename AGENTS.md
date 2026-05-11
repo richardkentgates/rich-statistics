@@ -22,7 +22,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
-| `docs/app/v/2.2.7/` | Latest bundled PWA version (canonical: `/v/<version>/`) |
+| `docs/app/2.2.7/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
 | `src-tauri/` | Tauri 2 desktop app wrapper |
 
 ## Database Tables (each uses `{$wpdb->prefix}rsa_` prefix)
@@ -41,7 +41,7 @@ Premium features are gated by Freemius (product ID 25954).
 `/overview`, `/pages`, `/audience`, `/referrers`, `/behavior`, `/campaigns`, `/filter-options`, `/user-settings`
 
 **Premium** (`check_premium_auth` — capability + Freemius license):
-`/clicks`, `/heatmap`, `/export`, `/woocommerce`, `/user-flow` (+journey/+sources), `/purge-page`, `/verify-install`, `/ai/query`
+`/clicks`, `/heatmap`, `/export`, `/woocommerce`, `/user-flow` (+journey/+sources), `/purge-page`, `/ai/query`
 
 ## Running Tests
 
@@ -63,7 +63,7 @@ Freemius is stubbed in `tests/bootstrap.php` — `rs_fs()->can_use_premium_code_
 
 ## Coding Standards
 
-WordPress Coding Standards via PHPCS:
+WordPress Coding Standards via PHPCS (requires `wp-coding-standards/wpcs` — installed via `composer install`):
 ```bash
 composer phpcs
 composer phpcbf
@@ -87,6 +87,18 @@ composer phpcbf
 3. Update the latest folder's files
 
 ## Branch Structure
+
+```
+feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+                        │
+                   merge PR
+                        ↓
+                      test ──push──→ auto-deploy: rs-test
+                        │
+                   merge PR
+                        ↓
+                      main ──tag v*──→ build-release.yml → rs-app
+```
 
 | Branch | Environment | Server | CI Workflow | Branch Type |
 |--------|-------------|--------|-------------|-------------|
@@ -160,15 +172,26 @@ See `ROADMAP.md` for the full audit of server infrastructure, version compatibil
 
 ## Remaining Work
 
-See `ROADMAP.md` §6 for the full prioritized list. Verified discrepancies found during audit fix verification:
+See `ROADMAP.md` §6 for the full prioritized list.
 
-| Priority | Gap | Environment |
-|----------|-----|-------------|
-| P0 | APT repo missing | Dev |
-| P0 | `dist/update.json` missing | Dev |
-| P1 | `dist/update.json` version stale (2.1.0 vs 2.2.7) | Test |
-| P1 | `v/` version directories incomplete | Dev, Test |
-| P2 | `RSA_APP_URL` hardcoded to production | All |
-| P3 | PHPCS not run in CI | All |
-| P4 | WordPress.org SVN submission | — |
-| P5 | Monitoring, rollback, backup | Prod |
+| Priority | Gap | Status |
+|----------|-----|--------|
+| P2.2 | E2E test pipeline | ❌ Not started |
+| P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
+
+**Recently completed (May 2026):**
+- P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅
+- P2.1: PHPCS in CI (all 4 workflows) ✅
+- P2.3: Migration + env detection tests (19 new tests) ✅
+- P3: Signatures (CI wiring verified, next tag push) ✅
+- P4.1: readme.txt (full 2.x changelog) ✅
+- P5.1: Uptime monitoring — external system handles it ✅
+- P5.2: Error tracking docs in ROADMAP §8.2 ✅
+- P5.3–4: Ops docs (rollback + backup in ROADMAP §8) ✅
+- D1–7: All documentation files audited and fixed ✅
+- F2/F3: Removed orphaned templates + dead `/verify-install` endpoint ✅
+- F4: Premium gating with `require_premium_or_exit()` on all renderers ✅
+- F6/F7: Fixed tracker `total_time` NULL-coercion bug + optimized to single query ✅
+- F9: 10 unit tests for `rsa_detect_app_env()` covering all env code paths ✅
+- F10: `build.sh` includes env config files in versioned snapshots ✅
+- F13: Snapshot path standardized to `docs/app/v/{version}/` in both `build.sh` and `build-release.yml` ✅
