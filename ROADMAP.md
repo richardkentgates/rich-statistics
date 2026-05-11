@@ -70,10 +70,13 @@ All four phases are implemented:
 | PWA web app | ✅ Served | ✅ Served | ✅ Served |
 | `/_deploy/` webhook | ✅ Present | ✅ Present | ✅ Present |
 | Desktop binaries in `dist/` | ✅ Present | ✅ Present | ✅ Present |
-| APT repository | ✅ Present | ❌ **Missing** | ✅ Present |
-| vhost `/apt/` alias | ✅ Present | ❌ **Missing** | ✅ Present |
-| `dist/update.json` | ✅ Present (version 2.2.7) | ❌ **Missing** | ❌ **Stale** (shows 2.1.0) |
-| `v/` version snapshots | ✅ Complete (2.0.0–2.2.7) | ❌ **Incomplete** (missing 2.1.2+) | ❌ **Outdated** (pre-2.0 relics, missing 2.1.1+) |
+| Web root ownership | `richardkentgates:www-data` | `richardkentgates:www-data` | `richardkentgates:www-data` |
+| APT repository | ✅ Present | ✅ Present | ✅ Present |
+| vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
+| `dist/update.json` | ✅ Present (v2.2.7, sig: empty) | ✅ Present (v2.2.7, sig: empty) | ✅ Present (v2.2.7, sig: empty) |
+| `v/` version snapshots | ✅ Complete (2.0.0–2.2.7) | ✅ Complete (2.0.0–2.2.7) | ✅ Complete (2.0.0–2.2.7) |
+| `versions.json` | ✅ Complete (19 entries) | ✅ Complete (19 entries) | ✅ Complete (19 entries) |
+| Old root-level version dirs | ✅ Clean | ✅ Clean | ✅ Clean |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
 
@@ -81,10 +84,7 @@ All four phases are implemented:
 
 | Priority | Issue | Detail |
 |----------|-------|--------|
-| P1 | Dev APT repo missing | No `/var/www/rs-app-dev/apt/` directory, no vhost `/apt/` alias, no `rsa-apt-repo-update-dev` script |
-| P1 | Dev `dist/update.json` missing | Desktop binaries are pushed but no Tauri updater metadata file exists at `/var/www/rs-app-dev/dist/update.json` |
-| P2 | Test `dist/update.json` stale | Shows version `2.1.0` but binaries on disk are `2.2.7` |
-| P2 | Dev/test `v/` version directories incomplete | Dev missing 2.1.2–2.2.7; test has pre-2.0 artifacts and missing 2.1.1–2.2.7 |
+| P0 | `update.json` signatures empty | All three environments have `"signature": ""` — Tauri updater will reject unsigned updates. Next CI build will generate `.sig` files and regenerate `update.json` |
 | P3 | `RSA_APP_URL` hardcoded to production | Plugin points PWA link to prod on all environments |
 
 ---
@@ -118,37 +118,33 @@ These are discrepancies discovered during verification of the initial audit fixe
 
 | Ref | Finding | Environment | Detail |
 |-----|---------|-------------|--------|
-| F1 | **Dev APT repo missing entirely** | Dev | No `/var/www/rs-app-dev/apt/` directory, no vhost alias, no `rsa-apt-repo-update-dev` script. Desktop binaries pushed but no APT distribution |
-| F2 | **Dev `dist/update.json` missing** | Dev | Desktop `.deb` and `.exe` binaries exist but no `update.json` for Tauri updater — desktop apps won't auto-update |
-| F3 | **Test `update.json` version stale** | Test | Shows `"version": "2.1.0"` but latest binaries on disk are `2.2.7`. CI pushes binaries but doesn't update the version metadata |
-| F4 | **Dev `v/` version dirs incomplete** | Dev | Only has 2.0.0–2.1.1. Missing 2.1.2 through 2.2.7. Will cause version mismatch errors for users running newer plugin versions |
-| F5 | **Test `v/` version dirs outdated** | Test | Has pre-2.0 versions (1.3.0–1.4.8) that shouldn't be there. Missing 2.1.1 through 2.2.7 |
-| F6 | **`RSA_APP_URL` hardcoded** | All | Plugin always points "Open App" button to production `rs-app.richardkentgates.com` regardless of environment |
+| F1 | **Dev APT repo claimed missing but present** | Dev | ROADMAP said missing but actually exists at `/var/www/rs-app-dev/apt/` with pool, dists, InRelease, vhost alias ✅ |
+| F2 | **Dev `update.json` claimed missing but present** | Dev | ROADMAP said missing but exists with v2.2.7 ✅ |
+| F3 | **Test `update.json` claimed stale but current** | Test | ROADMAP said v2.1.0 but actual was v2.2.7 ✅ |
+| F4 | **Dev `v/` dirs claimed incomplete but complete** | Dev | ROADMAP said missing 2.1.2+ but all 19 versions present ✅ |
+| F5 | **Test `v/` dirs had pre-2.0 relics** | Test | Old 1.3.0–1.4.8 root-level dirs cleaned; `versions.json` synced from prod ✅ |
+| F6 | **`RSA_APP_URL` hardcoded** | All | Plugin always points "Open App" button to production regardless of environment |
+| F7 | **Web root ownership mismatch** | All | `/var/www/rs-app*` owned by `www-data:www-data` instead of SSH user. Fixed to `richardkentgates:www-data` ✅ |
+| F8 | **Prod `_deploy/` at wrong path** | Prod | Webhook at `/var/www/rs-app/_deploy/` (outside `public_html/`), not `public_html/_deploy/` as ROADMAP implied. Vhost alias correct. Ownership fixed ✅ |
 
 ---
 
 ## 6. Remaining Work (Prioritized)
 
-### P0: Fix infrastructure gaps
-
-1. **Create dev APT repo**: Set up `/var/www/rs-app-dev/apt/` directory structure, add vhost `/apt/` alias, create `rsa-apt-repo-update-dev` script, add APT update step to dev CI
-2. **Create dev `dist/update.json`**: Generate Tauri updater metadata for dev desktop binaries
-3. **Fix test `dist/update.json` version**: Update to reflect actual deployed version
-
-### P1: Populate version directories
-
-1. **Sync dev/test `v/` directories**: Copy version snapshots from prod to dev and test so all environments have the complete set (2.0.0–2.2.7)
-
-### P2: Environment-aware plugin
+### P1: Environment-aware plugin
 
 1. **Make `RSA_APP_URL` configurable**: Plugin should detect environment and use the correct PWA URL
 2. **Add `env` flag to `config.js`**: Deploy environment-specific config on dev/test subdomains
 
-### P3: CI / Quality
+### P2: CI / Quality
 
 1. Add PHPCS check to CI workflows
 2. Add E2E test pipeline
 3. Add upgrade/migration test coverage
+
+### P3: Signatures
+
+1. **Run CI build to generate signed `update.json`**: Wire `TAURI_SIGNING_PRIVATE_KEY` secret, push `.sig` files, run `rsa-gen-update-json` on server. Auto-resolved on next tag push
 
 ### P4: WordPress.org
 
