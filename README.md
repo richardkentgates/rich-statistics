@@ -95,7 +95,7 @@ Rich Statistics offers native desktop apps for Linux and Windows across all rele
 | **Dev / Beta** | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://dev.richstatistics.com/dist/rich-statistics-windows.exe) |
 | **Test / Staging** | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://test.richstatistics.com/dist/rich-statistics-windows.exe) |
 
-The apps include automatic update detection via the built-in Tauri updater.
+All desktop apps include automatic updates via the built-in Tauri updater. Linux (APT) updates via `sudo apt upgrade`; Windows and direct .deb installs check `update.json` on each launch and prompt to download new versions.
 
 ### Premium (via Freemius)
 
@@ -338,12 +338,15 @@ The production web app is served from `https://app.richstatistics.com`. Dev and 
 
 > **Note:** Dev and test web apps connect to the same WordPress REST API as production — they only differ in the PWA/desktop client version bundled.
 
-## Linux Desktop App (Premium)
+## Desktop Apps (Premium)
 
-A native Linux desktop app is built automatically with each release. It wraps the same
-dashboard as the PWA in a lightweight WebKitGTK window — no Electron, no bundled browser.
+Native desktop apps for Linux and Windows are built with each release. They wrap the same
+dashboard as the PWA in a lightweight native window — no Electron, no bundled browser.
+All apps include automatic update detection: Linux APT updates via `sudo apt upgrade`;
+Windows and direct .deb installs check `update.json` via the Tauri updater on each launch
+and prompt to download new versions.
 
-### Install via APT (recommended)
+### Linux — Install via APT (recommended)
 
 The APT repository provides automatic updates via your normal system package manager.
 
@@ -375,17 +378,20 @@ Each track has its own APT repository with the same structure:
 
 Replace the URL in the APT install instructions above to subscribe to a different track.
 
-### Manual install (direct .deb download)
+### Manual install (direct download)
 
-| Track | amd64 | arm64 |
-|-------|-------|-------|
-| **Production** | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
-| **Dev / Beta** | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
-| **Test / Staging** | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
+| Track | Linux amd64 | Linux arm64 | Windows |
+|-------|------------|-------------|---------|
+| **Production** | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://app.richstatistics.com/dist/rich-statistics-windows.exe) |
+| **Dev / Beta** | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://dev.richstatistics.com/dist/rich-statistics-windows.exe) |
+| **Test / Staging** | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://test.richstatistics.com/dist/rich-statistics-windows.exe) |
 
+Linux:
 ```bash
 sudo dpkg -i rich-statistics-linux-*.deb
 ```
+
+Windows: Run the downloaded `.exe` installer and follow the setup wizard.
 
 ---
 
