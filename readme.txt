@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.2.9
+Stable tag: 2.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,11 +33,13 @@ Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent
 
 **Premium features (via Freemius):**
 
-* Click tracking by protocol (tel, mailto, geo, sms) and by element ID/class — with destination capture (phone number, email, coordinates, file URL)
-* Heatmap with viewport-relative thermal canvas overlay and hotspot tooltips
-* Full REST API (14 endpoints) authenticated via WP Application Passwords
+* Click tracking by protocol (tel, mailto, geo, sms) and by element ID/class — with destination capture
+* Heatmap with viewport-relative thermal canvas overlay
+* Full REST API (15+ endpoints) authenticated via WP Application Passwords
 * Progressive Web App: installable mobile analytics dashboard
-* Linux native desktop app (x86_64 and ARM64) built with Tauri
+* WooCommerce Analytics: conversion funnel, revenue, top products
+* AI Analytics Assistant: conversational insights via OpenAI or local LLM
+* Desktop apps for Linux (.deb, amd64 + arm64) and Windows (.exe)
 
 **Privacy by design:**
 
@@ -53,6 +55,25 @@ Sessions are identified using a `sessionStorage` UUID — this identifier lives 
 3. Navigate to **Analytics** in the admin sidebar to view your data
 
 To upgrade to Premium, go to **Analytics → Upgrade** inside WordPress. The upgrade is delivered as a standard WordPress plugin update — no ZIP file required.
+
+== Desktop App ==
+
+Rich Statistics offers native desktop apps for Linux and Windows:
+
+**Linux (APT — recommended):**
+
+    curl -fsSL https://app.richstatistics.com/apt/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] https://app.richstatistics.com/apt stable main" | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+    sudo apt update && sudo apt install rich-statistics
+
+**Linux (.deb direct download):**
+
+* x86-64: https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb
+* ARM64: https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb
+
+**Windows:**
+
+* https://app.richstatistics.com/dist/rich-statistics-windows.exe
 
 == Frequently Asked Questions ==
 
@@ -78,7 +99,7 @@ PHP 8.0 or higher. WordPress 6.0 or higher.
 
 = Where is my data stored? =
 
-All data is stored in your WordPress database in four tables: `wp_rsa_events`, `wp_rsa_sessions`, `wp_rsa_clicks` (Premium), and `wp_rsa_heatmap` (Premium). No data is ever sent to external servers.
+All data is stored in your WordPress database in five tables: `wp_rsa_events`, `wp_rsa_sessions`, `wp_rsa_clicks` (Premium), `wp_rsa_heatmap` (Premium), and `wp_rsa_wc_events` (Premium). No data is ever sent to external servers.
 
 = Can I export my data? =
 
@@ -90,7 +111,9 @@ Go to **Analytics → Data Settings**, enable **Remove all data on uninstall**, 
 
 = What is the Premium plan? =
 
-The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web app. It is available for purchase at [statistics.richardkentgates.com](https://statistics.richardkentgates.com).
+The Premium plan unlocks click tracking, heatmaps, the REST API, the PWA web app,
+WooCommerce Analytics, AI Assistant, desktop apps, and data export.
+Available at https://statistics.richardkentgates.com
 
 == Screenshots ==
 

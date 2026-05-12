@@ -73,9 +73,9 @@ All four phases are implemented:
 | Web root ownership | `richardkentgates:www-data` | `richardkentgates:www-data` | `richardkentgates:www-data` |
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
-| `dist/update.json` | ✅ Present (v2.2.7, sig: empty) | ✅ Present (v2.2.7, sig: empty) | ✅ Present (v2.2.7, sig: empty) |
-| `v/` version snapshots | ✅ Complete (2.0.0–2.2.7) | ✅ Complete (2.0.0–2.2.7) | ✅ Complete (2.0.0–2.2.7) |
-| `versions.json` | ✅ Complete (19 entries) | ✅ Complete (19 entries) | ✅ Complete (19 entries) |
+| `dist/update.json` | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) |
+| `v/` version snapshots | ✅ Complete (2.0.0–2.3.0) | ✅ Complete (2.0.0–2.3.0) | ✅ Complete (2.0.0–2.3.0) |
+| `versions.json` | ✅ Complete (21 entries) | ✅ Complete (21 entries) | ✅ Complete (21 entries) |
 | Old root-level version dirs | ✅ Clean | ✅ Clean | ✅ Clean |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
