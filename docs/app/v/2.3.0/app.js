@@ -1132,12 +1132,92 @@
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
 			case 'install'    : renderInstall( container );    break;
+			case 'ai-chat'    : renderAiChat( container );    break;
 			default: setLoading( false );
 		}
 	}
 
 	function setLoading( on ) {
 		document.getElementById( 'rsa-loading' ).hidden = ! on;
+	}
+
+	// -----------------------------------------------------------------------
+	// AI Chat
+	// -----------------------------------------------------------------------
+	function renderAiChat( container ) {
+		setLoading( false );
+		var siteUrl = state.siteUrl;
+		var headers = getAuthHeaders( siteUrl + '/wp-json/rsa/v1/ai/query' );
+		headers['Content-Type'] = 'application/json';
+
+		container.innerHTML =
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
+				'<p style="color:#888;font-size:14px;">Ask questions about your analytics in plain English.</p>' +
+				'<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:500px;">' +
+					'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
+					'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:8px;">' +
+						'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics...">' +
+						'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+
+		addAiMessage( 'ai', 'Hello! Ask me anything about your analytics data.' );
+
+		var input = document.getElementById( 'rsa-ai-input' );
+		var sendBtn = document.getElementById( 'rsa-ai-send' );
+
+		function doSend() {
+			var msg = input.value.trim();
+			if ( ! msg ) return;
+			addAiMessage( 'user', msg );
+			input.value = '';
+			sendBtn.disabled = true;
+			sendBtn.textContent = '...';
+
+			fetch( siteUrl + '/wp-json/rsa/v1/ai/query', {
+				method: 'POST',
+				headers: headers,
+				body: JSON.stringify( { question: msg, period: state.period } )
+			})
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( data ) {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				if ( data.ok ) {
+					addAiMessage( 'ai', data.data.answer );
+				} else {
+					addAiMessage( 'ai', 'Error: ' + ( data.error || 'Unknown error' ) );
+				}
+			} )
+			.catch( function () {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				addAiMessage( 'ai', 'Connection error. Please try again.' );
+			} );
+		}
+
+		sendBtn.addEventListener( 'click', doSend );
+		input.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); }
+		} );
+
+		// Focus input when view becomes visible
+		setTimeout( function () { input.focus(); }, 200 );
+	}
+
+	function addAiMessage( who, text ) {
+		var div = document.getElementById( 'rsa-ai-messages' );
+		if ( ! div ) return;
+		var msg = document.createElement( 'div' );
+		msg.style.cssText = 'margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.5;' +
+			( who === 'user'
+				? 'background:#e3f2fd;margin-left:20%;border:1px solid #90caf9;'
+				: 'background:#fff;margin-right:20%;border:1px solid #e0e0e0;box-shadow:0 1px 2px rgba(0,0,0,0.05);' );
+		msg.innerHTML = '<div>' + esc( text ).replace( /\n/g, '<br>' ) + '</div>';
+		div.appendChild( msg );
+		div.scrollTop = div.scrollHeight;
 	}
 
 	// -----------------------------------------------------------------------
@@ -2354,127 +2434,34 @@
 	// Install
 	// -----------------------------------------------------------------------
 	function renderInstall( container ) {
-		var BASE_DL = 'https://app.richstatistics.com/desktop';
-
-		var pwaSection =
-			'<div class="rsa-install-card">' +
-				'<div class="rsa-install-card-body">' +
-					'<h3>Install as Desktop App</h3>' +
-					'<p class="rsa-field-hint">Click the button to add Rich Statistics to your applications — it will open in its own window without browser tabs or address bar.</p>' +
-					'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px" hidden>' +
-						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
-						' Install App' +
-					'</button>' +
-					'<p class="rsa-field-hint rsa-install-btn-pending" style="margin-top:8px">Looking for install prompt\u2026 If this message persists, the app may already be installed or your browser does not support PWA install.</p>' +
-				'</div>' +
-			'</div>';
-
-		var linuxSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Linux Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Linux desktop app is a native Tauri application (.deb) for amd64 and arm64 Debian/Ubuntu systems. It wraps the same analytics interface and updates automatically via your system package manager.</p>' +
-
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
-				'</div>' +
-
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
-					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
-					'</div>' +
-					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
-				'</div>' +
-			'</div>';
-
-		var windowsSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Windows Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Windows desktop app is a native Tauri application (.exe) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
-
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Download Installer</div>' +
-					'<p style="margin-bottom:8px"><a class="rsa-install-btn" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download rich-statistics-windows.exe</a></p>' +
-					'<pre class="rsa-install-code">1. Download the .exe installer above\n2. Run the installer and follow the NSIS setup wizard\n3. The app will check for updates automatically</pre>' +
-				'</div>' +
-			'</div>';
-
-		var testSection =
-			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #feca57">' +
-				'<h3 style="color:#feca57">Test Version — Staging Environment</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The test version mirrors production code deployed for integration testing. Data here may include test entries.</p>' +
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Test Web App</div>' +
-					'<p style="margin-bottom:8px"><a href="https://test.richstatistics.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#feca57;color:#1a1a2e;border-radius:6px;text-decoration:none;font-size:14px">Open Test App</a></p>' +
-				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:8px">Test environment connects to: <code><WP_TEST_SERVER_IP></code> (staging WordPress)</p>' +
-			'</div>';
-
-		var devSection =
-			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #4a90b8">' +
-				'<h3>Dev Version — Pre-Release Testing</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The dev version is built from the <code>develop</code> branch and may contain untested features. Use for testing before production release.</p>' +
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Dev Web App</div>' +
-					'<p style="margin-bottom:8px"><a href="https://dev.richstatistics.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Open Dev App</a></p>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Dev Linux — via APT</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://dev.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics-dev.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics-dev.gpg] \\\n    https://dev.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics-dev.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:12px">' +
-					'<div class="rsa-install-method-label">Dev Linux — direct .deb</div>' +
-					'<div style="margin-top:8px">' +
-						'<a href="https://dev.richstatistics.com/desktop/rich-statistics-linux-amd64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px">x86-64 .deb</a>' +
-						'<a href="https://dev.richstatistics.com/desktop/rich-statistics-linux-arm64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px;margin-left:8px">ARM64 .deb</a>' +
-					'</div>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:12px">' +
-					'<div class="rsa-install-method-label">Dev Windows</div>' +
-					'<p style="margin-bottom:8px"><a href="https://dev.richstatistics.com/desktop/rich-statistics-windows.exe" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Dev Windows .exe</a></p>' +
-				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:12px">To revert to production: run the standard install commands above, or <code>sudo apt remove rich-statistics &amp;&amp; sudo apt autoremove</code> then reinstall.</p>' +
-			'</div>';
-
-		var compatSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Browser &amp; Platform Support</h3>' +
-				'<table class="rsa-table rsa-install-compat-table">' +
-					'<thead><tr><th>Browser / Platform</th><th>Install Method</th></tr></thead>' +
-					'<tbody>' +
-						'<tr><td>Chrome &amp; Edge (desktop)</td><td>Install button (above) or address-bar ⊕ icon</td></tr>' +
-						'<tr><td>Chrome / Samsung Internet (Android)</td><td>Install button or browser menu → "Add to Home Screen"</td></tr>' +
-						'<tr><td>Safari (iOS 16.4+)</td><td>Share ↑ → "Add to Home Screen"</td></tr>' +
-						'<tr><td>Safari (macOS Sonoma+)</td><td>File → "Add to Dock…"</td></tr>' +
-						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
-						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
-						'<tr><td>Windows 10/11</td><td>Download .exe installer above</td></tr>' +
-					'</tbody>' +
-				'</table>' +
-			'</div>';
-
 		container.innerHTML =
-			'<div class="rsa-chart-card">' +
-				'<h3>Web App</h3>' +
-				pwaSection +
-			'</div>' +
-			linuxSection +
-			windowsSection +
-			testSection +
-			devSection +
-			compatSection;
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+			'<h2 style="font-size:20px;margin-bottom:24px;">Install Rich Statistics Desktop App</h2>' +
+			'<p style="color:#888;">Access your analytics from your desktop — no browser required.</p>' +
 
-		if ( _installPrompt ) {
-			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
-				btn.hidden = false;
-			} );
-			container.querySelectorAll( '.rsa-install-btn-pending' ).forEach( function ( el ) {
-				el.hidden = true;
-			} );
-		}
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Linux</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<p class="rsa-install-subtitle">Install via APT (recommended)</p>' +
+					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<p class="rsa-install-subtitle">Or download .deb directly</p>' +
+					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb">x86-64</a>' +
+					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb">ARM64</a>' +
+				'</div>' +
+			'</div>' +
+
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Windows</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<p class="rsa-install-subtitle">Download installer (.exe)</p>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-btn" href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Windows .exe</a></p>' +
+				'</div>' +
+			'</div>' +
+
+			'<p style="font-size:12px;color:#888;margin-top:32px;">' +
+			'Desktop binaries are updated with each release. ' +
+			'Installation via APT is recommended for automatic updates.</p>';
+	}
 
 		setLoading( false );
 	}
