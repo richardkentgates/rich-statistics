@@ -66,7 +66,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 	define( 'RSA_VERSION', '1.1.0' );
 	define( 'RSA_URL', 'http://example.com/wp-content/plugins/rich-statistics/' );
 	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-	define( 'RSA_APP_URL', 'https://rs-test.richardkentgates.com/' );
+	define( 'RSA_APP_URL', 'https://test.richstatistics.com/' );
 	define( 'RSA_APP_ENV', 'test' );
 	define( 'RSA_APP_VERSION', RSA_VERSION );
 	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
@@ -154,7 +154,7 @@ define( 'ABSPATH', sys_get_temp_dir() . '/' );
 define( 'RSA_VERSION', '1.1.0' );
 define( 'RSA_URL', 'http://example.com/wp-content/plugins/rich-statistics/' );
 define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-define( 'RSA_APP_URL', 'https://rs-test.richardkentgates.com/' );
+define( 'RSA_APP_URL', 'https://test.richstatistics.com/' );
 define( 'RSA_APP_ENV', 'test' );
 define( 'RSA_APP_VERSION', RSA_VERSION );
 define( 'RSA_MIN_APP_VERSION', '2.0.0' );

@@ -22,15 +22,15 @@ jobs:
         run: |
           curl -fsS -X POST \
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_DEV }}" \
-            https://rs-dev.richardkentgates.com/_deploy/
+            https://dev.richstatistics.com/_deploy/
 
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml
     needs: build-zip
     with:
       target-path: /var/www/rs-app-dev/dist
-      server-host: rs-dev.richardkentgates.com
-      updater-url: https://rs-dev.richardkentgates.com/dist/update.json
+      server-host: dev.richstatistics.com
+      updater-url: https://dev.richstatistics.com/dist/update.json
       apt-script: rsa-apt-repo-update-dev
       update-json-script: rsa-gen-update-json-dev
       artifact-prefix: rich-statistics-develop

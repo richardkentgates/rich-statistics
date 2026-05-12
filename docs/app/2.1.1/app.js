@@ -2326,7 +2326,7 @@
 	// Install
 	// -----------------------------------------------------------------------
 	function renderInstall( container ) {
-		var BASE_DL = 'https://rs-app.richardkentgates.com/desktop';
+		var BASE_DL = 'https://app.richstatistics.com/desktop';
 
 		var pwaSection =
 			'<div class="rsa-install-card">' +
@@ -2348,7 +2348,7 @@
 
 				'<div class="rsa-install-method">' +
 					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://rs-app.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
 					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
 				'</div>' +
 

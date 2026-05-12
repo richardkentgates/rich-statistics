@@ -80,9 +80,9 @@ class RSA_Rest_API {
 		return [
 			home_url(),
 			'tauri://localhost',
-			'https://rs-app.richardkentgates.com',
-			'https://rs-dev.richardkentgates.com',
-			'https://rs-test.richardkentgates.com',
+			'https://app.richstatistics.com',
+			'https://dev.richstatistics.com',
+			'https://test.richstatistics.com',
 		];
 	}
 

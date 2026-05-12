@@ -20,8 +20,8 @@ desktop app (Tauri/.deb) that connect to the plugin via the WordPress REST API.
 | | |
 |---|---|
 | **WordPress plugin ZIP** | The main PHP plugin, distributed via WordPress.org (free) and Freemius (premium) |
-| **PWA / web app** | Vanilla JS at `docs/app/`, served from `rs-app.richardkentgates.com` |
-| **Linux desktop app** | Tauri-wrapped `.deb` in `src-tauri/`, served from `rs-app.richardkentgates.com/dist/` |
+| **PWA / web app** | Vanilla JS at `docs/app/`, served from `app.richstatistics.com` |
+| **Linux desktop app** | Tauri-wrapped `.deb` in `src-tauri/`, served from `app.richstatistics.com/dist/` |
 
 ---
 
@@ -109,7 +109,7 @@ All prefixed `{wpdb->prefix}rsa_`. See `includes/class-db.php` for schema.
 | **GitHub** | Source, CI, Release artifacts |
 | **WordPress.org** | Free plugin distribution |
 | **Freemius** | Premium licensing, payments, in-plugin auto-updates |
-| **rs-app.richardkentgates.com** | App server: serves PWA, `.deb` files; receives deploy webhook |
+| **app.richstatistics.com** | App server: serves PWA, `.deb` files; receives deploy webhook |
 
 ---
 
@@ -170,7 +170,7 @@ by the tag-triggered CI workflow automatically.
 | User | `richardkentgates` |
 | Local SSH key | `~/.ssh/id_rsa` (only this works — `gcloud_key` and `id_ed25519` are rejected) |
 | Web root | `/var/www/rs-app/public_html/` (DocumentRoot); `_deploy/` and `.deployed-version` are at `/var/www/rs-app/` (outside DocumentRoot) |
-| APT repo | `https://rs-app.richardkentgates.com/apt stable main` |
+| APT repo | `https://app.richstatistics.com/apt stable main` |
 | APT update script | `/usr/local/bin/rsa-apt-repo-update` |
 | Webhook token file | `/etc/rsa-webhook-token` (chmod 640, chown root:www-data) |
 
