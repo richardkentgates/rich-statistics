@@ -106,6 +106,9 @@ The apps include automatic update detection via the built-in Tauri updater.
 | WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
+| AI Analytics Assistant | Conversational insights via OpenAI or local LLM |
+| Desktop apps | Native Linux (.deb, amd64 + arm64) and Windows (.exe) |
+| Data export | CSV/JSON export of pageviews, sessions, clicks, referrers |
 
 ---
 
@@ -292,15 +295,20 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/referrers` | Top referrer domains |
 | GET | `/behavior` | Time histogram, session depth, entry pages |
 | GET | `/campaigns` | UTM source/medium/campaign breakdown with session + pageview counts |
+| GET | `/filter-options` | Available browser/OS filter values |
 | GET | `/user-flow` | Step-based path flow data (Miller columns) |
+| GET | `/user-flow/journey` | Page-to-page journey data |
+| GET | `/user-flow/sources` | Entry source breakdown |
 | GET | `/clicks` | Click element totals (premium) |
 | GET | `/heatmap` | Heatmap coordinates for a page (premium; supports `date_from`/`date_to`) |
 | GET | `/woocommerce` | WooCommerce funnel, revenue, and top-product data (premium; requires WooCommerce active) |
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
+| POST | `/track` | Pageview ingest (nonce-protected, public) |
 | POST | `/ai/query` | AI chat query endpoint (premium) |
 | POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
 | GET/POST | `/user-settings` | Sync app site list across devices |
+| POST | `/purge-page` | Delete all data for a specific page (premium) |
 
 **Note:** Page tracking uses WordPress AJAX (`admin-ajax.php?action=rsa_track`), not the REST API.
 
