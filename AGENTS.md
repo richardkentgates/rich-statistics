@@ -9,7 +9,7 @@ Premium features are gated by Freemius (product ID 25954).
 
 | File | Purpose |
 |------|---------|
-| `rich-statistics.php` | Main plugin file (version 2.2.7, RSA_VERSION constant) |
+| `rich-statistics.php` | Main plugin file (version 2.3.0, RSA_VERSION constant) |
 | `includes/class-rest-api.php` | REST API namespace `rsa/v1`, auth callbacks |
 | `includes/class-db.php` | DB schema, migrations, table helpers |
 | `includes/class-tracker.php` | Frontend tracking + ingest |
@@ -22,7 +22,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
-| `docs/app/2.2.7/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
+| `docs/app/v/2.3.0/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
 | `src-tauri/` | Tauri 2 desktop app wrapper |
 
 ## Database Tables (each uses `{$wpdb->prefix}rsa_` prefix)
@@ -79,7 +79,7 @@ composer phpcbf
 ### Adding a premium feature
 1. Gate the admin template with `rs_fs()->can_use_premium_code__premium_only()`
 2. Gate the REST endpoint with `$premium` callback
-3. Add to `premiumFeatures` map in `docs/app/2.2.7/app.js`
+3. Add to `premiumFeatures` map in `docs/app/v/2.3.0/app.js`
 
 ### Creating a new PWA version
 1. Copy the latest version folder under `docs/app/v/`

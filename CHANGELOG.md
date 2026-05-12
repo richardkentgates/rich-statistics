@@ -10,35 +10,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - PHPCS coding standards check added to CI workflows (`tests.yml`, `build-develop.yml`, `build-test.yml`, `build-release.yml`)
 - `wp-coding-standards/wpcs` added as dev dependency
-- Environment-aware PWA config: `config.js` auto-detects env from hostname; `config-dev.js` and `index-dev.html` created for dev env
 - Versioned PWA snapshot `config.js` now includes `env` auto-detection
 - `readme.txt` changelog updated with all 2.x releases
 - `tests/bootstrap.php` now uses `test.richstatistics.com` for `RSA_APP_URL` in test environment
 - Unit test bootstrap now defines `RSA_APP_ENV`, `RSA_APP_VERSION`, `RSA_MIN_APP_VERSION`
-- DB migration test coverage: 9 new tests in `DbTest.php` (idempotency, data preservation, column completeness, option seeding)
 - Ops documentation: rollback procedure, backup strategy, monitoring plan (ROADMAP §8)
 - GitHub Wiki synced: Release Tracks, Installation, Code-Map pages updated
-- Premium admin page gate: `require_premium_or_exit()` guards all premium render methods
-- AI Chat admin page wired into menu (`page_ai_chat` + menu entry under premium)
-- `premiumFeatures` map in PWA app.js now includes `ai-chat` and `woocommerce`
-- `ai-chat` added to PWA premiumFeatures map in both root and 2.2.7 app.js
-- Env detection unit tests: 10 new tests covering all 3 env code paths + app URL mapping
 - WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
 - `wporg-assets/` directory scaffolded for screenshots and banners
 
 ### Fixed
 - `build.sh` now uses `docs/app/v/{version}/` (consistent with `build-release.yml`); env config files (`config-dev.js`, `index-dev.html` etc.) included in versioned snapshots
 - `build-release.yml` versioned snapshot now includes env config files
-- Removed dead `/rsa/v1/verify-install` endpoint and its 5 integration tests (legacy install tokens no longer generated; OTP is the current method)
 - Removed orphaned `email-settings.php` and `data-settings.php` templates (fully covered by `preferences.php`)
 - Fixed email test redirect from non-existent `email-settings` page → `preferences` page
-- Tracker session `total_time` update: coalesced to single query with `COALESCE(total_time, 0) + %d`, preventing NULL-to-0 coercion
 - `build.sh`: removed stale `webapp/` directory reference (no longer exists)
-- README.md badges: corrected `build-dev.yml` → `build-develop.yml` and `build-test.yml`
-- CONTRIBUTING.md: corrected CI workflow names (`build-dev.yml` → `build-develop.yml`/`build-test.yml`)
-- ROADMAP.md: updated B9 status (RSA_APP_URL resolved), B10 status (partial)
-- AGENTS.md: fixed `docs/app/v/2.2.7/` path; replaced outdated remaining-work table
-- ARCHITECTURE.md: added `build-develop.yml`/`build-test.yml` workflows, added `test` branch to branching diagram, corrected PWA hosting description
+
+## [2.3.0] - 2026-05-12
+
+### Added
+- Domain migration: rs-*.richardkentgates.com → *.richstatistics.com
+- PWA AI Chat view with premium gating
+- App server architecture DR documentation
+- i18n, a11y, security audit fixes
+- Created uninstall.php (was missing)
+- Plugin Checker: 0 errors
+- CI workflow refactoring: reusable sub-workflows
+- Added WordPress admin Install page
+
+## [2.2.8] - 2026-05-11
+
+### Added
+- Env-aware PWA config.js + config-dev.js/index-dev.html
+- Premium admin gating (require_premium_or_exit)
+- Migration test coverage (9 new tests) + env detection tests (10 new)
+
+### Fixed
+- Documentation overhaul across all 6 doc files
+- Removed dead /verify-install endpoint
+- Tracker session total_time NULL-coercion fix
 
 ## [2.2.7] - 2026-05-10
 
