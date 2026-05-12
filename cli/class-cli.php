@@ -182,6 +182,7 @@ class RSA_CLI extends WP_CLI_Command {
 		$format = in_array( $assoc['format'] ?? 'json', [ 'json', 'csv' ], true ) ? ( $assoc['format'] ?? 'json' ) : 'json';
 		$this->maybe_switch_blog( $assoc );
 
+		/* translators: 1: period, 2: format */
 		WP_CLI::line( sprintf( __( 'Exporting (%1$s, %2$s)…', 'rich-statistics' ), $period, $format ) );
 		$data = RSA_Analytics::export_events( $period, $format );
 
@@ -193,6 +194,7 @@ class RSA_CLI extends WP_CLI_Command {
 				WP_CLI::error( __( 'Output path must be within the WordPress directory.', 'rich-statistics' ) );
 			}
 			file_put_contents( $output, $data );
+			/* translators: %s: output file path */
 			WP_CLI::success( sprintf( __( 'Written to %s', 'rich-statistics' ), $output ) );
 		} else {
 			echo $data . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
@@ -231,11 +233,13 @@ class RSA_CLI extends WP_CLI_Command {
 			$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( '-' . ( $days ?? get_option( 'rsa_retention_days', 90 ) ) . ' days' ) );
 			$et     = RSA_DB::events_table();
 			$count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$et}` WHERE created_at < %s", $cutoff ) ); // phpcs:ignore
+			/* translators: %d: number of event rows */
 			WP_CLI::line( sprintf( __( 'Would delete approximately %d event rows.', 'rich-statistics' ), $count ) );
 			return;
 		}
 
 		$deleted = RSA_DB::prune_old_data( $days );
+		/* translators: %d: number of deleted records */
 		WP_CLI::success( sprintf( __( 'Pruned %d records.', 'rich-statistics' ), $deleted ) );
 	}
 
@@ -271,6 +275,7 @@ class RSA_CLI extends WP_CLI_Command {
 		update_option( 'rsa_email_digest_recipients', $original );
 
 		if ( $sent ) {
+			/* translators: %s: recipient email */
 			WP_CLI::success( sprintf( __( 'Test digest sent to %s.', 'rich-statistics' ), $recipient ) );
 		} else {
 			WP_CLI::error( __( 'Failed to send. Check WordPress mail settings.', 'rich-statistics' ) );
