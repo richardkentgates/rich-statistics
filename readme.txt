@@ -58,22 +58,45 @@ To upgrade to Premium, go to **Analytics → Upgrade** inside WordPress. The upg
 
 == Desktop App ==
 
-Rich Statistics offers native desktop apps for Linux and Windows:
+Rich Statistics offers native desktop apps for Linux and Windows with automatic updates.
 
-**Linux (APT — recommended):**
+### Linux — Install via APT (recommended)
+
+The APT repository provides automatic updates through your system package manager:
 
     curl -fsSL https://app.richstatistics.com/apt/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] https://app.richstatistics.com/apt stable main" | sudo tee /etc/apt/sources.list.d/rich-statistics.list
     sudo apt update && sudo apt install rich-statistics
 
-**Linux (.deb direct download):**
+After setup, `sudo apt upgrade` keeps the app up to date alongside other system packages.
+
+### Linux — Direct .deb Download
+
+Download the `.deb` for your architecture and install with `dpkg`:
 
 * x86-64: https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb
 * ARM64: https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb
 
-**Windows:**
+    sudo dpkg -i rich-statistics-linux-*.deb
 
-* https://app.richstatistics.com/dist/rich-statistics-windows.exe
+The app checks for updates automatically on each launch.
+
+### Windows
+
+Download the installer and run it:
+
+    https://app.richstatistics.com/dist/rich-statistics-windows.exe
+
+The app checks for updates automatically on each launch via the Tauri updater. When a new version is available, you will be prompted to download and install it.
+
+### Dev / Test Tracks
+
+Pre-release builds for development and testing are available at:
+
+* Dev: https://dev.richstatistics.com
+* Test: https://test.richstatistics.com
+
+See the [Release Tracks wiki](https://github.com/richardkentgates/rich-statistics/wiki/Release-Tracks) for dev/test APT repo setup and desktop downloads.
 
 == Frequently Asked Questions ==
 
