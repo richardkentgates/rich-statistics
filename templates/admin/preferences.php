@@ -106,14 +106,33 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 					<p class="description"><?php esc_html_e( 'For Ollama: http://localhost:11434/v1/chat/completions. No API key needed.', 'rich-statistics' ); ?></p>
 				</td>
 			</tr>
-			<tr>
+			<tr class="ai-openai-only">
 				<th><label for="rsa_ai_model"><?php esc_html_e( 'Model', 'rich-statistics' ); ?></label></th>
 				<td>
-					<input type="text" id="rsa_ai_model" name="rsa_ai_model"
+					<select id="rsa_ai_model" name="rsa_ai_model">
+						<?php
+						$current_model = get_option( 'rsa_ai_model', 'gpt-4o-mini' );
+						$openai_models = array(
+							'gpt-4o-mini'  => __( 'GPT-4o Mini (fast, economical)', 'rich-statistics' ),
+							'gpt-4o'       => __( 'GPT-4o (flagship)', 'rich-statistics' ),
+							'gpt-4-turbo'  => __( 'GPT-4 Turbo', 'rich-statistics' ),
+							'gpt-3.5-turbo' => __( 'GPT-3.5 Turbo', 'rich-statistics' ),
+						);
+						foreach ( $openai_models as $val => $label ) :
+						?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $current_model, $val ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr class="ai-custom-only">
+				<th><label for="rsa_ai_model_custom"><?php esc_html_e( 'Model', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="text" id="rsa_ai_model_custom" name="rsa_ai_model"
 							class="regular-text"
-							value="<?php echo esc_attr( get_option( 'rsa_ai_model', 'gpt-4o-mini' ) ); ?>"
-							placeholder="gpt-4o-mini">
-					<p class="description"><?php esc_html_e( 'OpenAI: gpt-4o-mini. Ollama: llama3.2:3b, mistral:7b, etc.', 'rich-statistics' ); ?></p>
+							value="<?php echo esc_attr( get_option( 'rsa_ai_model', 'llama3.2:3b' ) ); ?>"
+							placeholder="llama3.2:3b">
+					<p class="description"><?php esc_html_e( 'Model name for your local LLM (e.g. llama3.2:3b, mistral:7b, mixtral:8x7b).', 'rich-statistics' ); ?></p>
 				</td>
 			</tr>
 		</table>
