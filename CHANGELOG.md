@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment-aware PWA config: `config.js` auto-detects env from hostname; `config-dev.js` and `index-dev.html` created for dev env
 - Versioned PWA snapshot `config.js` now includes `env` auto-detection
 - `readme.txt` changelog updated with all 2.x releases
-- `tests/bootstrap.php` now uses `rs-test.richardkentgates.com` for `RSA_APP_URL` in test environment
+- `tests/bootstrap.php` now uses `test.richstatistics.com` for `RSA_APP_URL` in test environment
 - Unit test bootstrap now defines `RSA_APP_ENV`, `RSA_APP_VERSION`, `RSA_MIN_APP_VERSION`
 - DB migration test coverage: 9 new tests in `DbTest.php` (idempotency, data preservation, column completeness, option seeding)
 - Ops documentation: rollback procedure, backup strategy, monitoring plan (ROADMAP §8)

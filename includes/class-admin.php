@@ -392,6 +392,11 @@ class RSA_Admin {
 			'label' => __( 'Maintenance', 'rich-statistics' ),
 			'cap'   => 'rsa_manage_statistics',
 		];
+		$pages['install'] = [
+			'title' => __( 'Install App', 'rich-statistics' ),
+			'label' => __( 'Install App', 'rich-statistics' ),
+			'cap'   => 'rsa_manage_statistics',
+		];
 		return $pages;
 	}
 
@@ -638,6 +643,8 @@ class RSA_Admin {
 	public static function page_ai_chat(): void {
 		self::require_premium_or_exit();
 		self::render( 'ai-chat' ); }
+	/** Render the install page. */
+	public static function page_install(): void { self::render( 'install' ); }
 
 	/** Require a premium license or exit with an error. */
 	private static function require_premium_or_exit(): void {

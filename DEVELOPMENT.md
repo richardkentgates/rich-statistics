@@ -33,8 +33,8 @@ This single repository produces **three deliverables**:
 | Deliverable | What it is | Where it goes |
 |---|---|---|
 | **WordPress plugin ZIP** | The installable plugin (`rich-statistics-x.y.z.zip`) | GitHub Release → uploaded to Freemius for premium users; WordPress.org for free users |
-| **PWA / companion app** | Installable web app (vanilla JS) served from `docs/app/` | Hosted at `https://rs-app.richardkentgates.com/app/` |
-| **Linux desktop app** | Tauri-wrapped `.deb` for amd64 and arm64 | Served from `https://rs-app.richardkentgates.com/dist/` |
+| **PWA / companion app** | Installable web app (vanilla JS) served from `docs/app/` | Hosted at `https://app.richstatistics.com/app/` |
+| **Linux desktop app** | Tauri-wrapped `.deb` for amd64 and arm64 | Served from `https://app.richstatistics.com/dist/` |
 
 ---
 
@@ -130,7 +130,7 @@ GitHub (source + CI)
   └── Freemius dashboard (premium licensing + auto-updates)
         └── Developer manually uploads plugin ZIP after each release
 
-App server: rs-app.richardkentgates.com  (104.197.231.120)
+App server: app.richstatistics.com  (104.197.231.120)
   ├── /app/              → serves the live PWA (pulled from docs/app/ by webhook)
   ├── /dist/             → serves .deb files + update.json (pushed by CI via SSH)
   └── /_deploy/          → webhook endpoint (PHP, validates X-Deploy-Token header)
@@ -180,7 +180,7 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
    ```bash
    git checkout test && git merge --no-ff develop && git push origin test
    ```
-   CI auto-deploys to `rs-test.richardkentgates.com`.
+   CI auto-deploys to `test.richstatistics.com`.
 
 5. **After QA passes, merge to main and tag**
    ```bash
@@ -248,7 +248,7 @@ Bootstraps the `/_deploy/` webhook handler and `rsa-app-update*` script on any e
 
 ## 8. App Server Infrastructure
 
-**Server:** Debian 12 (bookworm), Google Cloud, `rs-app.richardkentgates.com` (`104.197.231.120`)
+**Server:** Debian 12 (bookworm), Google Cloud, `app.richstatistics.com` (`104.197.231.120`)
 **Web server:** Apache 2.4 + PHP 8.2 (`libapache2-mod-php8.2`)
 **SSL:** Let's Encrypt via `certbot --apache`, auto-renews via systemd timer
 **System user:** `richardkentgates` (also the web-root owner)
@@ -257,7 +257,7 @@ Bootstraps the `/_deploy/` webhook handler and `rsa-app-update*` script on any e
 
 ```
 CI (ping-deploy job)
-  │  POST https://rs-app.richardkentgates.com/_deploy/
+  │  POST https://app.richstatistics.com/_deploy/
   │  Header: X-Deploy-Token: <DEPLOY_WEBHOOK_TOKEN>
   ▼
 _deploy/index.php  (from bin/server-webhook.php)
@@ -282,7 +282,7 @@ If the server needs to be rebuilt from scratch:
 git clone https://github.com/richardkentgates/rich-statistics.git
 cd rich-statistics
 sudo bash bin/setup-app-server.sh \
-  --domain rs-app.richardkentgates.com \
+  --domain app.richstatistics.com \
   --email  your@email.com \
   --user   richardkentgates
 ```
@@ -291,7 +291,7 @@ The script prints the new `DEPLOY_WEBHOOK_TOKEN` and `APP_SERVER_SSH_KEY` values
 at the end — update both secrets in the GitHub repository settings.
 
 Full recovery documentation: [docs/wiki/app-server-setup.html](docs/wiki/app-server-setup.html)
-(rendered at `https://rs-app.richardkentgates.com/wiki/app-server-setup.html`)
+(rendered at `https://app.richstatistics.com/wiki/app-server-setup.html`)
 
 ---
 
@@ -340,7 +340,7 @@ return false and free-tier tests run without any Freemius dependency.
 
 ## 10. Webapp & Desktop App
 
-The PWA lives in `docs/app/` and is served from `https://rs-app.richardkentgates.com/app/`.
+The PWA lives in `docs/app/` and is served from `https://app.richstatistics.com/app/`.
 
 `src-tauri/` is the Tauri 2 source folder (wraps `docs/app/` in a native window). 
 The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pushes them to the app server via SSH.
@@ -358,15 +358,15 @@ The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pu
     "notes": "",
     "platforms": {
       "linux-x86_64": {
-        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb",
+        "url": "https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb",
         "signature": ""
       },
       "linux-aarch64": {
-        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb",
+        "url": "https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb",
         "signature": ""
       },
       "windows-x86_64": {
-        "url": "https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe",
+        "url": "https://app.richstatistics.com/dist/rich-statistics-windows.exe",
         "signature": ""
       }
     }
@@ -375,7 +375,7 @@ The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pu
 
 ### Desktop auto-updates
 
-The desktop app checks `https://rs-app.richardkentgates.com/dist/update.json`
+The desktop app checks `https://app.richstatistics.com/dist/update.json`
 for new versions. The CI `build-desktop` job writes this file via SSH after
 building each `.deb`. Updates are signed with `TAURI_SIGNING_PRIVATE_KEY`;
 the matching public key is in `src-tauri/tauri.conf.json`.

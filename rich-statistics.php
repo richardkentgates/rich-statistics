@@ -33,10 +33,10 @@ if ( function_exists( 'rs_fs' ) ) {
 			if ( ! $host ) {
 				return 'production';
 			}
-			if ( str_contains( $host, 'rs-dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
+			if ( str_contains( $host, 'dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
 				return 'development';
 			}
-			if ( str_contains( $host, 'rs-test.' ) ) {
+			if ( str_contains( $host, 'test.' ) ) {
 				return 'test';
 			}
 			return 'production';
@@ -47,12 +47,12 @@ if ( function_exists( 'rs_fs' ) ) {
 		function rsa_detect_app_url(): string {
 			$env = rsa_detect_app_env();
 			if ( 'development' === $env ) {
-				return 'https://rs-dev.richardkentgates.com/';
+				return 'https://dev.richstatistics.com/';
 			}
 			if ( 'test' === $env ) {
-				return 'https://rs-test.richardkentgates.com/';
+				return 'https://test.richstatistics.com/';
 			}
-			return 'https://rs-app.richardkentgates.com/';
+			return 'https://app.richstatistics.com/';
 		}
 	}
 

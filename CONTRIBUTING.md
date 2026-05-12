@@ -31,9 +31,9 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 
 | Branch | Environment | Subdomain | CI Workflow | Branch Type |
 |--------|-------------|-----------|-------------|-------------|
-| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged) | Stable releases |
-| `develop` | Dev / Beta | `rs-dev.richardkentgates.com` | `build-develop.yml` (push) | Bleeding-edge |
-| `test` | Staging / QA | `rs-test.richardkentgates.com` | `build-test.yml` (push) | Integration testing |
+| `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged) | Stable releases |
+| `develop` | Dev / Beta | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge |
+| `test` | Staging / QA | `test.richstatistics.com` | `build-test.yml` (push) | Integration testing |
 
 - **`main`** — Stable releases only. Merged from `test` via release PR, then tagged.
 - **`develop`** — Primary development branch. Base your feature branches here.
@@ -45,10 +45,10 @@ Each push to `develop` triggers `build-develop.yml`; pushes to `test` trigger `b
 
 | Resource | Production | Dev | Test |
 |----------|-----------|-----|------|
-| PWA web app | `https://rs-app.richardkentgates.com` | `https://rs-dev.richardkentgates.com` | `https://rs-test.richardkentgates.com` |
-| Deploy webhook | `https://rs-app.richardkentgates.com/_deploy/` | `https://rs-dev.richardkentgates.com/_deploy/` | `https://rs-test.richardkentgates.com/_deploy/` |
-| APT repository | `https://rs-app.richardkentgates.com/apt/` | `https://rs-dev.richardkentgates.com/apt/` | `https://rs-test.richardkentgates.com/apt/` |
-| Desktop binaries | `https://rs-app.richardkentgates.com/dist/` | `https://rs-dev.richardkentgates.com/dist/` | `https://rs-test.richardkentgates.com/dist/` |
+| PWA web app | `https://app.richstatistics.com` | `https://dev.richstatistics.com` | `https://test.richstatistics.com` |
+| Deploy webhook | `https://app.richstatistics.com/_deploy/` | `https://dev.richstatistics.com/_deploy/` | `https://test.richstatistics.com/_deploy/` |
+| APT repository | `https://app.richstatistics.com/apt/` | `https://dev.richstatistics.com/apt/` | `https://test.richstatistics.com/apt/` |
+| Desktop binaries | `https://app.richstatistics.com/dist/` | `https://dev.richstatistics.com/dist/` | `https://test.richstatistics.com/dist/` |
 
 ---
 
@@ -120,7 +120,7 @@ composer phpcbf
 4. Ensure `composer phpcs` reports no errors
 5. Update `CHANGELOG.md` under **[Unreleased]** describing your change
 6. Open a PR against `develop` — describe the motivation, what changed, and how to test it
-7. After merging, the `develop` branch auto-deploys to the dev environment (`rs-dev.richardkentgates.com`)
+7. After merging, the `develop` branch auto-deploys to the dev environment (`dev.richstatistics.com`)
 
 ### Push Flow
 
@@ -137,9 +137,9 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 ```
 
 1. **Feature work:** Branch from `develop`, PR back into `develop`. CI runs `tests.yml` + `build-develop.yml`.
-2. **Dev deploy:** Every push to `develop` auto-deploys PWA + desktop to `rs-dev.richardkentgates.com`.
-3. **QA / Staging:** Merge `develop` → `test` via PR. Push to `test` auto-deploys to `rs-test.richardkentgates.com`.
-4. **Production release:** After QA passes on `test`, merge `test` → `main` via PR. Tag the merge commit `v<version>`. The tag triggers `build-release.yml` which builds the production ZIP, versioned PWA snapshot, desktop binaries, and deploys to `rs-app.richardkentgates.com`.
+2. **Dev deploy:** Every push to `develop` auto-deploys PWA + desktop to `dev.richstatistics.com`.
+3. **QA / Staging:** Merge `develop` → `test` via PR. Push to `test` auto-deploys to `test.richstatistics.com`.
+4. **Production release:** After QA passes on `test`, merge `test` → `main` via PR. Tag the merge commit `v<version>`. The tag triggers `build-release.yml` which builds the production ZIP, versioned PWA snapshot, desktop binaries, and deploys to `app.richstatistics.com`.
 
 ### What we review
 

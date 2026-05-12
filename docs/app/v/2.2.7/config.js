@@ -26,9 +26,9 @@
 	// Auto-detect environment from hostname when not injected by plugin.
 	if ( ! window.RSA_CONFIG.env ) {
 		var host = window.location.hostname;
-		if ( host === 'rs-dev.richardkentgates.com' || host === 'localhost' || host === '127.0.0.1' ) {
+		if ( host === 'dev.richstatistics.com' || host === 'localhost' || host === '127.0.0.1' ) {
 			window.RSA_CONFIG.env = 'development';
-		} else if ( host === 'rs-test.richardkentgates.com' ) {
+		} else if ( host === 'test.richstatistics.com' ) {
 			window.RSA_CONFIG.env = 'test';
 		} else {
 			window.RSA_CONFIG.env = 'production';

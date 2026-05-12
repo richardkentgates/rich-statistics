@@ -16,18 +16,18 @@ This document captures audit findings, infrastructure decisions, and the verifie
 | A4 | CI `build-release.yml` push paths | ✅ Resolved | Uses `dist/` |
 | A5 | `rsa-apt-repo-update` DESKTOP_DIR | ✅ Resolved | Uses `DIST_DIR` |
 | A6 | `rsa-update-windows` URL paths | ✅ Resolved | Uses `/dist/` |
-| A7 | Test `update.json` URLs | ✅ Resolved | Points to `rs-test.richardkentgates.com/dist/` |
+| A7 | Test `update.json` URLs | ✅ Resolved | Points to `test.richstatistics.com/dist/` |
 
 ### B. Branch-based endpoints (dev/test/prod)
 
 | Ref | Issue | Status | Notes |
 |-----|-------|--------|-------|
-| B1 | CI `deploy-web-dev` hit prod webhook | ✅ Resolved | Now hits `rs-dev.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV` |
-| B2 | CI `deploy-web-test` hit prod webhook | ✅ Resolved | Now hits `rs-test.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST` |
+| B1 | CI `deploy-web-dev` hit prod webhook | ✅ Resolved | Now hits `dev.richstatistics.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV` |
+| B2 | CI `deploy-web-test` hit prod webhook | ✅ Resolved | Now hits `test.richstatistics.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST` |
 | B3 | `rsa-app-update-dev` cloned `main` | ✅ Resolved | Now clones `develop` branch |
 | B4 | `rsa-app-update-test` cloned `main` | ✅ Resolved | Now clones `test` branch |
-| B5 | Test SSL vhost wrong `ServerName` | ✅ Resolved | Corrected to `rs-test.richardkentgates.com` |
-| B6 | No SSL cert for test | ✅ Resolved | LetsEncrypt cert obtained for `rs-test.richardkentgates.com` |
+| B5 | Test SSL vhost wrong `ServerName` | ✅ Resolved | Corrected to `test.richstatistics.com` |
+| B6 | No SSL cert for test | ✅ Resolved | LetsEncrypt cert obtained for `test.richstatistics.com` |
 | B7 | Test vhost missing `/_deploy/` Alias | ✅ Resolved | Added to both HTTP and SSL vhosts |
 | B8 | Dev `dist/` empty | ✅ Resolved | Desktop binaries now pushed by CI |
 | B9 | `RSA_APP_URL` hardcoded to production | ✅ Resolved | Dynamic via `rsa_detect_app_url()` — see commit df82c7c |
@@ -64,7 +64,7 @@ All four phases are implemented:
 
 | Resource | Production | Dev | Test |
 |----------|-----------|-----|------|
-| Subdomain | `rs-app.richardkentgates.com` | `rs-dev.richardkentgates.com` | `rs-test.richardkentgates.com` |
+| Subdomain | `app.richstatistics.com` | `dev.richstatistics.com` | `test.richstatistics.com` |
 | Server path | `/var/www/rs-app/public_html/` | `/var/www/rs-app-dev/` | `/var/www/rs-app-test/` |
 | SSL | ✅ Valid LetsEncrypt | ✅ Valid LetsEncrypt | ✅ Valid LetsEncrypt |
 | PWA web app | ✅ Served | ✅ Served | ✅ Served |
@@ -92,8 +92,8 @@ All four phases are implemented:
 
 | Ref | Workflow | Job | Status | Notes |
 |-----|----------|-----|--------|-------|
-| CI1 | `build-develop.yml` | `deploy-web` | ✅ Resolved | Sends to `rs-dev.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV` |
-| CI2 | `build-test.yml` | `deploy-web` | ✅ Resolved | Sends to `rs-test.richardkentgates.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST` |
+| CI1 | `build-develop.yml` | `deploy-web` | ✅ Resolved | Sends to `dev.richstatistics.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_DEV` |
+| CI2 | `build-test.yml` | `deploy-web` | ✅ Resolved | Sends to `test.richstatistics.com/_deploy/` with `DEPLOY_WEBHOOK_TOKEN_TEST` |
 | CI3 | `build-develop.yml` | `build-desktop` | ✅ Resolved | Pushes Linux + Windows (signed) binaries + `.sig` to dev server `dist/`, regenerates `update.json` |
 | CI4 | `build-release.yml` | `build-desktop-linux` | ✅ Resolved | Pushes signed `.deb` + `.sig` to `public_html/dist/`, updates APT repo |
 | CI5 | `build-release.yml` | `ping-deploy` | ✅ Resolved | Deterministic webhook call to production `/_deploy/` |
@@ -183,17 +183,17 @@ Each environment subdomain should be monitored for HTTP 200 responses. Since no 
 **Recommended setup (cron on app server, or external):**
 ```
 # Check every 5 minutes via cron
-*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://rs-app.richardkentgates.com/ | grep -q 200 || logger -t rsa-monitor "PROD DOWN"
-*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://rs-dev.richardkentgates.com/ | grep -q 200 || logger -t rsa-monitor "DEV DOWN"
-*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://rs-test.richardkentgates.com/ | grep -q 200 || logger -t rsa-monitor "TEST DOWN"
+*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://app.richstatistics.com/ | grep -q 200 || logger -t rsa-monitor "PROD DOWN"
+*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://dev.richstatistics.com/ | grep -q 200 || logger -t rsa-monitor "DEV DOWN"
+*/5 * * * * curl -fsS -o /dev/null -w "%{http_code}" https://test.richstatistics.com/ | grep -q 200 || logger -t rsa-monitor "TEST DOWN"
 ```
 
 **Endpoints to monitor:**
 | Environment | URL | What to check |
 |-------------|-----|---------------|
-| Production | `https://rs-app.richardkentgates.com/` | PWA root returns 200 |
-| Dev | `https://rs-dev.richardkentgates.com/` | PWA root returns 200 |
-| Test | `https://rs-test.richardkentgates.com/` | PWA root returns 200 |
+| Production | `https://app.richstatistics.com/` | PWA root returns 200 |
+| Dev | `https://dev.richstatistics.com/` | PWA root returns 200 |
+| Test | `https://test.richstatistics.com/` | PWA root returns 200 |
 | All | `https://<host>/dist/update.json` | Tauri update manifest accessible |
 | All | `https://<host>/apt/` | APT repo directory listing |
 | All | `https://<host>/_deploy/` | Webhook endpoint (returns 405 on GET, not 404) |
@@ -238,7 +238,7 @@ sudo apt install rich-statistics=<previous-version>
 # Linux (direct .deb)
 sudo dpkg -i rich-statistics-linux-amd64-<previous>.deb
 
-# Windows — download previous .exe from https://rs-app.richardkentgates.com/dist/
+# Windows — download previous .exe from https://app.richstatistics.com/dist/
 # Tauri updater checks update.json which lists the latest version only.
 # Rollback requires manual .exe download and install.
 ```
@@ -251,7 +251,7 @@ cd /var/www/rs-app/public_html
 sudo git checkout <previous-hash> -- docs/app/
 
 # 2. Flush CDN/cache if applicable
-# 3. Verify: curl -I https://rs-app.richardkentgates.com/
+# 3. Verify: curl -I https://app.richstatistics.com/
 ```
 
 #### CI Pipeline Rollback

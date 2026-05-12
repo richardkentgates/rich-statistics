@@ -28,7 +28,7 @@ set -euo pipefail
 
 APT_DIR="/var/www/rs-app/apt"
 DESKTOP_DIR="/var/www/rs-app/public_html/dist"
-KEY_UID="Rich Statistics APT Signing Key <apt@rs-app.richardkentgates.com>"
+KEY_UID="Rich Statistics APT Signing Key <apt@app.richstatistics.com>"
 LOG_TAG="rsa-apt-repo-update"
 
 log() { logger -t "${LOG_TAG}" "$*" || true; echo "$(date -u +%FT%TZ)  $*"; }
