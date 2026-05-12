@@ -186,7 +186,7 @@ The Premium plan unlocks click tracking, heatmaps, the REST API, and the PWA web
 = 1.2.0 =
 * PWA OTP pairing: 6-digit HMAC-signed code for secure app connection
 * /verify-otp REST endpoint
-* Hosted PWA at rs-app.richardkentgates.com
+* Hosted PWA at app.richstatistics.com
 
 = 1.1.0 =
 * Click destination capture (phone, email, geo, SMS, download URLs)

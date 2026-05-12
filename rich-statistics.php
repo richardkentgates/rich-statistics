@@ -47,12 +47,12 @@ if ( function_exists( 'rs_fs' ) ) {
 		function rsa_detect_app_url(): string {
 			$env = rsa_detect_app_env();
 			if ( 'development' === $env ) {
-				return 'https://rs-dev.richardkentgates.com/';
+				return 'https://dev.richstatistics.com/';
 			}
 			if ( 'test' === $env ) {
-				return 'https://rs-test.richardkentgates.com/';
+				return 'https://test.richstatistics.com/';
 			}
-			return 'https://rs-app.richardkentgates.com/';
+			return 'https://app.richstatistics.com/';
 		}
 	}
 

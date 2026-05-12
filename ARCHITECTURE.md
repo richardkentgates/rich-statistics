@@ -324,7 +324,7 @@ main         ← tagged releases only (v2.x.x)
 
 ## PWA / Desktop App Architecture
 
-The companion app is served from the application server at `rs-app.richardkentgates.com` (synced via deploy webhook from GitHub) and is also bundled inside the Tauri-wrapped Linux desktop app (`.deb`).
+The companion app is served from the application server at `app.richstatistics.com` (synced via deploy webhook from GitHub) and is also bundled inside the Tauri-wrapped Linux desktop app (`.deb`).
 
 ### Versioned Snapshot Folder Layout
 
@@ -428,7 +428,7 @@ navigator.serviceWorker.addEventListener('message', function (event) {
 
 ## App Server
 
-The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
+The companion app server (`app.richstatistics.com`, GCP) serves:
 - `/` — live canonical PWA
 - `/v/{version}/` — versioned snapshots referenced by `versions.json`
 - `/dist/rich-statistics-linux-amd64.deb` — latest amd64 `.deb`
@@ -453,11 +453,11 @@ The companion app server (`rs-app.richardkentgates.com`, GCP) serves:
 
 The app server doubles as a Debian/Ubuntu APT repository so users can install and upgrade the Linux desktop app through their normal system package manager.
 
-**Repository URL:** `https://rs-app.richardkentgates.com/apt stable main`
+**Repository URL:** `https://app.richstatistics.com/apt stable main`
 
-**Public signing key:** `https://rs-app.richardkentgates.com/apt/public.gpg`
+**Public signing key:** `https://app.richstatistics.com/apt/public.gpg`
 GPG fingerprint: `7528670109B7907492528C2F7F1EA217D64A5134`
-(RSA 4096, uid: `Rich Statistics APT Signing Key <apt@rs-app.richardkentgates.com>`)
+(RSA 4096, uid: `Rich Statistics APT Signing Key <apt@app.richstatistics.com>`)
 
 **Directory layout on server:**
 ```
@@ -488,10 +488,10 @@ GPG fingerprint: `7528670109B7907492528C2F7F1EA217D64A5134`
 
 **User installation:**
 ```bash
-curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+curl -fsSL https://app.richstatistics.com/apt/public.gpg \
     | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
-    https://rs-app.richardkentgates.com/apt stable main" \
+    https://app.richstatistics.com/apt stable main" \
     | sudo tee /etc/apt/sources.list.d/rich-statistics.list
 sudo apt update && sudo apt install rich-statistics
 ```
