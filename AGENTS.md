@@ -102,9 +102,9 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 
 | Branch | Environment | Server | CI Workflow | Branch Type |
 |--------|-------------|--------|-------------|-------------|
-| `main` | Production | `rs-app.richardkentgates.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
-| `develop` | Dev/Beta | `rs-dev.richardkentgates.com` | `build-develop.yml` (push) | Bleeding-edge |
-| `test` | Staging | `rs-test.richardkentgates.com` | `build-test.yml` (push) | Integration testing |
+| `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
+| `develop` | Dev/Beta | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge |
+| `test` | Staging | `test.richstatistics.com` | `build-test.yml` (push) | Integration testing |
 
 Each branch has its own:
 - WordPress plugin ZIP (CI artifact)
@@ -115,10 +115,10 @@ Each branch has its own:
 
 | Resource | Production | Dev | Test |
 |----------|-----------|-----|------|
-| PWA origin | `rs-app.richardkentgates.com` | `rs-dev.richardkentgates.com` | `rs-test.richardkentgates.com` |
-| Webhook | `rs-app.richardkentgates.com/_deploy/` | `rs-dev.richardkentgates.com/_deploy/` | `rs-test.richardkentgates.com/_deploy/` |
-| APT repo | `rs-app.richardkentgates.com/apt/` | `rs-dev.richardkentgates.com/apt/` | `rs-test.richardkentgates.com/apt/` |
-| Desktop binaries | `rs-app.richardkentgates.com/dist/` | `rs-dev.richardkentgates.com/dist/` | `rs-test.richardkentgates.com/dist/` |
+| PWA origin | `app.richstatistics.com` | `dev.richstatistics.com` | `test.richstatistics.com` |
+| Webhook | `app.richstatistics.com/_deploy/` | `dev.richstatistics.com/_deploy/` | `test.richstatistics.com/_deploy/` |
+| APT repo | `app.richstatistics.com/apt/` | `dev.richstatistics.com/apt/` | `test.richstatistics.com/apt/` |
+| Desktop binaries | `app.richstatistics.com/dist/` | `dev.richstatistics.com/dist/` | `test.richstatistics.com/dist/` |
 | Server path | `/var/www/rs-app/public_html/` | `/var/www/rs-app-dev/` | `/var/www/rs-app-test/` |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Webhook token | `/etc/rsa-webhook-token` | `/etc/rsa-webhook-token-dev` | `/etc/rsa-webhook-token-test` |
@@ -170,9 +170,9 @@ See `ROADMAP.md` for the full audit of server infrastructure, version compatibil
 
 - Freemius — License management and plugin updates
 - OpenAI/Custom — AI query feature
-- `rs-app.richardkentgates.com` — Production PWA, desktop downloads, APT repo
-- `rs-dev.richardkentgates.com` — Dev/bleeding-edge PWA and desktop builds
-- `rs-test.richardkentgates.com` — Test/staging PWA (used for integration testing)
+- `app.richstatistics.com` — Production PWA, desktop downloads, APT repo
+- `dev.richstatistics.com` — Dev/bleeding-edge PWA and desktop builds
+- `test.richstatistics.com` — Test/staging PWA (used for integration testing)
 
 ## Build / Deploy
 

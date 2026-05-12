@@ -26,10 +26,10 @@
 [![Top language](https://img.shields.io/github/languages/top/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
 
 <!-- Platform -->
-[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://rs-app.richardkentgates.com)
-[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb)
-[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb)
-[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe)
+[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=googlechrome&logoColor=white)](https://app.richstatistics.com)
+[![Linux amd64](https://img.shields.io/badge/Linux-amd64%20.deb-FCC624?logo=linux&logoColor=black)](https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb)
+[![Linux arm64](https://img.shields.io/badge/Linux-arm64%20.deb-FCC624?logo=linux&logoColor=black)](https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb)
+[![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://app.richstatistics.com/dist/rich-statistics-windows.exe)
 
 <!-- Plugin features -->
 [![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
@@ -52,7 +52,7 @@
 [![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://statistics.richardkentgates.com)
 [![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1%20AA-blueviolet)](https://statistics.richardkentgates.com)
 
-**Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com) &nbsp;|&nbsp; **Web App:** [rs-app.richardkentgates.com](https://rs-app.richardkentgates.com) &nbsp;|&nbsp; **Dev:** [rs-dev.richardkentgates.com](https://rs-dev.richardkentgates.com) &nbsp;|&nbsp; **Test:** [rs-test.richardkentgates.com](https://rs-test.richardkentgates.com)
+**Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com) &nbsp;|&nbsp; **Web App:** [app.richstatistics.com](https://app.richstatistics.com) &nbsp;|&nbsp; **Dev:** [dev.richstatistics.com](https://dev.richstatistics.com) &nbsp;|&nbsp; **Test:** [test.richstatistics.com](https://test.richstatistics.com)
 
 ---
 
@@ -91,9 +91,9 @@ Rich Statistics offers native desktop apps for Linux and Windows across all rele
 
 | Track | Linux amd64 | Linux arm64 | Windows |
 |-------|------------|-------------|---------|
-| **Production** | [.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe) |
-| **Dev / Beta** | [.deb](https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://rs-dev.richardkentgates.com/dist/rich-statistics-windows.exe) |
-| **Test / Staging** | [.deb](https://rs-test.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-test.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://rs-test.richardkentgates.com/dist/rich-statistics-windows.exe) |
+| **Production** | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://app.richstatistics.com/dist/rich-statistics-windows.exe) |
+| **Dev / Beta** | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://dev.richstatistics.com/dist/rich-statistics-windows.exe) |
+| **Test / Staging** | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb) | [.exe](https://test.richstatistics.com/dist/rich-statistics-windows.exe) |
 
 The apps include automatic update detection via the built-in Tauri updater.
 
@@ -115,9 +115,9 @@ Rich Statistics maintains three release tracks, each deployed to its own endpoin
 
 | Track | Branch | Subdomain | Stability | Use Case |
 |-------|--------|-----------|-----------|----------|
-| **Production** | `main` | `rs-app.richardkentgates.com` | Stable | Official releases — use in production |
-| **Beta / Dev** | `develop` | `rs-dev.richardkentgates.com` | Bleeding-edge | Preview upcoming features, test integrations |
-| **Staging / Test** | `test` | `rs-test.richardkentgates.com` | Unstable | Integration testing, QA validation |
+| **Production** | `main` | `app.richstatistics.com` | Stable | Official releases — use in production |
+| **Beta / Dev** | `develop` | `dev.richstatistics.com` | Bleeding-edge | Preview upcoming features, test integrations |
+| **Staging / Test** | `test` | `test.richstatistics.com` | Unstable | Integration testing, QA validation |
 
 Each track has its own:
 - **WordPress plugin** built from its branch
@@ -206,12 +206,12 @@ Each branch syncs its web app, desktop binaries, and APT repository to a dedicat
 
 | Resource | Production | Dev | Test |
 |----------|-----------|-----|------|
-| PWA web app | `https://rs-app.richardkentgates.com` | `https://rs-dev.richardkentgates.com` | `https://rs-test.richardkentgates.com` |
-| Linux .deb (amd64) | `https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb` | `https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-amd64.deb` | `https://rs-test.richardkentgates.com/dist/rich-statistics-linux-amd64.deb` |
-| Linux .deb (arm64) | `https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb` | `https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-arm64.deb` | `https://rs-test.richardkentgates.com/dist/rich-statistics-linux-arm64.deb` |
-| Windows .exe | `https://rs-app.richardkentgates.com/dist/rich-statistics-windows.exe` | `https://rs-dev.richardkentgates.com/dist/rich-statistics-windows.exe` | `https://rs-test.richardkentgates.com/dist/rich-statistics-windows.exe` |
-| APT repository | `https://rs-app.richardkentgates.com/apt/` | `https://rs-dev.richardkentgates.com/apt/` | `https://rs-test.richardkentgates.com/apt/` |
-| Webhook | `https://rs-app.richardkentgates.com/_deploy/` | `https://rs-dev.richardkentgates.com/_deploy/` | `https://rs-test.richardkentgates.com/_deploy/` |
+| PWA web app | `https://app.richstatistics.com` | `https://dev.richstatistics.com` | `https://test.richstatistics.com` |
+| Linux .deb (amd64) | `https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb` | `https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb` | `https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb` |
+| Linux .deb (arm64) | `https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb` | `https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb` | `https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb` |
+| Windows .exe | `https://app.richstatistics.com/dist/rich-statistics-windows.exe` | `https://dev.richstatistics.com/dist/rich-statistics-windows.exe` | `https://test.richstatistics.com/dist/rich-statistics-windows.exe` |
+| APT repository | `https://app.richstatistics.com/apt/` | `https://dev.richstatistics.com/apt/` | `https://test.richstatistics.com/apt/` |
+| Webhook | `https://app.richstatistics.com/_deploy/` | `https://dev.richstatistics.com/_deploy/` | `https://test.richstatistics.com/_deploy/` |
 
 ---
 
@@ -310,13 +310,13 @@ All GET endpoints accept a `period` query parameter: `7d`, `30d`, `90d`, `thismo
 
 ## PWA Web App (Premium)
 
-The production web app is served from `https://rs-app.richardkentgates.com`. Dev and test builds are available at their respective subdomains:
+The production web app is served from `https://app.richstatistics.com`. Dev and test builds are available at their respective subdomains:
 
 | Track | URL |
 |-------|-----|
-| **Production** | `https://rs-app.richardkentgates.com` |
-| **Dev / Beta** | `https://rs-dev.richardkentgates.com` |
-| **Test / Staging** | `https://rs-test.richardkentgates.com` |
+| **Production** | `https://app.richstatistics.com` |
+| **Dev / Beta** | `https://dev.richstatistics.com` |
+| **Test / Staging** | `https://test.richstatistics.com` |
 
 ### Connecting to your site
 
@@ -341,12 +341,12 @@ The APT repository provides automatic updates via your normal system package man
 
 ```bash
 # Add the GPG key
-curl -fsSL https://rs-app.richardkentgates.com/apt/public.gpg \
+curl -fsSL https://app.richstatistics.com/apt/public.gpg \
     | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
 
 # Add the repository
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
-    https://rs-app.richardkentgates.com/apt stable main" \
+    https://app.richstatistics.com/apt stable main" \
     | sudo tee /etc/apt/sources.list.d/rich-statistics.list
 
 # Install
@@ -361,9 +361,9 @@ Each track has its own APT repository with the same structure:
 
 | Track | APT Repository URL |
 |-------|-------------------|
-| **Production** | `https://rs-app.richardkentgates.com/apt` |
-| **Dev / Beta** | `https://rs-dev.richardkentgates.com/apt` |
-| **Test / Staging** | `https://rs-test.richardkentgates.com/apt` |
+| **Production** | `https://app.richstatistics.com/apt` |
+| **Dev / Beta** | `https://dev.richstatistics.com/apt` |
+| **Test / Staging** | `https://test.richstatistics.com/apt` |
 
 Replace the URL in the APT install instructions above to subscribe to a different track.
 
@@ -371,9 +371,9 @@ Replace the URL in the APT install instructions above to subscribe to a differen
 
 | Track | amd64 | arm64 |
 |-------|-------|-------|
-| **Production** | [.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-app.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) |
-| **Dev / Beta** | [.deb](https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-dev.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) |
-| **Test / Staging** | [.deb](https://rs-test.richardkentgates.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://rs-test.richardkentgates.com/dist/rich-statistics-linux-arm64.deb) |
+| **Production** | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
+| **Dev / Beta** | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
+| **Test / Staging** | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb) | [.deb](https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb) |
 
 ```bash
 sudo dpkg -i rich-statistics-linux-*.deb
