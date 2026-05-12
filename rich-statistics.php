@@ -33,10 +33,10 @@ if ( function_exists( 'rs_fs' ) ) {
 			if ( ! $host ) {
 				return 'production';
 			}
-			if ( str_contains( $host, 'rs-dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
+			if ( str_contains( $host, 'dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
 				return 'development';
 			}
-			if ( str_contains( $host, 'rs-test.' ) ) {
+			if ( str_contains( $host, 'test.' ) ) {
 				return 'test';
 			}
 			return 'production';
