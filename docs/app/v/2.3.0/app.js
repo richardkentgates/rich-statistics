@@ -2753,7 +2753,7 @@
 				'<div class="rsa-card-header"><strong>Windows</strong></div>' +
 				'<div style="padding:16px;">' +
 					'<p class="rsa-install-subtitle">Download installer (.exe)</p>' +
-					'<p style="margin-bottom:8px"><a class="rsa-install-btn" href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Windows .exe</a></p>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Windows .exe</a></p>' +
 				'</div>' +
 			'</div>' +
 
