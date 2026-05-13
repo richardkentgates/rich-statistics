@@ -1189,6 +1189,7 @@ class RSA_Admin {
 					'<li>' . esc_html__( 'Bot filtering sensitivity: Analytics → Preferences → Tracking', 'rich-statistics' ) . '</li>' .
 					'<li>' . esc_html__( 'Email digests: Analytics → Preferences → Email Reports', 'rich-statistics' ) . '</li>' .
 					'<li>' . esc_html__( 'App access: Analytics → Preferences → App Access', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'Multisite: Network Admin → Rich Statistics for cross-site overview and AI', 'rich-statistics' ) . '</li>' .
 					'</ul>' .
 					'<p>' . esc_html__( 'Premium features (click tracking, heatmaps, WooCommerce, REST API) are available via the Upgrade link in the admin sidebar.', 'rich-statistics' ) . '</p>',
 			]
@@ -1320,6 +1321,15 @@ class RSA_Admin {
 					'<h2>' . esc_html__( 'Maintenance', 'rich-statistics' ) . '</h2>' .
 					'<p>' . esc_html__( 'Lists every distinct page path recorded in the database. Live paths correspond to published pages or posts on your site. Unmatched paths belong to deleted pages, renamed URLs, or test paths that are no longer active.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Use the Purge button to permanently delete all events, click records, and heatmap data for a specific path. This is useful for removing test traffic, redirect chains, or data for pages you have since deleted. Purging cannot be undone.', 'rich-statistics' ) . '</p>',
+			],
+			'toplevel_page_rich-statistics-network'            => [
+				'id'      => 'rsa-network-help',
+				'title'   => __( 'Network Dashboard', 'rich-statistics' ),
+				'content' =>
+					'<h2>' . esc_html__( 'Network Dashboard', 'rich-statistics' ) . '</h2>' .
+					'<p>' . esc_html__( 'The network dashboard shows analytics KPIs for every sub-site in your WordPress multisite network. The table displays pageviews, sessions, and bounce rate for the last 30 days. Click a site name to open its individual dashboard.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Cross-Site AI Assistant', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Configure your AI provider (endpoint, API key, model) in the settings panel, then ask questions about any site in your network. The AI fetches data from each site\'s REST API and generates conversational answers. Voice input and output are supported in compatible browsers.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Premium gating', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'The dashboard itself is free for all multisite networks. Premium tools (campaigns, user-flow, clicks, heatmap, woocommerce) are gated per-site based on each sub-site\'s own Freemius licence. The AI tool endpoint handles this automatically.', 'rich-statistics' ) . '</p>',
 			],
 		];
 

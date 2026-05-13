@@ -28,7 +28,7 @@ Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent
 * Configurable data retention (1–730 days, default 90)
 * Email digest reports (daily/weekly/monthly) via wp_mail — no third-party email service
 * WP-CLI support: overview, top-pages, audience, export, purge, status
-* Full Multisite support with per-site tables and network admin panel
+* Full Multisite support with per-site tables, network admin dashboard with cross-site AI, and network-wide disable switch
 * All third-party dependencies bundled locally — no CDN calls at runtime
 
 **Premium features (via Freemius):**
@@ -38,7 +38,7 @@ Privacy-first analytics for WordPress publishers. No PII, no cookies, no consent
 * Full REST API (15+ endpoints) authenticated via WP Application Passwords
 * Progressive Web App: installable mobile analytics dashboard
 * WooCommerce Analytics: conversion funnel, revenue, top products
-* AI Analytics Assistant: conversational insights via OpenAI or local LLM
+* AI Analytics Assistant: conversational insights via OpenAI or local LLM (PWA, desktop app, and multisite network dashboard)
 * Desktop apps for Linux (.deb, amd64 + arm64) and Windows (.exe)
 
 **Privacy by design:**
