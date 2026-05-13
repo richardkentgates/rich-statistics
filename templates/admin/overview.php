@@ -126,15 +126,17 @@ if ( ! empty( $referrers ) ) {
 	);
 }
 
-// Campaign insight.
-$campaigns = RSA_Analytics::get_campaigns( $period, 1 );
-if ( ! empty( $campaigns ) ) {
-	$top_camp   = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
-	$insights[] = sprintf(
-		__( 'Top campaign: <strong>%1$s</strong> (%2$s sessions).', 'rich-statistics' ),
-		esc_html( $top_camp ),
-		esc_html( number_format( $campaigns[0]['sessions'] ) )
-	);
+// Campaign insight (premium only).
+if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
+	$campaigns = RSA_Analytics::get_campaigns( $period, 1 );
+	if ( ! empty( $campaigns ) ) {
+		$top_camp   = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
+		$insights[] = sprintf(
+			__( 'Top campaign: <strong>%1$s</strong> (%2$s sessions).', 'rich-statistics' ),
+			esc_html( $top_camp ),
+			esc_html( number_format( $campaigns[0]['sessions'] ) )
+		);
+	}
 }
 ?>
 <?php if ( $insights ) : ?>
@@ -234,11 +236,9 @@ if ( ! empty( $campaigns ) ) {
 <script>
 (function() {
 	'use strict';
-	// Auto-refresh the overview page every 30 seconds to show live data.
 	setTimeout( function() {
-		// Preserve the current period and any custom date filters.
 		var url = new URL( window.location.href );
-		url.searchParams.set( 'rsa_refresh', '1' );
+		url.searchParams.delete( 'rsa_refresh' );
 		window.location.href = url.toString();
 	}, 30000 );
 })();

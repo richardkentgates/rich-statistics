@@ -295,12 +295,10 @@ $has_ai       = ! empty( $ai_endpoint );
 		sendBtn.disabled = true;
 		sendBtn.textContent = '...';
 
-		// Fetch data from all sites via REST tool endpoint
+		// Fetch data from all sites via REST tool endpoint.
+		// Always try all tools — each site's /ai/tool endpoint gates per-site.
 		var promises = [];
-		var hasPremium = <?php echo function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ? 'true' : 'false'; ?>;
-		var tools = hasPremium
-			? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
-			: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ];
 
 		siteData.forEach( function ( site ) {
 			tools.forEach( function ( tool ) {

@@ -1209,8 +1209,7 @@
 			case 'heatmap'    : renderHeatmap( container );     break;
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
-			case 'install'    : renderInstall( container );    break;
-			case 'ai-chat'    : renderAiChat( container );    break;
+			case 'install'    : renderInstall( container );      break;
 			default: setLoading( false );
 		}
 
@@ -1301,9 +1300,7 @@
 			'</div>';
 
 		// Fetch tools and build insights
-		var tools = state.isPremium
-			? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
-			: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ];
 
 		Promise.all( tools.map( function ( tool ) {
 			return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
@@ -1463,9 +1460,7 @@
 			sendBtn.textContent = '...';
 			_speakNext = ap.autoSpeak && ! wasVoice;
 
-			var toolsToFetch = state.isPremium
-				? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
-				: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+			var toolsToFetch = [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ];
 
 			Promise.all( toolsToFetch.map( function ( tool ) {
 				return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
@@ -2845,6 +2840,8 @@
 					'</div>' +
 				'</div>' +
 			'</div>';
+
+		setLoading( false );
 	}
 
 	// -----------------------------------------------------------------------

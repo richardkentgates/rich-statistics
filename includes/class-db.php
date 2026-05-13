@@ -204,7 +204,7 @@ class RSA_DB {
 			'rsa_email_digest_enabled'     => 0,
 			'rsa_email_digest_frequency'   => 'weekly',
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
-			'rsa_email_digest_next'        => '',
+
 			'rsa_woocommerce_enabled'      => 1,
 		];
 
@@ -283,46 +283,56 @@ class RSA_DB {
 		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
 
-		$result   = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000",
-				$cutoff
-			)
-		);
-		$deleted += (int) $result;
+		do {
+			$result   = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000",
+					$cutoff
+				)
+			);
+			$deleted += (int) $result;
+		} while ( $result > 0 );
 
-		$result   = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000",
-				$cutoff
-			)
-		);
-		$deleted += (int) $result;
+		do {
+			$result   = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000",
+					$cutoff
+				)
+			);
+			$deleted += (int) $result;
+		} while ( $result > 0 );
 
-		$result   = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000",
-				$cutoff
-			)
-		);
-		$deleted += (int) $result;
+		do {
+			$result   = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000",
+					$cutoff
+				)
+			);
+			$deleted += (int) $result;
+		} while ( $result > 0 );
 
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
-		$result      = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000",
-				$cutoff_date
-			)
-		);
-		$deleted    += (int) $result;
+		do {
+			$result   = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$wpdb->prefix}rsa_heatmap` WHERE date_bucket < %s LIMIT 5000",
+					$cutoff_date
+				)
+			);
+			$deleted += (int) $result;
+		} while ( $result > 0 );
 
-		$result   = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000",
-				$cutoff
-			)
-		);
-		$deleted += (int) $result;
+		do {
+			$result   = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000",
+					$cutoff
+				)
+			);
+			$deleted += (int) $result;
+		} while ( $result > 0 );
 
 		return $deleted;
 	}
