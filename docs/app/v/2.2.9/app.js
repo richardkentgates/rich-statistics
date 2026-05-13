@@ -914,8 +914,6 @@
 			woocommerce  : 'WooCommerce',
 		};
 
-		// Also gate AI chat in the PWA (view may be added in future)
-		premiumFeatures['ai-chat'] = 'AI Assistant';
 
 		function switchView( view ) {
 			// Deactivate old view
