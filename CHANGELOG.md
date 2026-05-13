@@ -5,10 +5,31 @@ All notable changes to Rich Statistics are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-05-13
+
+### Added
+- `POST /ai/tool` REST endpoint returning structured JSON — free tools (overview, pages, audience, referrers, behavior) for all users, premium tools (campaigns, user-flow, clicks, heatmap, woocommerce) with active licence
+- Free Insights panel on admin Overview dashboard — server-side insight cards derived from analytics data (no LLM needed)
+- AI provider settings in PWA (Install → AI Assistant Provider) — users bring their own OpenAI-compatible endpoint and API key
+- AI Analytics Assistant wiki page documenting the tool-calling architecture
+- Legal compliance section on GitHub Pages landing page with GDPR, ePrivacy, CCPA statute citations
+
+### Changed
+- AI architecture refactored: `/ai/query` (monolithic LLM call) replaced by `/ai/tool` — plugin returns structured data, the app calls the user's own LLM
+- PWA `renderAiChat()` rewritten for tool-calling orchestration — fetches data via `/ai/tool`, sends to user-configured LLM for conversational answers
+- No AI provider configuration stored server-side — API key and provider settings live in the app's localStorage
+- Version bumped to 2.4.0
+
+### Removed
+- `POST /ai/query` endpoint and `ai_query()` method
+- AI Integration section from admin Preferences page (`rsa_ai_provider`, `rsa_ai_api_key`, `rsa_ai_endpoint`, `rsa_ai_model` options)
+- `templates/admin/ai-chat.php` — AI chat now lives in the PWA/desktop app
+- Admin menu entry for AI Assistant (redirects to Overview)
+- Premium gating of AI chat in PWA — `/ai/tool` endpoint gates tools per-tier, app-side AI engine is free
+
 ## [Unreleased]
 
 ### Added
-- PHPCS coding standards check added to CI workflows (`tests.yml`, `build-develop.yml`, `build-test.yml`, `build-release.yml`)
 - `wp-coding-standards/wpcs` added as dev dependency
 - Versioned PWA snapshot `config.js` now includes `env` auto-detection
 - `readme.txt` changelog updated with all 2.x releases
