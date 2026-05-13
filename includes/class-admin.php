@@ -643,7 +643,7 @@ class RSA_Admin {
 	/** Render the AI chat page (redirects to the app). */
 	public static function page_ai_chat(): void {
 		wp_safe_redirect( admin_url( 'admin.php?page=rich-statistics-overview' ) );
-		exit; }
+		exit; } // Kept for backward compat — may have been bookmarked
 	/** Render the install page. */
 	public static function page_install(): void {
 		self::render( 'install' ); }
@@ -1152,7 +1152,7 @@ class RSA_Admin {
 			return '';
 		}
 		return substr( $key, 0, 4 ) . str_repeat( '*', max( 0, strlen( $key ) - 4 ) );
-	}
+	} // Retained for API compatibility
 
 	// ----------------------------------------------------------------
 	// Help tabs — appear in the upper-right "Help" dropdown on each page.

@@ -41,14 +41,14 @@ class RSA_Email {
 			return;
 		}
 
-		$freq   = get_option( 'rsa_email_digest_frequency', 'weekly' );
-		$offset = match ( $freq ) {
-			'daily'   => DAY_IN_SECONDS,
-			'monthly' => 30 * DAY_IN_SECONDS,
-			default   => WEEK_IN_SECONDS,
-		};
-
-		wp_schedule_single_event( time() + $offset, 'rsa_send_digest' );
+		$freq = get_option( 'rsa_email_digest_frequency', 'weekly' );
+		if ( 'daily' === $freq ) {
+			wp_schedule_single_event( time() + DAY_IN_SECONDS, 'rsa_send_digest' );
+		} elseif ( 'monthly' === $freq ) {
+			wp_schedule_single_event( strtotime( 'first day of next month 8:00' ), 'rsa_send_digest' );
+		} else {
+			wp_schedule_single_event( time() + WEEK_IN_SECONDS, 'rsa_send_digest' );
+		}
 	}
 
 	/**
