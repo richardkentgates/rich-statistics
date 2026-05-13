@@ -230,3 +230,16 @@ if ( ! empty( $campaigns ) ) {
 </div>
 
 <?php RSA_Admin::page_footer(); ?>
+
+<script>
+(function() {
+	'use strict';
+	// Auto-refresh the overview page every 30 seconds to show live data.
+	setTimeout( function() {
+		// Preserve the current period and any custom date filters.
+		var url = new URL( window.location.href );
+		url.searchParams.set( 'rsa_refresh', '1' );
+		window.location.href = url.toString();
+	}, 30000 );
+})();
+</script>

@@ -38,6 +38,7 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
+		refreshTimer: null,      // setInterval id for auto-refresh
 		aiProvider  : null,      // { apiKey, endpoint, model, voiceInput, voiceOutput, voiceLang, voiceSpeed, autoSpeak } or null
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
 		isPremium   : false,     // from RSA_CONFIG.isPremium
@@ -1170,6 +1171,12 @@
 		var container = document.getElementById( 'rsa-view-' + view );
 		if ( ! container ) return;
 
+		// Clear any existing auto-refresh.
+		if ( state.refreshTimer ) {
+			clearInterval( state.refreshTimer );
+			state.refreshTimer = null;
+		}
+
 		setLoading( true );
 
 		switch ( view ) {
@@ -1188,7 +1195,47 @@
 			case 'ai-chat'    : renderAiChat( container );    break;
 			default: setLoading( false );
 		}
+
+		startAutoRefresh();
 	}
+
+	/**
+	 * Start auto-refresh for the current view.
+	 * Overview refreshes every 30s; most other views every 60s.
+	 */
+	function startAutoRefresh() {
+		if ( state.refreshTimer ) {
+			clearInterval( state.refreshTimer );
+		}
+		var interval = state.view === 'overview' ? 30000 : 60000;
+		state.refreshTimer = setInterval( function () {
+			// Only re-fetch if this view is still active and online.
+			if ( state.connState === 'offline' ) return;
+			state.cache = {};
+			var fn = renderFunctions[ state.view ];
+			if ( fn ) {
+				var container = document.getElementById( 'rsa-view-' + state.view );
+				if ( container ) fn( container );
+			}
+		}, interval );
+	}
+
+	// Map view names to render functions for auto-refresh.
+	var renderFunctions = {
+		overview   : renderOverview,
+		pages      : renderPages,
+		audience   : renderAudience,
+		referrers  : renderReferrers,
+		behavior   : renderBehavior,
+		campaigns  : renderCampaigns,
+		'user-flow': renderUserFlow,
+		clicks     : renderClicks,
+		heatmap    : renderHeatmap,
+		export     : renderExport,
+		woocommerce: renderWoocommerce,
+		install    : renderInstall,
+		'ai-chat'  : renderAiChat,
+	};
 
 	function setLoading( on ) {
 		document.getElementById( 'rsa-loading' ).hidden = ! on;
