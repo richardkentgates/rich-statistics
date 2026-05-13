@@ -13,7 +13,7 @@ if ( ! current_user_can( 'manage_network_options' ) ) {
 // Handle AI + voice settings save.
 if ( isset( $_POST['rsa_network_ai_save'] ) ) {
 	check_admin_referer( 'rsa_network_ai_save' );
-	update_site_option( 'rsa_network_ai_endpoint', esc_url_raw( $_POST['rsa_network_ai_endpoint'] ?? '' ) );
+	update_site_option( 'rsa_network_ai_endpoint', esc_url_raw( wp_unslash( $_POST['rsa_network_ai_endpoint'] ?? '' ) ) );
 	if ( isset( $_POST['rsa_network_ai_key'] ) && '' !== $_POST['rsa_network_ai_key'] ) {
 		$raw = sanitize_text_field( wp_unslash( $_POST['rsa_network_ai_key'] ) );
 		if ( ! preg_match( '/^\*+$/', $raw ) ) {

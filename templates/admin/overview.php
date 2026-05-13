@@ -77,6 +77,7 @@ if ( $data['pageviews'] > 0 ) {
 	$top_share = $data['pageviews'] > 0 ? round( ( $top_views / $data['pageviews'] ) * 100, 1 ) : 0;
 	if ( $top_page ) {
 		$insights[] = sprintf(
+			/* translators: 1: page path, 2: view count, 3: percentage share */
 			__( 'Top page: <strong>%1$s</strong> with %2$s views (%3$s%% of total traffic).', 'rich-statistics' ),
 			esc_html( $top_page ),
 			esc_html( number_format( $top_views ) ),
@@ -108,6 +109,7 @@ if ( $data['sessions'] > 0 ) {
 	$ratio = round( $data['pageviews'] / $data['sessions'], 1 );
 	if ( $ratio >= 3 ) {
 		$insights[] = sprintf(
+			/* translators: %s: pages-per-session ratio */
 			__( 'Visitors view %s pages per session on average — strong engagement.', 'rich-statistics' ),
 			esc_html( $ratio )
 		);
@@ -120,6 +122,7 @@ if ( ! empty( $referrers ) ) {
 	$top_ref    = $referrers[0]['domain'];
 	$ref_visits = $referrers[0]['visits'];
 	$insights[] = sprintf(
+		/* translators: 1: referrer domain, 2: visit count */
 		__( 'Top referrer: <strong>%1$s</strong> (%2$s visits).', 'rich-statistics' ),
 		esc_html( $top_ref ),
 		esc_html( number_format( $ref_visits ) )
@@ -132,6 +135,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only()
 	if ( ! empty( $campaigns ) ) {
 		$top_camp   = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
 		$insights[] = sprintf(
+			/* translators: 1: campaign name or source, 2: session count */
 			__( 'Top campaign: <strong>%1$s</strong> (%2$s sessions).', 'rich-statistics' ),
 			esc_html( $top_camp ),
 			esc_html( number_format( $campaigns[0]['sessions'] ) )
