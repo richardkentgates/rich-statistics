@@ -28,14 +28,14 @@ if ( isset( $_POST['rsa_network_ai_save'] ) ) {
 	$saved = true;
 }
 
-$ai_endpoint   = get_site_option( 'rsa_network_ai_endpoint', '' );
-$ai_key        = get_site_option( 'rsa_network_ai_key', '' );
-$ai_model      = get_site_option( 'rsa_network_ai_model', 'gpt-4o-mini' );
-$voice_input   = (int) get_site_option( 'rsa_network_voice_input', 0 );
-$voice_output  = (int) get_site_option( 'rsa_network_voice_output', 0 );
-$voice_lang    = get_site_option( 'rsa_network_voice_lang', 'en-US' );
-$voice_speed   = (float) get_site_option( 'rsa_network_voice_speed', 1.0 );
-$has_ai        = ! empty( $ai_endpoint );
+$ai_endpoint  = get_site_option( 'rsa_network_ai_endpoint', '' );
+$ai_key       = get_site_option( 'rsa_network_ai_key', '' );
+$ai_model     = get_site_option( 'rsa_network_ai_model', 'gpt-4o-mini' );
+$voice_input  = (int) get_site_option( 'rsa_network_voice_input', 0 );
+$voice_output = (int) get_site_option( 'rsa_network_voice_output', 0 );
+$voice_lang   = get_site_option( 'rsa_network_voice_lang', 'en-US' );
+$voice_speed  = (float) get_site_option( 'rsa_network_voice_speed', 1.0 );
+$has_ai       = ! empty( $ai_endpoint );
 ?>
 <div class="wrap rsa-wrap">
 	<h1>
@@ -55,8 +55,8 @@ $has_ai        = ! empty( $ai_endpoint );
 	$sites = get_sites( array( 'number' => 100, 'orderby' => 'id', 'order' => 'ASC' ) );
 	if ( $sites ) :
 		global $wpdb;
-		$now   = current_time( 'mysql' );
-		$start = date( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+		$now               = current_time( 'mysql' );
+		$start             = date( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$default_retention = (int) get_site_option( 'rsa_default_retention_days', 90 );
 		$network_disable   = (int) get_site_option( 'rsa_network_disable_tracker', 0 );
 		$site_data         = array();
@@ -75,8 +75,8 @@ $has_ai        = ! empty( $ai_endpoint );
 			<?php
 			foreach ( $sites as $site ) :
 				switch_to_blog( $site->blog_id );
-				$has_table = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . 'rsa_events' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$bt        = (int) get_option( 'rsa_bot_score_threshold', 5 );
+				$has_table  = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . 'rsa_events' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$bt         = (int) get_option( 'rsa_bot_score_threshold', 5 );
 				$tracker_on = ! $network_disable && ! (bool) get_option( 'rsa_network_disable_tracker', 0 );
 
 				$pageviews = 0;
@@ -95,13 +95,13 @@ $has_ai        = ! empty( $ai_endpoint );
 				$site_data[]   = array(
 					'id'        => $site->blog_id,
 					'name'      => $site_details->blogname,
-			'url' => get_home_url(),
-			'pageviews' => $pageviews,
-			'sessions'  => $sessions,
-			'bounce'    => $bounce,
-		);
-		restore_current_blog();
-		?>
+					'url'       => get_home_url(),
+					'pageviews' => $pageviews,
+					'sessions'  => $sessions,
+					'bounce'    => $bounce,
+				);
+				restore_current_blog();
+				?>
 		<tr>
 			<td><a href="<?php echo esc_url( $dashboard_url ); ?>"><?php echo esc_html( $site_details->blogname ); ?></a></td>
 			<td><?php echo $has_table ? esc_html( number_format( $pageviews ) ) : '<span style="color:#a0a5ae">&mdash;</span>'; ?></td>
@@ -199,14 +199,18 @@ $has_ai        = ! empty( $ai_endpoint );
 	var apiEndpoint = '<?php echo esc_js( $ai_endpoint ); ?>';
 	var apiKey = '<?php echo esc_js( $ai_key ); ?>';
 	var apiModel = '<?php echo esc_js( $ai_model ); ?>';
-	var l10n = <?php echo wp_json_encode( array(
-		'speaking'          => __( 'Speaking...', 'rich-statistics' ),
+	var l10n = 
+	<?php
+	echo wp_json_encode( array(
+		'speaking'            => __( 'Speaking...', 'rich-statistics' ),
 		'voice_not_supported' => __( 'Voice input not supported.', 'rich-statistics' ),
 		'unable_to_generate'  => __( 'Unable to generate a response.', 'rich-statistics' ),
 		'connection_error'    => __( 'Connection error. Check your AI provider endpoint.', 'rich-statistics' ),
 		'hello'               => __( 'Hello! Ask me anything about your network of', 'rich-statistics' ),
 		'sites'               => __( 'sites.', 'rich-statistics' ),
-	) ); ?>;
+	) );
+	?>
+				;
 
 	var input   = document.getElementById( 'rsa-net-input' );
 	var sendBtn = document.getElementById( 'rsa-net-send' );

@@ -390,7 +390,7 @@ class RSA_Admin {
 			'label' => __( 'Maintenance', 'rich-statistics' ),
 			'cap'   => 'rsa_manage_statistics',
 		];
-		$pages['install'] = [
+		$pages['install']     = [
 			'title' => __( 'Install App', 'rich-statistics' ),
 			'label' => __( 'Install App', 'rich-statistics' ),
 			'cap'   => 'rsa_manage_statistics',
@@ -645,7 +645,8 @@ class RSA_Admin {
 		wp_safe_redirect( admin_url( 'admin.php?page=rich-statistics-overview' ) );
 		exit; }
 	/** Render the install page. */
-	public static function page_install(): void { self::render( 'install' ); }
+	public static function page_install(): void {
+		self::render( 'install' ); }
 
 	/** Require a premium license or exit with an error. */
 	private static function require_premium_or_exit(): void {
@@ -1322,7 +1323,7 @@ class RSA_Admin {
 					'<p>' . esc_html__( 'Lists every distinct page path recorded in the database. Live paths correspond to published pages or posts on your site. Unmatched paths belong to deleted pages, renamed URLs, or test paths that are no longer active.', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Use the Purge button to permanently delete all events, click records, and heatmap data for a specific path. This is useful for removing test traffic, redirect chains, or data for pages you have since deleted. Purging cannot be undone.', 'rich-statistics' ) . '</p>',
 			],
-			'toplevel_page_rich-statistics-network'            => [
+			'toplevel_page_rich-statistics-network'        => [
 				'id'      => 'rsa-network-help',
 				'title'   => __( 'Network Dashboard', 'rich-statistics' ),
 				'content' =>

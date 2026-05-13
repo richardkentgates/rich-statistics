@@ -71,13 +71,13 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 $insights = [];
 
 if ( $data['pageviews'] > 0 ) {
-	$top_pages   = RSA_Analytics::get_top_pages( $period, 1, $date_filters );
-	$top_page    = $top_pages ? $top_pages[0]['page'] : null;
-	$top_views   = $top_pages ? $top_pages[0]['views'] : 0;
-	$top_share   = $data['pageviews'] > 0 ? round( ( $top_views / $data['pageviews'] ) * 100, 1 ) : 0;
+	$top_pages = RSA_Analytics::get_top_pages( $period, 1, $date_filters );
+	$top_page  = $top_pages ? $top_pages[0]['page'] : null;
+	$top_views = $top_pages ? $top_pages[0]['views'] : 0;
+	$top_share = $data['pageviews'] > 0 ? round( ( $top_views / $data['pageviews'] ) * 100, 1 ) : 0;
 	if ( $top_page ) {
 		$insights[] = sprintf(
-			__( 'Top page: <strong>%s</strong> with %s views (%s%% of total traffic).', 'rich-statistics' ),
+			__( 'Top page: <strong>%1$s</strong> with %2$s views (%3$s%% of total traffic).', 'rich-statistics' ),
 			esc_html( $top_page ),
 			esc_html( number_format( $top_views ) ),
 			esc_html( $top_share )
@@ -120,7 +120,7 @@ if ( ! empty( $referrers ) ) {
 	$top_ref    = $referrers[0]['domain'];
 	$ref_visits = $referrers[0]['visits'];
 	$insights[] = sprintf(
-		__( 'Top referrer: <strong>%s</strong> (%s visits).', 'rich-statistics' ),
+		__( 'Top referrer: <strong>%1$s</strong> (%2$s visits).', 'rich-statistics' ),
 		esc_html( $top_ref ),
 		esc_html( number_format( $ref_visits ) )
 	);
@@ -129,9 +129,9 @@ if ( ! empty( $referrers ) ) {
 // Campaign insight.
 $campaigns = RSA_Analytics::get_campaigns( $period, 1 );
 if ( ! empty( $campaigns ) ) {
-	$top_camp = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
+	$top_camp   = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
 	$insights[] = sprintf(
-		__( 'Top campaign: <strong>%s</strong> (%s sessions).', 'rich-statistics' ),
+		__( 'Top campaign: <strong>%1$s</strong> (%2$s sessions).', 'rich-statistics' ),
 		esc_html( $top_camp ),
 		esc_html( number_format( $campaigns[0]['sessions'] ) )
 	);

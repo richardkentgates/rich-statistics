@@ -321,7 +321,7 @@ class RSA_CLI extends WP_CLI_Command {
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$this->maybe_switch_blog( $assoc );
 
-		$data = RSA_Analytics::get_user_flow( $period );
+		$data  = RSA_Analytics::get_user_flow( $period );
 		$steps = $data['steps'] ?? [];
 
 		if ( empty( $steps ) ) {
@@ -333,9 +333,9 @@ class RSA_CLI extends WP_CLI_Command {
 		$items = [ [ __( 'Step', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ), __( 'Drop-off', 'rich-statistics' ) ] ];
 		$prev  = 0;
 		foreach ( $steps as $i => $s ) {
-			$drop  = $i > 0 ? ( ( $prev - $s['sessions'] ) ) : 0;
+			$drop    = $i > 0 ? ( ( $prev - $s['sessions'] ) ) : 0;
 			$items[] = [ $i + 1, number_format( $s['sessions'] ), number_format( $drop ) ];
-			$prev = $s['sessions'];
+			$prev    = $s['sessions'];
 		}
 		$this->cli_table( $items );
 	}

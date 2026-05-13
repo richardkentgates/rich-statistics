@@ -191,7 +191,8 @@ class RSA_Rest_API {
 			'params' => [
 				'type'              => 'object',
 				'default'           => [],
-				'validate_callback' => function ( $v ) { return is_array( $v ); },
+				'validate_callback' => function ( $v ) {
+					return is_array( $v ); },
 			],
 		];
 		register_rest_route(
