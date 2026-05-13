@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Rich Statistics — Admin Styles
-   ========================================================================== */
+	Rich Statistics — Admin Styles
+	========================================================================== */
 
 /* Variables — aligned with WP admin native palette */
 :root {
@@ -474,8 +474,8 @@
 }
 
 /* ----------------------------------------------------------------
-   Upsell banner (shown to non-paying users across all admin pages)
-   ---------------------------------------------------------------- */
+	Upsell banner (shown to non-paying users across all admin pages)
+	---------------------------------------------------------------- */
 .rsa-upsell-banner {
 display: flex;
 align-items: center;
