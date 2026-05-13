@@ -106,7 +106,7 @@ All desktop apps include automatic updates via the built-in Tauri updater. Linux
 | WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
-| AI Analytics Assistant | Conversational insights via OpenAI or local LLM |
+| AI Analytics Assistant | Conversational insights powered by your own AI provider (configured in the PWA app). Plugin provides structured tool data (`POST /ai/tool`); the app calls your LLM. |
 | Desktop apps | Native Linux (.deb, amd64 + arm64) and Windows (.exe) |
 | Data export | CSV/JSON export of pageviews, sessions, clicks, referrers |
 
@@ -305,7 +305,7 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
 | POST | `/track` | Pageview ingest (nonce-protected, public) |
-| POST | `/ai/query` | AI chat query endpoint (premium) |
+| POST | `/ai/tool` | Structured analytics data for AI tool-calling. Free tools: overview, pages, audience, referrers, behavior. Premium tools: campaigns, user-flow, clicks, heatmap, woocommerce. Returns JSON — no LLM call server-side. |
 | POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
 | GET/POST | `/user-settings` | Sync app site list across devices |
 | POST | `/purge-page` | Delete all data for a specific page (premium) |

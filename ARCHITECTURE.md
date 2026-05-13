@@ -75,7 +75,7 @@ rich-statistics/
 │   ├── heatmap.php            Premium
 │   ├── preferences.php
 │   ├── export.php
-│   ├── ai-chat.php
+│   ├── (ai-chat removed — AI lives in the PWA app)
 │   └── network-settings.php
 ├── templates/email/           HTML email digest template
 ├── src-tauri/               Tauri 2 desktop app wrapper (Rust) — wraps docs/app/

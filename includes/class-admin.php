@@ -345,11 +345,6 @@ class RSA_Admin {
 				'label' => __( 'Export', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
-			$pages['ai-chat']   = [
-				'title' => __( 'AI Assistant', 'rich-statistics' ),
-				'label' => __( 'AI Assistant', 'rich-statistics' ),
-				'cap'   => 'manage_options',
-			];
 		} else {
 			$pages['campaigns'] = [
 				'title' => __( 'Campaigns', 'rich-statistics' ),
@@ -375,11 +370,6 @@ class RSA_Admin {
 				'title' => __( 'Export', 'rich-statistics' ),
 				'label' => __( 'Export', 'rich-statistics' ) . $upgrade_label,
 				'cap'   => 'rsa_manage_statistics',
-			];
-			$pages['ai-chat']   = [
-				'title' => __( 'AI Assistant', 'rich-statistics' ),
-				'label' => __( 'AI Assistant', 'rich-statistics' ) . $upgrade_label,
-				'cap'   => 'manage_options',
 			];
 		}
 		$pages['preferences'] = [
@@ -639,10 +629,10 @@ class RSA_Admin {
 	/** Render the network settings page. */
 	public static function page_network_settings(): void {
 		self::render( 'network-settings' ); }
-	/** Render the AI chat page. */
+	/** Render the AI chat page (redirects to the app). */
 	public static function page_ai_chat(): void {
-		self::require_premium_or_exit();
-		self::render( 'ai-chat' ); }
+		wp_safe_redirect( admin_url( 'admin.php?page=rich-statistics-overview' ) );
+		exit; }
 	/** Render the install page. */
 	public static function page_install(): void { self::render( 'install' ); }
 
@@ -835,18 +825,7 @@ class RSA_Admin {
 			'rsa_email_digest_recipients'  => 'sanitize_text_field',
 			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
-			'rsa_ai_provider'              => 'sanitize_text_field',
-			'rsa_ai_endpoint'              => 'sanitize_url',
-			'rsa_ai_model'                 => 'sanitize_text_field',
 		];
-
-		if ( isset( $_POST['rsa_ai_api_key'] ) && '' !== $_POST['rsa_ai_api_key'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-			$raw = sanitize_text_field( wp_unslash( $_POST['rsa_ai_api_key'] ) );
-			if ( preg_match( '/^\*+$/', $raw ) ) {
-				$raw = get_option( 'rsa_ai_api_key', '' );
-			}
-			update_option( 'rsa_ai_api_key', $raw );
-		}
 
 		foreach ( $fields as $key => $sanitizer ) {
 			if ( isset( $_POST[ $key ] ) ) {
@@ -1320,6 +1299,7 @@ class RSA_Admin {
 					'<p><strong>' . esc_html__( 'Bot score threshold', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Requests scoring at or above this value are silently discarded as automated traffic. Range: 1–10. Default: 5. Lower values filter more aggressively.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Data retention', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Events older than the retention period are pruned nightly. Range: 1–730 days. Default: 90 days. Disable pruning to keep all data indefinitely.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Email digests', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'Configure a periodic summary email (daily, weekly, or monthly). Sent via wp_mail — no third-party email service required. Enter comma-separated addresses for multiple recipients.', 'rich-statistics' ) . '</p>' .
+					'<p><strong>' . esc_html__( 'Insights panel', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'The Overview page now includes a free Insights section derived directly from your analytics data. No LLM or API key needed — insight cards are computed server-side from your metrics. For conversational AI, use the Rich Statistics PWA with your own AI provider configured in the app\'s settings.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Remove data on uninstall', 'rich-statistics' ) . '</strong> — ' . esc_html__( 'When enabled, all plugin data and options are permanently deleted when you remove the plugin. This action cannot be undone.', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-maintenance' => [
