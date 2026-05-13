@@ -138,21 +138,21 @@ $has_ai        = ! empty( $ai_endpoint );
 			</tr>
 			<tr>
 				<th><?php esc_html_e( 'Voice Input', 'rich-statistics' ); ?></th>
-				<td><label><input type="checkbox" name="rsa_network_voice_input" value="1" <?php checked( $voice_input, 1 ); ?>> Enable microphone</label></td>
+				<td><label><input type="checkbox" name="rsa_network_voice_input" value="1" <?php checked( $voice_input, 1 ); ?>> <?php esc_html_e( 'Enable microphone', 'rich-statistics' ); ?></label></td>
 			</tr>
 			<tr>
 				<th><?php esc_html_e( 'Voice Output', 'rich-statistics' ); ?></th>
-				<td><label><input type="checkbox" name="rsa_network_voice_output" value="1" <?php checked( $voice_output, 1 ); ?>> Enable speaker</label></td>
+				<td><label><input type="checkbox" name="rsa_network_voice_output" value="1" <?php checked( $voice_output, 1 ); ?>> <?php esc_html_e( 'Enable speaker', 'rich-statistics' ); ?></label></td>
 			</tr>
 			<tr>
 				<th><label for="rsa_network_voice_lang"><?php esc_html_e( 'Language', 'rich-statistics' ); ?></label></th>
 				<td>
 					<select id="rsa_network_voice_lang" name="rsa_network_voice_lang">
-						<option value="en-US" <?php selected( $voice_lang, 'en-US' ); ?>>English (US)</option>
-						<option value="en-GB" <?php selected( $voice_lang, 'en-GB' ); ?>>English (UK)</option>
-						<option value="es-ES" <?php selected( $voice_lang, 'es-ES' ); ?>>Spanish</option>
-						<option value="fr-FR" <?php selected( $voice_lang, 'fr-FR' ); ?>>French</option>
-						<option value="de-DE" <?php selected( $voice_lang, 'de-DE' ); ?>>German</option>
+						<option value="en-US" <?php selected( $voice_lang, 'en-US' ); ?>><?php esc_html_e( 'English (US)', 'rich-statistics' ); ?></option>
+						<option value="en-GB" <?php selected( $voice_lang, 'en-GB' ); ?>><?php esc_html_e( 'English (UK)', 'rich-statistics' ); ?></option>
+						<option value="es-ES" <?php selected( $voice_lang, 'es-ES' ); ?>><?php esc_html_e( 'Spanish', 'rich-statistics' ); ?></option>
+						<option value="fr-FR" <?php selected( $voice_lang, 'fr-FR' ); ?>><?php esc_html_e( 'French', 'rich-statistics' ); ?></option>
+						<option value="de-DE" <?php selected( $voice_lang, 'de-DE' ); ?>><?php esc_html_e( 'German', 'rich-statistics' ); ?></option>
 					</select>
 				</td>
 			</tr>
@@ -199,6 +199,14 @@ $has_ai        = ! empty( $ai_endpoint );
 	var apiEndpoint = '<?php echo esc_js( $ai_endpoint ); ?>';
 	var apiKey = '<?php echo esc_js( $ai_key ); ?>';
 	var apiModel = '<?php echo esc_js( $ai_model ); ?>';
+	var l10n = <?php echo wp_json_encode( array(
+		'speaking'          => __( 'Speaking...', 'rich-statistics' ),
+		'voice_not_supported' => __( 'Voice input not supported.', 'rich-statistics' ),
+		'unable_to_generate'  => __( 'Unable to generate a response.', 'rich-statistics' ),
+		'connection_error'    => __( 'Connection error. Check your AI provider endpoint.', 'rich-statistics' ),
+		'hello'               => __( 'Hello! Ask me anything about your network of', 'rich-statistics' ),
+		'sites'               => __( 'sites.', 'rich-statistics' ),
+	) ); ?>;
 
 	var input   = document.getElementById( 'rsa-net-input' );
 	var sendBtn = document.getElementById( 'rsa-net-send' );
@@ -228,7 +236,7 @@ $has_ai        = ! empty( $ai_endpoint );
 		u.lang = voiceLang;
 		u.rate = voiceSpeed;
 		if ( stopBtn ) stopBtn.hidden = false;
-		if ( vsEl ) vsEl.textContent = 'Speaking...';
+		if ( vsEl ) vsEl.textContent = l10n.speaking;
 		u.onend = function () { if ( stopBtn ) stopBtn.hidden = true; if ( vsEl ) vsEl.textContent = ''; };
 		window.speechSynthesis.speak( u );
 	}
@@ -246,7 +254,7 @@ $has_ai        = ! empty( $ai_endpoint );
 	if ( micBtn ) {
 		micBtn.addEventListener( 'click', function () {
 			var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-			if ( ! SR ) { if ( vsEl ) vsEl.textContent = 'Voice input not supported.'; return; }
+			if ( ! SR ) { if ( vsEl ) vsEl.textContent = l10n.voice_not_supported; return; }
 			if ( isListening ) {
 				if ( recognition ) { recognition.stop(); isListening = false; }
 				micBtn.style.borderColor = '#ccc';
@@ -333,20 +341,20 @@ $has_ai        = ! empty( $ai_endpoint );
 			sendBtn.textContent = 'Send';
 			var answer = ( llmData.choices && llmData.choices[0] && llmData.choices[0].message && llmData.choices[0].message.content )
 				|| ( llmData.error && llmData.error.message )
-				|| 'Unable to generate a response.';
+				|| l10n.unable_to_generate;
 			addMsg( 'ai', answer );
 			if ( hasVoiceOutput ) speakText( answer );
 		} )
 		.catch( function () {
 			sendBtn.disabled = false;
 			sendBtn.textContent = 'Send';
-			addMsg( 'ai', 'Connection error. Check your AI provider endpoint.' );
+			addMsg( 'ai', l10n.connection_error );
 		} );
 	}
 
 	sendBtn.addEventListener( 'click', doSend );
 	input.addEventListener( 'keydown', function ( e ) { if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); } } );
-	addMsg( 'ai', 'Hello! Ask me anything about your network of ' + siteData.length + ' sites.' );
+	addMsg( 'ai', l10n.hello + ' ' + siteData.length + ' ' + l10n.sites );
 })();
 </script>
 <?php else : ?>
