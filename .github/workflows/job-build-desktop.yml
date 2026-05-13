@@ -156,6 +156,10 @@ jobs:
                 echo "Not found: $f"
               fi
             done
+            # Warn if Windows update will be unsigned.
+            if ! ls src-tauri/target/release/bundle/nsis/*.exe.sig 2>/dev/null; then
+              echo "WARNING: no .exe.sig file found — update.json will have empty signature"
+            fi
           else
             echo "Contents of deb dir:"
             ls -la src-tauri/target/release/bundle/deb/ || echo "(no deb dir)"
@@ -172,6 +176,8 @@ jobs:
             fi
             if [ -n "${SIG}" ]; then
               $SCP "${SIG}" "<SSH_USER>@<PWA_SERVER_IP>:${{ inputs.target-path }}/${DEST}.deb.sig"
+            else
+              echo "WARNING: no .deb.sig file found — update.json will have empty signature"
             fi
           fi
 

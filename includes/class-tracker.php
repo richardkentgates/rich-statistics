@@ -84,14 +84,15 @@ class RSA_Tracker {
 	}
 
 	private static function get_or_create_session_id(): string {
-		if ( ! empty( self::$current_session_id ) ) {
-			return self::$current_session_id;
+		$blog_id = get_current_blog_id();
+		if ( ! empty( self::$session_ids[ $blog_id ] ) ) {
+			return self::$session_ids[ $blog_id ];
 		}
-		$hex                      = bin2hex( random_bytes( 16 ) );
-		$hex                      = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
-		$variants                 = [ '8', '9', 'a', 'b' ];
-		$hex                      = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
-		self::$current_session_id = sprintf(
+		$hex                              = bin2hex( random_bytes( 16 ) );
+		$hex                              = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
+		$variants                         = [ '8', '9', 'a', 'b' ];
+		$hex                              = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
+		self::$session_ids[ $blog_id ]    = sprintf(
 			'%s-%s-%s-%s-%s',
 			substr( $hex, 0, 8 ),
 			substr( $hex, 8, 4 ),
@@ -99,7 +100,7 @@ class RSA_Tracker {
 			substr( $hex, 16, 4 ),
 			substr( $hex, 20, 12 )
 		);
-		return self::$current_session_id;
+		return self::$session_ids[ $blog_id ];
 	}
 
 	private static function get_protocol_options(): array {
@@ -271,15 +272,34 @@ class RSA_Tracker {
 		];
 	}
 
-	private static $current_session_id = '';
+	/**
+	 * Per-blog session ID storage for multisite safety.
+	 * Keyed by blog_id so that concurrent processing of multiple sites
+	 * in a single request doesn't share session IDs.
+	 *
+	 * @var array<int, string>
+	 */
+	private static array $session_ids = [];
 
+	/**
+	 * Return the session ID for the current blog.
+	 *
+	 * @return string
+	 */
 	public static function get_current_session_id(): string {
-		return self::$current_session_id;
+		$blog_id = get_current_blog_id();
+		return self::$session_ids[ $blog_id ] ?? '';
 	}
 
+	/**
+	 * Set the session ID for the current blog.
+	 *
+	 * @param string $sid The session ID.
+	 */
 	public static function set_current_session_id( string $sid ): void {
 		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
-			self::$current_session_id = $sid;
+			$blog_id                          = get_current_blog_id();
+			self::$session_ids[ $blog_id ]    = $sid;
 		}
 	}
 
