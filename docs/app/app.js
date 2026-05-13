@@ -2742,7 +2742,7 @@
 				'<div class="rsa-card-header"><strong>Linux</strong></div>' +
 				'<div style="padding:16px;">' +
 					'<p class="rsa-install-subtitle">Install via APT (recommended)</p>' +
-					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
 					'<p class="rsa-install-subtitle">Or download .deb directly</p>' +
 					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb">x86-64</a>' +
 					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb">ARM64</a>' +
