@@ -257,9 +257,17 @@ class RSA_Admin {
 			__( 'Rich Statistics', 'rich-statistics' ),
 			'manage_network_options',
 			'rich-statistics-network',
-			[ __CLASS__, 'page_network_settings' ],
+			[ __CLASS__, 'page_network_dashboard' ],
 			'dashicons-chart-area',
 			25
+		);
+		add_submenu_page(
+			'rich-statistics-network',
+			__( 'Network Settings', 'rich-statistics' ),
+			__( 'Network Settings', 'rich-statistics' ),
+			'manage_network_options',
+			'rich-statistics-network-settings',
+			[ __CLASS__, 'page_network_settings' ]
 		);
 	}
 
@@ -626,6 +634,9 @@ class RSA_Admin {
 	public static function page_woocommerce(): void {
 		self::require_premium_or_exit();
 		self::render( 'woocommerce' ); }
+	/** Render the network dashboard page. */
+	public static function page_network_dashboard(): void {
+		self::render( 'network-dashboard' ); }
 	/** Render the network settings page. */
 	public static function page_network_settings(): void {
 		self::render( 'network-settings' ); }
