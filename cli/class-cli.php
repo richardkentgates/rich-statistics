@@ -321,21 +321,17 @@ class RSA_CLI extends WP_CLI_Command {
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$this->maybe_switch_blog( $assoc );
 
-		$data  = RSA_Analytics::get_user_flow( $period );
-		$steps = $data['steps'] ?? [];
+		$rows = RSA_Analytics::get_user_flow( $period );
 
-		if ( empty( $steps ) ) {
+		if ( empty( $rows ) ) {
 			WP_CLI::warning( __( 'No user flow data found for this period.', 'rich-statistics' ) );
 			return;
 		}
 
-		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'User Flow (step drop-off)', 'rich-statistics' ) . '%n' ) );
-		$items = [ [ __( 'Step', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ), __( 'Drop-off', 'rich-statistics' ) ] ];
-		$prev  = 0;
-		foreach ( $steps as $i => $s ) {
-			$drop    = $i > 0 ? ( ( $prev - $s['sessions'] ) ) : 0;
-			$items[] = [ $i + 1, number_format( $s['sessions'] ), number_format( $drop ) ];
-			$prev    = $s['sessions'];
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'User Flow (page transitions)', 'rich-statistics' ) . '%n' ) );
+		$items = [ [ __( 'From', 'rich-statistics' ), __( 'To', 'rich-statistics' ), __( 'Transitions', 'rich-statistics' ) ] ];
+		foreach ( $rows as $r ) {
+			$items[] = [ $r['from_page'], $r['to_page'], number_format( $r['count'] ) ];
 		}
 		$this->cli_table( $items );
 	}
