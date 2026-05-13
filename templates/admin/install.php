@@ -20,7 +20,7 @@ RSA_Admin::page_header( __( 'Install Desktop App', 'rich-statistics' ) );
 		<div style="padding:16px;">
 			<p><strong><?php esc_html_e( 'Install via APT (recommended)', 'rich-statistics' ); ?></strong></p>
 			<pre style="background:#f5f5f5;padding:12px;border-radius:4px;overflow-x:auto;font-size:12px;">curl -fsSL https://app.richstatistics.com/apt/public.gpg \
-	| sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+	| sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/rich-statistics.gpg
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
 	https://app.richstatistics.com/apt stable main" \
