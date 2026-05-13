@@ -4,15 +4,19 @@
  * Available in the FREE tier.
  *
  * Usage:
- *   wp rich-stats overview [--period=30d]
- *   wp rich-stats top-pages [--period=30d] [--limit=10]
- *   wp rich-stats audience [--period=30d]
- *   wp rich-stats export [--format=json|csv] [--period=90d]
- *   wp rich-stats purge [--older-than=90] [--dry-run]
+ *   wp rich-stats overview [--period=30d] [--blog-id=<id>]
+ *   wp rich-stats top-pages [--period=30d] [--limit=10] [--blog-id=<id>]
+ *   wp rich-stats audience [--period=30d] [--blog-id=<id>]
+ *   wp rich-stats referrers [--period=30d] [--limit=10] [--blog-id=<id>]
+ *   wp rich-stats behavior [--period=30d] [--blog-id=<id>]
+ *   wp rich-stats campaigns [--period=30d] [--limit=10] [--blog-id=<id>] (Premium)
+ *   wp rich-stats user-flow [--period=30d] [--blog-id=<id>] (Premium)
+ *   wp rich-stats export [--format=json|csv] [--period=90d] [--blog-id=<id>]
+ *   wp rich-stats purge [--older-than=90] [--dry-run] [--blog-id=<id>]
  *   wp rich-stats email-test [--recipient=you@example.com]
  *   wp rich-stats status
- *   wp rich-stats clicks [--period=30d] [--limit=20] [--page=/] (Premium)
- *   wp rich-stats woocommerce [--period=30d] [--limit=10] (Premium)
+ *   wp rich-stats clicks [--period=30d] [--limit=20] [--page=/] [--blog-id=<id>] (Premium)
+ *   wp rich-stats woocommerce [--period=30d] [--limit=10] [--blog-id=<id>] (Premium)
  *
  * @package RichStatistics
  */
@@ -155,6 +159,188 @@ class RSA_CLI extends WP_CLI_Command {
 	}
 
 	// ----------------------------------------------------------------
+	// referrers
+	// ----------------------------------------------------------------
+
+	/**
+	 * List top referrer domains.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : Default: 30d.
+	 *
+	 * [--limit=<n>]
+	 * : Number of rows. Default: 10.
+	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
+	 * @subcommand referrers
+	 */
+	public function referrers( array $args, array $assoc ): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			WP_CLI::error( __( 'You do not have permission to use Rich Statistics commands.', 'rich-statistics' ) );
+		}
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$limit  = max( 1, (int) ( $assoc['limit'] ?? 10 ) );
+		$this->maybe_switch_blog( $assoc );
+
+		$rows = RSA_Analytics::get_referrers( $period, $limit );
+
+		if ( empty( $rows ) ) {
+			WP_CLI::warning( __( 'No referrer data found.', 'rich-statistics' ) );
+			return;
+		}
+
+		$items = [ [ __( 'Domain', 'rich-statistics' ), __( 'Visits', 'rich-statistics' ) ] ];
+		foreach ( $rows as $r ) {
+			$items[] = [ $r['domain'] ?: '(direct)', number_format( $r['visits'] ) ];
+		}
+		$this->cli_table( $items );
+	}
+
+	// ----------------------------------------------------------------
+	// behavior
+	// ----------------------------------------------------------------
+
+	/**
+	 * Show behavior analysis: time histogram, session depth, entry pages.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : Default: 30d.
+	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
+	 * @subcommand behavior
+	 */
+	public function behavior( array $args, array $assoc ): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			WP_CLI::error( __( 'You do not have permission to use Rich Statistics commands.', 'rich-statistics' ) );
+		}
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$this->maybe_switch_blog( $assoc );
+
+		$data = RSA_Analytics::get_behavior( $period );
+
+		WP_CLI::line( '' );
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Time on Page', 'rich-statistics' ) . '%n' ) );
+		$time_items = [ [ __( 'Range', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
+		foreach ( array_slice( $data['time_on_page'] ?? [], 0, 8 ) as $r ) {
+			$time_items[] = [ $r['label'], number_format( $r['count'] ) ];
+		}
+		$this->cli_table( $time_items );
+
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Session Depth', 'rich-statistics' ) . '%n' ) );
+		$depth_items = [ [ __( 'Depth', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
+		foreach ( array_slice( $data['session_depth'] ?? [], 0, 8 ) as $r ) {
+			$depth_items[] = [ $r['label'], number_format( $r['count'] ) ];
+		}
+		$this->cli_table( $depth_items );
+
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Entry Pages', 'rich-statistics' ) . '%n' ) );
+		$entry_items = [ [ __( 'Page', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
+		foreach ( array_slice( $data['entry_pages'] ?? [], 0, 8 ) as $r ) {
+			$entry_items[] = [ $r['page'], number_format( $r['sessions'] ) ];
+		}
+		$this->cli_table( $entry_items );
+	}
+
+	// ----------------------------------------------------------------
+	// campaigns  (premium)
+	// ----------------------------------------------------------------
+
+	/**
+	 * Show UTM campaign breakdown with session and pageview counts.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : Default: 30d.
+	 *
+	 * [--limit=<n>]
+	 * : Number of rows. Default: 10.
+	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
+	 * @subcommand campaigns
+	 */
+	public function campaigns( array $args, array $assoc ): void {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			WP_CLI::error( __( 'Campaign tracking requires a Rich Statistics Premium licence.', 'rich-statistics' ) );
+		}
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$limit  = max( 1, (int) ( $assoc['limit'] ?? 10 ) );
+		$this->maybe_switch_blog( $assoc );
+
+		$rows = RSA_Analytics::get_campaigns( $period, $limit );
+
+		if ( empty( $rows ) ) {
+			WP_CLI::warning( __( 'No campaign data found for this period.', 'rich-statistics' ) );
+			return;
+		}
+
+		$items = [ [ __( 'Campaign', 'rich-statistics' ), __( 'Source', 'rich-statistics' ), __( 'Medium', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ), __( 'Pageviews', 'rich-statistics' ) ] ];
+		foreach ( $rows as $r ) {
+			$items[] = [
+				$r['campaign'] ?: '—',
+				$r['source'] ?: '—',
+				$r['medium'] ?: '—',
+				number_format( $r['sessions'] ),
+				number_format( $r['pageviews'] ),
+			];
+		}
+		$this->cli_table( $items );
+	}
+
+	// ----------------------------------------------------------------
+	// user-flow  (premium)
+	// ----------------------------------------------------------------
+
+	/**
+	 * Show user flow path explorer data.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--period=<period>]
+	 * : Default: 30d.
+	 *
+	 * @param array $args  CLI positional arguments.
+	 * @param array $assoc CLI associative arguments.
+	 *
+	 * @subcommand user-flow
+	 */
+	public function user_flow( array $args, array $assoc ): void {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			WP_CLI::error( __( 'User Flow requires a Rich Statistics Premium licence.', 'rich-statistics' ) );
+		}
+		$period = $this->validate_period( $assoc['period'] ?? '30d' );
+		$this->maybe_switch_blog( $assoc );
+
+		$data = RSA_Analytics::get_user_flow( $period );
+		$steps = $data['steps'] ?? [];
+
+		if ( empty( $steps ) ) {
+			WP_CLI::warning( __( 'No user flow data found for this period.', 'rich-statistics' ) );
+			return;
+		}
+
+		WP_CLI::line( WP_CLI::colorize( '%B' . __( 'User Flow (step drop-off)', 'rich-statistics' ) . '%n' ) );
+		$items = [ [ __( 'Step', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ), __( 'Drop-off', 'rich-statistics' ) ] ];
+		$prev  = 0;
+		foreach ( $steps as $i => $s ) {
+			$drop  = $i > 0 ? ( ( $prev - $s['sessions'] ) ) : 0;
+			$items[] = [ $i + 1, number_format( $s['sessions'] ), number_format( $drop ) ];
+			$prev = $s['sessions'];
+		}
+		$this->cli_table( $items );
+	}
+
+	// ----------------------------------------------------------------
 	// export
 	// ----------------------------------------------------------------
 
@@ -178,6 +364,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * @subcommand export
 	 */
 	public function export( array $args, array $assoc ): void {
+		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
+			WP_CLI::error( __( 'Data export requires a Rich Statistics Premium licence.', 'rich-statistics' ) );
+		}
 		$period = $this->validate_period( $assoc['period'] ?? '90d' );
 		$format = in_array( $assoc['format'] ?? 'json', [ 'json', 'csv' ], true ) ? ( $assoc['format'] ?? 'json' ) : 'json';
 		$this->maybe_switch_blog( $assoc );
