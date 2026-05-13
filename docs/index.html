@@ -168,6 +168,14 @@
       </div>
 
       <div class="feature-card">
+        <div class="feature-card__icon" aria-hidden="true">🧠</div>
+        <h3>AI Analytics Assistant</h3>
+        <p>Ask questions about your analytics in plain English. The plugin provides structured data via <code>POST /ai/tool</code> — free tools (overview, pages, audience, referrers, behavior) for all users, premium tools (campaigns, user-flow, clicks, heatmap, woocommerce) with an active licence. The PWA or desktop app calls your own OpenAI-compatible LLM to generate conversational answers. No AI API key is stored on your server — it lives in the app.</p>
+        <span class="badge badge--premium">Premium</span>
+        <a class="feature-card__link" href="#app">Configure in the app →</a>
+      </div>
+
+      <div class="feature-card">
         <div class="feature-card__icon" aria-hidden="true">📱</div>
         <h3>PWA &amp; Desktop App</h3>
         <p>The web app and Linux desktop app are free. Install the PWA on any device for offline-capable access, or download the native Linux desktop build. Requires the REST API (Premium) on your WordPress site.</p>
@@ -652,6 +660,13 @@ sudo apt install ./rich-statistics-linux-arm64.deb</code></pre>
         <div class="step__body">
           <h3>Open the app &amp; add your site</h3>
           <p>Open the web app (or the PWA you installed), tap <strong>Add Your Site</strong>, enter your site URL and the 6-digit App Code, then create an Application Password to complete the connection.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__num" aria-hidden="true">4</div>
+        <div class="step__body">
+          <h3>Configure the AI Assistant (optional)</h3>
+          <p>In the app, go to <strong>Install → AI Assistant Provider</strong> and enter your OpenAI-compatible endpoint, API key, and model. The AI feature calls <code>POST /ai/tool</code> on your site to fetch structured analytics data, then sends it to your LLM for conversational answers. No AI configuration is stored on your WordPress server.</p>
         </div>
       </div>
     </div>
