@@ -538,32 +538,44 @@
 			.then( function ( bundled ) {
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
 					// Verify the versioned folder is actually present before navigating.
-					// versions.json may list the version while the snapshot folder was
-					// not included in this particular Tauri build.
 					fetch( '/v/' + pluginVersion + '/index.html', { method: 'HEAD' } )
 						.then( function ( r ) {
 							if ( r.ok ) {
 								window.location.href = '/v/' + pluginVersion + '/';
 							}
-							// Folder absent — stay at current location silently.
 						} )
 						.catch( function () {} );
 					return;
-				} else {
-					// Plugin is newer than all bundled versions — show update banner
-					showDesktopUpdateBanner( pluginVersion, bundled );
-					// Navigate to the highest bundled version we do have
-					var latest = bundled.slice().sort( function ( a, b ) {
-						var pa = a.split( '.' ).map( Number );
-						var pb = b.split( '.' ).map( Number );
-						for ( var i = 0; i < 3; i++ ) {
-							if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
-						}
-						return 0;
-					} )[ 0 ];
-					if ( latest && current !== latest ) {
-						window.location.href = '/v/' + latest + '/';
+				}
+				// Plugin not in bundled versions — check if a desktop update exists.
+				// Only show the banner if an actual newer desktop build is available.
+				var latest = bundled.slice().sort( function ( a, b ) {
+					var pa = a.split( '.' ).map( Number );
+					var pb = b.split( '.' ).map( Number );
+					for ( var i = 0; i < 3; i++ ) {
+						if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
 					}
+					return 0;
+				} )[ 0 ];
+				fetch( '/dist/update.json' )
+					.then( function ( r ) { return r.ok ? r.json() : null; } )
+					.then( function ( upd ) {
+						if ( upd && upd.version ) {
+							var uv = upd.version.split( '.' ).map( Number );
+							var bv = latest.split( '.' ).map( Number );
+							var newer = false;
+							for ( var i = 0; i < 3; i++ ) {
+								if ( uv[ i ] > bv[ i ] ) { newer = true; break; }
+								if ( uv[ i ] < bv[ i ] ) break;
+							}
+							if ( newer ) {
+								showDesktopUpdateBanner( pluginVersion, bundled );
+							}
+						}
+					} )
+					.catch( function () {} );
+				if ( latest && current !== latest ) {
+					window.location.href = '/v/' + latest + '/';
 				}
 			} )
 			.catch( function () {} );
