@@ -35,9 +35,9 @@
       <li><a href="https://github.com/richardkentgates/rich-statistics/wiki" target="_blank" rel="noopener">Docs</a></li>
       <li><a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
-    <a class="btn btn--primary nav__cta" href="https://richardkentgates.com" target="_blank" rel="noopener">
-      Get the Plugin
-    </a>
+      <a class="btn btn--primary nav__cta" href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">
+        Get the Plugin
+      </a>
   </nav>
 </header>
 
@@ -56,7 +56,7 @@
       IP tracking, without cookies, and without sending a single byte to a third-party server.
     </p>
     <div class="hero__actions">
-      <a class="btn btn--primary btn--lg" href="https://richardkentgates.com" target="_blank" rel="noopener">
+      <a class="btn btn--primary btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">
         Get the Plugin
       </a>
       <a class="btn btn--ghost btn--lg" href="https://github.com/richardkentgates/rich-statistics/wiki" target="_blank" rel="noopener">
@@ -259,7 +259,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Do Not Track &amp; Global Privacy Control
         </h3>
-        <p>If a visitor's browser sends a <code>DNT: 1</code> header or has the Global Privacy Control signal set (<code>navigator.globalPrivacyControl</code>), the tracker script exits immediately — before collecting any signal, before creating a session ID, before sending a single byte. No data is recorded for that visit.</p>
+        <p>If a visitor's browser sends a <code>DNT: 1</code> header or has the Global Privacy Control signal set (<code>navigator.globalPrivacyControl</code>), the tracker script exits immediately — before collecting any signal, before creating a session ID, before sending a single byte. No data is recorded for that visit. This honours the <strong>GDPR Art. 21</strong> right to object, the <strong>CCPA §1798.120</strong> right to opt-out, and California's GPC regulations without any configuration required.</p>
       </div>
 
       <div class="privacy-block">
@@ -267,23 +267,23 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Session IDs
         </h3>
-        <p>A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It <strong>dies when the tab closes</strong>, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a visitor's journey across sessions.</p>
+        <p>A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It <strong>dies when the tab closes</strong>, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a visitor's journey across sessions. Because <code>sessionStorage</code> is not a cookie and is cleared by the browser automatically, it falls outside the <strong>ePrivacy Directive Art. 5(3)</strong> consent requirement. The transient, tab-scoped nature means the identifier does not constitute personal data under <strong>GDPR Art. 4(1)</strong> — it cannot be used to identify a natural person across time or devices.</p>
       </div>
 
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          No IP addresses, ever
+          Analytics: No IP addresses recorded
         </h3>
-        <p>IP addresses are never read, stored, or passed to any function — including the bot detection pipeline. The bot scorer works from a browser-side bitmask (pass/fail scores only, never raw values) plus two request headers; <code>REMOTE_ADDR</code> is not accessed anywhere. Run <code>grep -rn "REMOTE_ADDR" includes/ assets/</code> on the source — zero matches.</p>
+        <p>The analytics pipeline never reads, stores, or passes IP addresses. The bot scorer works from a browser-side bitmask (pass/fail scores only, never raw values) plus two request headers; <code>REMOTE_ADDR</code> is not used in tracking or recording. No IP address is written to any analytics table. Because IP addresses are personal data under <strong>GDPR Recital 30</strong>, not processing them at all means the analytics data falls outside the <strong>GDPR Art. 4(1)</strong> definition of personal data (see <strong>Recital 26</strong> — anonymous data not subject to GDPR). This also satisfies the data minimisation principle (<strong>GDPR Art. 5(1)(c)</strong>) and qualifies as de-identified data under <strong>CCPA §1798.140(v)(2)(A)</strong>.</p>
       </div>
 
       <div class="privacy-block">
         <h3>
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
-          No cookies or persistent identifiers
+          Analytics: No cookies or persistent identifiers
         </h3>
-        <p>The plugin sets no cookies and writes nothing to <code>localStorage</code>. There is no browser fingerprinting and no device ID generation. <code>setcookie()</code> and <code>$_COOKIE</code> are not used anywhere. Visitor state within a tab uses <code>sessionStorage</code> only — the browser clears it when the tab closes. The only value that carries across page loads is an optional UTM attribution, also in <code>sessionStorage</code>.</p>
+        <p>The plugin sets no cookies and writes nothing to <code>localStorage</code> for analytics purposes. There is no browser fingerprinting and no device ID generation. Visitor state within a tab uses <code>sessionStorage</code> only — the browser clears it when the tab closes. The only value that carries across page loads is an optional UTM attribution, also in <code>sessionStorage</code>. Since the tracking mechanism does not use HTTP cookies or any storage that persists beyond the tab session, it qualifies for the <strong>strictly necessary</strong> exemption under <strong>ePrivacy Directive Art. 5(3)</strong> — no consent is required. <strong>Note:</strong> WordPress core and Freemius SDK set authentication cookies when you or your visitors sign in — those are outside the plugin's control and are standard WordPress behaviour. Those cookies serve an entirely different purpose (auth vs. analytics) and are strictly necessary for site administration under the same Art. 5(3) exemption.</p>
       </div>
 
       <div class="privacy-block">
@@ -291,7 +291,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           URL &amp; referrer sanitization
         </h3>
-        <p>Before a page path is stored, it is scrubbed server-side: any query parameter longer than 40 characters or resembling an email address is stripped — preventing accidental storage of password-reset tokens or email addresses that sometimes appear in URLs. Referrer URLs are reduced to domain-only before storage; the path and query string (which can contain user-identifying tokens from the referring site) are discarded immediately and never written to the database.</p>
+        <p>Before a page path is stored, it is scrubbed server-side: any query parameter longer than 40 characters or resembling an email address is stripped — preventing accidental storage of password-reset tokens or email addresses that sometimes appear in URLs. Referrer URLs are reduced to domain-only before storage; the path and query string (which can contain user-identifying tokens from the referring site) are discarded immediately and never written to the database. This implements <strong>data minimisation</strong> (<strong>GDPR Art. 5(1)(c)</strong>) and <strong>data protection by design</strong> (<strong>GDPR Art. 25</strong>) at the storage layer, ensuring that even accidental exposure of identifying data is prevented before it reaches a database row.</p>
       </div>
 
       <div class="privacy-block">
@@ -299,7 +299,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           Audience data
         </h3>
-        <p>Operating system and browser are parsed from the User-Agent string. Screen resolution is reported directly by the browser. These are aggregated counters — <strong>no row in any table links a device spec back to a specific visit or session</strong>.</p>
+        <p>Operating system and browser are parsed from the User-Agent string. Screen resolution is reported directly by the browser. These are aggregated counters — <strong>no row in any table links a device spec back to a specific visit or session</strong>. Aggregate-level audience data that cannot be re-associated with an individual falls under <strong>anonymous data</strong> as defined by <strong>GDPR Recital 26</strong>, placing it outside the scope of the GDPR and <strong>CCPA §1798.140(v)(2)(A)</strong>'s definition of personal information.</p>
       </div>
 
       <div class="privacy-block">
@@ -315,15 +315,131 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           No cross-site tracking
         </h3>
-        <p>The tracker runs entirely within your WordPress site. No script is loaded from an external domain, no beacon is sent to a third party, and no data leaves your server. This also means no ad-network leakage and no exposure from a CDN compromise.</p>
+        <p>The tracker runs entirely within your WordPress site. No script is loaded from an external domain, no beacon is sent to a third party, and no data leaves your server. This also means no ad-network leakage and no exposure from a CDN compromise. Because no data is transferred to a third country or international organisation, <strong>GDPR Chapter V</strong> (international transfers) — including <strong>Schrems II</strong> adequacy decisions, <strong>Standard Contractual Clauses (Art. 46)</strong>, and <strong>Data Privacy Framework</strong> certification — is irrelevant to this plugin's operation.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Security: Legitimate interest under GDPR Art. 6(1)(f)
+        </h3>
+        <p>The plugin accesses <code>$_SERVER['REMOTE_ADDR']</code> in exactly one place: the OTP verification endpoint (<code>POST /verify-otp</code>). The IP is hashed via SHA-256 and used solely as a transient rate-limit key — a maximum of 5 failed attempts per 5-minute window before a 429 response is returned. The raw IP is never logged, stored in a database, persisted beyond the transient TTL, or associated with analytics data. This processing is necessary for the security of the authentication flow and qualifies as a legitimate interest under GDPR Art. 6(1)(f). It is not analytics tracking.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          Security: Authentication cookies (WordPress core)
+        </h3>
+        <p>When a site administrator or logged-in user authenticates, WordPress core sets standard session cookies (<code>wordpress_logged_in_*</code>, <code>wp-settings-*</code>). The Freemius SDK also sets a session cookie for licence verification. These are required for the admin dashboard and app authentication to function. Rich Statistics itself never sets, reads, or modifies these cookies — they are part of the underlying WordPress platform and are outside the plugin's analytics scope.</p>
       </div>
 
     </div>
 
     <div class="privacy-audit-note">
       <strong>Want to verify it yourself?</strong> The plugin is fully open source.
-      Run <code>grep -rn "REMOTE_ADDR\|setcookie\|_COOKIE" includes/ assets/</code> on the source and you'll get zero matches.
+      Run <code>grep -rn "REMOTE_ADDR\|setcookie\|_COOKIE" includes/ assets/</code> on the plugin's own source and you will find exactly one match: <code>$_SERVER['REMOTE_ADDR']</code> in <code>class-rest-api.php</code>, used only for OTP rate limiting as described above. The <code>setcookie()</code> and <code>$_COOKIE</code> searches return zero matches in the plugin's own code. (WordPress core and Freemius SDK under <code>vendor/</code> use cookies for authentication — those are not part of the plugin's analytics system.)
       <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">View source on GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     LEGAL COMPLIANCE
+============================================================ -->
+<section class="section section--alt" id="compliance">
+  <div class="container">
+    <div class="section__header">
+      <h2>What Rich Statistics relieves your site of</h2>
+      <p>Because the plugin collects no PII, sets no cookies for tracking, and keeps all data on your server, it eliminates the most common legal liability vectors for web analytics. Below is an itemised breakdown of what obligations do not apply.</p>
+    </div>
+
+    <div class="privacy-grid">
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No cookie consent banner for analytics
+        </h3>
+        <p>The tracker sets no cookies, writes nothing to <code>localStorage</code>, and uses only <code>sessionStorage</code> (which clears when the tab closes). This qualifies for the <strong>strictly necessary</strong> exemption under <strong>ePrivacy Directive Art. 5(3)</strong>. No consent mechanism, Consent Management Platform, or cookie notice is required for the analytics data this plugin collects.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No Data Processing Agreement (DPA) needed
+        </h3>
+        <p>Data never leaves your server. No third-party analytics provider processes your visitors' data. Under <strong>GDPR Art. 28</strong>, a DPA is only required when a processor processes personal data on a controller's behalf — since there is no processor and no personal data leaves your infrastructure, no DPA is necessary between you and Rich Statistics.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No cross-border transfer mechanism
+        </h3>
+        <p>No data is sent to an external analytics service, no CDN is loaded at runtime, and no third-party script fires on your pages. This eliminates <strong>Schrems II</strong> adequacy concerns, <strong>Standard Contractual Clauses</strong> administration, <strong>Data Privacy Framework</strong> certification dependencies, and <strong>GDPR Chapter V</strong> transfer restrictions. Your data physically stays on your WordPress server.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No Data Protection Impact Assessment (DPIA) required
+        </h3>
+        <p>Under <strong>GDPR Art. 35</strong>, a DPIA is mandatory when processing is likely to result in high risk to individuals' rights. Processing that involves no special category data, no systematic monitoring, no profiling, and no personal data at all (the analytics data is anonymous — <strong>GDPR Recital 26</strong>) falls below the DPIA threshold.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No Subject Access Request burden
+        </h3>
+        <p>Because no PII is stored, there is nothing to produce or erase when a visitor exercises their <strong>GDPR Art. 15 (right of access)</strong> or <strong>Art. 17 (right to erasure)</strong> rights. The analytics database contains no email addresses, no IP addresses, no usernames, and no device IDs. This also satisfies <strong>CCPA §1798.105</strong> (right to delete) trivially — there is nothing identifying to delete.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No personal data breach notification from analytics
+        </h3>
+        <p>Under <strong>GDPR Art. 33</strong> and <strong>Art. 34</strong>, breach notification obligations apply only when personal data is compromised. Since the analytics database stores no PII, a breach of that database does not trigger notification to supervisory authorities or affected individuals. No IPs, no emails, no cookies — nothing that identifies a natural person (<strong>GDPR Art. 4(1)</strong>).</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No IP-address-as-PII liability
+        </h3>
+        <p><strong>GDPR Recital 30</strong> expressly identifies IP addresses as personal data. Since the analytics pipeline never reads or stores <code>REMOTE_ADDR</code>, this liability vector is eliminated entirely. The only IP processing is the hashed rate-limit key for OTP verification (security legitimate interest under <strong>GDPR Art. 6(1)(f)</strong>), which is never logged or persisted beyond minutes.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No third-party vendor lock-in or data exposure
+        </h3>
+        <p>Self-hosted analytics means your data is not routed through Google, Mixpanel, or any other third-party infrastructure. There is no risk of a vendor-side breach exposing your visitor data, no dependency on a vendor's privacy policy changes, and no obligation to audit a processor's sub-processors. <strong>GDPR Art. 28(4)</strong> (sub-processor authorisation) is irrelevant when there is no processor.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No Consent Management Platform costs
+        </h3>
+        <p>Most analytics providers require a CMP to capture consent for tracking cookies or IP processing. Because Rich Statistics needs neither, the ongoing cost, maintenance, and UX friction of a CMP are eliminated. <strong>ePrivacy Directive Art. 5(3)</strong> (cookie consent) and <strong>GDPR Art. 7</strong> (consent conditions) do not apply to the analytics pipeline.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>
+          <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
+          No data retention violation risk
+        </h3>
+        <p><strong>GDPR Art. 5(1)(e)</strong> requires that personal data be kept no longer than necessary. With configurable auto-pruning (1–730 days), the plugin enforces the storage limitation principle automatically. Old data is purged on a daily cron schedule, and the default 90-day retention aligns with standard regulatory guidance for analytics data.</p>
+      </div>
+
+    </div>
+
+    <div class="privacy-audit-note">
+      <strong>Disclaimer:</strong> This page describes the plugin's technical design and its implications under current EU and US privacy laws. It does not constitute legal advice. Every site's compliance obligations depend on its specific content, audience, jurisdiction, and other plugins or services in use. Consult a qualified privacy attorney for a full compliance assessment.
     </div>
   </div>
 </section>
@@ -344,7 +460,7 @@
           <span class="privacy-block__status privacy-block__status--good" aria-label="Safe">✓</span>
           No consent popup required
         </h3>
-        <p>Because Rich Statistics collects no PII and sets no cookies, most sites do not need a consent banner for analytics at all. Do Not Track and Global Privacy Control are honoured automatically — no configuration required.</p>
+        <p>Because Rich Statistics collects no PII and sets no cookies for analytics, most sites do not need a consent banner for analytics under the ePrivacy Directive Art. 5(3) (strictly necessary exemption), GDPR Art. 6(1)(f) (legitimate interest for anonymous analytics), and CCPA §1798.140(v)(2)(A) (de-identified data exemption). Do Not Track and Global Privacy Control are honoured automatically — no configuration required.</p>
       </div>
 
       <div class="privacy-block">
@@ -415,6 +531,9 @@
       <a class="btn btn--primary btn--lg" href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">
         Download from GitHub
       </a>
+      <a class="btn btn--ghost btn--lg" href="https://wordpress.org/plugins/rich-statistics/" target="_blank" rel="noopener">
+        Install from WordPress.org
+      </a>
     </div>
   </div>
 </section>
@@ -467,12 +586,30 @@
       <a class="btn btn--primary btn--lg" href="app/" target="_blank" rel="noopener">
         Open Web App
       </a>
-      <a class="btn btn--outline btn--lg" href="https://app.richstatistics.com/desktop/rich-statistics-linux-amd64.deb" rel="noopener" aria-label="Download Linux Desktop app for x86_64">
+      <a class="btn btn--outline btn--lg" href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" rel="noopener" aria-label="Download Linux Desktop app for x86_64">
         &#8595; Linux Desktop (x86_64)
       </a>
-      <a class="btn btn--outline btn--lg" href="https://app.richstatistics.com/desktop/rich-statistics-linux-arm64.deb" rel="noopener" aria-label="Download Linux Desktop app for ARM64">
+      <a class="btn btn--outline btn--lg" href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb" rel="noopener" aria-label="Download Linux Desktop app for ARM64">
         &#8595; Linux Desktop (ARM64)
       </a>
+      <a class="btn btn--outline btn--lg" href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" rel="noopener" aria-label="Download Windows Desktop app">
+        &#8595; Windows Desktop
+      </a>
+    </div>
+
+    <div class="release-tracks">
+      <h3>Release Tracks</h3>
+      <p>Each release track publishes desktop builds to its own endpoint. Choose the track that matches your update preference.</p>
+      <table>
+        <thead>
+          <tr><th>Track</th><th>Linux amd64</th><th>Linux arm64</th><th>Windows</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Production</strong></td><td><a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb">.deb</a></td><td><a href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb">.deb</a></td><td><a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe">.exe</a></td></tr>
+          <tr><td><strong>Dev / Beta</strong></td><td><a href="https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb">.deb</a></td><td><a href="https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb">.deb</a></td><td><a href="https://dev.richstatistics.com/dist/rich-statistics-windows.exe">.exe</a></td></tr>
+          <tr><td><strong>Test / Staging</strong></td><td><a href="https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb">.deb</a></td><td><a href="https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb">.deb</a></td><td><a href="https://test.richstatistics.com/dist/rich-statistics-windows.exe">.exe</a></td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="desktop-install">
