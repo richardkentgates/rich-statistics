@@ -41,7 +41,10 @@ Premium features are gated by Freemius (product ID 25954).
 `/overview`, `/pages`, `/audience`, `/referrers`, `/behavior`, `/campaigns`, `/filter-options`, `/user-settings`
 
 **Premium** (`check_premium_auth` — capability + Freemius license):
-`/clicks`, `/heatmap`, `/export`, `/woocommerce`, `/user-flow` (+journey/+sources), `/purge-page`, `/ai/query`
+`/clicks`, `/heatmap`, `/export`, `/woocommerce`, `/user-flow` (+journey/+sources), `/purge-page`
+
+**AI tool endpoint** (`check_ai_tool_permission` — free tools for all, premium tools with license):
+`POST /ai/tool` — accepts `{ tool, params }` and returns structured JSON. Free tools: `overview`, `pages`, `audience`, `referrers`, `behavior`. Premium tools: `campaigns`, `user-flow`, `clicks`, `heatmap`, `woocommerce`. No LLM call happens server-side — the app provides its own AI via the structured data.
 
 ## Running Tests
 

@@ -178,22 +178,30 @@ class RSA_Rest_API {
 		$basic   = [ __CLASS__, 'check_basic_auth' ];
 		$premium = [ __CLASS__, 'check_premium_auth' ];
 
-		// AI conversational endpoint (Premium).
+		// AI tool endpoint — returns structured JSON for the app to reason over.
+		// Free tools are available to all authenticated users;
+		// premium tools require an active premium licence.
+		$tool_args = [
+			'tool'   => [
+				'type'              => 'string',
+				'required'          => true,
+				'enum'              => [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns', 'user-flow', 'clicks', 'heatmap', 'woocommerce' ],
+				'sanitize_callback' => 'sanitize_text_field',
+			],
+			'params' => [
+				'type'              => 'object',
+				'default'           => [],
+				'validate_callback' => function ( $v ) { return is_array( $v ); },
+			],
+		];
 		register_rest_route(
 			self::NS,
-			'/ai/query',
+			'/ai/tool',
 			[
 				'methods'             => 'POST',
-				'callback'            => [ __CLASS__, 'ai_query' ],
-				'permission_callback' => $premium,
-				'args'                => [
-					'question' => [
-						'type'              => 'string',
-						'required'          => true,
-						'sanitize_callback' => 'sanitize_text_field',
-					],
-					'period'   => $read_args['period'],
-				],
+				'callback'            => [ __CLASS__, 'ai_tool' ],
+				'permission_callback' => [ __CLASS__, 'check_ai_tool_permission' ],
+				'args'                => $tool_args,
 			]
 		);
 
@@ -651,6 +659,63 @@ class RSA_Rest_API {
 		return true;
 	}
 
+	/**
+	 * Permission callback for /ai/tool — allows free tools for any authenticated
+	 * user, premium tools only with active licence.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return bool|WP_Error
+	 */
+	public static function check_ai_tool_permission( WP_REST_Request $r ): bool|WP_Error {
+		$free_tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+		$tool       = $r->get_param( 'tool' );
+		if ( in_array( $tool, $free_tools, true ) ) {
+			return self::check_basic_auth( $r );
+		}
+		return self::check_premium_auth( $r );
+	}
+
+	/**
+	 * AI tool endpoint — returns structured analytics data for a given tool.
+	 * The app uses this data for LLM reasoning; no LLM call happens server-side.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function ai_tool( WP_REST_Request $r ): WP_REST_Response {
+		$tool   = $r->get_param( 'tool' );
+		$params = $r->get_param( 'params' );
+		$period = isset( $params['period'] ) && in_array( $params['period'], [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ], true )
+			? $params['period']
+			: '30d';
+		$limit  = isset( $params['limit'] ) ? min( 100, max( 1, (int) $params['limit'] ) ) : 10;
+
+		$page = sanitize_text_field( $params['page'] ?? '' );
+
+		$data = match ( $tool ) {
+			'overview'    => self::strip_pii( RSA_Analytics::get_overview( $period ) ),
+			'pages'       => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_top_pages( $period, $limit ) ),
+			'audience'    => self::strip_pii( RSA_Analytics::get_audience( $period ) ),
+			'referrers'   => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_referrers( $period, $limit ) ),
+			'behavior'    => self::strip_pii( RSA_Analytics::get_behavior( $period ) ),
+			'campaigns'   => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_campaigns( $period, $limit ) ),
+			'user-flow'   => self::strip_pii( RSA_Analytics::get_user_flow( $period ) ),
+			'clicks'      => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_click_map( $period, $page ) ),
+			'heatmap'     => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_heatmap( $page, $period ) ),
+			'woocommerce' => self::strip_pii( RSA_Analytics::get_woocommerce( $period ) ),
+		};
+
+		return self::ok(
+			[
+				'tool'    => $tool,
+				'period'  => $period,
+				'limit'   => $limit,
+				'data'    => $data,
+				'premium' => ! in_array( $tool, [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ], true ),
+			]
+		);
+	}
+
 	// ----------------------------------------------------------------
 	// Plugin info (public).
 	// ----------------------------------------------------------------
@@ -1097,146 +1162,7 @@ class RSA_Rest_API {
 	// ----------------------------------------------------------------
 
 	/**
-	 * AI query endpoint.
-	 *
-	 * @fs_premium_only
-	 *
-	 * @param WP_REST_Request $r Request object.
-	 * @return WP_REST_Response
-	 */
-	public static function ai_query( WP_REST_Request $r ): WP_REST_Response {
-		if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) ) {
-			return new WP_REST_Response(
-				[
-					'ok'    => false,
-					'error' => 'Premium feature',
-				],
-				403
-			);
-		}
-
-		$question = sanitize_text_field( $r->get_param( 'question' ) );
-		$period   = $r->get_param( 'period' ) ? $r->get_param( 'period' ) : '30d';
-
-		// Get AI configuration.
-		$provider = get_option( 'rsa_ai_provider', 'openai' ); // 'openai' or 'custom'
-		$api_key  = get_option( 'rsa_ai_api_key', '' );
-		$endpoint = get_option( 'rsa_ai_endpoint', 'https://api.openai.com/v1/chat/completions' );
-		$model    = get_option( 'rsa_ai_model', 'gpt-4o-mini' );
-
-		// For custom/local endpoints, key might not be required (local Ollama).
-		if ( 'openai' === $provider && empty( $api_key ) ) {
-			return new WP_REST_Response(
-				[
-					'ok'    => false,
-					'error' => 'AI API key not configured',
-				],
-				400
-			);
-		}
-
-		// Gather relevant data (privacy: only aggregate data, no PII).
-		$data           = [];
-		$question_lower = strtolower( $question );
-
-		if ( str_contains( $question_lower, 'overview' ) || str_contains( $question_lower, 'summary' ) || str_contains( $question_lower, 'total' ) ) {
-			$data['overview'] = self::strip_pii( RSA_Analytics::get_overview( $period ) );
-		}
-		if ( str_contains( $question_lower, 'page' ) || str_contains( $question_lower, 'top' ) ) {
-			$data['pages'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_top_pages( $period, 10 ) );
-		}
-		if ( str_contains( $question_lower, 'visitor' ) || str_contains( $question_lower, 'audience' ) || str_contains( $question_lower, 'browser' ) || str_contains( $question_lower, 'os' ) ) {
-			$data['audience'] = self::strip_pii( RSA_Analytics::get_audience( $period ) );
-		}
-		if ( str_contains( $question_lower, 'refer' ) || str_contains( $question_lower, 'source' ) ) {
-			$data['referrers'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_referrers( $period, 10 ) );
-		}
-		if ( str_contains( $question_lower, 'campaign' ) || str_contains( $question_lower, 'utm' ) ) {
-			$data['campaigns'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_campaigns( $period, 10 ) );
-		}
-		if ( str_contains( $question_lower, 'woocommerce' ) || str_contains( $question_lower, 'revenue' ) || str_contains( $question_lower, 'product' ) ) {
-			$data['woocommerce'] = array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_woocommerce( $period, 10 ) );
-		}
-		if ( str_contains( $question_lower, 'flow' ) || str_contains( $question_lower, 'journey' ) || str_contains( $question_lower, 'entry' ) ) {
-			$data['user_flow'] = self::strip_pii( RSA_Analytics::get_user_flow( $period ) );
-		}
-
-		// Build privacy-safe context for AI.
-		$system_prompt = 'You are a privacy-first analytics assistant. ' .
-			"Answer the user's question based on the provided aggregate data only. " .
-			"Never invent numbers. Be concise and conversational.\n\n" .
-			"Data:\n" . wp_json_encode( $data, JSON_PRETTY_PRINT );
-
-		// Build request body (OpenAI-compatible format for local LLMs).
-		$body = [
-			'model'      => $model,
-			'messages'   => [
-				[
-					'role'    => 'system',
-					'content' => $system_prompt,
-				],
-				[
-					'role'    => 'user',
-					'content' => $question,
-				],
-			],
-			'max_tokens' => 500,
-		];
-
-		// Add API key header only if provided (local LLMs don't need it).
-		$headers = [ 'Content-Type' => 'application/json' ];
-		if ( ! empty( $api_key ) ) {
-			$headers['Authorization'] = 'Bearer ' . $api_key;
-		}
-
-		// Call AI API.
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'headers' => $headers,
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 30,
-			]
-		);
-
-		if ( is_wp_error( $response ) ) {
-			error_log( 'RSA AI error: ' . $response->get_error_message() );
-			return new WP_REST_Response(
-				[
-					'ok'    => false,
-					'error' => __( 'AI request failed.', 'rich-statistics' ),
-				],
-				500
-			);
-		}
-
-		$status = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $status ) {
-			error_log( 'RSA AI API HTTP ' . $status . ': ' . wp_remote_retrieve_body( $response ) );
-			return new WP_REST_Response(
-				[
-					'ok'    => false,
-					'error' => __( 'AI request failed.', 'rich-statistics' ),
-				],
-				500
-			);
-		}
-
-		$body   = json_decode( wp_remote_retrieve_body( $response ), true );
-		$answer = $body['choices'][0]['message']['content'] ?? __( 'Unable to generate response.', 'rich-statistics' );
-
-		return self::ok(
-			[
-				'question' => $question,
-				'answer'   => $answer,
-				'provider' => $provider,
-				'model'    => $model,
-			]
-		);
-	}
-
-	/**
-	 * Strip PII from data before sending to AI
+	 * Strip PII from data before returning via the API.
 	 *
 	 * @param array $data Data to strip.
 	 * @return array
@@ -1245,15 +1171,12 @@ class RSA_Rest_API {
 		array_walk_recursive(
 			$data,
 			function ( &$value, $key ) {
-				// Remove any email-like strings.
 				if ( is_string( $value ) && filter_var( $value, FILTER_VALIDATE_EMAIL ) ) {
 					$value = '[email-redacted]';
 				}
-				// Truncate session IDs (first 8 chars only).
 				if ( is_string( $value ) && 32 === strlen( $value ) && ctype_xdigit( $value ) ) {
 					$value = substr( $value, 0, 8 ) . '...';
 				}
-				// Remove IP-like strings.
 				if ( is_string( $value ) && preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $value ) ) {
 					$value = '[ip-redacted]';
 				}

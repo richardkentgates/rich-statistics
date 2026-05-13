@@ -66,6 +66,93 @@ RSA_Admin::page_header( __( 'Overview', 'rich-statistics' ), $period );
 	</div>
 </div>
 
+<!-- AI Insights (free, no LLM needed) -->
+<?php
+$insights = [];
+
+if ( $data['pageviews'] > 0 ) {
+	$top_pages   = RSA_Analytics::get_top_pages( $period, 1, $date_filters );
+	$top_page    = $top_pages ? $top_pages[0]['page'] : null;
+	$top_views   = $top_pages ? $top_pages[0]['views'] : 0;
+	$top_share   = $data['pageviews'] > 0 ? round( ( $top_views / $data['pageviews'] ) * 100, 1 ) : 0;
+	if ( $top_page ) {
+		$insights[] = sprintf(
+			__( 'Top page: <strong>%s</strong> with %s views (%s%% of total traffic).', 'rich-statistics' ),
+			esc_html( $top_page ),
+			esc_html( number_format( $top_views ) ),
+			esc_html( $top_share )
+		);
+	}
+}
+
+// Bounce rate assessment.
+$bounce = (float) $data['bounce_rate'];
+if ( $bounce < 40 ) {
+	$insights[] = __( 'Bounce rate is low — visitors are engaging with multiple pages.', 'rich-statistics' );
+} elseif ( $bounce > 70 ) {
+	$insights[] = __( 'Bounce rate is high — consider reviewing page content and load times.', 'rich-statistics' );
+} else {
+	$insights[] = __( 'Bounce rate is within a typical range.', 'rich-statistics' );
+}
+
+// Avg time assessment.
+$avg_time = (int) $data['avg_time'];
+if ( $avg_time > 120 ) {
+	$insights[] = __( 'Visitors spend over 2 minutes on average — content is engaging.', 'rich-statistics' );
+} elseif ( $avg_time < 30 ) {
+	$insights[] = __( 'Average time on page is under 30 seconds — content may need improvement.', 'rich-statistics' );
+}
+
+// Sessions-to-views ratio.
+if ( $data['sessions'] > 0 ) {
+	$ratio = round( $data['pageviews'] / $data['sessions'], 1 );
+	if ( $ratio >= 3 ) {
+		$insights[] = sprintf(
+			__( 'Visitors view %s pages per session on average — strong engagement.', 'rich-statistics' ),
+			esc_html( $ratio )
+		);
+	}
+}
+
+// Top referrer.
+$referrers = RSA_Analytics::get_referrers( $period, 1, $date_filters );
+if ( ! empty( $referrers ) ) {
+	$top_ref    = $referrers[0]['domain'];
+	$ref_visits = $referrers[0]['visits'];
+	$insights[] = sprintf(
+		__( 'Top referrer: <strong>%s</strong> (%s visits).', 'rich-statistics' ),
+		esc_html( $top_ref ),
+		esc_html( number_format( $ref_visits ) )
+	);
+}
+
+// Campaign insight.
+$campaigns = RSA_Analytics::get_campaigns( $period, 1 );
+if ( ! empty( $campaigns ) ) {
+	$top_camp = $campaigns[0]['campaign'] ?? $campaigns[0]['source'];
+	$insights[] = sprintf(
+		__( 'Top campaign: <strong>%s</strong> (%s sessions).', 'rich-statistics' ),
+		esc_html( $top_camp ),
+		esc_html( number_format( $campaigns[0]['sessions'] ) )
+	);
+}
+?>
+<?php if ( $insights ) : ?>
+<div class="rsa-card rsa-card-full" style="margin-bottom:16px;">
+	<div class="rsa-card-header">
+		<h2><?php esc_html_e( 'Insights', 'rich-statistics' ); ?></h2>
+		<span style="font-size:12px;color:#888;"><?php esc_html_e( 'Derived from your analytics data', 'rich-statistics' ); ?></span>
+	</div>
+	<div style="padding:8px 16px 16px;">
+		<ul style="margin:0;padding:0;list-style:none;">
+			<?php foreach ( $insights as $i ) : ?>
+			<li style="padding:6px 0;font-size:13px;line-height:1.6;"><?php echo wp_kses_post( $i ); ?></li>
+			<?php endforeach; ?>
+		</ul>
+	</div>
+</div>
+<?php endif; ?>
+
 <!-- Pageviews over time: sparkline / line chart -->
 <div class="rsa-card rsa-card-full">
 	<div class="rsa-card-header">

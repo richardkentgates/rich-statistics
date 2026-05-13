@@ -38,6 +38,7 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
+		aiProvider  : null,      // { apiKey, endpoint, model } or null
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
 		isPremium   : false,     // from RSA_CONFIG.isPremium
 		upgradeUrl  : '',        // Freemius upgrade URL
@@ -77,6 +78,7 @@
 		bindSignOut();
 		bindAddSite();
 		bindInstallPrompt();
+		bindAiSettings();
 		showIosInstallTip();
 
 		// Connection banners — check initial state and listen for changes.
@@ -104,6 +106,8 @@
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
+		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
+		state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
 		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
 		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
 
@@ -914,9 +918,6 @@
 			woocommerce  : 'WooCommerce',
 		};
 
-		// Also gate AI chat in the PWA (view may be added in future)
-		premiumFeatures['ai-chat'] = 'AI Assistant';
-
 		function switchView( view ) {
 			// Deactivate old view
 			var oldEl = document.getElementById( 'rsa-view-' + state.view );
@@ -1076,6 +1077,29 @@
 		} );
 	}
 
+	function bindAiSettings() {
+		document.addEventListener( 'click', function ( e ) {
+			if ( e.target.id === 'rsa-ai-save' ) {
+				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
+				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
+				var model    = document.getElementById( 'rsa-ai-model' ).value.trim();
+				if ( ! endpoint ) return;
+				state.aiProvider = { endpoint: endpoint, apiKey: apiKey || '', model: model || 'gpt-4o-mini' };
+				localStorage.setItem( 'rsa_ai_provider', JSON.stringify( state.aiProvider ) );
+				var btn = document.getElementById( 'rsa-ai-save' );
+				btn.textContent = 'Saved!';
+				setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
+			}
+			if ( e.target.id === 'rsa-ai-clear' ) {
+				state.aiProvider = null;
+				localStorage.removeItem( 'rsa_ai_provider' );
+				document.getElementById( 'rsa-ai-endpoint' ).value = 'https://api.openai.com/v1/chat/completions';
+				document.getElementById( 'rsa-ai-key' ).value = '';
+				document.getElementById( 'rsa-ai-model' ).value = 'gpt-4o-mini';
+			}
+		} );
+	}
+
 	function setConnBanner( type ) {
 		var offlineBanner  = document.getElementById( 'rsa-banner-offline'  );
 		var siteDownBanner = document.getElementById( 'rsa-banner-site-down' );
@@ -1147,26 +1171,86 @@
 	function renderAiChat( container ) {
 		setLoading( false );
 		var siteUrl = state.siteUrl;
-		var headers = getAuthHeaders( siteUrl + '/wp-json/rsa/v1/ai/query' );
+		var headers = getAuthHeaders( siteUrl + '/wp-json/rsa/v1/ai/tool' );
 		headers['Content-Type'] = 'application/json';
+
+		var hasAiProvider = ! ! ( state.aiProvider && state.aiProvider.endpoint );
 
 		container.innerHTML =
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
 				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
-				'<p style="color:#888;font-size:14px;">Ask questions about your analytics in plain English.</p>' +
-				'<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:500px;">' +
-					'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
-					'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:8px;">' +
-						'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics...">' +
-						'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
-					'</div>' +
-				'</div>' +
+				( hasAiProvider ? '' : '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:12px;margin-bottom:16px;font-size:13px;color:#6d4c00;">' +
+					'Set up your AI provider in <strong>Install → AI Assistant Provider</strong> for conversational answers. ' +
+					'For now, the assistant shows pre-built insights from your data.</div>' ) +
+				'<div id="rsa-ai-insights" style="margin-bottom:16px;"></div>' +
+				( hasAiProvider
+					? '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:400px;">' +
+						'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
+						'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:8px;">' +
+							'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics...">' +
+							'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
+						'</div>' +
+					'</div>'
+					: '' ) +
 			'</div>';
+
+		// Fetch tools and build insights
+		var tools = state.isPremium
+			? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
+			: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+
+		Promise.all( tools.map( function ( tool ) {
+			return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
+				method: 'POST',
+				headers: headers,
+				body: JSON.stringify( { tool: tool, params: { period: state.period, limit: 5 } } )
+			} ).then( function ( r ) { return r.json(); } );
+		} ) ).then( function ( results ) {
+			var insightsDiv = document.getElementById( 'rsa-ai-insights' );
+			if ( ! insightsDiv ) return;
+			var items = [];
+			results.forEach( function ( res ) {
+				if ( ! res.ok || ! res.data || ! res.data.data ) return;
+				var data = res.data;
+				if ( data.tool === 'overview' && data.data ) {
+					var o = data.data;
+			if ( o.pageviews > 0 ) items.push( fmt( o.pageviews ) + ' page views this period.' );
+				if ( o.sessions > 0 ) items.push( fmt( o.sessions ) + ' sessions, ' + o.bounce_rate + '% bounce rate.' );
+				}
+				if ( data.tool === 'pages' && data.data && data.data.length ) {
+					var top = data.data[0];
+					items.push( 'Top page: <strong>' + esc( top.page ) + '</strong> (' + fmt( top.views ) + ' views).' );
+				}
+				if ( data.tool === 'referrers' && data.data && data.data.length ) {
+					items.push( 'Top referrer: <strong>' + esc( data.data[0].domain ) + '</strong>.' );
+				}
+				if ( data.tool === 'audience' && data.data ) {
+					var a = data.data;
+					if ( a.browser_labels && a.browser_labels.length ) {
+						items.push( 'Most used browser: <strong>' + esc( a.browser_labels[0].label ) + '</strong> (' + fmt( a.browser_labels[0].count ) + ').' );
+					}
+				}
+				if ( data.tool === 'campaigns' && data.data && data.data.length ) {
+					items.push( 'Top campaign: <strong>' + esc( data.data[0].campaign || data.data[0].source ) + '</strong> (' + fmt( data.data[0].sessions ) + ' sessions).' );
+				}
+			} );
+			if ( items.length ) {
+				insightsDiv.innerHTML =
+					'<div style="background:#f0f7f4;border:1px solid #c8e6d9;border-radius:6px;padding:12px 16px;">' +
+					'<strong style="font-size:13px;">Key insights from your data:</strong>' +
+					'<ul style="margin:8px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.7;">' +
+					items.map( function ( i ) { return '<li>' + i + '</li>'; } ).join( '' ) +
+					'</ul></div>';
+			}
+		} ).catch( function () {} );
+
+		if ( ! hasAiProvider ) return;
 
 		addAiMessage( 'ai', 'Hello! Ask me anything about your analytics data.' );
 
 		var input = document.getElementById( 'rsa-ai-input' );
 		var sendBtn = document.getElementById( 'rsa-ai-send' );
+		if ( ! input || ! sendBtn ) return;
 
 		function doSend() {
 			var msg = input.value.trim();
@@ -1176,25 +1260,57 @@
 			sendBtn.disabled = true;
 			sendBtn.textContent = '...';
 
-			fetch( siteUrl + '/wp-json/rsa/v1/ai/query', {
-				method: 'POST',
-				headers: headers,
-				body: JSON.stringify( { question: msg, period: state.period } )
-			})
-			.then( function ( r ) { return r.json(); } )
-			.then( function ( data ) {
+			// First fetch tool data, then call LLM
+			var toolsToFetch = state.isPremium
+				? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
+				: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+
+			Promise.all( toolsToFetch.map( function ( tool ) {
+				return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
+					method: 'POST',
+					headers: headers,
+					body: JSON.stringify( { tool: tool, params: { period: state.period, limit: 10 } } )
+				} ).then( function ( r ) { return r.json(); } );
+			} ) ).then( function ( toolResults ) {
+				var contextData = {};
+				toolResults.forEach( function ( res ) {
+					if ( res.ok && res.data ) {
+						contextData[ res.data.tool ] = res.data.data;
+					}
+				} );
+
+				// Call user's LLM with context
+				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.';
+				var body = {
+					model: ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini',
+					messages: [
+						{ role: 'system', content: systemPrompt + '\n\nData:\n' + JSON.stringify( contextData, null, 2 ) },
+						{ role: 'user', content: msg }
+					],
+					max_tokens: 500
+				};
+				var llmHeaders = { 'Content-Type': 'application/json' };
+				if ( state.aiProvider && state.aiProvider.apiKey ) {
+					llmHeaders['Authorization'] = 'Bearer ' + state.aiProvider.apiKey;
+				}
+				return fetch( state.aiProvider.endpoint, {
+					method: 'POST',
+					headers: llmHeaders,
+					body: JSON.stringify( body )
+				} );
+			} ).then( function ( r ) { return r.json(); } )
+			.then( function ( llmData ) {
 				sendBtn.disabled = false;
 				sendBtn.textContent = 'Send';
-				if ( data.ok ) {
-					addAiMessage( 'ai', data.data.answer );
-				} else {
-					addAiMessage( 'ai', 'Error: ' + ( data.error || 'Unknown error' ) );
-				}
+				var answer = ( llmData.choices && llmData.choices[0] && llmData.choices[0].message && llmData.choices[0].message.content )
+					|| ( llmData.error && llmData.error.message )
+					|| 'Unable to generate a response. Check your AI provider settings.';
+				addAiMessage( 'ai', answer );
 			} )
 			.catch( function () {
 				sendBtn.disabled = false;
 				sendBtn.textContent = 'Send';
-				addAiMessage( 'ai', 'Connection error. Please try again.' );
+				addAiMessage( 'ai', 'Connection error. Check your AI provider endpoint.' );
 			} );
 		}
 
@@ -1203,7 +1319,6 @@
 			if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); }
 		} );
 
-		// Focus input when view becomes visible
 		setTimeout( function () { input.focus(); }, 200 );
 	}
 
@@ -2460,7 +2575,38 @@
 
 			'<p style="font-size:12px;color:#888;margin-top:32px;">' +
 			'Desktop binaries are updated with each release. ' +
-			'Installation via APT is recommended for automatic updates.</p>';
+			'Installation via APT is recommended for automatic updates.</p>' +
+
+			'<h2 style="font-size:18px;margin:32px 0 16px;">AI Assistant Provider</h2>' +
+			'<p style="color:#888;font-size:13px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Provide an OpenAI-compatible endpoint (cloud or local).</p>' +
+
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Provider Settings</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-endpoint">API Endpoint</label>' +
+						'<input type="url" id="rsa-ai-endpoint" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.endpoint ) || 'https://api.openai.com/v1/chat/completions' ) + '"' +
+							' placeholder="https://api.openai.com/v1/chat/completions">' +
+					'</div>' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-key">API Key</label>' +
+						'<input type="password" id="rsa-ai-key" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.apiKey ) || '' ) + '"' +
+							' placeholder="sk-... (not needed for local Ollama)">' +
+					'</div>' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
+						'<input type="text" id="rsa-ai-model" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini' ) + '"' +
+							' placeholder="gpt-4o-mini">' +
+					'</div>' +
+					'<div style="margin-top:12px;display:flex;gap:8px;">' +
+						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
+						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
 	}
 
 		setLoading( false );
