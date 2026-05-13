@@ -1086,6 +1086,12 @@
 	}
 
 	function bindAiSettings() {
+		document.addEventListener( 'input', function ( e ) {
+			if ( e.target.id === 'rsa-ai-voice-speed' ) {
+				var val = document.getElementById( 'rsa-ai-speed-val' );
+				if ( val ) val.textContent = e.target.value;
+			}
+		} );
 		document.addEventListener( 'click', function ( e ) {
 			if ( e.target.id === 'rsa-ai-save' ) {
 				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
@@ -2817,8 +2823,7 @@
 								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( state.aiProvider ? state.aiProvider.voiceSpeed : '1.0' ) + '</span></label>' +
 								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
 									' value="' + ( state.aiProvider && state.aiProvider.voiceSpeed ? state.aiProvider.voiceSpeed : '1.0' ) + '"' +
-									' style="width:100%;"' +
-									' oninput="document.getElementById(\'rsa-ai-speed-val\').textContent = this.value;">' +
+									' style="width:100%;">' +
 							'</div>' +
 						'</div>' +
 					'</div>' +
