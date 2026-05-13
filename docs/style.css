@@ -329,6 +329,7 @@ pre code { background: none; padding: 0; }
   border-radius: 999px;
 }
 .badge--premium { background: #fef3c7; color: #92400e; }
+.badge--free    { background: #d1fae5; color: #065f46; }
 
 /* ---- Privacy grid ---- */
 .privacy-grid {
