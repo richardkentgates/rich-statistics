@@ -18,6 +18,8 @@ Premium features are gated by Freemius (product ID 25954).
 | `includes/class-woocommerce.php` | WooCommerce event tracking |
 | `cli/class-cli.php` | WP-CLI commands (`wp rich-stats`) |
 | `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
+| `templates/admin/network-dashboard.php` | Multisite network dashboard with cross-site AI |
+| `templates/admin/network-settings.php` | Network-wide settings panel |
 | `tests/integration/` | PHPUnit integration tests (12 files) |
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |

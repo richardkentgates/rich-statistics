@@ -82,7 +82,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Data retention | Configurable 1–730 days (default 90) |
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
 | WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
-| Multisite | Per-site tables, network admin, network-wide disable switch |
+| Multisite | Per-site tables, network admin dashboard with cross-site AI, network-wide disable switch |
 | Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests |
 
 ## Desktop Apps
@@ -305,7 +305,7 @@ Authentication: **WordPress Application Passwords** (`Authorization: Basic base6
 | GET | `/export` | CSV/JSON export (`data_type`: pageviews/sessions/clicks/referrers) |
 | GET | `/info` | Plugin version + site info (public — no auth required) |
 | POST | `/track` | Pageview ingest (nonce-protected, public) |
-| POST | `/ai/tool` | Structured analytics data for AI tool-calling. Free tools: overview, pages, audience, referrers, behavior. Premium tools: campaigns, user-flow, clicks, heatmap, woocommerce. Returns JSON — no LLM call server-side. |
+| POST | `/ai/tool` | Structured analytics data for AI tool-calling. Free tools: overview, pages, audience, referrers, behavior. Premium tools: campaigns, user-flow, clicks, heatmap, woocommerce. Returns JSON — no LLM call server-side. Used by the PWA, desktop app, and multisite network dashboard. |
 | POST | `/verify-otp` | Validate 6-digit App Code for PWA pairing (public) |
 | GET/POST | `/user-settings` | Sync app site list across devices |
 | POST | `/purge-page` | Delete all data for a specific page (premium) |
