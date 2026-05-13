@@ -38,7 +38,7 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
-		aiProvider  : null,      // { apiKey, endpoint, model } or null
+		aiProvider  : null,      // { apiKey, endpoint, model, voiceInput, voiceOutput, voiceLang, voiceSpeed, autoSpeak } or null
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
 		isPremium   : false,     // from RSA_CONFIG.isPremium
 		upgradeUrl  : '',        // Freemius upgrade URL
@@ -108,6 +108,13 @@
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
 		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
 		state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+		if ( state.aiProvider ) {
+			state.aiProvider.voiceInput  = state.aiProvider.voiceInput  !== undefined ? state.aiProvider.voiceInput  : false;
+			state.aiProvider.voiceOutput = state.aiProvider.voiceOutput !== undefined ? state.aiProvider.voiceOutput : false;
+			state.aiProvider.voiceLang   = state.aiProvider.voiceLang   || 'en-US';
+			state.aiProvider.voiceSpeed  = state.aiProvider.voiceSpeed  || 1.0;
+			state.aiProvider.autoSpeak   = state.aiProvider.autoSpeak   !== undefined ? state.aiProvider.autoSpeak   : false;
+		}
 		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
 		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
 
@@ -1084,7 +1091,21 @@
 				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
 				var model    = document.getElementById( 'rsa-ai-model' ).value.trim();
 				if ( ! endpoint ) return;
-				state.aiProvider = { endpoint: endpoint, apiKey: apiKey || '', model: model || 'gpt-4o-mini' };
+				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
+				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
+				var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
+				var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
+				var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
+				state.aiProvider = {
+					endpoint: endpoint,
+					apiKey: apiKey || '',
+					model: model || 'gpt-4o-mini',
+					voiceInput: voiceInput,
+					voiceOutput: voiceOutput,
+					voiceLang: voiceLang,
+					voiceSpeed: voiceSpeed,
+					autoSpeak: autoSpeak,
+				};
 				localStorage.setItem( 'rsa_ai_provider', JSON.stringify( state.aiProvider ) );
 				var btn = document.getElementById( 'rsa-ai-save' );
 				btn.textContent = 'Saved!';
@@ -1096,6 +1117,14 @@
 				document.getElementById( 'rsa-ai-endpoint' ).value = 'https://api.openai.com/v1/chat/completions';
 				document.getElementById( 'rsa-ai-key' ).value = '';
 				document.getElementById( 'rsa-ai-model' ).value = 'gpt-4o-mini';
+				var vi = document.getElementById( 'rsa-ai-voice-input' );
+				if ( vi ) vi.checked = false;
+				var vo = document.getElementById( 'rsa-ai-voice-output' );
+				if ( vo ) vo.checked = false;
+				var as = document.getElementById( 'rsa-ai-auto-speak' );
+				if ( as ) as.checked = false;
+				var vs = document.getElementById( 'rsa-ai-voice-speed' );
+				if ( vs ) vs.value = 1.0;
 			}
 		} );
 	}
@@ -1175,6 +1204,9 @@
 		headers['Content-Type'] = 'application/json';
 
 		var hasAiProvider = ! ! ( state.aiProvider && state.aiProvider.endpoint );
+		var ap = state.aiProvider || {};
+		var supportsSpeech = typeof SpeechRecognition !== 'undefined' || typeof webkitSpeechRecognition !== 'undefined';
+		var supportsTTS    = typeof speechSynthesis !== 'undefined';
 
 		container.innerHTML =
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
@@ -1184,10 +1216,19 @@
 					'For now, the assistant shows pre-built insights from your data.</div>' ) +
 				'<div id="rsa-ai-insights" style="margin-bottom:16px;"></div>' +
 				( hasAiProvider
-					? '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:400px;">' +
+					? '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:450px;">' +
+						'<div style="padding:8px 12px;border-bottom:1px solid #e0e0e0;background:#f8f9fa;display:flex;gap:12px;align-items:center;font-size:12px;color:#888;">' +
+							( ap.voiceOutput && supportsTTS
+								? '<button id="rsa-ai-stop-speech" style="padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;" hidden>Stop Speaking</button>'
+								: '' ) +
+							'<span id="rsa-ai-voice-status" style="flex:1;font-style:italic;"></span>' +
+						'</div>' +
 						'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
-						'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:8px;">' +
-							'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics...">' +
+						'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:6px;align-items:center;">' +
+							( ap.voiceInput && supportsSpeech
+								? '<button id="rsa-ai-mic" style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;line-height:1;" title="Speak your question">🎤</button>'
+								: '' ) +
+							'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics..." autocomplete="off">' +
 							'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
 						'</div>' +
 					'</div>'
@@ -1250,17 +1291,113 @@
 
 		var input = document.getElementById( 'rsa-ai-input' );
 		var sendBtn = document.getElementById( 'rsa-ai-send' );
+		var micBtn  = document.getElementById( 'rsa-ai-mic' );
+		var stopBtn = document.getElementById( 'rsa-ai-stop-speech' );
+		var voiceStatus = document.getElementById( 'rsa-ai-voice-status' );
 		if ( ! input || ! sendBtn ) return;
 
+		// --- Voice input (SpeechRecognition) ---
+		var recognition = null;
+		var isListening = false;
+
+		function startListening() {
+			if ( isListening ) return;
+			var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+			if ( ! SR ) {
+				if ( voiceStatus ) voiceStatus.textContent = 'Voice input not supported in this browser.';
+				return;
+			}
+			recognition = new SR();
+			recognition.lang = ap.voiceLang || 'en-US';
+			recognition.interimResults = true;
+			recognition.continuous = false;
+
+			recognition.onresult = function ( e ) {
+				var transcript = '';
+				for ( var i = e.resultIndex; i < e.results.length; i++ ) {
+					transcript += e.results[i][0].transcript;
+					if ( e.results[i].isFinal ) {
+						input.value = transcript;
+						doSend();
+					} else {
+						input.value = transcript;
+						input.style.color = '#888';
+					}
+				}
+			};
+			recognition.onend = function () {
+				isListening = false;
+				input.style.color = '';
+				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+			};
+			recognition.onerror = function ( e ) {
+				isListening = false;
+				input.style.color = '';
+				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+				if ( voiceStatus ) voiceStatus.textContent = 'Mic error: ' + e.error;
+			};
+
+			isListening = true;
+			if ( micBtn ) micBtn.style.borderColor = '#e74c3c';
+			input.placeholder = 'Listening...';
+			recognition.start();
+		}
+
+		if ( micBtn ) {
+			micBtn.addEventListener( 'click', function () {
+				if ( isListening ) {
+					if ( recognition ) { recognition.stop(); isListening = false; }
+					input.style.color = '';
+					micBtn.style.borderColor = '#ccc';
+					input.placeholder = 'Ask about your analytics...';
+				} else {
+					startListening();
+				}
+			} );
+		}
+
+		// --- Voice output (speechSynthesis) ---
+		function speakText( text ) {
+			if ( ! ap.voiceOutput || ! supportsTTS ) return;
+			window.speechSynthesis.cancel();
+			var utterance = new SpeechSynthesisUtterance( text.replace( /<[^>]+>/g, '' ) );
+			utterance.lang = ap.voiceLang || 'en-US';
+			utterance.rate  = ap.voiceSpeed || 1.0;
+			if ( stopBtn ) stopBtn.hidden = false;
+			if ( voiceStatus ) voiceStatus.textContent = 'Speaking...';
+			utterance.onend = function () {
+				if ( stopBtn ) stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = '';
+			};
+			utterance.onerror = function () {
+				if ( stopBtn ) stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = 'Speech error.';
+			};
+			window.speechSynthesis.speak( utterance );
+		}
+
+		if ( stopBtn ) {
+			stopBtn.addEventListener( 'click', function () {
+				window.speechSynthesis.cancel();
+				stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = '';
+			} );
+		}
+
+		// --- Send message ---
+		var _speakNext = false;
+
 		function doSend() {
-			var msg = input.value.trim();
+			var msg = input.value.trim().replace( /\uFEFF/g, '' );
 			if ( ! msg ) return;
+			var wasVoice = input.style.color === 'rgb(136, 136, 136)';
+			input.style.color = '';
 			addAiMessage( 'user', msg );
 			input.value = '';
 			sendBtn.disabled = true;
 			sendBtn.textContent = '...';
+			_speakNext = ap.autoSpeak && ! wasVoice;
 
-			// First fetch tool data, then call LLM
 			var toolsToFetch = state.isPremium
 				? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
 				: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
@@ -1279,10 +1416,9 @@
 					}
 				} );
 
-				// Call user's LLM with context
 				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.';
 				var body = {
-					model: ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini',
+					model: ap.model || 'gpt-4o-mini',
 					messages: [
 						{ role: 'system', content: systemPrompt + '\n\nData:\n' + JSON.stringify( contextData, null, 2 ) },
 						{ role: 'user', content: msg }
@@ -1290,10 +1426,10 @@
 					max_tokens: 500
 				};
 				var llmHeaders = { 'Content-Type': 'application/json' };
-				if ( state.aiProvider && state.aiProvider.apiKey ) {
-					llmHeaders['Authorization'] = 'Bearer ' + state.aiProvider.apiKey;
+				if ( ap.apiKey ) {
+					llmHeaders['Authorization'] = 'Bearer ' + ap.apiKey;
 				}
-				return fetch( state.aiProvider.endpoint, {
+				return fetch( ap.endpoint, {
 					method: 'POST',
 					headers: llmHeaders,
 					body: JSON.stringify( body )
@@ -1306,6 +1442,7 @@
 					|| ( llmData.error && llmData.error.message )
 					|| 'Unable to generate a response. Check your AI provider settings.';
 				addAiMessage( 'ai', answer );
+				if ( _speakNext ) speakText( answer );
 			} )
 			.catch( function () {
 				sendBtn.disabled = false;
@@ -2601,15 +2738,49 @@
 							' value="' + esc( ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini' ) + '"' +
 							' placeholder="gpt-4o-mini">' +
 					'</div>' +
+					'<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px;">' +
+						'<strong style="font-size:13px;display:block;margin-bottom:8px;">Voice &amp; Speech</strong>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-input"' +
+								( state.aiProvider && state.aiProvider.voiceInput ? ' checked' : '' ) + '>' +
+							' Voice input (microphone) — speak your questions' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-output"' +
+								( state.aiProvider && state.aiProvider.voiceOutput ? ' checked' : '' ) + '>' +
+							' Voice output (speaker) — hear answers read aloud' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-auto-speak"' +
+								( state.aiProvider && state.aiProvider.autoSpeak ? ' checked' : '' ) + '>' +
+							' Auto-speak new answers' +
+						'</label>' +
+						'<div style="display:flex;gap:12px;margin-top:8px;">' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-lang" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Language</label>' +
+								'<select id="rsa-ai-voice-lang" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">' +
+									'<option value="en-US"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
+									'<option value="en-GB"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
+									'<option value="es-ES"' + ( state.aiProvider && state.aiProvider.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
+									'<option value="fr-FR"' + ( state.aiProvider && state.aiProvider.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
+									'<option value="de-DE"' + ( state.aiProvider && state.aiProvider.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
+								'</select>' +
+							'</div>' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( state.aiProvider ? state.aiProvider.voiceSpeed : '1.0' ) + '</span></label>' +
+								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
+									' value="' + ( state.aiProvider && state.aiProvider.voiceSpeed ? state.aiProvider.voiceSpeed : '1.0' ) + '"' +
+									' style="width:100%;"' +
+									' oninput="document.getElementById(\'rsa-ai-speed-val\').textContent = this.value;">' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
 					'<div style="margin-top:12px;display:flex;gap:8px;">' +
 						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
 						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
 					'</div>' +
 				'</div>' +
 			'</div>';
-	}
-
-		setLoading( false );
 	}
 
 	// -----------------------------------------------------------------------
