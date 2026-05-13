@@ -38,6 +38,8 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
+		refreshTimer: null,      // setInterval id for auto-refresh
+		aiProvider  : null,      // { apiKey, endpoint, model, voiceInput, voiceOutput, voiceLang, voiceSpeed, autoSpeak } or null
 		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
 		isPremium   : false,     // from RSA_CONFIG.isPremium
 		upgradeUrl  : '',        // Freemius upgrade URL
@@ -77,6 +79,7 @@
 		bindSignOut();
 		bindAddSite();
 		bindInstallPrompt();
+		bindAiSettings();
 		showIosInstallTip();
 
 		// Connection banners — check initial state and listen for changes.
@@ -104,6 +107,15 @@
 		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
+		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
+		state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+		if ( state.aiProvider ) {
+			state.aiProvider.voiceInput  = state.aiProvider.voiceInput  !== undefined ? state.aiProvider.voiceInput  : false;
+			state.aiProvider.voiceOutput = state.aiProvider.voiceOutput !== undefined ? state.aiProvider.voiceOutput : false;
+			state.aiProvider.voiceLang   = state.aiProvider.voiceLang   || 'en-US';
+			state.aiProvider.voiceSpeed  = state.aiProvider.voiceSpeed  || 1.0;
+			state.aiProvider.autoSpeak   = state.aiProvider.autoSpeak   !== undefined ? state.aiProvider.autoSpeak   : false;
+		}
 		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
 		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
 
@@ -914,7 +926,6 @@
 			woocommerce  : 'WooCommerce',
 		};
 
-
 		function switchView( view ) {
 			// Deactivate old view
 			var oldEl = document.getElementById( 'rsa-view-' + state.view );
@@ -1074,6 +1085,51 @@
 		} );
 	}
 
+	function bindAiSettings() {
+		document.addEventListener( 'click', function ( e ) {
+			if ( e.target.id === 'rsa-ai-save' ) {
+				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
+				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
+				var model    = document.getElementById( 'rsa-ai-model' ).value.trim();
+				if ( ! endpoint ) return;
+				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
+				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
+				var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
+				var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
+				var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
+				state.aiProvider = {
+					endpoint: endpoint,
+					apiKey: apiKey || '',
+					model: model || 'gpt-4o-mini',
+					voiceInput: voiceInput,
+					voiceOutput: voiceOutput,
+					voiceLang: voiceLang,
+					voiceSpeed: voiceSpeed,
+					autoSpeak: autoSpeak,
+				};
+				localStorage.setItem( 'rsa_ai_provider', JSON.stringify( state.aiProvider ) );
+				var btn = document.getElementById( 'rsa-ai-save' );
+				btn.textContent = 'Saved!';
+				setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
+			}
+			if ( e.target.id === 'rsa-ai-clear' ) {
+				state.aiProvider = null;
+				localStorage.removeItem( 'rsa_ai_provider' );
+				document.getElementById( 'rsa-ai-endpoint' ).value = 'https://api.openai.com/v1/chat/completions';
+				document.getElementById( 'rsa-ai-key' ).value = '';
+				document.getElementById( 'rsa-ai-model' ).value = 'gpt-4o-mini';
+				var vi = document.getElementById( 'rsa-ai-voice-input' );
+				if ( vi ) vi.checked = false;
+				var vo = document.getElementById( 'rsa-ai-voice-output' );
+				if ( vo ) vo.checked = false;
+				var as = document.getElementById( 'rsa-ai-auto-speak' );
+				if ( as ) as.checked = false;
+				var vs = document.getElementById( 'rsa-ai-voice-speed' );
+				if ( vs ) vs.value = 1.0;
+			}
+		} );
+	}
+
 	function setConnBanner( type ) {
 		var offlineBanner  = document.getElementById( 'rsa-banner-offline'  );
 		var siteDownBanner = document.getElementById( 'rsa-banner-site-down' );
@@ -1115,6 +1171,12 @@
 		var container = document.getElementById( 'rsa-view-' + view );
 		if ( ! container ) return;
 
+		// Clear any existing auto-refresh.
+		if ( state.refreshTimer ) {
+			clearInterval( state.refreshTimer );
+			state.refreshTimer = null;
+		}
+
 		setLoading( true );
 
 		switch ( view ) {
@@ -1130,12 +1192,331 @@
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
 			case 'install'    : renderInstall( container );    break;
+			case 'ai-chat'    : renderAiChat( container );    break;
 			default: setLoading( false );
 		}
+
+		startAutoRefresh();
 	}
+
+	/**
+	 * Start auto-refresh for the current view.
+	 * Overview refreshes every 30s; most other views every 60s.
+	 */
+	function startAutoRefresh() {
+		if ( state.refreshTimer ) {
+			clearInterval( state.refreshTimer );
+		}
+		var interval = state.view === 'overview' ? 30000 : 60000;
+		state.refreshTimer = setInterval( function () {
+			// Only re-fetch if this view is still active and online.
+			if ( state.connState === 'offline' ) return;
+			state.cache = {};
+			var fn = renderFunctions[ state.view ];
+			if ( fn ) {
+				var container = document.getElementById( 'rsa-view-' + state.view );
+				if ( container ) fn( container );
+			}
+		}, interval );
+	}
+
+	// Map view names to render functions for auto-refresh.
+	var renderFunctions = {
+		overview   : renderOverview,
+		pages      : renderPages,
+		audience   : renderAudience,
+		referrers  : renderReferrers,
+		behavior   : renderBehavior,
+		campaigns  : renderCampaigns,
+		'user-flow': renderUserFlow,
+		clicks     : renderClicks,
+		heatmap    : renderHeatmap,
+		export     : renderExport,
+		woocommerce: renderWoocommerce,
+		install    : renderInstall,
+		'ai-chat'  : renderAiChat,
+	};
 
 	function setLoading( on ) {
 		document.getElementById( 'rsa-loading' ).hidden = ! on;
+	}
+
+	// -----------------------------------------------------------------------
+	// AI Chat
+	// -----------------------------------------------------------------------
+	function renderAiChat( container ) {
+		setLoading( false );
+		var siteUrl = state.siteUrl;
+		var headers = getAuthHeaders( siteUrl + '/wp-json/rsa/v1/ai/tool' );
+		headers['Content-Type'] = 'application/json';
+
+		var hasAiProvider = ! ! ( state.aiProvider && state.aiProvider.endpoint );
+		var ap = state.aiProvider || {};
+		var supportsSpeech = typeof SpeechRecognition !== 'undefined' || typeof webkitSpeechRecognition !== 'undefined';
+		var supportsTTS    = typeof speechSynthesis !== 'undefined';
+
+		container.innerHTML =
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
+				( hasAiProvider ? '' : '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:12px;margin-bottom:16px;font-size:13px;color:#6d4c00;">' +
+					'Set up your AI provider in <strong>Install → AI Assistant Provider</strong> for conversational answers. ' +
+					'For now, the assistant shows pre-built insights from your data.</div>' ) +
+				'<div id="rsa-ai-insights" style="margin-bottom:16px;"></div>' +
+				( hasAiProvider
+					? '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:450px;">' +
+						'<div style="padding:8px 12px;border-bottom:1px solid #e0e0e0;background:#f8f9fa;display:flex;gap:12px;align-items:center;font-size:12px;color:#888;">' +
+							( ap.voiceOutput && supportsTTS
+								? '<button id="rsa-ai-stop-speech" style="padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;" hidden>Stop Speaking</button>'
+								: '' ) +
+							'<span id="rsa-ai-voice-status" style="flex:1;font-style:italic;"></span>' +
+						'</div>' +
+						'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
+						'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:6px;align-items:center;">' +
+							( ap.voiceInput && supportsSpeech
+								? '<button id="rsa-ai-mic" style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;line-height:1;" title="Speak your question">🎤</button>'
+								: '' ) +
+							'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics..." autocomplete="off">' +
+							'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
+						'</div>' +
+					'</div>'
+					: '' ) +
+			'</div>';
+
+		// Fetch tools and build insights
+		var tools = state.isPremium
+			? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
+			: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+
+		Promise.all( tools.map( function ( tool ) {
+			return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
+				method: 'POST',
+				headers: headers,
+				body: JSON.stringify( { tool: tool, params: { period: state.period, limit: 5 } } )
+			} ).then( function ( r ) { return r.json(); } );
+		} ) ).then( function ( results ) {
+			var insightsDiv = document.getElementById( 'rsa-ai-insights' );
+			if ( ! insightsDiv ) return;
+			var items = [];
+			results.forEach( function ( res ) {
+				if ( ! res.ok || ! res.data || ! res.data.data ) return;
+				var data = res.data;
+				if ( data.tool === 'overview' && data.data ) {
+					var o = data.data;
+			if ( o.pageviews > 0 ) items.push( fmt( o.pageviews ) + ' page views this period.' );
+				if ( o.sessions > 0 ) items.push( fmt( o.sessions ) + ' sessions, ' + o.bounce_rate + '% bounce rate.' );
+				}
+				if ( data.tool === 'pages' && data.data && data.data.length ) {
+					var top = data.data[0];
+					items.push( 'Top page: <strong>' + esc( top.page ) + '</strong> (' + fmt( top.views ) + ' views).' );
+				}
+				if ( data.tool === 'referrers' && data.data && data.data.length ) {
+					items.push( 'Top referrer: <strong>' + esc( data.data[0].domain ) + '</strong>.' );
+				}
+				if ( data.tool === 'audience' && data.data ) {
+					var a = data.data;
+					if ( a.browser_labels && a.browser_labels.length ) {
+						items.push( 'Most used browser: <strong>' + esc( a.browser_labels[0].label ) + '</strong> (' + fmt( a.browser_labels[0].count ) + ').' );
+					}
+				}
+				if ( data.tool === 'campaigns' && data.data && data.data.length ) {
+					items.push( 'Top campaign: <strong>' + esc( data.data[0].campaign || data.data[0].source ) + '</strong> (' + fmt( data.data[0].sessions ) + ' sessions).' );
+				}
+			} );
+			if ( items.length ) {
+				insightsDiv.innerHTML =
+					'<div style="background:#f0f7f4;border:1px solid #c8e6d9;border-radius:6px;padding:12px 16px;">' +
+					'<strong style="font-size:13px;">Key insights from your data:</strong>' +
+					'<ul style="margin:8px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.7;">' +
+					items.map( function ( i ) { return '<li>' + i + '</li>'; } ).join( '' ) +
+					'</ul></div>';
+			}
+		} ).catch( function () {} );
+
+		if ( ! hasAiProvider ) return;
+
+		addAiMessage( 'ai', 'Hello! Ask me anything about your analytics data.' );
+
+		var input = document.getElementById( 'rsa-ai-input' );
+		var sendBtn = document.getElementById( 'rsa-ai-send' );
+		var micBtn  = document.getElementById( 'rsa-ai-mic' );
+		var stopBtn = document.getElementById( 'rsa-ai-stop-speech' );
+		var voiceStatus = document.getElementById( 'rsa-ai-voice-status' );
+		if ( ! input || ! sendBtn ) return;
+
+		// --- Voice input (SpeechRecognition) ---
+		var recognition = null;
+		var isListening = false;
+
+		function startListening() {
+			if ( isListening ) return;
+			var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+			if ( ! SR ) {
+				if ( voiceStatus ) voiceStatus.textContent = 'Voice input not supported in this browser.';
+				return;
+			}
+			recognition = new SR();
+			recognition.lang = ap.voiceLang || 'en-US';
+			recognition.interimResults = true;
+			recognition.continuous = false;
+
+			recognition.onresult = function ( e ) {
+				var transcript = '';
+				for ( var i = e.resultIndex; i < e.results.length; i++ ) {
+					transcript += e.results[i][0].transcript;
+					if ( e.results[i].isFinal ) {
+						input.value = transcript;
+						doSend();
+					} else {
+						input.value = transcript;
+						input.style.color = '#888';
+					}
+				}
+			};
+			recognition.onend = function () {
+				isListening = false;
+				input.style.color = '';
+				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+			};
+			recognition.onerror = function ( e ) {
+				isListening = false;
+				input.style.color = '';
+				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+				if ( voiceStatus ) voiceStatus.textContent = 'Mic error: ' + e.error;
+			};
+
+			isListening = true;
+			if ( micBtn ) micBtn.style.borderColor = '#e74c3c';
+			input.placeholder = 'Listening...';
+			recognition.start();
+		}
+
+		if ( micBtn ) {
+			micBtn.addEventListener( 'click', function () {
+				if ( isListening ) {
+					if ( recognition ) { recognition.stop(); isListening = false; }
+					input.style.color = '';
+					micBtn.style.borderColor = '#ccc';
+					input.placeholder = 'Ask about your analytics...';
+				} else {
+					startListening();
+				}
+			} );
+		}
+
+		// --- Voice output (speechSynthesis) ---
+		function speakText( text ) {
+			if ( ! ap.voiceOutput || ! supportsTTS ) return;
+			window.speechSynthesis.cancel();
+			var utterance = new SpeechSynthesisUtterance( text.replace( /<[^>]+>/g, '' ) );
+			utterance.lang = ap.voiceLang || 'en-US';
+			utterance.rate  = ap.voiceSpeed || 1.0;
+			if ( stopBtn ) stopBtn.hidden = false;
+			if ( voiceStatus ) voiceStatus.textContent = 'Speaking...';
+			utterance.onend = function () {
+				if ( stopBtn ) stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = '';
+			};
+			utterance.onerror = function () {
+				if ( stopBtn ) stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = 'Speech error.';
+			};
+			window.speechSynthesis.speak( utterance );
+		}
+
+		if ( stopBtn ) {
+			stopBtn.addEventListener( 'click', function () {
+				window.speechSynthesis.cancel();
+				stopBtn.hidden = true;
+				if ( voiceStatus ) voiceStatus.textContent = '';
+			} );
+		}
+
+		// --- Send message ---
+		var _speakNext = false;
+
+		function doSend() {
+			var msg = input.value.trim().replace( /\uFEFF/g, '' );
+			if ( ! msg ) return;
+			var wasVoice = input.style.color === 'rgb(136, 136, 136)';
+			input.style.color = '';
+			addAiMessage( 'user', msg );
+			input.value = '';
+			sendBtn.disabled = true;
+			sendBtn.textContent = '...';
+			_speakNext = ap.autoSpeak && ! wasVoice;
+
+			var toolsToFetch = state.isPremium
+				? [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ]
+				: [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+
+			Promise.all( toolsToFetch.map( function ( tool ) {
+				return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
+					method: 'POST',
+					headers: headers,
+					body: JSON.stringify( { tool: tool, params: { period: state.period, limit: 10 } } )
+				} ).then( function ( r ) { return r.json(); } );
+			} ) ).then( function ( toolResults ) {
+				var contextData = {};
+				toolResults.forEach( function ( res ) {
+					if ( res.ok && res.data ) {
+						contextData[ res.data.tool ] = res.data.data;
+					}
+				} );
+
+				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.';
+				var body = {
+					model: ap.model || 'gpt-4o-mini',
+					messages: [
+						{ role: 'system', content: systemPrompt + '\n\nData:\n' + JSON.stringify( contextData, null, 2 ) },
+						{ role: 'user', content: msg }
+					],
+					max_tokens: 500
+				};
+				var llmHeaders = { 'Content-Type': 'application/json' };
+				if ( ap.apiKey ) {
+					llmHeaders['Authorization'] = 'Bearer ' + ap.apiKey;
+				}
+				return fetch( ap.endpoint, {
+					method: 'POST',
+					headers: llmHeaders,
+					body: JSON.stringify( body )
+				} );
+			} ).then( function ( r ) { return r.json(); } )
+			.then( function ( llmData ) {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				var answer = ( llmData.choices && llmData.choices[0] && llmData.choices[0].message && llmData.choices[0].message.content )
+					|| ( llmData.error && llmData.error.message )
+					|| 'Unable to generate a response. Check your AI provider settings.';
+				addAiMessage( 'ai', answer );
+				if ( _speakNext ) speakText( answer );
+			} )
+			.catch( function () {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+				addAiMessage( 'ai', 'Connection error. Check your AI provider endpoint.' );
+			} );
+		}
+
+		sendBtn.addEventListener( 'click', doSend );
+		input.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); }
+		} );
+
+		setTimeout( function () { input.focus(); }, 200 );
+	}
+
+	function addAiMessage( who, text ) {
+		var div = document.getElementById( 'rsa-ai-messages' );
+		if ( ! div ) return;
+		var msg = document.createElement( 'div' );
+		msg.style.cssText = 'margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.5;' +
+			( who === 'user'
+				? 'background:#e3f2fd;margin-left:20%;border:1px solid #90caf9;'
+				: 'background:#fff;margin-right:20%;border:1px solid #e0e0e0;box-shadow:0 1px 2px rgba(0,0,0,0.05);' );
+		msg.innerHTML = '<div>' + esc( text ).replace( /\n/g, '<br>' ) + '</div>';
+		div.appendChild( msg );
+		div.scrollTop = div.scrollHeight;
 	}
 
 	// -----------------------------------------------------------------------
@@ -2352,163 +2733,101 @@
 	// Install
 	// -----------------------------------------------------------------------
 	function renderInstall( container ) {
-<<<<<<< HEAD:docs/app/2.0.0/app.js
-		var ua         = navigator.userAgent || '';
-		var platform   = ( navigator.platform || '' ).toLowerCase();
-		var isLinux    = platform.indexOf( 'linux' ) !== -1 || ua.indexOf( 'linux' ) !== -1;
-		var isWindows  = platform.indexOf( 'win' ) !== -1 || ua.indexOf( 'windows' ) !== -1;
-		var isIos      = /iphone|ipad|ipod/i.test( ua );
-		var isAndroid  = /android/i.test( ua );
-		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|edg|android/i.test( ua );
-		var isFirefox  = /firefox|fxios/i.test( ua );
-		var isChrome   = /chrome|crios/i.test( ua ) && ! /edg/i.test( ua );
-		var isEdge     = /edg\//i.test( ua );
-		var isSamsung  = /samsungbrowser/i.test( ua );
-		var isStandalone = ( 'standalone' in window.navigator && window.navigator.standalone ) ||
-		                   window.matchMedia( '(display-mode: standalone)' ).matches;
-		var isTauriApp = isTauri();
-
-		var BASE_DL = 'https://app.richstatistics.com/desktop';
-=======
-		var BASE_DL = 'https://rs-app.richardkentgates.com/desktop';
->>>>>>> origin/main:docs/app/v/2.2.8/app.js
-
-		var pwaSection =
-			'<div class="rsa-install-card">' +
-				'<div class="rsa-install-card-body">' +
-					'<h3>Install as Desktop App</h3>' +
-					'<p class="rsa-field-hint">Click the button to add Rich Statistics to your applications — it will open in its own window without browser tabs or address bar.</p>' +
-					'<button type="button" class="rsa-btn rsa-btn-primary rsa-install-btn rsa-install-page-btn" style="margin-top:10px" hidden>' +
-						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>' +
-						' Install App' +
-					'</button>' +
-					'<p class="rsa-field-hint rsa-install-btn-pending" style="margin-top:8px">Looking for install prompt\u2026 If this message persists, the app may already be installed or your browser does not support PWA install.</p>' +
-				'</div>' +
-			'</div>';
-
-		var linuxSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Linux Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Linux desktop app is a native Tauri application (.deb) for amd64 and arm64 Debian/Ubuntu systems. It wraps the same analytics interface and updates automatically via your system package manager.</p>' +
-
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
-				'</div>' +
-
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
-					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
-					'</div>' +
-					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
-				'</div>' +
-			'</div>';
-
-		var windowsSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Windows Desktop App</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The Windows desktop app is a native Tauri application (.exe) that wraps the same analytics interface. It updates automatically via the built-in Tauri updater.</p>' +
-
-				'<div class="rsa-install-method">' +
-<<<<<<< HEAD:docs/app/2.0.0/app.js
-					'<div class="rsa-install-method-label">Recommended — via APT (system updates)</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-					'<p class="rsa-field-hint">After setup, <code>sudo apt upgrade</code> will keep the app up-to-date alongside all other system packages.</p>' +
-				'</div>' +
-
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Manual — direct .deb download</div>' +
-					'<div class="rsa-linux-arch-links" style="margin-top:8px">' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-amd64.deb">x86-64</a>' +
-						'<a class="rsa-linux-arch-link rsa-install-deb-link" href="' + esc( BASE_DL ) + '/rich-statistics-linux-arm64.deb">ARM64</a>' +
-					'</div>' +
-					'<pre class="rsa-install-code" style="margin-top:8px">sudo dpkg -i rich-statistics-linux-*.deb</pre>' +
-=======
-					'<div class="rsa-install-method-label">Download Installer</div>' +
-					'<p style="margin-bottom:8px"><a class="rsa-install-btn" href="' + esc( BASE_DL ) + '/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download rich-statistics-windows.exe</a></p>' +
-					'<pre class="rsa-install-code">1. Download the .exe installer above\n2. Run the installer and follow the NSIS setup wizard\n3. The app will check for updates automatically</pre>' +
->>>>>>> origin/main:docs/app/v/2.2.8/app.js
-				'</div>' +
-			'</div>';
-
-		var testSection =
-			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #feca57">' +
-				'<h3 style="color:#feca57">Test Version — Staging Environment</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The test version mirrors production code deployed for integration testing. Data here may include test entries.</p>' +
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Test Web App</div>' +
-					'<p style="margin-bottom:8px"><a href="https://rs-test.richardkentgates.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#feca57;color:#1a1a2e;border-radius:6px;text-decoration:none;font-size:14px">Open Test App</a></p>' +
-				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:8px">Test environment connects to: <code>34.56.56.233</code> (staging WordPress)</p>' +
-			'</div>';
-
-		var devSection =
-			'<div class="rsa-chart-card" style="margin-top:20px;background:#1a1a2e;border:1px solid #4a90b8">' +
-				'<h3>Dev Version — Pre-Release Testing</h3>' +
-				'<p style="font-size:13px;margin-bottom:14px;color:var(--rsa-text)">The dev version is built from the <code>develop</code> branch and may contain untested features. Use for testing before production release.</p>' +
-				'<div class="rsa-install-method">' +
-					'<div class="rsa-install-method-label">Dev Web App</div>' +
-					'<p style="margin-bottom:8px"><a href="https://rs-dev.richardkentgates.com" target="_blank" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Open Dev App</a></p>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:16px">' +
-					'<div class="rsa-install-method-label">Dev Linux — via APT</div>' +
-					'<pre class="rsa-install-code">curl -fsSL https://rs-dev.richardkentgates.com/apt/public.gpg \\\n    | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics-dev.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics-dev.gpg] \\\n    https://rs-dev.richardkentgates.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics-dev.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:12px">' +
-					'<div class="rsa-install-method-label">Dev Linux — direct .deb</div>' +
-					'<div style="margin-top:8px">' +
-						'<a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-linux-amd64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px">x86-64 .deb</a>' +
-						'<a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-linux-arm64.deb" class="rsa-install-deb-link" style="display:inline-block;padding:6px 12px;background:#4a90b8;color:#fff;border-radius:4px;text-decoration:none;font-size:13px;margin-left:8px">ARM64 .deb</a>' +
-					'</div>' +
-				'</div>' +
-				'<div class="rsa-install-method" style="margin-top:12px">' +
-					'<div class="rsa-install-method-label">Dev Windows</div>' +
-					'<p style="margin-bottom:8px"><a href="https://rs-dev.richardkentgates.com/desktop/rich-statistics-windows.exe" class="rsa-install-btn" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Dev Windows .exe</a></p>' +
-				'</div>' +
-				'<p class="rsa-field-hint" style="margin-top:12px">To revert to production: run the standard install commands above, or <code>sudo apt remove rich-statistics &amp;&amp; sudo apt autoremove</code> then reinstall.</p>' +
-			'</div>';
-
-		var compatSection =
-			'<div class="rsa-chart-card" style="margin-top:20px">' +
-				'<h3>Browser &amp; Platform Support</h3>' +
-				'<table class="rsa-table rsa-install-compat-table">' +
-					'<thead><tr><th>Browser / Platform</th><th>Install Method</th></tr></thead>' +
-					'<tbody>' +
-						'<tr><td>Chrome &amp; Edge (desktop)</td><td>Install button (above) or address-bar ⊕ icon</td></tr>' +
-						'<tr><td>Chrome / Samsung Internet (Android)</td><td>Install button or browser menu → "Add to Home Screen"</td></tr>' +
-						'<tr><td>Safari (iOS 16.4+)</td><td>Share ↑ → "Add to Home Screen"</td></tr>' +
-						'<tr><td>Safari (macOS Sonoma+)</td><td>File → "Add to Dock…"</td></tr>' +
-						'<tr><td>Firefox</td><td>Not supported — use Chrome or Edge</td></tr>' +
-						'<tr><td>Linux (any browser)</td><td>Use the .deb / APT method above</td></tr>' +
-						'<tr><td>Windows 10/11</td><td>Download .exe installer above</td></tr>' +
-					'</tbody>' +
-				'</table>' +
-			'</div>';
-
 		container.innerHTML =
-			'<div class="rsa-chart-card">' +
-				'<h3>Web App</h3>' +
-				pwaSection +
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+			'<h2 style="font-size:20px;margin-bottom:24px;">Install Rich Statistics Desktop App</h2>' +
+			'<p style="color:#888;">Access your analytics from your desktop — no browser required.</p>' +
+
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Linux</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<p class="rsa-install-subtitle">Install via APT (recommended)</p>' +
+					'<pre class="rsa-install-code">curl -fsSL https://app.richstatistics.com/apt/public.gpg \\\n    | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/rich-statistics.gpg\n\necho "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \\\n    https://app.richstatistics.com/apt stable main" \\\n    | sudo tee /etc/apt/sources.list.d/rich-statistics.list\n\nsudo apt update &amp;&amp; sudo apt install rich-statistics</pre>' +
+					'<p class="rsa-install-subtitle">Or download .deb directly</p>' +
+					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb">x86-64</a>' +
+					'<a class="rsa-linux-arch-link rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb">ARM64</a>' +
+				'</div>' +
 			'</div>' +
-			linuxSection +
-			windowsSection +
-			testSection +
-			devSection +
-			compatSection;
 
-		if ( _installPrompt ) {
-			container.querySelectorAll( '.rsa-install-page-btn' ).forEach( function ( btn ) {
-				btn.hidden = false;
-			} );
-			container.querySelectorAll( '.rsa-install-btn-pending' ).forEach( function ( el ) {
-				el.hidden = true;
-			} );
-		}
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Windows</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<p class="rsa-install-subtitle">Download installer (.exe)</p>' +
+					'<p style="margin-bottom:8px"><a class="rsa-install-deb-link" href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" style="display:inline-block;padding:8px 16px;background:#4a90b8;color:#fff;border-radius:6px;text-decoration:none;font-size:14px">Download Windows .exe</a></p>' +
+				'</div>' +
+			'</div>' +
 
-		setLoading( false );
+			'<p style="font-size:12px;color:#888;margin-top:32px;">' +
+			'Desktop binaries are updated with each release. ' +
+			'Installation via APT is recommended for automatic updates.</p>' +
+
+			'<h2 style="font-size:18px;margin:32px 0 16px;">AI Assistant Provider</h2>' +
+			'<p style="color:#888;font-size:13px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Provide an OpenAI-compatible endpoint (cloud or local).</p>' +
+
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Provider Settings</strong></div>' +
+				'<div style="padding:16px;">' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-endpoint">API Endpoint</label>' +
+						'<input type="url" id="rsa-ai-endpoint" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.endpoint ) || 'https://api.openai.com/v1/chat/completions' ) + '"' +
+							' placeholder="https://api.openai.com/v1/chat/completions">' +
+					'</div>' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-key">API Key</label>' +
+						'<input type="password" id="rsa-ai-key" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.apiKey ) || '' ) + '"' +
+							' placeholder="sk-... (not needed for local Ollama)">' +
+					'</div>' +
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
+						'<input type="text" id="rsa-ai-model" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini' ) + '"' +
+							' placeholder="gpt-4o-mini">' +
+					'</div>' +
+					'<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px;">' +
+						'<strong style="font-size:13px;display:block;margin-bottom:8px;">Voice &amp; Speech</strong>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-input"' +
+								( state.aiProvider && state.aiProvider.voiceInput ? ' checked' : '' ) + '>' +
+							' Voice input (microphone) — speak your questions' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-output"' +
+								( state.aiProvider && state.aiProvider.voiceOutput ? ' checked' : '' ) + '>' +
+							' Voice output (speaker) — hear answers read aloud' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-auto-speak"' +
+								( state.aiProvider && state.aiProvider.autoSpeak ? ' checked' : '' ) + '>' +
+							' Auto-speak new answers' +
+						'</label>' +
+						'<div style="display:flex;gap:12px;margin-top:8px;">' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-lang" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Language</label>' +
+								'<select id="rsa-ai-voice-lang" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">' +
+									'<option value="en-US"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
+									'<option value="en-GB"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
+									'<option value="es-ES"' + ( state.aiProvider && state.aiProvider.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
+									'<option value="fr-FR"' + ( state.aiProvider && state.aiProvider.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
+									'<option value="de-DE"' + ( state.aiProvider && state.aiProvider.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
+								'</select>' +
+							'</div>' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( state.aiProvider ? state.aiProvider.voiceSpeed : '1.0' ) + '</span></label>' +
+								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
+									' value="' + ( state.aiProvider && state.aiProvider.voiceSpeed ? state.aiProvider.voiceSpeed : '1.0' ) + '"' +
+									' style="width:100%;"' +
+									' oninput="document.getElementById(\'rsa-ai-speed-val\').textContent = this.value;">' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+					'<div style="margin-top:12px;display:flex;gap:8px;">' +
+						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
+						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
 	}
 
 	// -----------------------------------------------------------------------
