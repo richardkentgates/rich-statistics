@@ -323,7 +323,7 @@ class RSA_DB {
 		);
 		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( $wpdb->prepare( "DELETE FROM " . $wpdb->options . " WHERE option_name IN ($placeholders)", $options ) );
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $wpdb->options . " WHERE option_name IN ($placeholders)", $options ) );
 	}
 
 	/**
