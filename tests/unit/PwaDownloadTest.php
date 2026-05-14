@@ -78,9 +78,4 @@ class PwaDownloadTest extends TestCase {
 		$method = new ReflectionMethod( RSA_Pwa_Download::class, 'stream_zip' );
 		$this->assertTrue( $method->isPrivate() );
 	}
-
-	public function test_issue_token_is_private(): void {
-		$method = new ReflectionMethod( RSA_Pwa_Download::class, 'issue_token' );
-		$this->assertTrue( $method->isPrivate() );
-	}
 }

@@ -1124,11 +1124,17 @@ class RSA_Analytics {
 			if ( empty( $rows ) ) {
 				return '';
 			}
-			$output = "\xEF\xBB\xBF" . implode( ',', array_keys( $rows[0] ) ) . "\n";
+			// Use fputcsv for RFC 4180 compliance — handles commas, quotes, and newlines in values.
+			$handle = fopen( 'php://temp', 'w' );
+			fwrite( $handle, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel.
+			fputcsv( $handle, array_keys( $rows[0] ) );
 			foreach ( $rows as $row ) {
-				$output .= implode( ',', array_map( static fn( $v ) => '"' . str_replace( '"', '""', (string) $v ) . '"', array_values( $row ) ) ) . "\n";
+				fputcsv( $handle, array_values( $row ) );
 			}
-			return $output;
+			rewind( $handle );
+			$csv = stream_get_contents( $handle );
+			fclose( $handle );
+			return $csv;
 		}
 
 		return wp_json_encode( $rows );
@@ -1209,11 +1215,17 @@ class RSA_Analytics {
 			if ( empty( $rows ) ) {
 				return "\xEF\xBB\xBF" . implode( ',', $headers ) . "\n";
 			}
-			$out = "\xEF\xBB\xBF" . implode( ',', $headers ) . "\n"; // UTF-8 BOM for Excel.
+			// Use fputcsv for RFC 4180 compliance — handles commas, quotes, and newlines in values.
+			$handle = fopen( 'php://temp', 'w' );
+			fwrite( $handle, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel.
+			fputcsv( $handle, $headers );
 			foreach ( $rows as $row ) {
-				$out .= implode( ',', array_map( static fn( $v ) => '"' . str_replace( '"', '""', (string) $v ) . '"', array_values( $row ) ) ) . "\n";
+				fputcsv( $handle, array_values( $row ) );
 			}
-			return $out;
+			rewind( $handle );
+			$csv = stream_get_contents( $handle );
+			fclose( $handle );
+			return $csv;
 		}
 
 		return wp_json_encode( $rows );
@@ -1241,7 +1253,7 @@ class RSA_Analytics {
 		$end    = strtotime( $range['end'] );
 
 		while ( $cursor <= $end ) {
-			$day      = gmdate( 'Y-m-d', $cursor );
+			$day      = wp_date( 'Y-m-d', $cursor );
 			$filled[] = array(
 				'day'   => $day,
 				'views' => $map[ $day ] ?? 0,
@@ -1325,7 +1337,7 @@ class RSA_Analytics {
 	 */
 	private static function bot_threshold(): int {
 		if ( null === self::$bot_threshold ) {
-			self::$bot_threshold = (int) get_option( 'rsa_bot_score_threshold', 3 );
+			self::$bot_threshold = (int) get_option( 'rsa_bot_score_threshold', 5 );
 		}
 		return self::$bot_threshold;
 	}

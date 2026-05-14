@@ -769,7 +769,7 @@ class RSA_Rest_API {
 			return new WP_Error( 'invalid_data', __( 'sites must be an array.', 'rich-statistics' ), [ 'status' => 400 ] );
 		}
 
-		// Strip everything except the three safe fields we want to persist.
+		// Strip everything except the safe fields we want to persist.
 		$sanitized = array_map(
 			function ( $site ) {
 				return [
@@ -1130,32 +1130,46 @@ class RSA_Rest_API {
 	 * @return WP_REST_Response
 	 */
 	public static function post_track( WP_REST_Request $r ): WP_REST_Response {
-		// Save and restore $_POST to avoid polluting global state.
-		$saved_post                = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
-		$_POST                     = $r->get_params();
+		// Per-IP rate limiting — prevents session-ID-based bypass of the
+		// per-session limiter in RSA_Tracker::is_rate_limited().
+		$ip_raw   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$ip_key   = 'rsa_rl_ip_' . hash( 'sha256', $ip_raw );
+		$ip_count = (int) get_transient( $ip_key );
+		if ( $ip_count >= RSA_Tracker::RATE_LIMIT_PER_MIN ) {
+			return new WP_REST_Response( [ 'ok' => false, 'error' => 'rate_limited' ], 429 );
+		}
+		set_transient( $ip_key, $ip_count + 1, 60 );
+
+		// Save and restore $_POST and $_SERVER to avoid polluting global state.
+		$saved_post   = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
+		$saved_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
+		$_POST        = $r->get_params();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
-		// Verify nonce manually (passed as 'nonce' param).
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'rsa_track' ) ) {
-			$_POST = $saved_post;
-			return new WP_REST_Response(
-				[
-					'ok'    => false,
-					'error' => 'invalid_nonce',
-				],
-				403
-			);
+		try {
+			// Verify nonce manually (passed as 'nonce' param).
+			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'rsa_track' ) ) {
+				return new WP_REST_Response(
+					[
+						'ok'    => false,
+						'error' => 'invalid_nonce',
+					],
+					403
+				);
+			}
+
+			// Delegate to the tracker's handle_ingest — capture wp_send_json call.
+			add_filter( 'wp_doing_ajax', '__return_true' );
+			ob_start();
+			RSA_Tracker::handle_ingest();
+			ob_get_clean();
+			remove_filter( 'wp_doing_ajax', '__return_true' );
+
+			return new WP_REST_Response( [ 'ok' => true ], 200 );
+		} finally {
+			$_POST                     = $saved_post;
+			$_SERVER['REQUEST_METHOD'] = $saved_method;
 		}
-
-		// Delegate to the tracker's handle_ingest — capture wp_send_json call.
-		add_filter( 'wp_doing_ajax', '__return_true' );
-		ob_start();
-		RSA_Tracker::handle_ingest();
-		ob_get_clean();
-		remove_filter( 'wp_doing_ajax', '__return_true' );
-
-		$_POST = $saved_post;
-		return new WP_REST_Response( [ 'ok' => true ], 200 );
 	}
 
 	// ----------------------------------------------------------------
@@ -1179,6 +1193,10 @@ class RSA_Rest_API {
 					$value = substr( $value, 0, 8 ) . '...';
 				}
 				if ( is_string( $value ) && preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $value ) ) {
+					$value = '[ip-redacted]';
+				}
+				// IPv6 addresses (full, compressed, and IPv4-mapped).
+				if ( is_string( $value ) && preg_match( '/^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){1,7}:$|^(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}$|^(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}$|^(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}$|^(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}$|^[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}$|^:(?::[0-9a-fA-F]{1,4}){1,7}$|^::$|^(?:[0-9a-fA-F]{1,4}:){6}(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$|^::ffff:(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/', $value ) ) {
 					$value = '[ip-redacted]';
 				}
 			}

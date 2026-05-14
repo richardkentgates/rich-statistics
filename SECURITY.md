@@ -4,7 +4,8 @@
 
 | Version | Security Fixes |
 |---|---|
-| 1.x (current) | ✅ Active |
+| 2.x (current) | ✅ Active |
+| 1.x | ❌ End of Life |
 
 ---
 
@@ -42,7 +43,7 @@ Rich Statistics is built with the following security properties:
 | No PII at rest | IP addresses never stored; referrers stored as domain only; email-shaped query params stripped |
 | No third-party requests | Chart.js bundled locally; no CDN or external analytics calls |
 | Nonce verification | All AJAX handlers and forms verify `wp_nonce` |
-| Capability checks | All admin actions require `manage_options` capability |
+| Capability checks | All admin actions require `rsa_manage_statistics` capability |
 | Prepared statements | All SQL uses `$wpdb->prepare()` |
 | Rate limiting | 60 events/session/minute via WP transients |
 | Output escaping | All output escaped at point of rendering |

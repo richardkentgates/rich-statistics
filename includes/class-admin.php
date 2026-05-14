@@ -592,21 +592,39 @@ class RSA_Admin {
 
 	/** Render the overview page. */
 	public static function page_overview(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'overview' ); }
 	/** Render the pages view. */
 	public static function page_pages(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'pages' ); }
 	/** Render the audience view. */
 	public static function page_audience(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'audience' ); }
 	/** Render the referrers view. */
 	public static function page_referrers(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'referrers' ); }
 	/** Render the campaigns view. */
 	public static function page_campaigns(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'campaigns' ); }
 	/** Render the behavior view. */
 	public static function page_behavior(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'behavior' ); }
 	/** Render the user flow view. */
 	public static function page_user_flow(): void {
@@ -622,9 +640,15 @@ class RSA_Admin {
 		self::render( 'heatmap' ); }
 	/** Render the preferences page. */
 	public static function page_preferences(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'preferences' ); }
 	/** Render the maintenance page. */
 	public static function page_maintenance(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'maintenance' ); }
 	/** Render the export page. */
 	public static function page_export(): void {
@@ -636,9 +660,15 @@ class RSA_Admin {
 		self::render( 'woocommerce' ); }
 	/** Render the network dashboard page. */
 	public static function page_network_dashboard(): void {
+		if ( ! current_user_can( 'manage_network_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'network-dashboard' ); }
 	/** Render the network settings page. */
 	public static function page_network_settings(): void {
+		if ( ! current_user_can( 'manage_network_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'network-settings' ); }
 	/** Render the AI chat page (redirects to the app). */
 	public static function page_ai_chat(): void {
@@ -646,6 +676,9 @@ class RSA_Admin {
 		exit; } // Kept for backward compat — may have been bookmarked
 	/** Render the install page. */
 	public static function page_install(): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'install' ); }
 
 	/** Require a premium license or exit with an error. */
@@ -661,6 +694,17 @@ class RSA_Admin {
 	 * @param string $template Template slug.
 	 */
 	private static function render( string $template ): void {
+		// Whitelist check — prevents path traversal if any caller passes
+		// user-controlled input as the template slug.
+		$allowed = [
+			'overview', 'pages', 'audience', 'referrers', 'campaigns',
+			'behavior', 'user-flow', 'click-map', 'heatmap', 'preferences',
+			'maintenance', 'export', 'woocommerce', 'network-dashboard',
+			'network-settings', 'install',
+		];
+		if ( ! in_array( $template, $allowed, true ) ) {
+			return;
+		}
 		$file = RSA_DIR . 'templates/admin/' . $template . '.php';
 		if ( file_exists( $file ) ) {
 			include $file;

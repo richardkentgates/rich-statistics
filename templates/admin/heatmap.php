@@ -24,6 +24,7 @@ if ( ! ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_on
 <?php endif; ?>
 </div>
 	<?php
+	RSA_Admin::page_footer();
 	return;
 }
 

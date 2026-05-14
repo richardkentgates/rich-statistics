@@ -296,12 +296,13 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 				</td>
 			</tr>
 		</table>
-		<p style="padding:0 0 16px;">
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=rsa_send_test_email' ), 'rsa_test_email' ) ); ?>"
-				class="button">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;padding:0 0 16px;">
+			<input type="hidden" name="action" value="rsa_send_test_email">
+			<?php wp_nonce_field( 'rsa_test_email' ); ?>
+			<button type="submit" class="button">
 				<?php esc_html_e( 'Send Test Email', 'rich-statistics' ); ?>
-			</a>
-		</p>
+			</button>
+		</form>
 	</div>
 
 	<?php submit_button( __( 'Save Preferences', 'rich-statistics' ), 'primary', 'submit', true ); ?>

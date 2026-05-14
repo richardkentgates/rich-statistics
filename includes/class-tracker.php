@@ -88,11 +88,11 @@ class RSA_Tracker {
 		if ( ! empty( self::$session_ids[ $blog_id ] ) ) {
 			return self::$session_ids[ $blog_id ];
 		}
-		$hex                              = bin2hex( random_bytes( 16 ) );
-		$hex                              = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
-		$variants                         = [ '8', '9', 'a', 'b' ];
-		$hex                              = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
-		self::$session_ids[ $blog_id ]    = sprintf(
+		$hex                           = bin2hex( random_bytes( 16 ) );
+		$hex                           = substr( $hex, 0, 12 ) . '4' . substr( $hex, 13 );
+		$variants                      = [ '8', '9', 'a', 'b' ];
+		$hex                           = substr( $hex, 0, 16 ) . $variants[ array_rand( $variants ) ] . substr( $hex, 17 );
+		self::$session_ids[ $blog_id ] = sprintf(
 			'%s-%s-%s-%s-%s',
 			substr( $hex, 0, 8 ),
 			substr( $hex, 8, 4 ),
@@ -125,6 +125,12 @@ class RSA_Tracker {
 			wp_send_json_error( 'invalid_nonce', 403 );
 		}
 
+		// Per-IP rate limiting — runs before bot scoring to reject high-volume
+		// requests early and prevent wasted CPU on bot detection.
+		if ( self::is_ip_rate_limited() ) {
+			wp_send_json_success( [ 'ok' => true ] );
+		}
+
 		$payload = self::parse_payload();
 		if ( is_wp_error( $payload ) ) {
 			wp_send_json_error( $payload->get_error_message(), 400 );
@@ -143,6 +149,7 @@ class RSA_Tracker {
 			wp_send_json_success( [ 'ok' => true ] );
 		}
 
+		// Only parse UA for non-bot requests — saves CPU on known bots.
 		$ua_data = RSA_Bot_Detection::parse_ua( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) );
 
 		if ( self::is_rate_limited( $payload['session_id'] ) ) {
@@ -160,46 +167,45 @@ class RSA_Tracker {
 
 		global $wpdb;
 
-		$existing = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT id, pages_viewed FROM `{$wpdb->prefix}rsa_sessions` WHERE session_id = %s",
-				$payload['session_id']
-			)
-		);
+		$now = current_time( 'mysql', true );
 
-		if ( $existing ) {
-			if ( $payload['time_on_page'] > 0 ) {
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE `{$wpdb->prefix}rsa_sessions` SET pages_viewed = pages_viewed + 1, exit_page = %s, total_time = COALESCE(total_time, 0) + %d WHERE session_id = %s",
-						$page,
-						(int) $payload['time_on_page'],
-						$payload['session_id']
-					)
-				);
-			} else {
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE `{$wpdb->prefix}rsa_sessions` SET pages_viewed = pages_viewed + 1, exit_page = %s WHERE session_id = %s",
-						$page,
-						$payload['session_id']
-					)
-				);
-			}
+		// Atomic upsert — avoids SELECT-then-INSERT race condition under
+		// concurrent pageviews from the same session.
+		if ( $payload['time_on_page'] > 0 ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO `{$wpdb->prefix}rsa_sessions` (session_id, pages_viewed, entry_page, total_time, os, browser, language, timezone, created_at)
+					 VALUES (%s, 1, %s, %d, %s, %s, %s, %s, %s)
+					 ON DUPLICATE KEY UPDATE
+					   pages_viewed = pages_viewed + 1,
+					   exit_page    = VALUES(exit_page),
+					   total_time   = COALESCE(total_time, 0) + VALUES(total_time)",
+					$payload['session_id'],
+					$page,
+					(int) $payload['time_on_page'],
+					$ua_data['os'],
+					$ua_data['browser'],
+					$payload['language'],
+					$payload['timezone'],
+					$now
+				)
+			);
 		} else {
-			$wpdb->insert(
-				$wpdb->prefix . 'rsa_sessions',
-				[
-					'session_id'   => $payload['session_id'],
-					'pages_viewed' => 1,
-					'entry_page'   => $page,
-					'created_at'   => current_time( 'mysql' ),
-					'os'           => $ua_data['os'],
-					'browser'      => $ua_data['browser'],
-					'language'     => $payload['language'],
-					'timezone'     => $payload['timezone'],
-				],
-				[ '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' ]
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO `{$wpdb->prefix}rsa_sessions` (session_id, pages_viewed, entry_page, os, browser, language, timezone, created_at)
+					 VALUES (%s, 1, %s, %s, %s, %s, %s, %s)
+					 ON DUPLICATE KEY UPDATE
+					   pages_viewed = pages_viewed + 1,
+					   exit_page    = VALUES(exit_page)",
+					$payload['session_id'],
+					$page,
+					$ua_data['os'],
+					$ua_data['browser'],
+					$payload['language'],
+					$payload['timezone'],
+					$now
+				)
 			);
 		}
 
@@ -209,7 +215,7 @@ class RSA_Tracker {
 				'session_id'      => $payload['session_id'],
 				'page'            => $page,
 				'referrer_domain' => $referrer_domain,
-				'created_at'      => current_time( 'mysql' ),
+				'created_at'      => $now,
 				'os'              => $ua_data['os'],
 				'browser'         => $ua_data['browser'],
 				'browser_version' => $ua_data['browser_version'],
@@ -298,14 +304,31 @@ class RSA_Tracker {
 	 */
 	public static function set_current_session_id( string $sid ): void {
 		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $sid ) ) {
-			$blog_id                          = get_current_blog_id();
-			self::$session_ids[ $blog_id ]    = $sid;
+			$blog_id                       = get_current_blog_id();
+			self::$session_ids[ $blog_id ] = $sid;
 		}
 	}
 
 	private static function is_rate_limited( string $session_id ): bool {
 		$key   = 'rsa_rl_' . substr( md5( $session_id ), 0, 16 );
 		$count = (int) get_transient( $key );
+		if ( $count >= self::RATE_LIMIT_PER_MIN ) {
+			return true;
+		}
+		set_transient( $key, $count + 1, 60 );
+		return false;
+	}
+
+	/**
+	 * Per-IP rate limiting — prevents attackers from bypassing the per-session
+	 * limiter by generating unlimited session IDs.
+	 *
+	 * @return bool True if the IP is rate limited.
+	 */
+	private static function is_ip_rate_limited(): bool {
+		$ip_raw = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key    = 'rsa_rl_ip_' . hash( 'sha256', $ip_raw );
+		$count  = (int) get_transient( $key );
 		if ( $count >= self::RATE_LIMIT_PER_MIN ) {
 			return true;
 		}

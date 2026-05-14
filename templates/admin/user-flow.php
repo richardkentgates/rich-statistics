@@ -175,8 +175,8 @@ $common_params = array_filter(
 	$explorer_url = add_query_arg( array_merge( $common_params, array( 'view_type' => 'explorer' ) ), $base );
 	$table_url    = add_query_arg( array_merge( $common_params, array( 'view_type' => 'table' ) ), $base );
 	?>
-	<a href="<?php echo esc_url( $explorer_url ); ?>" class="button <?php echo $view_type === 'explorer' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Path Explorer', 'rich-statistics' ); ?></a>
-	<a href="<?php echo esc_url( $table_url ); ?>" class="button <?php echo $view_type === 'table' ? 'button-primary' : ''; ?>"><?php esc_html_e( 'Journey Table', 'rich-statistics' ); ?></a>
+	<a href="<?php echo esc_url( $explorer_url ); ?>" class="button <?php echo esc_attr( $view_type === 'explorer' ? 'button-primary' : '' ); ?>"><?php esc_html_e( 'Path Explorer', 'rich-statistics' ); ?></a>
+	<a href="<?php echo esc_url( $table_url ); ?>" class="button <?php echo esc_attr( $view_type === 'table' ? 'button-primary' : '' ); ?>"><?php esc_html_e( 'Journey Table', 'rich-statistics' ); ?></a>
 </div>
 
 <?php
