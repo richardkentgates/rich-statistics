@@ -34,4 +34,5 @@ jobs:
       apt-script: rsa-apt-repo-update-test
       update-json-script: rsa-gen-update-json-test
       artifact-prefix: rich-statistics-test
+      product-suffix: (Test)
     secrets: inherit
