@@ -148,6 +148,36 @@ Available at https://statistics.richardkentgates.com
 
 == Changelog ==
 
+= 2.4.0 =
+* Multisite network dashboard with cross-site AI analytics
+* AI tool-calling architecture — structured JSON via /ai/tool endpoint
+* Environment-aware PWA routing (dev/test/production)
+* Per-site tool gating in network dashboard
+* RSA_APP_VERSION decoupled from RSA_VERSION
+* Static session ID cross-contamination fix for multisite
+* Tauri CSP hardened (removed unsafe-inline)
+* CSV export RFC 4180 compliance (fputcsv)
+* Bot threshold default aligned across plugin (5)
+* Timezone-consistent date gap filling in charts
+* 16 form labels, 13 color contrast fixes, keyboard navigation
+* 10 unit tests for rsa_detect_app_env()
+* PHPCS in all 4 CI workflows
+* Plugin Checker: 0 errors on test server
+
+= 2.3.0 =
+* Versioned PWA snapshots (docs/app/v/{version}/)
+* Tauri desktop app version routing
+* App version sync: RSA_CONFIG.appVersion + minAppVersion
+* Prune old PWA snapshots (keep latest 3)
+* Auto-refresh URL pollution fix
+* Monthly digest drift fix
+* DB prune loop optimization
+* Orphaned template cleanup
+* PWA icons 404 fix (Apache alias conflict)
+* Install page loading hang fix
+* Tracker total_time NULL-coercion fix
+* build.sh includes env config files in snapshots
+
 = 2.2.9 =
 * Coding standards cleanup: zero PHPCS errors across entire codebase
 * CI workflow refactoring: reusable sub-workflows reduce duplication by 70%

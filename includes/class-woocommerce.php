@@ -99,10 +99,12 @@ class RSA_Woocommerce {
 	 * @param int $order_id Order ID.
 	 */
 	public static function track_order_complete( int $order_id ): void {
-		if ( get_post_meta( $order_id, '_rsa_tracked', true ) ) {
+		// Use add_post_meta with unique=true to prevent race condition where
+		// both woocommerce_payment_complete and woocommerce_order_status_processing
+		// fire simultaneously and both read _rsa_tracked as empty.
+		if ( ! add_post_meta( $order_id, '_rsa_tracked', '1', true ) ) {
 			return;
 		}
-		update_post_meta( $order_id, '_rsa_tracked', '1' );
 
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
@@ -137,7 +139,7 @@ class RSA_Woocommerce {
 		$data    = [
 			'session_id' => self::session_id(),
 			'event_type' => $event_type,
-			'created_at' => current_time( 'mysql' ),
+			'created_at' => current_time( 'mysql', true ),
 		];
 		$formats = [ '%s', '%s', '%s' ];
 

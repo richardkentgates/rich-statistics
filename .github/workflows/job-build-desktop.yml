@@ -133,13 +133,19 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
 
+      - name: Add SSH known hosts
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H <PWA_SERVER_IP> >> ~/.ssh/known_hosts
+
       - name: Push binaries
         shell: bash
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
-          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
-          SCP="scp -o StrictHostKeyChecking=no"
+          SSH="ssh -o BatchMode=yes"
+          SCP="scp -o BatchMode=yes"
           $SSH <SSH_USER>@<PWA_SERVER_IP> "mkdir -p ${{ inputs.target-path }}"
 
           echo "Platform: ${PLATFORM}"
@@ -188,7 +194,7 @@ jobs:
         run: |
           ARCH=${PLATFORM#linux-}
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o StrictHostKeyChecking=no <SSH_USER>@<PWA_SERVER_IP> \
+          ssh -o BatchMode=yes <SSH_USER>@<PWA_SERVER_IP> \
             "sudo /usr/local/bin/${{ inputs.apt-script }} ${ARCH} ${VERSION}"
 
       - name: Regenerate update.json (Windows only)
@@ -196,5 +202,5 @@ jobs:
         shell: bash
         run: |
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o StrictHostKeyChecking=no <SSH_USER>@<PWA_SERVER_IP> \
+          ssh -o BatchMode=yes <SSH_USER>@<PWA_SERVER_IP> \
             "sudo /usr/local/bin/${{ inputs.update-json-script }} ${VERSION} ${{ inputs.server-host }} ${{ inputs.target-path }}"

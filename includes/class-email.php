@@ -135,7 +135,7 @@ class RSA_Email {
 	 */
 	public static function handle_test_send(): void {
 		check_admin_referer( 'rsa_test_email' );
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'rich-statistics' ) );
 		}
 		$sent = self::send_digest( '30d' );

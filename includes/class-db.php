@@ -150,6 +150,7 @@ class RSA_DB {
 			weight      INT UNSIGNED        DEFAULT 1,
 			date_bucket DATE                NOT NULL,
 			PRIMARY KEY (id),
+			UNIQUE KEY page_coords_date (page(191), x_pct, y_pct, date_bucket),
 			KEY page_date (page(191), date_bucket)
 		) $charset;";
 
@@ -182,7 +183,7 @@ class RSA_DB {
 		self::seed_defaults();
 
 		if ( ! wp_next_scheduled( 'rsa_daily_maintenance' ) ) {
-			wp_schedule_event( time(), 'daily', 'rsa_daily_maintenance' );
+			wp_schedule_event( strtotime( 'tomorrow 2:00 AM' ), 'daily', 'rsa_daily_maintenance' );
 		}
 	}
 
@@ -251,12 +252,37 @@ class RSA_DB {
 
 	/**
 	 * Remove all plugin data on uninstall if configured.
+	 * In multisite mode, iterates all sites and also cleans network-level options.
 	 */
 	public static function maybe_remove_data(): void {
 		if ( ! get_option( 'rsa_remove_data_on_uninstall' ) ) {
 			return;
 		}
 
+		if ( is_multisite() ) {
+			$sites = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => 0,
+				]
+			);
+			foreach ( $sites as $blog_id ) {
+				switch_to_blog( $blog_id );
+				self::drop_site_tables();
+				restore_current_blog();
+			}
+			// Clean network-level options from sitemeta.
+			delete_site_option( 'rsa_network_settings' );
+			delete_site_option( 'rsa_network_disable_tracker' );
+		} else {
+			self::drop_site_tables();
+		}
+	}
+
+	/**
+	 * Drop tables and options for the current site.
+	 */
+	private static function drop_site_tables(): void {
 		global $wpdb;
 
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_events`" );
@@ -282,36 +308,32 @@ class RSA_DB {
 		$days    = $days ?? (int) get_option( 'rsa_retention_days', 90 );
 		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
+		$start   = microtime( true );
 
-		do {
-			$result   = $wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM `{$wpdb->prefix}rsa_events` WHERE created_at < %s LIMIT 5000",
-					$cutoff
-				)
-			);
-			$deleted += (int) $result;
-		} while ( $result > 0 );
+		$tables = [
+			'rsa_events'    => [ 'created_at', $cutoff ],
+			'rsa_sessions'  => [ 'created_at', $cutoff ],
+			'rsa_clicks'    => [ 'created_at', $cutoff ],
+			'rsa_wc_events' => [ 'created_at', $cutoff ],
+		];
 
-		do {
-			$result   = $wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM `{$wpdb->prefix}rsa_sessions` WHERE created_at < %s LIMIT 5000",
-					$cutoff
-				)
-			);
-			$deleted += (int) $result;
-		} while ( $result > 0 );
-
-		do {
-			$result   = $wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at < %s LIMIT 5000",
-					$cutoff
-				)
-			);
-			$deleted += (int) $result;
-		} while ( $result > 0 );
+		foreach ( $tables as $table => $config ) {
+			[ $col, $val ] = $config;
+			do {
+				$result   = $wpdb->query(
+					$wpdb->prepare(
+						"DELETE FROM `{$wpdb->prefix}{$table}` WHERE {$col} < %s LIMIT 5000",
+						$val
+					)
+				);
+				$deleted += (int) $result;
+				// Break if we've been running for 55 seconds — let the next
+				// cron invocation continue where we left off.
+				if ( microtime( true ) - $start > 55 ) {
+					return $deleted;
+				}
+			} while ( $result > 0 );
+		}
 
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
 		do {
@@ -322,16 +344,9 @@ class RSA_DB {
 				)
 			);
 			$deleted += (int) $result;
-		} while ( $result > 0 );
-
-		do {
-			$result   = $wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM `{$wpdb->prefix}rsa_wc_events` WHERE created_at < %s LIMIT 5000",
-					$cutoff
-				)
-			);
-			$deleted += (int) $result;
+			if ( microtime( true ) - $start > 55 ) {
+				return $deleted;
+			}
 		} while ( $result > 0 );
 
 		return $deleted;
@@ -339,53 +354,43 @@ class RSA_DB {
 
 	/**
 	 * Aggregate raw clicks into heatmap buckets.
+	 * Uses pure-SQL INSERT ... SELECT to avoid loading millions of clicks
+	 * into PHP memory on high-traffic sites.
 	 */
 	public static function aggregate_heatmap(): void {
 		global $wpdb;
 
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 
-		$rows = $wpdb->get_results(
+		$wpdb->query(
 			$wpdb->prepare(
-				"SELECT page, x_pct, y_pct FROM `{$wpdb->prefix}rsa_clicks` WHERE DATE(created_at) = %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL",
+				"INSERT INTO `{$wpdb->prefix}rsa_heatmap` (page, x_pct, y_pct, weight, date_bucket)
+				 SELECT page,
+				        ROUND(x_pct / 2) * 2,
+				        ROUND(y_pct / 2) * 2,
+				        COUNT(*),
+				        %s
+				 FROM `{$wpdb->prefix}rsa_clicks`
+				 WHERE DATE(created_at) = %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL
+				 GROUP BY page, ROUND(x_pct / 2) * 2, ROUND(y_pct / 2) * 2
+				 ON DUPLICATE KEY UPDATE weight = weight + VALUES(weight)",
+				$yesterday,
 				$yesterday
-			),
-			ARRAY_A
+			)
 		);
-
-		if ( empty( $rows ) ) {
-			return;
-		}
-
-		$buckets = [];
-		foreach ( $rows as $row ) {
-			$x               = round( (float) $row['x_pct'] / 2 ) * 2;
-			$y               = round( (float) $row['y_pct'] / 2 ) * 2;
-			$key             = $row['page'] . '|' . $x . '|' . $y;
-			$buckets[ $key ] = ( $buckets[ $key ] ?? 0 ) + 1;
-		}
-
-		foreach ( $buckets as $key => $weight ) {
-			[ $page, $x, $y ] = explode( '|', $key, 3 );
-			$wpdb->query(
-				$wpdb->prepare(
-					"INSERT INTO `{$wpdb->prefix}rsa_heatmap` (page, x_pct, y_pct, weight, date_bucket)
-					 VALUES (%s, %f, %f, %d, %s)
-					 ON DUPLICATE KEY UPDATE weight = weight + VALUES(weight)",
-					$page,
-					(float) $x,
-					(float) $y,
-					$weight,
-					$yesterday
-				)
-			);
-		}
 	}
 
 	/**
 	 * Run daily maintenance tasks.
 	 */
 	public static function daily_maintenance(): void {
+		// Prevent concurrent cron runs — if maintenance takes longer than
+		// expected (e.g. on very large sites), skip this invocation.
+		if ( get_transient( 'rsa_maintenance_lock' ) ) {
+			return;
+		}
+		set_transient( 'rsa_maintenance_lock', 1, HOUR_IN_SECONDS );
+
 		if ( is_multisite() ) {
 			$sites = get_sites(
 				[

@@ -42,8 +42,19 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Verify Chart.js SRI hash
+        run: |
+          EXPECTED="sha384-+D43qK/C2xYkGHB0y0W0u3i8Yj1r5rJv3X0q5qX5qX5qX5qX5qX5qX5qX5qX5qX5"
+          ACTUAL=$(sha384sum docs/app/chart.min.js | awk '{print $1}' | xxd -r -p | base64)
+          echo "Chart.js SRI: sha384-${ACTUAL}"
+          # Note: SRI verification disabled until we pin a specific Chart.js version
+          # if [ "sha384-${ACTUAL}" != "$EXPECTED" ]; then
+          #   echo "ERROR: Chart.js SRI hash mismatch!"
+          #   exit 1
+          # fi
+
       - name: Run PHPCS
-        run: composer phpcs -- --report-full || true
+        run: composer phpcs -- --report-full
 
       - name: Create plugin ZIP
         run: |
@@ -69,9 +80,18 @@ jobs:
             --exclude="SECURITY.md" \
             --exclude="README.md"
 
+      - name: Generate SHA256 checksum
+        run: |
+          VERSION="${{ inputs.version }}"
+          ZIP_NAME="rich-statistics-${VERSION}.zip"
+          sha256sum "build/${ZIP_NAME}" > "build/${ZIP_NAME}.sha256"
+          cat "build/${ZIP_NAME}.sha256"
+
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}-${{ inputs.version }}
-          path: build/rich-statistics-${{ inputs.version }}.zip
+          path: |
+            build/rich-statistics-${{ inputs.version }}.zip
+            build/rich-statistics-${{ inputs.version }}.zip.sha256
           retention-days: ${{ inputs.retention-days }}

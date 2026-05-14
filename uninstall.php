@@ -17,6 +17,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+// Clear scheduled cron hooks to prevent orphaned cron entries.
+wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
+wp_clear_scheduled_hook( 'rsa_send_digest' );
+
 global $wpdb;
 
 $remove = get_option( 'rsa_remove_data_on_uninstall', 0 );
@@ -36,7 +40,9 @@ if ( is_multisite() ) {
 		drop_tables();
 		restore_current_blog();
 	}
+	// Clean network-level options.
 	delete_site_option( 'rsa_network_settings' );
+	delete_site_option( 'rsa_network_disable_tracker' );
 } else {
 	drop_tables();
 }
@@ -59,5 +65,7 @@ function drop_tables() {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore
 	}
 
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'rsa_%'" ); // phpcs:ignore
+	$wpdb->query(
+		$wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", 'rsa_%' )
+	);
 }
