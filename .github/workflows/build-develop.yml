@@ -35,6 +35,4 @@ jobs:
       update-json-script: rsa-gen-update-json-dev
       artifact-prefix: rich-statistics-develop
       product-suffix: (Dev)
-      server-ip: ${{ vars.SERVER_IP }}
-      server-user: ${{ vars.SERVER_USER }}
     secrets: inherit

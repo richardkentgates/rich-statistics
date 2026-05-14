@@ -228,8 +228,6 @@ jobs:
       update-json-script: rsa-gen-update-json
       artifact-prefix: rich-statistics
       stamp-version: true
-      server-ip: ${{ vars.SERVER_IP }}
-      server-user: ${{ vars.SERVER_USER }}
     secrets: inherit
 
   ping-deploy:
