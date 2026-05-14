@@ -29,6 +29,10 @@ on:
         required: false
         type: boolean
         default: false
+      product-suffix:
+        required: false
+        type: string
+        default: ''
 
     secrets:
       APP_SERVER_SSH_KEY:
@@ -115,7 +119,7 @@ jobs:
           CI: true
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-          TAURI_CONFIG: '{"plugins":{"updater":{"endpoints":["${{ inputs.updater-url }}"]}}}'
+          TAURI_CONFIG: '{"productName":"Rich Statistics${{ inputs.product-suffix }}","identifier":"com.richardkentgates.rich-statistics${{ inputs.product-suffix }}","plugins":{"updater":{"endpoints":["${{ inputs.updater-url }}"]}}}'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -154,16 +158,19 @@ jobs:
           if [ "${PLATFORM}" = "windows" ]; then
             echo "Contents of nsis dir:"
             ls -la src-tauri/target/release/bundle/nsis/ || echo "(no nsis dir)"
-            for f in src-tauri/target/release/bundle/nsis/*.exe src-tauri/target/release/bundle/nsis/*.exe.sig; do
-              if [ -f "$f" ]; then
-                echo "Pushing: $f"
-                $SCP "$f" "richardkentgates@104.197.231.120:${{ inputs.target-path }}/"
-              else
-                echo "Not found: $f"
-              fi
-            done
-            # Warn if Windows update will be unsigned.
-            if ! ls src-tauri/target/release/bundle/nsis/*.exe.sig 2>/dev/null; then
+            EXE=$(ls src-tauri/target/release/bundle/nsis/*.exe 2>/dev/null | head -1)
+            SIG=$(ls src-tauri/target/release/bundle/nsis/*.exe.sig 2>/dev/null | head -1 || true)
+            DEST="rich-statistics-windows${{ inputs.product-suffix }}"
+            echo "EXE=${EXE} SIG=${SIG} DEST=${DEST}"
+            if [ -n "${EXE}" ]; then
+              $SCP "${EXE}" "richardkentgates@104.197.231.120:${{ inputs.target-path }}/${DEST}.exe"
+            else
+              echo "ERROR: no .exe file found"
+              exit 1
+            fi
+            if [ -n "${SIG}" ]; then
+              $SCP "${SIG}" "richardkentgates@104.197.231.120:${{ inputs.target-path }}/${DEST}.exe.sig"
+            else
               echo "WARNING: no .exe.sig file found — update.json will have empty signature"
             fi
           else
