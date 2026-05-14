@@ -29,7 +29,7 @@
   "scripts": {
     "test": "phpunit --configuration phpunit.xml.dist --no-coverage",
     "test-coverage": "phpunit --configuration phpunit.xml.dist --coverage-html build/coverage",
-    "phpcs": "phpcs --extensions=php .",
+    "phpcs": "phpcs --extensions=php --runtime-set ignore_warnings_on_exit 1 .",
     "phpcbf": "phpcbf --extensions=php ."
   },
   "config": {

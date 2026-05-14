@@ -24,7 +24,7 @@ function rsa_privacy_disclosure_shortcode(): string {
 	$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 
 	/* translators: %s: Site name */
-	$title          = sprintf( __( 'Analytics Data Collected by %s', 'rich-statistics' ), $site_name );
+	$title = sprintf( __( 'Analytics Data Collected by %s', 'rich-statistics' ), $site_name );
 	/* translators: %s: Plugin version */
 	$footer_version = sprintf( __( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ), defined( 'RSA_VERSION' ) ? RSA_VERSION : '' );
 	/* translators: %s: Site name */

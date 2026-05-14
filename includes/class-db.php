@@ -56,7 +56,7 @@ class RSA_DB {
 					self::install();
 					restore_current_blog();
 				}
-				$offset += $batch_size;
+				$offset    += $batch_size;
 				$site_count = count( $sites );
 			} while ( $site_count === $batch_size );
 		} else {
@@ -304,7 +304,7 @@ class RSA_DB {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" );
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" );
 
-		$options = array(
+		$options      = array(
 			'rsa_retention_days',
 			'rsa_bot_score_threshold',
 			'rsa_remove_data_on_uninstall',
@@ -441,7 +441,7 @@ class RSA_DB {
 					self::aggregate_heatmap();
 					restore_current_blog();
 				}
-				$offset += $batch_size;
+				$offset    += $batch_size;
 				$site_count = count( $sites );
 			} while ( $site_count === $batch_size );
 		} else {
