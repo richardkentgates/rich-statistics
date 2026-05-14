@@ -76,7 +76,6 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Referrer tracking | Domain-level only, no full URLs |
 | UTM campaign tracking | Capture `utm_source`, `utm_medium`, `utm_campaign` from landing URLs; attributed to the full session |
 | Campaigns view | Admin page showing each source/medium/campaign combination with sessions and pageviews |
-| User Flow | Path Explorer (Miller columns) with drop-off funnel — step-by-step page navigation across sessions |
 | Behavior analysis | Time-on-page histogram, session depth, entry pages |
 | Bot filtering | 10-signal client-side scoring + server-side UA/header checks |
 | Data retention | Configurable 1–730 days (default 90) |
@@ -103,6 +102,7 @@ All desktop apps include automatic updates via the built-in Tauri updater. Linux
 |---|---|
 | Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click. CSS selector-based click tracking also records element tag, ID, class, text, and viewport position. |
 | Heatmap | Viewport-relative thermal overlay on any page URL |
+| User Flow | Path Explorer (Miller columns) with drop-off funnel — step-by-step page navigation across sessions |
 | WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
 | PWA web app | Installable mobile app connected to your site's REST API |
