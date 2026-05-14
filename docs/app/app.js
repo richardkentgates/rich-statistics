@@ -464,6 +464,10 @@
 		document.getElementById( 'rsa-login' ).hidden = false;
 		document.getElementById( 'rsa-add-site' ).hidden = true;
 		document.getElementById( 'rsa-app' ).hidden = true;
+		var desktopInstall = document.getElementById( 'rsa-login-desktop-install' );
+		if ( desktopInstall ) {
+			desktopInstall.hidden = isTauri();
+		}
 	}
 
 	function showApp() {
@@ -974,6 +978,7 @@
 				export      : 'Export',
 				woocommerce : 'WooCommerce',
 				install     : 'Install',
+				'ai-settings': 'AI Settings',
 			};
 			document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -1213,6 +1218,7 @@
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
 			case 'install'    : renderInstall( container );      break;
+			case 'ai-settings': renderAiSettings( container );   break;
 			default: setLoading( false );
 		}
 
@@ -1254,6 +1260,7 @@
 		export     : renderExport,
 		woocommerce: renderWoocommerce,
 		install    : renderInstall,
+		'ai-settings': renderAiSettings,
 		'ai-chat'  : renderAiChat,
 	};
 
@@ -1279,7 +1286,7 @@
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
 				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
 				( hasAiProvider ? '' : '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:12px;margin-bottom:16px;font-size:13px;color:#6d4c00;">' +
-					'Set up your AI provider in <strong>Install → AI Assistant Provider</strong> for conversational answers. ' +
+					'Set up your AI provider in <strong>AI Settings</strong> for conversational answers. ' +
 					'For now, the assistant shows pre-built insights from your data.</div>' ) +
 				'<div id="rsa-ai-insights" style="margin-bottom:16px;"></div>' +
 				( hasAiProvider
@@ -1479,7 +1486,9 @@
 					}
 				} );
 
-				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.';
+				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.' +
+					' When the data would benefit from visualization, include a JSON chart block like:\n```chart\n{"type":"bar","labels":["A","B"],"datasets":[{"label":"Views","data":[10,20]}]}\n```\n' +
+					'Supported types: bar, line, doughnut. Always include labels and datasets array.';
 				var body = {
 					model: ap.model || 'gpt-4o-mini',
 					messages: [
@@ -1530,7 +1539,67 @@
 			( who === 'user'
 				? 'background:#e3f2fd;margin-left:20%;border:1px solid #90caf9;'
 				: 'background:#fff;margin-right:20%;border:1px solid #e0e0e0;box-shadow:0 1px 2px rgba(0,0,0,0.05);' );
-		msg.innerHTML = '<div>' + esc( text ).replace( /\n/g, '<br>' ) + '</div>';
+
+		var chartMatch = text.match( /```chart\n([\s\S]*?)\n```/ );
+		var displayText = chartMatch ? text.replace( /```chart\n[\s\S]*?\n```/, '' ).trim() : text;
+
+		var contentDiv = document.createElement( 'div' );
+		contentDiv.innerHTML = esc( displayText ).replace( /\n/g, '<br>' );
+		msg.appendChild( contentDiv );
+
+		if ( chartMatch ) {
+			try {
+				var chartData = JSON.parse( chartMatch[1] );
+				var canvasId = 'c-ai-' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 6 );
+				var chartWrap = document.createElement( 'div' );
+				chartWrap.style.cssText = 'margin-top:10px;height:220px;';
+				var canvas = document.createElement( 'canvas' );
+				canvas.id = canvasId;
+				chartWrap.appendChild( canvas );
+				msg.appendChild( chartWrap );
+
+				setTimeout( function () {
+					var el = document.getElementById( canvasId );
+					if ( ! el ) return;
+					var cfg = {
+						type: chartData.type === 'line' ? 'line' : chartData.type === 'doughnut' ? 'doughnut' : 'bar',
+						data: {
+							labels: chartData.labels || [],
+							datasets: ( chartData.datasets || [] ).map( function ( ds, i ) {
+								var color = PALETTE[ i % PALETTE.length ];
+								var dsCfg = {
+									label: ds.label || '',
+									data: ds.data || [],
+									backgroundColor: chartData.type === 'line' ? color + '33' : color + 'cc',
+									borderColor: color,
+									borderWidth: 1,
+								};
+								if ( chartData.type === 'line' ) {
+									dsCfg.fill = true;
+									dsCfg.tension = 0.3;
+									dsCfg.pointRadius = 2;
+								}
+								return dsCfg;
+							} ),
+						},
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							plugins: {
+								legend: { display: chartData.type === 'doughnut' ? { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } : { display: ( chartData.datasets || [] ).length > 1 } },
+								tooltip: { mode: 'index', intersect: false },
+							},
+							scales: chartData.type === 'doughnut' ? {} : {
+								y: { beginAtZero: true, ticks: { precision: 0 } },
+								x: chartData.type === 'bar' ? { ticks: { font: { size: 11 } } } : {},
+							},
+						},
+					};
+					state.charts[ canvasId ] = new Chart( el, cfg );
+				}, 50 );
+			} catch ( _ ) {}
+		}
+
 		div.appendChild( msg );
 		div.scrollTop = div.scrollHeight;
 	}
@@ -2776,9 +2845,19 @@
 			'<p style="font-size:12px;color:#888;margin-top:32px;">' +
 			'Desktop binaries are updated with each release. ' +
 			'Installation via APT is recommended for automatic updates.</p>' +
+			'</div>';
 
-			'<h2 style="font-size:18px;margin:32px 0 16px;">AI Assistant Provider</h2>' +
-			'<p style="color:#888;font-size:13px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Provide an OpenAI-compatible endpoint (cloud or local).</p>' +
+		setLoading( false );
+	}
+
+	// -----------------------------------------------------------------------
+	// AI Settings
+	// -----------------------------------------------------------------------
+	function renderAiSettings( container ) {
+		container.innerHTML =
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+			'<h2 style="font-size:20px;margin-bottom:8px;">AI Assistant Provider</h2>' +
+			'<p style="color:#888;font-size:13px;margin-bottom:24px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Provide an OpenAI-compatible endpoint (cloud or local).</p>' +
 
 			'<div class="rsa-card" style="margin-bottom:16px;">' +
 				'<div class="rsa-card-header"><strong>Provider Settings</strong></div>' +
@@ -2842,6 +2921,7 @@
 						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
 					'</div>' +
 				'</div>' +
+			'</div>' +
 			'</div>';
 
 		setLoading( false );
