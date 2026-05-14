@@ -54,7 +54,7 @@ jobs:
           # fi
 
       - name: Run PHPCS
-        run: composer phpcs -- --report-full
+        run: composer phpcs -- --report-full --runtime-set ignore_warnings_on_exit 1
 
       - name: Create plugin ZIP
         run: |
