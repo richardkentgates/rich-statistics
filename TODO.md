@@ -114,56 +114,56 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 3: Medium Priority (29 items)
+## Phase 3: Medium Priority (29 items) — 8/29 fixed
 
 ### CI/CD (M1–M9)
 
-| Ref | Finding |
-|-----|---------|
-| M1 | No retry logic on SSH/SCP — transient failures require full re-run |
-| M2 | Chart.js SRI hash is placeholder/disabled — no security value |
-| M3 | No Node.js version pinning for Tauri build |
-| M4 | `build-release.yml` doesn't use reusable `job-build-zip.yml` — ZIP logic duplicated |
-| M5 | `tests.yml` missing Composer cache on integration job |
-| M6 | `tests.yml` PHP 8.3 missing from integration matrix |
-| M7 | `tests.yml` PHPCS failure handler references non-existent XML report |
-| M8 | `sed` regex uses `[0-9]*` instead of `[0-9]+` (imprecise) |
-| M9 | `workflow_dispatch` on release without tag creates orphan artifacts |
+| Ref | Finding | Status |
+|-----|---------|--------|
+| M1 | No retry logic on SSH/SCP — transient failures require full re-run | ⏳ |
+| M2 | Chart.js SRI hash is placeholder/disabled — no security value | ✅ Fixed — now computes and logs actual hash |
+| M3 | No Node.js version pinning for Tauri build | ⏳ |
+| M4 | `build-release.yml` doesn't use reusable `job-build-zip.yml` — ZIP logic duplicated | ⏳ |
+| M5 | `tests.yml` missing Composer cache on integration job | ⏳ |
+| M6 | `tests.yml` PHP 8.3 missing from integration matrix | ⏳ |
+| M7 | `tests.yml` PHPCS failure handler references non-existent XML report | ⏳ |
+| M8 | `sed` regex uses `[0-9]*` instead of `[0-9]+` (imprecise) | ✅ Fixed |
+| M9 | `workflow_dispatch` on release without tag creates orphan artifacts | ✅ Already fixed (H6 guard) |
 
 ### Database (M10–M14)
 
-| Ref | Finding |
-|-----|---------|
-| M10 | Options deletion uses `LIKE 'rsa_%'` — broad pattern |
-| M11 | `get_sites('number' => 0)` fetches ALL sites at once — memory risk |
-| M12 | Maintenance lock uses 1-hour TTL — concurrent runs possible |
-| M13 | `heatmap` table has no standalone index on `date_bucket` |
-| M14 | Events table has no indexes on `utm_source` or `utm_medium` |
+| Ref | Finding | Status |
+|-----|---------|--------|
+| M10 | Options deletion uses `LIKE 'rsa_%'` — broad pattern | ✅ Fixed — explicit option list |
+| M11 | `get_sites('number' => 0)` fetches ALL sites at once — memory risk | ⏳ |
+| M12 | Maintenance lock uses 1-hour TTL — concurrent runs possible | ⏳ |
+| M13 | `heatmap` table has no standalone index on `date_bucket` | ✅ Fixed |
+| M14 | Events table has no indexes on `utm_source` or `utm_medium` | ✅ Fixed |
 
 ### Tests (M15–M24)
 
-| Ref | Finding |
-|-----|---------|
-| M15 | No tests for CORS handling |
-| M16 | No tests for `remove_cookie_auth()` |
-| M17 | No tests for `post_track()` REST endpoint |
-| M18 | No tests for `post_verify_otp()` rate limiting |
-| M19 | No tests for `strip_pii()` IPv6 handling |
-| M20 | `/export` endpoint has no integration tests |
-| M21 | `/user-flow/journey` and `/user-flow/sources` no response shape tests |
-| M22 | `RSA_DB::activate()` network-wide path untested |
-| M23 | `RSA_DB::register_hooks()` untested |
-| M24 | `RSA_DB::on_new_blog_event()` execution untested |
+| Ref | Finding | Status |
+|-----|---------|--------|
+| M15 | No tests for CORS handling | ⏳ |
+| M16 | No tests for `remove_cookie_auth()` | ⏳ |
+| M17 | No tests for `post_track()` REST endpoint | ⏳ |
+| M18 | No tests for `post_verify_otp()` rate limiting | ⏳ |
+| M19 | No tests for `strip_pii()` IPv6 handling | ⏳ |
+| M20 | `/export` endpoint has no integration tests | ⏳ |
+| M21 | `/user-flow/journey` and `/user-flow/sources` no response shape tests | ⏳ |
+| M22 | `RSA_DB::activate()` network-wide path untested | ⏳ |
+| M23 | `RSA_DB::register_hooks()` untested | ⏳ |
+| M24 | `RSA_DB::on_new_blog_event()` execution untested | ⏳ |
 
 ### Server & Docs (M25–M29)
 
-| Ref | Finding |
-|-----|---------|
-| M25 | Webhook doesn't validate Content-Type or body |
-| M26 | ROADMAP.md §3 says `update.json` signatures empty — still P0 |
-| M27 | ROADMAP.md §4 CI gaps (webhook token, SSH key) may still be open |
-| M28 | `SECURITY.md` missing webhook security, APT signing key, CI secret management |
-| M29 | `README.md` badge links point to old domain `statistics.richardkentgates.com` |
+| Ref | Finding | Status |
+|-----|---------|--------|
+| M25 | Webhook doesn't validate Content-Type or body | ✅ Fixed — Content-Type restricted |
+| M26 | ROADMAP.md §3 says `update.json` signatures empty — still P0 | ⏳ |
+| M27 | ROADMAP.md §4 CI gaps (webhook token, SSH key) may still be open | ✅ Resolved by H1-H4 |
+| M28 | `SECURITY.md` missing webhook security, APT signing key, CI secret management | ✅ Fixed |
+| M29 | `README.md` badge links point to old domain `statistics.richardkentgates.com` | ✅ Fixed |
 
 ---
 
