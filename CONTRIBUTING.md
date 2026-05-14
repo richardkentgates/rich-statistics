@@ -32,12 +32,12 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 | Branch | Environment | Subdomain | CI Workflow | Branch Type |
 |--------|-------------|-----------|-------------|-------------|
 | `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged) | Stable releases |
-| `develop` | Dev / Beta | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge |
-| `test` | Staging / QA | `test.richstatistics.com` | `build-test.yml` (push) | Integration testing |
+| `develop` | Development | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge development |
+| `test` | Beta / Staging | `test.richstatistics.com` | `build-test.yml` (push) | Pre-release QA |
 
 - **`main`** — Stable releases only. Merged from `test` via release PR, then tagged.
-- **`develop`** — Primary development branch. Base your feature branches here.
-- **`test`** — Integration testing and QA validation. Merged from `develop` for pre-release verification.
+- **`develop`** — Active development branch. Base your feature branches here. All PRs target `develop`.
+- **`test`** — Beta/staging branch. Receives merges from `develop` for pre-release QA. After sign-off, `test` merges into `main`.
 
 Each push to `develop` triggers `build-develop.yml`; pushes to `test` trigger `build-test.yml`. Both build a plugin ZIP, sync PWA via webhook, and push desktop binaries to the environment's `dist/` directory. Tagged releases on `main` trigger `build-release.yml` which additionally creates versioned PWA snapshots.
 
@@ -138,7 +138,7 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 
 1. **Feature work:** Branch from `develop`, PR back into `develop`. CI runs `tests.yml` + `build-develop.yml`.
 2. **Dev deploy:** Every push to `develop` auto-deploys PWA + desktop to `dev.richstatistics.com`.
-3. **QA / Staging:** Merge `develop` → `test` via PR. Push to `test` auto-deploys to `test.richstatistics.com`.
+3. **Beta / Staging:** Merge `develop` → `test` via PR. Push to `test` auto-deploys to `test.richstatistics.com`. Test on the beta server before approving for production.
 4. **Production release:** After QA passes on `test`, merge `test` → `main` via PR. Tag the merge commit `v<version>`. The tag triggers `build-release.yml` which builds the production ZIP, versioned PWA snapshot, desktop binaries, and deploys to `app.richstatistics.com`.
 
 ### What we review

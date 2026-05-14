@@ -108,8 +108,8 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 | Branch | Environment | Server | CI Workflow | Branch Type |
 |--------|-------------|--------|-------------|-------------|
 | `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
-| `develop` | Dev/Beta | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge |
-| `test` | Staging | `test.richstatistics.com` | `build-test.yml` (push) | Integration testing |
+| `develop` | Development | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge development |
+| `test` | Beta / Staging | `test.richstatistics.com` | `build-test.yml` (push) | Pre-release QA |
 
 Each branch has its own:
 - WordPress plugin ZIP (CI artifact)
@@ -176,8 +176,8 @@ See `ROADMAP.md` for the full audit of server infrastructure, version compatibil
 - Freemius — License management and plugin updates
 - OpenAI/Custom — AI query feature
 - `app.richstatistics.com` — Production PWA, desktop downloads, APT repo
-- `dev.richstatistics.com` — Dev/bleeding-edge PWA and desktop builds
-- `test.richstatistics.com` — Test/staging PWA (used for integration testing)
+- `dev.richstatistics.com` — Development/bleeding-edge PWA and desktop builds
+- `test.richstatistics.com` — Beta/staging PWA (pre-release QA)
 
 ## Build / Deploy
 
