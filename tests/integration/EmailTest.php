@@ -100,8 +100,8 @@ class EmailTest extends WP_UnitTestCase {
 		RSA_Email::schedule_next();
 
 		$scheduled = wp_next_scheduled( 'rsa_send_digest' );
-		$diff      = $scheduled - time();
-		$this->assertGreaterThanOrEqual( 28 * DAY_IN_SECONDS, $diff );
+		$first_of_next = strtotime( 'first day of next month 00:00' );
+		$this->assertGreaterThanOrEqual( $first_of_next, $scheduled );
 	}
 
 	/**

@@ -60,9 +60,7 @@ class WoocommerceTest extends WP_UnitTestCase {
 		return $ref->invoke( null );
 	}
 	private function reset_tracker_session(): void {
-		$prop = new ReflectionProperty( RSA_Tracker::class, 'current_session_id' );
-		$prop->setAccessible( true );
-		$prop->setValue( null, '' );
+		RSA_Tracker::set_current_session_id( '' );
 	}
 	private function invoke_tracker_session(): string {
 		$ref = new ReflectionMethod( RSA_Tracker::class, 'get_or_create_session_id' );

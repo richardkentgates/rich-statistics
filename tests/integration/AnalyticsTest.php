@@ -60,6 +60,9 @@ class AnalyticsTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'daily', $result );
 	}
 	public function test_get_overview_returns_zero_with_no_data(): void {
+		global $wpdb;
+		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_events`" );
+		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_sessions`" );
 		$result = RSA_Analytics::get_overview( '7d' );
 		$this->assertSame( 0, (int) $result['pageviews'] );
 		$this->assertSame( 0, (int) $result['sessions'] );
