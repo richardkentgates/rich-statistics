@@ -12,6 +12,7 @@ class DbTest extends WP_UnitTestCase {
 		delete_option( 'rsa_retention_days' );
 		delete_option( 'rsa_bot_score_threshold' );
 		delete_option( 'rsa_email_digest_enabled' );
+		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::install();
 	}
 
