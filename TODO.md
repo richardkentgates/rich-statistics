@@ -114,16 +114,16 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 3: Medium Priority (29 items) — 14/29 fixed
+## Phase 3: Medium Priority (29 items) — 17/29 fixed
 
 ### CI/CD (M1–M9)
 
 | Ref | Finding | Status |
 |-----|---------|--------|
-| M1 | No retry logic on SSH/SCP — transient failures require full re-run | ⏳ |
+| M1 | No retry logic on SSH/SCP — transient failures require full re-run | ✅ Fixed — 3 retries with 10s backoff |
 | M2 | Chart.js SRI hash is placeholder/disabled — no security value | ✅ Fixed — now computes and logs actual hash |
-| M3 | No Node.js version pinning for Tauri build | ⏳ |
-| M4 | `build-release.yml` doesn't use reusable `job-build-zip.yml` — ZIP logic duplicated | ⏳ |
+| M3 | No Node.js version pinning for Tauri build | ✅ Fixed — Node.js 20 pinned |
+| M4 | `build-release.yml` doesn't use reusable `job-build-zip.yml` — ZIP logic duplicated | ✅ Fixed — now calls reusable workflow |
 | M5 | `tests.yml` missing Composer cache on integration job | ✅ Fixed |
 | M6 | `tests.yml` PHP 8.3 missing from integration matrix | ✅ Fixed |
 | M7 | `tests.yml` PHPCS failure handler references non-existent XML report | ✅ Fixed |
