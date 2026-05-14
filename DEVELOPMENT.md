@@ -33,7 +33,7 @@ This single repository produces **three deliverables**:
 | Deliverable | What it is | Where it goes |
 |---|---|---|
 | **WordPress plugin ZIP** | The installable plugin (`rich-statistics-x.y.z.zip`) | GitHub Release → uploaded to Freemius for premium users; WordPress.org for free users |
-| **PWA / companion app** | Installable web app (vanilla JS) served from `docs/app/` | Hosted at `https://app.richstatistics.com/app/` |
+| **PWA / companion app** | Installable web app (vanilla JS) served from `docs/app/` | Hosted at `https://app.richstatistics.com/` |
 | **Linux desktop app** | Tauri-wrapped `.deb` for amd64 and arm64 | Served from `https://app.richstatistics.com/dist/` |
 
 ---
@@ -131,7 +131,7 @@ GitHub (source + CI)
         └── Developer manually uploads plugin ZIP after each release
 
 App server: app.richstatistics.com  (104.197.231.120)
-  ├── /app/              → serves the live PWA (pulled from docs/app/ by webhook)
+  ├── /                  → serves the live PWA (pulled from docs/app/ by webhook)
   ├── /dist/             → serves .deb files + update.json (pushed by CI via SSH)
   └── /_deploy/          → webhook endpoint (PHP, validates X-Deploy-Token header)
 ```
@@ -340,7 +340,7 @@ return false and free-tier tests run without any Freemius dependency.
 
 ## 10. Webapp & Desktop App
 
-The PWA lives in `docs/app/` and is served from `https://app.richstatistics.com/app/`.
+The PWA lives in `docs/app/` and is served from `https://app.richstatistics.com/`.
 
 `src-tauri/` is the Tauri 2 source folder (wraps `docs/app/` in a native window). 
 The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pushes them to the app server via SSH.
