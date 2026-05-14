@@ -66,7 +66,7 @@ if ( function_exists( 'rs_fs' ) ) {
 	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 	define( 'RSA_MIN_WP', '6.0' );
 	define( 'RSA_MIN_PHP', '8.0' );
-	define( 'RSA_APP_VERSION', '2.4.0' );
+	define( 'RSA_APP_VERSION', '2.4.1' );
 	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
 	define( 'RSA_APP_URL', rsa_detect_app_url() );
 	define( 'RSA_APP_ENV', rsa_detect_app_env() );

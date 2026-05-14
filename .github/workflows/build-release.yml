@@ -9,10 +9,6 @@ on:
       version:
         description: 'Version to build (e.g. 2.2.8) — leave blank to use tag'
         required: false
-      setup_webhook:
-        description: 'Set to "true" to bootstrap production webhook on server (one-time)'
-        required: false
-        default: 'false'
 
 jobs:
   build:
