@@ -355,6 +355,26 @@ The `build-release.yml` CI workflow creates the snapshot in its **`build`** job 
 
 **Critical:** the desktop job must create the snapshot *before* `tauri build` so it is included in the bundle. If the snapshot only exists in the git-pushed commit from the `build` job, the `build-desktop` job is checking out the tag (which predates that commit) and the folder will be absent from the `.deb`.
 
+### Version Parity (MANDATORY)
+
+**Every released version MUST have a bundled PWA snapshot in `docs/app/v/{version}/`.**
+
+The desktop app bundles versioned PWA snapshots. Users may have dozens of WordPress sites
+running different plugin versions — the app detects each site's plugin version via
+`/wp-json/rsa/v1/info` and serves the matching PWA files from `docs/app/v/{version}/`.
+
+**Rules:**
+- **NEVER manually delete** a versioned snapshot folder from `docs/app/v/`. The CI prunes
+  automatically to the last 12 versions on each release tag.
+- **NEVER skip** a version — if v2.3.0 and v2.4.0 exist, v2.3.1 through v2.3.x must also exist.
+- `docs/app/versions.json` is **auto-generated** by CI from the `v/` directory contents. Never edit it manually.
+- The `build-release.yml` workflow creates the snapshot, prunes to the last 12, and updates `versions.json` on every tag push.
+- The `build-desktop` job copies the snapshot into the `.deb` bundle before `tauri build`.
+
+If a user on plugin v2.2.5 opens the desktop app, it navigates to `/v/2.2.5/`. If that folder
+is missing, the app falls back to the latest bundled version — which may have incompatible API
+changes. Version parity prevents this.
+
 ### Version Switching — How It Works
 
 The REST endpoint `/wp-json/rsa/v1/info` returns `{"ok":true,"data":{"version":"X.Y.Z",...}}` where `version` is the `RSA_VERSION` PHP constant.

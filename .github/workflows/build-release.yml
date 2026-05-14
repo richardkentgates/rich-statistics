@@ -148,26 +148,46 @@ jobs:
       - name: Update versions.json
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          python3 -c "import json,pathlib; p=pathlib.Path('docs/app/versions.json'); v=json.loads(p.read_text()); v=sorted(set(v+['${{ steps.version.outputs.version }}']),key=lambda x:list(map(int,x.split('.')))); p.write_text(json.dumps(v))"
+          # Regenerate versions.json from the v/ directory — never manually edit.
+          # Every released version MUST have a corresponding bundled snapshot.
+          # The desktop app relies on version parity: users may have different
+          # plugin versions across their sites and the app must serve the
+          # matching PWA files for each one.
+          python3 << 'PYEOF'
+          import json, pathlib
+          v_dir = pathlib.Path('docs/app/v')
+          versions = sorted(
+              [d.name for d in v_dir.iterdir() if d.is_dir()],
+              key=lambda x: list(map(int, x.split('.')))
+          )
+          pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
+          PYEOF
 
-      - name: Prune old snapshot directories (keep 3 latest)
+      - name: Prune old snapshot directories (keep last 12)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
+          # Keep the 12 most recent versioned snapshots. Older ones are removed
+          # from both the v/ directory and versions.json. Every released version
+          # must have a matching snapshot — the last 12 are the minimum needed
+          # for version parity across the user base.
           python3 << 'PYEOF'
           import json, shutil, pathlib
-          p = pathlib.Path('docs/app/versions.json')
-          all_v = sorted(json.loads(p.read_text()), key=lambda x: list(map(int, x.split('.'))))
-          keep = set(all_v[-3:])
-          for d in pathlib.Path('docs/app').iterdir():
-              if d.is_dir() and d.name.count('.') >= 2 and d.name not in keep:
+          v_dir = pathlib.Path('docs/app/v')
+          all_v = sorted(
+              [d.name for d in v_dir.iterdir() if d.is_dir()],
+              key=lambda x: list(map(int, x.split('.')))
+          )
+          keep = set(all_v[-12:])
+          for d in v_dir.iterdir():
+              if d.is_dir() and d.name not in keep:
                   shutil.rmtree(d)
                   print(f"pruned {d}")
-          v_dir = pathlib.Path('docs/app/v')
-          if v_dir.exists():
-              for d in v_dir.iterdir():
-                  if d.is_dir() and d.name not in keep:
-                      shutil.rmtree(d)
-                      print(f"pruned {d}")
+          # Regenerate versions.json from what remains
+          remaining = sorted(
+              [d.name for d in v_dir.iterdir() if d.is_dir()],
+              key=lambda x: list(map(int, x.split('.')))
+          )
+          pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
           PYEOF
 
       - name: Commit and push snapshot back to main
