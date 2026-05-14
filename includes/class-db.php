@@ -57,7 +57,8 @@ class RSA_DB {
 					restore_current_blog();
 				}
 				$offset += $batch_size;
-			} while ( count( $sites ) === $batch_size );
+				$site_count = count( $sites );
+			} while ( $site_count === $batch_size );
 		} else {
 			self::install();
 		}
@@ -321,8 +322,8 @@ class RSA_DB {
 			'rsa_db_version',
 		);
 		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name IN ($placeholders)", $options ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( $wpdb->prepare( "DELETE FROM " . $wpdb->options . " WHERE option_name IN ($placeholders)", $options ) );
 	}
 
 	/**
@@ -434,14 +435,15 @@ class RSA_DB {
 						'offset' => $offset,
 					]
 				);
-			foreach ( $sites as $blog_id ) {
-				switch_to_blog( $blog_id );
-				self::prune_old_data();
-				self::aggregate_heatmap();
-				restore_current_blog();
-			}
-			$offset += $batch_size;
-		} while ( count( $sites ) === $batch_size );
+				foreach ( $sites as $blog_id ) {
+					switch_to_blog( $blog_id );
+					self::prune_old_data();
+					self::aggregate_heatmap();
+					restore_current_blog();
+				}
+				$offset += $batch_size;
+				$site_count = count( $sites );
+			} while ( $site_count === $batch_size );
 		} else {
 			self::prune_old_data();
 			self::aggregate_heatmap();
