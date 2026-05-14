@@ -41,17 +41,23 @@ class RSA_DB {
 	 */
 	public static function activate( bool $network_wide = false ): void {
 		if ( is_multisite() && $network_wide ) {
-			$sites = get_sites(
-				[
-					'fields' => 'ids',
-					'number' => 0,
-				]
-			);
-			foreach ( $sites as $blog_id ) {
-				switch_to_blog( $blog_id );
-				self::install();
-				restore_current_blog();
-			}
+			$batch_size = 100;
+			$offset     = 0;
+			do {
+				$sites = get_sites(
+					[
+						'fields' => 'ids',
+						'number' => $batch_size,
+						'offset' => $offset,
+					]
+				);
+				foreach ( $sites as $blog_id ) {
+					switch_to_blog( $blog_id );
+					self::install();
+					restore_current_blog();
+				}
+				$offset += $batch_size;
+			} while ( count( $sites ) === $batch_size );
 		} else {
 			self::install();
 		}
@@ -415,21 +421,27 @@ class RSA_DB {
 		if ( get_transient( 'rsa_maintenance_lock' ) ) {
 			return;
 		}
-		set_transient( 'rsa_maintenance_lock', 1, HOUR_IN_SECONDS );
+		set_transient( 'rsa_maintenance_lock', 1, 30 * MINUTE_IN_SECONDS );
 
 		if ( is_multisite() ) {
-			$sites = get_sites(
-				[
-					'fields' => 'ids',
-					'number' => 0,
-				]
-			);
+			$batch_size = 100;
+			$offset     = 0;
+			do {
+				$sites = get_sites(
+					[
+						'fields' => 'ids',
+						'number' => $batch_size,
+						'offset' => $offset,
+					]
+				);
 			foreach ( $sites as $blog_id ) {
 				switch_to_blog( $blog_id );
 				self::prune_old_data();
 				self::aggregate_heatmap();
 				restore_current_blog();
 			}
+			$offset += $batch_size;
+		} while ( count( $sites ) === $batch_size );
 		} else {
 			self::prune_old_data();
 			self::aggregate_heatmap();

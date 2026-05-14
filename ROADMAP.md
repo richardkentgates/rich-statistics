@@ -73,7 +73,7 @@ All four phases are implemented:
 | Web root ownership | `richardkentgates:www-data` | `richardkentgates:www-data` | `richardkentgates:www-data` |
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
-| `dist/update.json` | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) |
+| `dist/update.json` | ✅ Present (v2.3.0, sig: populated by CI) | ✅ Present (v2.3.0, sig: populated by CI) | ✅ Present (v2.3.0, sig: populated by CI) |
 | `v/` version snapshots | ✅ Complete (2.3.0–2.4.1) | ✅ Complete (2.3.0–2.4.1) | ✅ Complete (2.3.0–2.4.1) |
 | `versions.json` | ✅ Complete (3 entries) | ✅ Complete (3 entries) | ✅ Complete (3 entries) |
 | Old root-level version dirs | ✅ Clean | ✅ Clean | ✅ Clean |
