@@ -355,13 +355,17 @@ echo ""
 echo "${BOLD}── DEPLOY_WEBHOOK_TOKEN ──${RESET}"
 echo "(contents of ${TOKEN_FILE})"
 echo ""
-cat "${TOKEN_FILE}"
+echo "${BOLD}${RED}WARNING: Token written to /tmp/rsa-webhook-token.txt — delete after copying${RESET}"
+cp "${TOKEN_FILE}" /tmp/rsa-webhook-token.txt
+chmod 600 /tmp/rsa-webhook-token.txt
 echo ""
 echo ""
 echo "${BOLD}── APP_SERVER_SSH_KEY ──${RESET}"
 echo "(ED25519 private key for ${SERVER_USER}@${DOMAIN})"
 echo ""
-cat "${CI_KEY_FILE}"
+echo "${BOLD}${RED}WARNING: Key written to /tmp/rsa-ssh-key.txt — delete after copying${RESET}"
+cp "${CI_KEY_FILE}" /tmp/rsa-ssh-key.txt
+chmod 600 /tmp/rsa-ssh-key.txt
 echo ""
 echo "${BOLD}${GREEN}════════════════════════════════════════════════════════${RESET}"
 echo ""
