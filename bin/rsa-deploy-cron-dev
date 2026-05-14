@@ -3,7 +3,7 @@
 set -euo pipefail
 
 TRIGGER="/var/www/rs-app-dev/.deploy-trigger"
-LOG="/var/log/rsa-deploy.log"
+LOG="/var/log/rsa-deploy-dev.log"
 
 if [ ! -f "$TRIGGER" ]; then
     exit 0
