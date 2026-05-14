@@ -33,6 +33,19 @@
 			Install App
 		</button>
 	</div>
+	<div id="rsa-login-desktop-install" class="rsa-login-desktop-install" hidden>
+		<h3 style="font-size:16px;margin:24px 0 8px;">Or install the desktop app</h3>
+		<p style="font-size:13px;color:#888;margin-bottom:16px;">Native desktop experience with offline support.</p>
+		<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+			<a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
+				<strong>Linux</strong> .deb
+			</a>
+			<a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
+				<strong>Windows</strong> .exe
+			</a>
+		</div>
+		<p style="font-size:11px;color:#aaa;margin-top:12px;">APT recommended for auto-updates: <code>sudo apt install rich-statistics</code></p>
+	</div>
 </div>
 
 <!-- Main app shell (hidden until logged in) -->
@@ -66,6 +79,7 @@
 				<li><a href="#" data-view="heatmap"     class="rsa-nav-link">Heatmap</a></li>
 				<li><a href="#" data-view="export"      class="rsa-nav-link">Export</a></li>
 				<li><a href="#" data-view="install"     class="rsa-nav-link">Install</a></li>
+				<li><a href="#" data-view="ai-settings" class="rsa-nav-link">AI Settings</a></li>
 				<li><a href="#" data-view="ai-chat"    class="rsa-nav-link">AI Chat</a></li>
 		</ul>
 		<div class="rsa-nav-footer">
@@ -128,6 +142,7 @@
 			<div id="rsa-view-export"     class="rsa-view" hidden></div>
 			<div id="rsa-view-woocommerce" class="rsa-view" hidden></div>
 			<div id="rsa-view-install"    class="rsa-view" hidden></div>
+			<div id="rsa-view-ai-settings" class="rsa-view" hidden></div>
 			<div id="rsa-view-ai-chat"   class="rsa-view" hidden></div>
 		</div><!-- /.rsa-main-scroll -->
 	</main>
