@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,10 +93,31 @@ The app checks for updates automatically on each launch via the Tauri updater. W
 
 Pre-release builds for development and testing are available at:
 
-* Dev: https://dev.richstatistics.com
-* Test: https://test.richstatistics.com
+* Dev (bleeding-edge): https://dev.richstatistics.com
+* Test (beta/staging): https://test.richstatistics.com
 
-See the [Release Tracks wiki](https://github.com/richardkentgates/rich-statistics/wiki/Release-Tracks) for dev/test APT repo setup and desktop downloads.
+#### Dev — APT Setup
+
+    curl -fsSL https://dev.richstatistics.com/apt/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics-dev.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics-dev.gpg] https://dev.richstatistics.com/apt stable main" | sudo tee /etc/apt/sources.list.d/rich-statistics-dev.list
+    sudo apt update && sudo apt install rich-statistics
+
+#### Test — APT Setup
+
+    curl -fsSL https://test.richstatistics.com/apt/public.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics-test.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics-test.gpg] https://test.richstatistics.com/apt stable main" | sudo tee /etc/apt/sources.list.d/rich-statistics-test.list
+    sudo apt update && sudo apt install rich-statistics
+
+#### Direct .deb Downloads (Dev / Test)
+
+* Dev: https://dev.richstatistics.com/dist/rich-statistics-linux-amd64.deb | https://dev.richstatistics.com/dist/rich-statistics-linux-arm64.deb
+* Test: https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb | https://test.richstatistics.com/dist/rich-statistics-linux-arm64.deb
+
+#### Desktop Binaries (Dev / Test)
+
+Windows installers are available at:
+* Dev: https://dev.richstatistics.com/dist/
+* Test: https://test.richstatistics.com/dist/
 
 == Frequently Asked Questions ==
 
@@ -147,6 +168,16 @@ Available at https://statistics.richardkentgates.com
 5. PWA Web App (Premium) — mobile analytics dashboard
 
 == Changelog ==
+
+= 2.4.1 =
+* APT repo parity: dev/test/production environments now have matching APT repository structure
+* CI workflow fix: build-desktop runs identically across all three branches
+* Webhook deployment uses trigger file + cron for reliability under Apache
+* Version parity: snapshots pruned to last 12, versions.json auto-generated
+* SW cache name auto-bumped on release tags
+* PWA AI chat with Chart.js rendering
+* Dedicated AI Settings view
+* Desktop install links in PWA empty state
 
 = 2.4.0 =
 * Multisite network dashboard with cross-site AI analytics

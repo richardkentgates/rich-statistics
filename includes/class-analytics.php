@@ -1125,15 +1125,15 @@ class RSA_Analytics {
 				return '';
 			}
 			// Use fputcsv for RFC 4180 compliance — handles commas, quotes, and newlines in values.
-			$handle = fopen( 'php://temp', 'w' );
-			fwrite( $handle, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel.
+			$handle = fopen( 'php://temp', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://temp stream, not file system
+			fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://temp stream, not file system
 			fputcsv( $handle, array_keys( $rows[0] ) );
 			foreach ( $rows as $row ) {
 				fputcsv( $handle, array_values( $row ) );
 			}
 			rewind( $handle );
 			$csv = stream_get_contents( $handle );
-			fclose( $handle );
+			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://temp stream, not file system
 			return $csv;
 		}
 
@@ -1216,15 +1216,15 @@ class RSA_Analytics {
 				return "\xEF\xBB\xBF" . implode( ',', $headers ) . "\n";
 			}
 			// Use fputcsv for RFC 4180 compliance — handles commas, quotes, and newlines in values.
-			$handle = fopen( 'php://temp', 'w' );
-			fwrite( $handle, "\xEF\xBB\xBF" ); // UTF-8 BOM for Excel.
+			$handle = fopen( 'php://temp', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://temp stream, not file system
+			fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://temp stream, not file system
 			fputcsv( $handle, $headers );
 			foreach ( $rows as $row ) {
 				fputcsv( $handle, array_values( $row ) );
 			}
 			rewind( $handle );
 			$csv = stream_get_contents( $handle );
-			fclose( $handle );
+			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://temp stream, not file system
 			return $csv;
 		}
 
