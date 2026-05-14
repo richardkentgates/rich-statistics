@@ -32,10 +32,11 @@ src-tauri/Cargo.lock
 /tmp/
 
 # -------------------------------------------------------------------------
-# Server provisioning scripts — local-only, never committed
+# Server provisioning scripts — committed for reproducibility
 # -------------------------------------------------------------------------
-bin/setup-app-server.sh
-bin/setup-apt-repo.sh
+# (Previously local-only; now tracked so fresh server provisioning works)
+# bin/setup-app-server.sh
+# bin/setup-apt-repo.sh
 
 # -------------------------------------------------------------------------
 # OS / editor files
