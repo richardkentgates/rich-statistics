@@ -112,6 +112,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Cache Rust build
         uses: swatinem/rust-cache@v2
         with:
@@ -154,30 +159,52 @@ jobs:
       - name: Deploy server scripts
         shell: bash
         run: |
-          SSH="ssh -o BatchMode=yes"
-          SCP="scp -o BatchMode=yes"
+          SSH="ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15"
+          SCP="scp -o BatchMode=yes -o ConnectTimeout=30"
           SERVER="${{ inputs.server-user }}@${{ inputs.server-ip }}"
 
-          echo "Deploying server scripts..."
-          $SCP "bin/gen-update-json.py" "${SERVER}:/tmp/gen-update-json.py"
-          $SCP "bin/server-gen-update-json.sh" "${SERVER}:/tmp/rsa-gen-update-json"
-          $SCP "bin/server-gen-update-json-dev.sh" "${SERVER}:/tmp/rsa-gen-update-json-dev"
-          $SCP "bin/server-gen-update-json-test.sh" "${SERVER}:/tmp/rsa-gen-update-json-test"
-          $SCP "bin/server-apt-repo-update.sh" "${SERVER}:/tmp/rsa-apt-repo-update"
-
-          # Verify and install in a single SSH session to avoid /tmp race condition.
-          $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py /tmp/rsa-apt-repo-update && sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo cp /tmp/rsa-apt-repo-update /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py /usr/local/bin/rsa-apt-repo-update && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/rsa-apt-repo-update"
-
-          echo "Server scripts deployed."
+          max_retries=3
+          retry=0
+          while [ $retry -lt $max_retries ]; do
+            echo "Deploying server scripts (attempt $((retry + 1))/$max_retries)..."
+            if $SCP "bin/gen-update-json.py" "${SERVER}:/tmp/gen-update-json.py" && \
+               $SCP "bin/server-gen-update-json.sh" "${SERVER}:/tmp/rsa-gen-update-json" && \
+               $SCP "bin/server-gen-update-json-dev.sh" "${SERVER}:/tmp/rsa-gen-update-json-dev" && \
+               $SCP "bin/server-gen-update-json-test.sh" "${SERVER}:/tmp/rsa-gen-update-json-test" && \
+               $SCP "bin/server-apt-repo-update.sh" "${SERVER}:/tmp/rsa-apt-repo-update" && \
+               $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py /tmp/rsa-apt-repo-update && sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo cp /tmp/rsa-apt-repo-update /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py /usr/local/bin/rsa-apt-repo-update && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/rsa-apt-repo-update"; then
+              echo "Server scripts deployed."
+              break
+            fi
+            retry=$((retry + 1))
+            if [ $retry -lt $max_retries ]; then
+              echo "Transfer failed, retrying in 10s..."
+              sleep 10
+            else
+              echo "ERROR: Failed to deploy server scripts after $max_retries attempts."
+              exit 1
+            fi
+          done
 
       - name: Push binaries
         shell: bash
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
-          SSH="ssh -o BatchMode=yes"
-          SCP="scp -o BatchMode=yes"
-          $SSH ${{ inputs.server-user }}@${{ inputs.server-ip }} "mkdir -p ${{ inputs.target-path }}"
+          SSH="ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15"
+          SCP="scp -o BatchMode=yes -o ConnectTimeout=30"
+          SERVER="${{ inputs.server-user }}@${{ inputs.server-ip }}"
+          max_retries=3
+          retry=0
+
+          # Create target directory with retry
+          while [ $retry -lt $max_retries ]; do
+            if $SSH "$SERVER" "mkdir -p ${{ inputs.target-path }}"; then
+              break
+            fi
+            retry=$((retry + 1))
+            [ $retry -lt $max_retries ] && sleep 10 || { echo "ERROR: Failed to create target dir"; exit 1; }
+          done
 
           echo "Platform: ${PLATFORM}"
           echo "Target: ${{ inputs.target-path }}"
@@ -190,13 +217,23 @@ jobs:
             DEST="rich-statistics-windows${{ inputs.product-suffix }}"
             echo "EXE=${EXE} SIG=${SIG} DEST=${DEST}"
             if [ -n "${EXE}" ]; then
-              $SCP "${EXE}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.exe"
+              retry=0
+              while [ $retry -lt $max_retries ]; do
+                if $SCP "${EXE}" "${SERVER}:${{ inputs.target-path }}/${DEST}.exe"; then break; fi
+                retry=$((retry + 1))
+                [ $retry -lt $max_retries ] && sleep 10 || { echo "ERROR: Failed to upload .exe"; exit 1; }
+              done
             else
               echo "ERROR: no .exe file found"
               exit 1
             fi
             if [ -n "${SIG}" ]; then
-              $SCP "${SIG}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.exe.sig"
+              retry=0
+              while [ $retry -lt $max_retries ]; do
+                if $SCP "${SIG}" "${SERVER}:${{ inputs.target-path }}/${DEST}.exe.sig"; then break; fi
+                retry=$((retry + 1))
+                [ $retry -lt $max_retries ] && sleep 10 || echo "WARNING: Failed to upload .sig"
+              done
             else
               echo "WARNING: no .exe.sig file found — update.json will have empty signature"
             fi
@@ -209,13 +246,23 @@ jobs:
             DEST="rich-statistics-linux-${ARCH}"
             echo "DEB=${DEB} SIG=${SIG} DEST=${DEST}"
             if [ -n "${DEB}" ]; then
-              $SCP "${DEB}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.deb"
+              retry=0
+              while [ $retry -lt $max_retries ]; do
+                if $SCP "${DEB}" "${SERVER}:${{ inputs.target-path }}/${DEST}.deb"; then break; fi
+                retry=$((retry + 1))
+                [ $retry -lt $max_retries ] && sleep 10 || { echo "ERROR: Failed to upload .deb"; exit 1; }
+              done
             else
               echo "ERROR: no .deb file found"
               exit 1
             fi
             if [ -n "${SIG}" ]; then
-              $SCP "${SIG}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.deb.sig"
+              retry=0
+              while [ $retry -lt $max_retries ]; do
+                if $SCP "${SIG}" "${SERVER}:${{ inputs.target-path }}/${DEST}.deb.sig"; then break; fi
+                retry=$((retry + 1))
+                [ $retry -lt $max_retries ] && sleep 10 || echo "WARNING: Failed to upload .sig"
+              done
             else
               echo "WARNING: no .deb.sig file found — update.json will have empty signature"
             fi
@@ -228,13 +275,25 @@ jobs:
         run: |
           ARCH=${PLATFORM#linux-}
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o BatchMode=yes ${{ inputs.server-user }}@${{ inputs.server-ip }} \
-            "sudo /usr/local/bin/${{ inputs.apt-script }} ${ARCH} ${VERSION}"
+          SERVER="${{ inputs.server-user }}@${{ inputs.server-ip }}"
+          for i in 1 2 3; do
+            if ssh -o BatchMode=yes -o ConnectTimeout=30 "$SERVER" \
+              "sudo /usr/local/bin/${{ inputs.apt-script }} ${ARCH} ${VERSION}"; then
+              break
+            fi
+            [ "$i" -lt 3 ] && sleep 10 || { echo "ERROR: APT update failed after 3 attempts"; exit 1; }
+          done
 
       - name: Regenerate update.json (Windows only)
         if: matrix.platform == 'windows'
         shell: bash
         run: |
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o BatchMode=yes ${{ inputs.server-user }}@${{ inputs.server-ip }} \
-            "sudo /usr/local/bin/${{ inputs.update-json-script }} ${VERSION} ${{ inputs.server-host }} ${{ inputs.target-path }}"
+          SERVER="${{ inputs.server-user }}@${{ inputs.server-ip }}"
+          for i in 1 2 3; do
+            if ssh -o BatchMode=yes -o ConnectTimeout=30 "$SERVER" \
+              "sudo /usr/local/bin/${{ inputs.update-json-script }} ${VERSION} ${{ inputs.server-host }} ${{ inputs.target-path }}"; then
+              break
+            fi
+            [ "$i" -lt 3 ] && sleep 10 || { echo "ERROR: update.json regeneration failed after 3 attempts"; exit 1; }
+          done

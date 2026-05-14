@@ -11,23 +11,26 @@ on:
         required: false
 
 jobs:
-  build:
-    name: Plugin ZIP + PWA snapshot + GitHub Release
+  build-zip:
+    uses: ./.github/workflows/job-build-zip.yml
+    with:
+      version: ${{ github.event.inputs.version || github.ref_name }}
+      artifact-name: rich-statistics
+      retention-days: 30
+
+  release:
+    name: PWA snapshot + GitHub Release
     runs-on: ubuntu-latest
+    needs: build-zip
     permissions:
       contents: write
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: "Guard: require tag or version input"
-        if: "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version == '' && github.ref_type != 'tag' }}"
-        run: |
-          echo "::error::Release workflow requires a git tag (v*) or a version input."
-          exit 1
 
       - name: Resolve version
         id: version
@@ -38,74 +41,13 @@ jobs:
             echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Download ZIP artifact
+        uses: actions/download-artifact@v4
         with:
-          php-version: '8.2'
-          coverage: none
-
-      - name: Verify PHP syntax
-        run: |
-          find . -name "*.php" \
-            -not -path "./vendor/freemius/languages/*" \
-            | xargs -I{} php -l "{}"
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Verify Chart.js SRI hash
-        run: |
-          ACTUAL=$(sha384sum docs/app/chart.min.js | awk '{print $1}' | xxd -r -p | base64)
-          echo "Chart.js SRI: sha384-${ACTUAL}"
-          echo "SRI hash verified for current Chart.js bundle."
-
-      - name: Run PHPCS
-        run: composer phpcs -- --report-full --runtime-set ignore_warnings_on_exit 1
-
-      - name: Create plugin ZIP
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          ZIP_NAME="rich-statistics-${VERSION}.zip"
-          mkdir -p build
-          zip -r "build/${ZIP_NAME}" . \
-            --exclude="*.git*" \
-            --exclude="*.github*" \
-            --exclude="*/tests/*" \
-            --exclude="*/bin/*" \
-            --exclude="*/build/*" \
-            --exclude="*/docs/*" \
-            --exclude="composer.json" \
-            --exclude="composer.lock" \
-            --exclude="phpunit.xml.dist" \
-            --exclude="phpcs.xml.dist" \
-            --exclude=".gitignore" \
-            --exclude=".gitattributes" \
-            --exclude="*.gitkeep" \
-            --exclude="*.sh" \
-            --exclude="CONTRIBUTING.md" \
-            --exclude="SECURITY.md" \
-            --exclude="README.md"
-          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
-        id: zip
-
-      - name: Generate SHA256 checksum
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          ZIP_NAME="rich-statistics-${VERSION}.zip"
-          sha256sum "build/${ZIP_NAME}" > "build/${ZIP_NAME}.sha256"
-          cat "build/${ZIP_NAME}.sha256"
-
-      - name: Upload ZIP artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: rich-statistics-${{ steps.version.outputs.version }}
-          path: |
-            build/rich-statistics-${{ steps.version.outputs.version }}.zip
-            build/rich-statistics-${{ steps.version.outputs.version }}.zip.sha256
-          retention-days: 30
+          name: rich-statistics-${{ github.event.inputs.version || github.ref_name }}
+          path: build
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -127,7 +69,6 @@ jobs:
             https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
 
       - name: Bump SW cache name
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           # Update the service worker cache name to match the release version.
           # This forces all browsers to invalidate the old cache and fetch fresh assets.
@@ -136,7 +77,6 @@ jobs:
           sed -i "s/: 'rsa-[0-9]\+-[0-9]\+-[0-9]\+'/: '${CACHE_NAME}'/" docs/app/sw.js
 
       - name: Create versioned PWA snapshot
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_VERSIONED="docs/app/v/${VERSION}"
@@ -152,7 +92,6 @@ jobs:
           fi
 
       - name: Update versions.json
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           # Regenerate versions.json from the v/ directory — never manually edit.
           # Every released version MUST have a corresponding bundled snapshot.
@@ -170,7 +109,6 @@ jobs:
           PYEOF
 
       - name: Prune old snapshot directories (keep last 12)
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           # Keep the 12 most recent versioned snapshots. Older ones are removed
           # from both the v/ directory and versions.json. Every released version
@@ -197,7 +135,6 @@ jobs:
           PYEOF
 
       - name: Commit and push snapshot back to main
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
