@@ -143,6 +143,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 104.197.231.120 >> ~/.ssh/known_hosts
 
+      - name: Deploy server scripts
+        shell: bash
+        run: |
+          bash bin/deploy-server-scripts.sh
+
       - name: Push binaries
         shell: bash
         env:
