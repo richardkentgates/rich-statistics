@@ -22,10 +22,16 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.APP_SERVER_SSH_KEY }}
 
+      - name: Add SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ vars.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: Install webhook handler
         run: |
-          SSH="ssh -o StrictHostKeyChecking=no -o BatchMode=yes"
-          SCP="scp -o StrictHostKeyChecking=no"
+          SSH="ssh -o BatchMode=yes"
+          SCP="scp -o BatchMode=yes"
+          SERVER="${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }}"
 
           ENV="${{ github.event.inputs.environment }}"
           case "$ENV" in
@@ -56,14 +62,14 @@ jobs:
               ;;
           esac
 
-          $SSH <SSH_USER>@<PWA_SERVER_IP> "sudo mkdir -p ${WEBROOT}/_deploy"
+          $SSH ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} "sudo mkdir -p ${WEBROOT}/_deploy"
           $SCP bin/server-webhook.php /tmp/rsa-webhook-index.php
-          $SSH <SSH_USER>@<PWA_SERVER_IP> \
+          $SSH ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
             "sudo cp /tmp/rsa-webhook-index.php ${WEBROOT}/_deploy/index.php && \
              sudo chown www-data:www-data ${WEBROOT}/_deploy/index.php"
 
           $SCP "${UPDATE_SOURCE}" /tmp/rsa-app-update
-          $SSH <SSH_USER>@<PWA_SERVER_IP> \
+          $SSH ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
             "sudo cp /tmp/rsa-app-update ${UPDATE_SCRIPT} && \
              sudo chmod +x ${UPDATE_SCRIPT} && \
              echo 'www-data ALL=(ALL) NOPASSWD: ${UPDATE_SCRIPT}' | \
