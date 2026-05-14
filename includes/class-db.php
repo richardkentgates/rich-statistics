@@ -104,8 +104,8 @@ class RSA_DB {
 			KEY session_id  (session_id),
 			KEY page        (page(191)),
 			KEY created_at  (created_at),
-			KEY utm_source   (utm_source(191)),
-			KEY utm_medium   (utm_medium(191)),
+			KEY utm_source   (utm_source),
+			KEY utm_medium   (utm_medium),
 			KEY utm_campaign (utm_campaign(191))
 		) $charset;";
 
