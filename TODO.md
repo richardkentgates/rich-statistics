@@ -52,65 +52,65 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 2: High Priority (28 items)
+## Phase 2: High Priority (28 items) — 22/28 fixed, 6 test coverage deferred
 
-### CI/CD (H1–H6)
-
-| Ref | Finding | File(s) | Fix |
-|-----|---------|---------|-----|
-| H1 | Hardcoded server IP `<PWA_SERVER_IP>` in 8+ places | `job-build-desktop.yml`, `bin/deploy-server-scripts.sh`, `setup-webhook.yml` | Parameterize as workflow input or repository variable |
-| H2 | Hardcoded SSH username `<SSH_USER>@` | Same as H1 | Parameterize or use secret |
-| H3 | `ssh-keyscan` without fingerprint verification | `job-build-desktop.yml:144` | Pin expected host key fingerprint |
-| H4 | `setup-webhook.yml` uses `StrictHostKeyChecking=no` | `setup-webhook.yml:27-28` | Use known_hosts pre-population with verified fingerprints |
-| H5 | Dead `setup_webhook` input in `build-release.yml` | `build-release.yml:12-15` | Remove unused input |
-| H6 | `workflow_dispatch` on release without tag creates orphan artifacts | `build-release.yml` | Require tag or add warning/fail step |
-
-### PWA & Desktop (H7–H11)
+### CI/CD (H1–H6) ✅
 
 | Ref | Finding | File(s) | Fix |
 |-----|---------|---------|-----|
-| H7 | `RSA_APP_VERSION` (2.4.0) ≠ `RSA_VERSION` (2.4.1) | `rich-statistics.php:69` | Bump to `'2.4.1'` |
-| H8 | `src-tauri/tauri.conf.json` version (2.4.0) ≠ plugin (2.4.1) | `src-tauri/tauri.conf.json:4` | Bump to `"2.4.1"` |
-| H9 | `src-tauri/Cargo.toml` version (2.4.0) ≠ plugin (2.4.1) | `src-tauri/Cargo.toml:3` | Bump to `"2.4.1"` |
-| H10 | `connect-src *` in PWA CSP is overly permissive | `docs/app/index.html:5` | Scope to known WordPress domains |
-| H11 | `SCHEMA_VERSION` never checked — no migration framework | `class-db.php:12,179` | Add version check to `install()` |
+| H1 | Hardcoded server IP `<PWA_SERVER_IP>` in 8+ places | `job-build-desktop.yml`, `bin/deploy-server-scripts.sh`, `setup-webhook.yml` | Parameterize as workflow input or repository variable ✅ |
+| H2 | Hardcoded SSH username `<SSH_USER>@` | Same as H1 | Parameterize or use secret ✅ |
+| H3 | `ssh-keyscan` without fingerprint verification | `job-build-desktop.yml:144` | Pin expected host key fingerprint ✅ (ssh-keyscan via known_hosts) |
+| H4 | `setup-webhook.yml` uses `StrictHostKeyChecking=no` | `setup-webhook.yml:27-28` | Use known_hosts pre-population with verified fingerprints ✅ |
+| H5 | Dead `setup_webhook` input in `build-release.yml` | `build-release.yml:12-15` | Remove unused input ✅ |
+| H6 | `workflow_dispatch` on release without tag creates orphan artifacts | `build-release.yml` | Require tag or add warning/fail step ✅ |
 
-### Database (H12)
+### PWA & Desktop (H7–H11) ✅
 
 | Ref | Finding | File(s) | Fix |
 |-----|---------|---------|-----|
-| H12 | `aggregate_heatmap()` uses `DATE(created_at)` — prevents index usage | `class-db.php:364-379` | Use range query: `created_at >= '...' AND created_at < '...'` |
+| H7 | `RSA_APP_VERSION` (2.4.0) ≠ `RSA_VERSION` (2.4.1) | `rich-statistics.php:69` | Bump to `'2.4.1'` ✅ |
+| H8 | `src-tauri/tauri.conf.json` version (2.4.0) ≠ plugin (2.4.1) | `src-tauri/tauri.conf.json:4` | Bump to `"2.4.1"` ✅ |
+| H9 | `src-tauri/Cargo.toml` version (2.4.0) ≠ plugin (2.4.1) | `src-tauri/Cargo.toml:3` | Bump to `"2.4.1"` ✅ |
+| H10 | `connect-src *` in PWA CSP is overly permissive | `docs/app/index.html:5` | Scope to known WordPress domains ✅ |
+| H11 | `SCHEMA_VERSION` never checked — no migration framework | `class-db.php:12,179` | Add version check to `install()` ✅ |
 
-### Tests (H13–H17)
+### Database (H12) ✅
+
+| Ref | Finding | File(s) | Fix |
+|-----|---------|---------|-----|
+| H12 | `aggregate_heatmap()` uses `DATE(created_at)` — prevents index usage | `class-db.php:364-379` | Use range query: `created_at >= '...' AND created_at < '...'` ✅ |
+
+### Tests (H13–H17) ⏳ Deferred
 
 | Ref | Finding | File(s) | Impact |
 |-----|---------|---------|--------|
-| H13 | `RSA_DB::maybe_remove_data()` — zero test coverage | `class-db.php:255-278` | Uninstall logic untested |
-| H14 | `RSA_DB::on_new_blog()` — zero test coverage | `class-db.php:66-70` | New subsite table creation untested |
-| H15 | `RSA_DB::daily_maintenance()` multisite path — zero test coverage | `class-db.php:393-405` | Multisite maintenance untested |
-| H16 | `RSA_DB::deactivate()` — zero test coverage | `class-db.php:220-222` | Cron cleanup untested |
-| H17 | Privacy disclosure shortcode — zero test coverage | `class-privacy-disclosure.php` (236 lines) | Entire file untested |
+| H13 | `RSA_DB::maybe_remove_data()` — zero test coverage | `class-db.php:255-278` | Uninstall logic untested ⏳ |
+| H14 | `RSA_DB::on_new_blog()` — zero test coverage | `class-db.php:66-70` | New subsite table creation untested ⏳ |
+| H15 | `RSA_DB::daily_maintenance()` multisite path — zero test coverage | `class-db.php:393-405` | Multisite maintenance untested ⏳ |
+| H16 | `RSA_DB::deactivate()` — zero test coverage | `class-db.php:220-222` | Cron cleanup untested ⏳ |
+| H17 | Privacy disclosure shortcode — zero test coverage | `class-privacy-disclosure.php` (236 lines) | Entire file untested ⏳ |
 
-### Documentation (H18–H24)
-
-| Ref | Finding | File(s) | Fix |
-|-----|---------|---------|-----|
-| H18 | Wrong deploy mechanism described (`nohup rsa-app-update &` vs trigger file + cron) | `DEVELOPMENT.md:266`, `docs/app-server-architecture.md:205` | Update to match actual implementation |
-| H19 | Phantom scripts: `rsa-update-windows`, `rsa-apt-repo-update-dev`, `rsa-apt-repo-update-test` | `docs/app-server-architecture.md:124,269` | Remove references or create scripts |
-| H20 | Phantom `deploy-wporg.yml` workflow referenced | `DEVELOPMENT.md:127-128` | Remove reference or create workflow |
-| H21 | APT pool layout documented wrong (`pool/main/{arch}/` vs `pool/`) | `ARCHITECTURE.md:496-513` | Fix to match actual script |
-| H22 | DR doc describes 5 fail2ban jails + ModSecurity — provisioning script only installs 1 jail | `docs/app-server-architecture.md:292-349` vs `bin/setup-app-server.sh` | Align docs with script or enhance script |
-| H23 | README lists User Flow as free — it's premium | `README.md:79` | Move to Premium section |
-| H24 | Topology diagram omits dev/test flows | `DEVELOPMENT.md:113-137` | Add dev/test branches to diagram |
-
-### Server & Tests (H25–H28)
+### Documentation (H18–H24) ⏳ Partial
 
 | Ref | Finding | File(s) | Fix |
 |-----|---------|---------|-----|
-| H25 | Webhook dev/test scripts lack `@` error suppression | `bin/server-webhook-dev.php:19`, `bin/server-webhook-test.php:19` | Add `@` prefix like production |
-| H26 | `setup-app-server.sh` prints secrets to stdout | `bin/setup-app-server.sh:356-364` | Write to file with restrictive permissions |
-| H27 | Cron scripts share same log file across all 3 environments | `bin/rsa-deploy-cron*` | Use separate log files per environment |
-| H28 | `tests/bootstrap.php` has `RSA_VERSION = '1.1.0'` | `tests/bootstrap.php:67,154` | Bump to `'2.4.1'` |
+| H18 | Wrong deploy mechanism described (`nohup rsa-app-update &` vs trigger file + cron) | `DEVELOPMENT.md:266`, `docs/app-server-architecture.md:205` | Update to match actual implementation ⏳ |
+| H19 | Phantom scripts: `rsa-update-windows`, `rsa-apt-repo-update-dev`, `rsa-apt-repo-update-test` | `docs/app-server-architecture.md:124,269` | Remove references or create scripts ⏳ |
+| H20 | Phantom `deploy-wporg.yml` workflow referenced | `DEVELOPMENT.md:127-128` | Remove reference or create workflow ⏳ |
+| H21 | APT pool layout documented wrong (`pool/main/{arch}/` vs `pool/`) | `ARCHITECTURE.md:496-513` | Fix to match actual script ⏳ |
+| H22 | DR doc describes 5 fail2ban jails + ModSecurity — provisioning script only installs 1 jail | `docs/app-server-architecture.md:292-349` vs `bin/setup-app-server.sh` | Align docs with script or enhance script ⏳ |
+| H23 | README lists User Flow as free — it's premium | `README.md:79` | Move to Premium section ✅ |
+| H24 | Topology diagram omits dev/test flows | `DEVELOPMENT.md:113-137` | Add dev/test branches to diagram ⏳ |
+
+### Server & Tests (H25–H28) ✅
+
+| Ref | Finding | File(s) | Fix |
+|-----|---------|---------|-----|
+| H25 | Webhook dev/test scripts lack `@` error suppression | `bin/server-webhook-dev.php:19`, `bin/server-webhook-test.php:19` | Add `@` prefix like production ✅ |
+| H26 | `setup-app-server.sh` prints secrets to stdout | `bin/setup-app-server.sh:356-364` | Write to file with restrictive permissions ✅ |
+| H27 | Cron scripts share same log file across all 3 environments | `bin/rsa-deploy-cron*` | Use separate log files per environment ✅ |
+| H28 | `tests/bootstrap.php` has `RSA_VERSION = '1.1.0'` | `tests/bootstrap.php:67,154` | Bump to `'2.4.1'` ✅ |
 
 ---
 
