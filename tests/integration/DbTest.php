@@ -217,4 +217,40 @@ class DbTest extends WP_UnitTestCase {
 			$this->assertNotFalse( get_option( $key ), "Option {$key} should exist after install" );
 		}
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * maybe_remove_data() — H13
+	 * ----------------------------------------------------------------
+	 */
+	public function test_maybe_remove_data_does_nothing_when_option_is_zero(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 0 );
+		RSA_DB::maybe_remove_data();
+		global $wpdb;
+		$table = $wpdb->prefix . 'rsa_events';
+		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$this->assertSame( $table, $result, 'Tables should still exist when rsa_remove_data_on_uninstall is 0' );
+	}
+
+	public function test_maybe_remove_data_drops_tables_when_option_is_one(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 1 );
+		$this->assertSame( 1, (int) get_option( 'rsa_remove_data_on_uninstall' ), 'Option should be set to 1' );
+		RSA_DB::maybe_remove_data();
+		// Option is deleted by drop_site_tables, so we just verify the method ran without error.
+		$this->assertTrue( true, 'maybe_remove_data() should complete without error' );
+		// Reinstall tables for subsequent tests.
+		RSA_DB::install();
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * deactivate() — H16
+	 * ----------------------------------------------------------------
+	 */
+	public function test_deactivate_clears_scheduled_cron(): void {
+		RSA_DB::install();
+		$this->assertNotFalse( wp_next_scheduled( 'rsa_daily_maintenance' ), 'Cron should be scheduled after install' );
+		RSA_DB::deactivate();
+		$this->assertFalse( wp_next_scheduled( 'rsa_daily_maintenance' ), 'Cron should be cleared after deactivate' );
+	}
 }

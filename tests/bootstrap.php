@@ -91,6 +91,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 				'class-click-tracking',
 				'class-heatmap',
 				'class-rest-api',
+				'class-privacy-disclosure',
 			);
 			foreach ( $includes as $cls ) {
 				$f = RSA_DIR . 'includes/' . $cls . '.php';

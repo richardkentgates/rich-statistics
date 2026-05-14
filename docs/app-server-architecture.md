@@ -120,8 +120,7 @@ Located at `/usr/local/bin/` on the server, sources in the repo under `bin/`.
 | `rsa-app-update-dev` | `bin/server-update-webapp-dev.sh` | Same for dev environment (clones develop branch) |
 | `rsa-app-update-test` | `bin/server-update-webapp-test.sh` | Same for test environment (clones test branch) |
 | `rsa-apt-repo-update` | `bin/server-apt-repo-update.sh` | Copies .deb into APT pool, regenerates Packages/Release/InRelease |
-| `rsa-gen-update-json` | — (inline in CI) | Regenerates `update.json` with platform signatures |
-| `rsa-update-windows` | — | Windows-specific update handling |
+| `rsa-gen-update-json` | `bin/gen-update-json.py` | Regenerates `update.json` with platform signatures |
 
 All update scripts use the same pattern:
 1. `git clone --depth 1 --filter=blob:none --sparse --branch <branch> <repo> /tmp/rsa-extract-*`
@@ -252,18 +251,16 @@ update.json regenerated with platform signatures
 ```
 /var/www/rs-app/apt/
 ├── public.gpg                  ← ASCII-armored public key
-├── pool/main/
-│   ├── amd64/
-│   │   └── rich-statistics_<version>_amd64.deb
-│   └── arm64/
-│       └── rich-statistics_<version>_arm64.deb
+├── pool/
+│   ├── rich-statistics_<version>_amd64.deb
+│   └── rich-statistics_<version>_arm64.deb
 └── dists/stable/
-    └── main/
-        ├── binary-amd64/       ← Packages, Packages.gz
-        ├── binary-arm64/       ← Packages, Packages.gz
-        ├── Release
-        ├── InRelease           ← GPG-signed by root's keyring
-        └── Release.gpg
+    ├── main/
+    │   ├── binary-amd64/       ← Packages, Packages.gz
+    │   └── binary-arm64/       ← Packages, Packages.gz
+    ├── Release
+    ├── InRelease               ← GPG-signed by root's keyring
+    └── Release.gpg
 ```
 
 Dev and test have their own APT repos at `/var/www/rs-app-dev/apt/` and `/var/www/rs-app-test/apt/` with their own `rsa-apt-repo-update-dev`/`test` scripts.
@@ -289,37 +286,17 @@ iptables includes fail2ban chains that dynamically ban offending IPs:
 
 ### 8.2 fail2ban
 
-Active jails (in `/etc/fail2ban/jail.local`):
+Active jails (in `/etc/fail2ban/jail.d/sshd-hard.conf`):
 
 | Jail | Log source | Ban action |
 |------|-----------|------------|
-| `apache-auth` | Apache error log | HTTP auth failures |
-| `apache-badbots` | Apache access log | Known bad bot User-Agents |
-| `apache-noscript` | Apache error log | Probing for scripts |
-| `apache-overflows` | Apache error log | Suspicious request patterns |
-| `sshd` | auth.log | SSH brute force |
+| `sshd` | auth.log | SSH brute force (max 3 retries, 10 min ban) |
 
-Ban time: 10 minutes (default). Currently 7 IPs banned for SSH.
+Additional jails (`apache-auth`, `apache-badbots`, `apache-noscript`, `apache-overflows`) can be added for production hardening.
 
 ### 8.3 ModSecurity
 
-ModSecurity is enabled with the OWASP Core Rule Set (CRS) v3.3.4.
-
-Configuration: `/etc/modsecurity/modsecurity.conf`
-```
-SecRuleEngine On
-SecRequestBodyAccess On
-SecRequestBodyLimit 13107200
-SecRequestBodyInMemoryLimit 131072
-SecRequestBodyLimitAction Reject
-```
-
-CRS includes WordPress-specific exclusion rules at:
-`/usr/share/modsecurity-crs/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf`
-
-Exclusion rules (if any) should be placed in:
-- `/etc/modsecurity/crs/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf`
-- `/etc/modsecurity/crs/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf`
+**Not currently installed.** Planned for production hardening. When added, configuration will use the OWASP Core Rule Set (CRS) with WordPress-specific exclusion rules.
 
 ### 8.4 SSH Hardening
 

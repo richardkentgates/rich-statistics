@@ -123,10 +123,6 @@ GitHub (source + CI)
   │           ├── Commit versioned docs/app/{version}/ snapshot → main branch
   │           └── POST /_deploy/ webhook → app server updates docs/app/
   │
-  ├── WordPress.org SVN (plugin distribution — free tier)
-  │     └── deploy-wporg.yml triggers on tag → 10up/action-wordpress-plugin-deploy
-  │         (workflow pending — awaiting WP.org plugin submission approval, see §11)
-  │
   └── Freemius dashboard (premium licensing + auto-updates)
         └── Developer manually uploads plugin ZIP after each release
 
@@ -134,6 +130,14 @@ App server: app.richstatistics.com  (<PWA_SERVER_IP>)
   ├── /                  → serves the live PWA (pulled from docs/app/ by webhook)
   ├── /dist/             → serves .deb files + update.json (pushed by CI via SSH)
   └── /_deploy/          → webhook endpoint (PHP, validates X-Deploy-Token header)
+
+Dev server: dev.richstatistics.com
+  ├── /                  → bleeding-edge PWA (deployed by build-develop.yml webhook)
+  └── /dist/             → dev desktop builds (pushed by CI via SSH)
+
+Test server: test.richstatistics.com
+  ├── /                  → beta/staging PWA (deployed by build-test.yml webhook)
+  └── /dist/             → test desktop builds (pushed by CI via SSH)
 ```
 
 ---
@@ -263,7 +267,11 @@ CI (ping-deploy job)
 _deploy/index.php  (from bin/server-webhook.php)
   │  Reads token from /etc/rsa-webhook-token (root:www-data 640)
   │  Compares against X-Deploy-Token header
-  │  On match: nohup sudo /usr/local/bin/rsa-app-update &
+  │  On match: writes timestamp to /var/www/rs-app/.deploy-trigger
+  ▼
+Cron (* * * * *) → /usr/local/bin/rsa-deploy-cron
+  │  Checks for .deploy-trigger file (expires after 120s)
+  │  Runs /usr/local/bin/rsa-app-update
   ▼
 /usr/local/bin/rsa-app-update  (from bin/server-update-webapp.sh)
   │  git sparse-clone: fetches only docs/app/ from the latest tag
