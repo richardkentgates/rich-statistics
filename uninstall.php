@@ -35,7 +35,7 @@ if ( is_multisite() ) {
 			'number' => 0,
 		)
 	);
-	foreach ( $sites as $blog_id ) {
+	foreach ( $sites as $blog_id ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- intentional multisite iteration
 		switch_to_blog( $blog_id );
 		drop_tables();
 		restore_current_blog();

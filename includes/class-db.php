@@ -3,12 +3,10 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Database schema, activation, migration, and uninstall.
-
  * {@internal ...}
  *
  * @package RichStatistics
  */
-
 class RSA_DB {
 
 	const SCHEMA_VERSION = 1;
@@ -320,8 +318,9 @@ class RSA_DB {
 		foreach ( $tables as $table => $config ) {
 			[ $col, $val ] = $config;
 			do {
-				$result   = $wpdb->query(
+				$result = $wpdb->query(
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table and $col from hardcoded whitelist
 						"DELETE FROM `{$wpdb->prefix}{$table}` WHERE {$col} < %s LIMIT 5000",
 						$val
 					)

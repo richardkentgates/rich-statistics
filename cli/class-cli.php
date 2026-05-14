@@ -195,7 +195,7 @@ class RSA_CLI extends WP_CLI_Command {
 
 		$items = [ [ __( 'Domain', 'rich-statistics' ), __( 'Visits', 'rich-statistics' ) ] ];
 		foreach ( $rows as $r ) {
-			$items[] = [ $r['domain'] ?: '(direct)', number_format( $r['visits'] ) ];
+			$items[] = [ ! empty( $r['domain'] ) ? $r['domain'] : '(direct)', number_format( $r['visits'] ) ];
 		}
 		$this->cli_table( $items );
 	}
@@ -287,9 +287,9 @@ class RSA_CLI extends WP_CLI_Command {
 		$items = [ [ __( 'Campaign', 'rich-statistics' ), __( 'Source', 'rich-statistics' ), __( 'Medium', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ), __( 'Pageviews', 'rich-statistics' ) ] ];
 		foreach ( $rows as $r ) {
 			$items[] = [
-				$r['campaign'] ?: '—',
-				$r['source'] ?: '—',
-				$r['medium'] ?: '—',
+				! empty( $r['campaign'] ) ? $r['campaign'] : '—',
+				! empty( $r['source'] ) ? $r['source'] : '—',
+				! empty( $r['medium'] ) ? $r['medium'] : '—',
 				number_format( $r['sessions'] ),
 				number_format( $r['pageviews'] ),
 			];
