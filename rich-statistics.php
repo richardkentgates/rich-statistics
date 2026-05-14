@@ -136,6 +136,7 @@ if ( function_exists( 'rs_fs' ) ) {
 		'RSA_Analytics',
 		'RSA_Admin',
 		'RSA_Email',
+		'RSA_Privacy_Disclosure',
 	);
 
 	foreach ( $rsa_classes as $class ) {
