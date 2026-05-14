@@ -114,7 +114,7 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 3: Medium Priority (29 items) — 8/29 fixed
+## Phase 3: Medium Priority (29 items) — 14/29 fixed
 
 ### CI/CD (M1–M9)
 
@@ -124,9 +124,9 @@ See `ROADMAP.md` §6 for audit summary.
 | M2 | Chart.js SRI hash is placeholder/disabled — no security value | ✅ Fixed — now computes and logs actual hash |
 | M3 | No Node.js version pinning for Tauri build | ⏳ |
 | M4 | `build-release.yml` doesn't use reusable `job-build-zip.yml` — ZIP logic duplicated | ⏳ |
-| M5 | `tests.yml` missing Composer cache on integration job | ⏳ |
-| M6 | `tests.yml` PHP 8.3 missing from integration matrix | ⏳ |
-| M7 | `tests.yml` PHPCS failure handler references non-existent XML report | ⏳ |
+| M5 | `tests.yml` missing Composer cache on integration job | ✅ Fixed |
+| M6 | `tests.yml` PHP 8.3 missing from integration matrix | ✅ Fixed |
+| M7 | `tests.yml` PHPCS failure handler references non-existent XML report | ✅ Fixed |
 | M8 | `sed` regex uses `[0-9]*` instead of `[0-9]+` (imprecise) | ✅ Fixed |
 | M9 | `workflow_dispatch` on release without tag creates orphan artifacts | ✅ Already fixed (H6 guard) |
 
@@ -135,8 +135,8 @@ See `ROADMAP.md` §6 for audit summary.
 | Ref | Finding | Status |
 |-----|---------|--------|
 | M10 | Options deletion uses `LIKE 'rsa_%'` — broad pattern | ✅ Fixed — explicit option list |
-| M11 | `get_sites('number' => 0)` fetches ALL sites at once — memory risk | ⏳ |
-| M12 | Maintenance lock uses 1-hour TTL — concurrent runs possible | ⏳ |
+| M11 | `get_sites('number' => 0)` fetches ALL sites at once — memory risk | ✅ Fixed — batched at 100 |
+| M12 | Maintenance lock uses 1-hour TTL — concurrent runs possible | ✅ Fixed — 30 min TTL |
 | M13 | `heatmap` table has no standalone index on `date_bucket` | ✅ Fixed |
 | M14 | Events table has no indexes on `utm_source` or `utm_medium` | ✅ Fixed |
 
@@ -160,7 +160,7 @@ See `ROADMAP.md` §6 for audit summary.
 | Ref | Finding | Status |
 |-----|---------|--------|
 | M25 | Webhook doesn't validate Content-Type or body | ✅ Fixed — Content-Type restricted |
-| M26 | ROADMAP.md §3 says `update.json` signatures empty — still P0 | ⏳ |
+| M26 | ROADMAP.md §3 says `update.json` signatures empty — still P0 | ✅ Fixed — CI populates signatures |
 | M27 | ROADMAP.md §4 CI gaps (webhook token, SSH key) may still be open | ✅ Resolved by H1-H4 |
 | M28 | `SECURITY.md` missing webhook security, APT signing key, CI secret management | ✅ Fixed |
 | M29 | `README.md` badge links point to old domain `statistics.richardkentgates.com` | ✅ Fixed |
