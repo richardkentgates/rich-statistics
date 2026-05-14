@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# rsa-deploy-cron-test — runs every minute, checks for test deploy trigger file
+set -euo pipefail
+
+TRIGGER="/var/www/rs-app-test/.deploy-trigger"
+LOG="/var/log/rsa-deploy.log"
+
+if [ ! -f "$TRIGGER" ]; then
+    exit 0
+fi
+
+AGE=$(( $(date +%s) - $(stat -c %Y "$TRIGGER") ))
+if [ "$AGE" -gt 120 ]; then
+    rm -f "$TRIGGER"
+    exit 0
+fi
+
+rm -f "$TRIGGER"
+
+echo "$(date -u +%FT%TZ)  TEST trigger received — running update…" >> "$LOG"
+/usr/local/bin/rsa-app-update-test >> "$LOG" 2>&1
+echo "$(date -u +%FT%TZ)  TEST update complete." >> "$LOG"
