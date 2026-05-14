@@ -9,6 +9,7 @@ candidates exist for the same platform.
 import json
 import pathlib
 import sys
+from datetime import datetime, timezone
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
 
     pattern_map = {
         "linux-amd64": "linux-x86_64",
-        "linux-arm64": "linux-arm64",
+        "linux-arm64": "linux-aarch64",
         "windows": "windows-x86_64",
     }
 
@@ -57,7 +58,7 @@ def main():
 
     update = {
         "version": version,
-        "pub_date": "2026-01-01T00:00:00Z",
+        "pub_date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "notes": "",
         "platforms": platforms,
     }

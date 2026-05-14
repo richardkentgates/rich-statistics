@@ -33,6 +33,14 @@ on:
         required: false
         type: string
         default: ''
+      server-ip:
+        required: false
+        type: string
+        default: '<PWA_SERVER_IP>'
+      server-user:
+        required: false
+        type: string
+        default: 'richardkentgates'
 
     secrets:
       APP_SERVER_SSH_KEY:
@@ -141,25 +149,24 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H <PWA_SERVER_IP> >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ inputs.server-ip }} >> ~/.ssh/known_hosts
 
       - name: Deploy server scripts
         shell: bash
         run: |
           SSH="ssh -o BatchMode=yes"
           SCP="scp -o BatchMode=yes"
-          SERVER="<SSH_USER>@<PWA_SERVER_IP>"
+          SERVER="${{ inputs.server-user }}@${{ inputs.server-ip }}"
 
           echo "Deploying server scripts..."
           $SCP "bin/gen-update-json.py" "${SERVER}:/tmp/gen-update-json.py"
           $SCP "bin/server-gen-update-json.sh" "${SERVER}:/tmp/rsa-gen-update-json"
           $SCP "bin/server-gen-update-json-dev.sh" "${SERVER}:/tmp/rsa-gen-update-json-dev"
           $SCP "bin/server-gen-update-json-test.sh" "${SERVER}:/tmp/rsa-gen-update-json-test"
+          $SCP "bin/server-apt-repo-update.sh" "${SERVER}:/tmp/rsa-apt-repo-update"
 
-          echo "Verifying uploaded files..."
-          $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py"
-
-          $SSH "$SERVER" "sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test"
+          # Verify and install in a single SSH session to avoid /tmp race condition.
+          $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py /tmp/rsa-apt-repo-update && sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo cp /tmp/rsa-apt-repo-update /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py /usr/local/bin/rsa-apt-repo-update && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/rsa-apt-repo-update"
 
           echo "Server scripts deployed."
 
@@ -170,7 +177,7 @@ jobs:
         run: |
           SSH="ssh -o BatchMode=yes"
           SCP="scp -o BatchMode=yes"
-          $SSH <SSH_USER>@<PWA_SERVER_IP> "mkdir -p ${{ inputs.target-path }}"
+          $SSH ${{ inputs.server-user }}@${{ inputs.server-ip }} "mkdir -p ${{ inputs.target-path }}"
 
           echo "Platform: ${PLATFORM}"
           echo "Target: ${{ inputs.target-path }}"
@@ -183,13 +190,13 @@ jobs:
             DEST="rich-statistics-windows${{ inputs.product-suffix }}"
             echo "EXE=${EXE} SIG=${SIG} DEST=${DEST}"
             if [ -n "${EXE}" ]; then
-              $SCP "${EXE}" "<SSH_USER>@<PWA_SERVER_IP>:${{ inputs.target-path }}/${DEST}.exe"
+              $SCP "${EXE}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.exe"
             else
               echo "ERROR: no .exe file found"
               exit 1
             fi
             if [ -n "${SIG}" ]; then
-              $SCP "${SIG}" "<SSH_USER>@<PWA_SERVER_IP>:${{ inputs.target-path }}/${DEST}.exe.sig"
+              $SCP "${SIG}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.exe.sig"
             else
               echo "WARNING: no .exe.sig file found — update.json will have empty signature"
             fi
@@ -202,13 +209,13 @@ jobs:
             DEST="rich-statistics-linux-${ARCH}"
             echo "DEB=${DEB} SIG=${SIG} DEST=${DEST}"
             if [ -n "${DEB}" ]; then
-              $SCP "${DEB}" "<SSH_USER>@<PWA_SERVER_IP>:${{ inputs.target-path }}/${DEST}.deb"
+              $SCP "${DEB}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.deb"
             else
               echo "ERROR: no .deb file found"
               exit 1
             fi
             if [ -n "${SIG}" ]; then
-              $SCP "${SIG}" "<SSH_USER>@<PWA_SERVER_IP>:${{ inputs.target-path }}/${DEST}.deb.sig"
+              $SCP "${SIG}" "${{ inputs.server-user }}@${{ inputs.server-ip }}:${{ inputs.target-path }}/${DEST}.deb.sig"
             else
               echo "WARNING: no .deb.sig file found — update.json will have empty signature"
             fi
@@ -221,7 +228,7 @@ jobs:
         run: |
           ARCH=${PLATFORM#linux-}
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o BatchMode=yes <SSH_USER>@<PWA_SERVER_IP> \
+          ssh -o BatchMode=yes ${{ inputs.server-user }}@${{ inputs.server-ip }} \
             "sudo /usr/local/bin/${{ inputs.apt-script }} ${ARCH} ${VERSION}"
 
       - name: Regenerate update.json (Windows only)
@@ -229,5 +236,5 @@ jobs:
         shell: bash
         run: |
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          ssh -o BatchMode=yes <SSH_USER>@<PWA_SERVER_IP> \
+          ssh -o BatchMode=yes ${{ inputs.server-user }}@${{ inputs.server-ip }} \
             "sudo /usr/local/bin/${{ inputs.update-json-script }} ${VERSION} ${{ inputs.server-host }} ${{ inputs.target-path }}"

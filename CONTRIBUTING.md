@@ -169,6 +169,7 @@ changes. Version parity prevents this.
 - [ ] No PII storage introduced
 - [ ] All new DB queries use `$wpdb->prepare()`
 - [ ] Output escaped at the point of output
+- [ ] Privacy disclosure shortcode updated if new data points added
 
 ---
 

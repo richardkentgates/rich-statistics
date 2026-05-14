@@ -12,6 +12,7 @@ class DbTest extends WP_UnitTestCase {
 		delete_option( 'rsa_retention_days' );
 		delete_option( 'rsa_bot_score_threshold' );
 		delete_option( 'rsa_email_digest_enabled' );
+		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::install();
 	}
 
@@ -144,7 +145,7 @@ class DbTest extends WP_UnitTestCase {
 	}
 
 	public function test_schema_version_option_matches_constant(): void {
-		$this->assertSame( (string) RSA_DB::SCHEMA_VERSION, get_option( RSA_DB::OPTION_KEY ) );
+		$this->assertSame( RSA_DB::SCHEMA_VERSION, (int) get_option( RSA_DB::OPTION_KEY ) );
 	}
 
 	public function test_events_table_has_all_expected_columns(): void {

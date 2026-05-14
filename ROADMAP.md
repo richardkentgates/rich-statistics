@@ -4,7 +4,7 @@ This document captures audit findings, infrastructure decisions, and the verifie
 
 ---
 
-## 1. Audit Findings (May 2026) — Resolution Status
+## 1. Audit Findings (May 2026 — Initial) — Resolution Status
 
 ### A. `desktop/` → `dist/` naming convention
 
@@ -74,17 +74,11 @@ All four phases are implemented:
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
 | `dist/update.json` | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) | ✅ Present (v2.3.0, sig: empty) |
-| `v/` version snapshots | ✅ Complete (2.0.0–2.3.0) | ✅ Complete (2.0.0–2.3.0) | ✅ Complete (2.0.0–2.3.0) |
-| `versions.json` | ✅ Complete (21 entries) | ✅ Complete (21 entries) | ✅ Complete (21 entries) |
+| `v/` version snapshots | ✅ Complete (2.3.0–2.4.1) | ✅ Complete (2.3.0–2.4.1) | ✅ Complete (2.3.0–2.4.1) |
+| `versions.json` | ✅ Complete (3 entries) | ✅ Complete (3 entries) | ✅ Complete (3 entries) |
 | Old root-level version dirs | ✅ Clean | ✅ Clean | ✅ Clean |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
-
-### Open infrastructure issues
-
-| Priority | Issue | Detail |
-|----------|-------|--------|
-| P0 | `update.json` signatures empty | All three environments have `"signature": ""` — Tauri updater will reject unsigned updates. Next CI build will generate `.sig` files and regenerate `update.json` |
 
 ---
 
@@ -99,77 +93,113 @@ All four phases are implemented:
 | CI5 | `build-release.yml` | `ping-deploy` | ✅ Resolved | Deterministic webhook call to production `/_deploy/` |
 | — | `build-release.yml` | `build-desktop-windows` | ✅ Resolved | Pushes signed `.exe` + `.sig` to `public_html/dist/`, regenerates `update.json` |
 | — | `build-test.yml` | `build-desktop` | ✅ Done | Pushes signed binaries + `.sig` to test server `dist/`, regenerates `update.json` |
-| — | `build-release.yml` | Prune old snapshots | ✅ Done | Keeps latest 3 versioned PWA snapshots in `docs/app/` |
-
-### CI gaps
-
-| Gap | Detail |
-|-----|--------|
-| E2E tests | No browser-based testing for PWA or admin interface |
-| Webhook token mismatch | Dev/test deployments fail with 401 — server webhook token doesn't match GitHub secret |
-| SSH key for push | Dev/test desktop binary pushes fail (exit 255) — `APP_SERVER_SSH_KEY` may not be configured for these branches |
-| Node.js 20 deprecation | All workflows use `actions/checkout@v4`, `upload-artifact@v4`, `ssh-agent@v0.9.0` — will stop working by Sep 2026 |
+| — | `build-release.yml` | Prune old snapshots | ✅ Done | Keeps latest 12 versioned PWA snapshots in `docs/app/` |
 
 ---
 
 ## 5. Post-Audit Findings (May 2026 — Verified)
 
-These are discrepancies discovered during verification of the initial audit fixes:
-
 | Ref | Finding | Environment | Detail |
 |-----|---------|-------------|--------|
-| F1 | **Dev APT repo claimed missing but present** | Dev | ROADMAP said missing but actually exists at `/var/www/rs-app-dev/apt/` with pool, dists, InRelease, vhost alias ✅ |
+| F1 | **Dev APT repo claimed missing but present** | Dev | ROADMAP said missing but actually exists ✅ |
 | F2 | **Dev `update.json` claimed missing but present** | Dev | ROADMAP said missing but exists with v2.2.7 ✅ |
 | F3 | **Test `update.json` claimed stale but current** | Test | ROADMAP said v2.1.0 but actual was v2.2.7 ✅ |
 | F4 | **Dev `v/` dirs claimed incomplete but complete** | Dev | ROADMAP said missing 2.1.2+ but all 19 versions present ✅ |
-| F5 | **Test `v/` dirs had pre-2.0 relics** | Test | Old 1.3.0–1.4.8 root-level dirs cleaned; `versions.json` synced from prod ✅ |
+| F5 | **Test `v/` dirs had pre-2.0 relics** | Test | Old 1.3.0–1.4.8 root-level dirs cleaned ✅ |
 | F6 | **`RSA_APP_URL` hardcoded** | All | Plugin always points "Open App" button to production regardless of environment |
-| F7 | **Web root ownership mismatch** | All | `/var/www/rs-app*` owned by `www-data:www-data` instead of SSH user. Fixed to `richardkentgates:www-data` ✅ |
-| F8 | **Prod `_deploy/` at wrong path** | Prod | Webhook at `/var/www/rs-app/_deploy/` (outside `public_html/`), not `public_html/_deploy/` as ROADMAP implied. Vhost alias correct. Ownership fixed ✅ |
+| F7 | **Web root ownership mismatch** | All | Fixed to `richardkentgates:www-data` ✅ |
+| F8 | **Prod `_deploy/` at wrong path** | Prod | Vhost alias correct. Ownership fixed ✅ |
 
 ---
 
-## 6. Remaining Work (Prioritized)
+## 6. Comprehensive Platform Audit (May 2026)
+
+Full audit completed across 8 areas. See `TODO.md` for the complete action item list.
+
+### Summary
+
+| Area | Status | Critical | High | Medium | Low |
+|------|--------|----------|------|--------|-----|
+| Plugin Code | ✅ Good | 0 | 0 | 2 | 5 |
+| CI/CD | ⚠️ Needs work | 2 | 4 | 5 | 5 |
+| Server Infra | ⚠️ Needs work | 2 | 3 | 3 | 2 |
+| PWA | ⚠️ Needs work | 1 | 3 | 1 | 3 |
+| Desktop App | ⚠️ Needs work | 0 | 2 | 0 | 2 |
+| Documentation | ❌ Poor | 2 | 9 | 7 | 7 |
+| Database | ✅ Good | 0 | 2 | 3 | 5 |
+| Tests | ⚠️ Needs work | 0 | 5 | 8 | 7 |
+| **TOTAL** | | **7** | **28** | **29** | **36** |
+
+### Phase 1: Critical (ship with next release)
+| Ref | Area | Finding | Status |
+|-----|------|---------|--------|
+| C1 | PWA | `sw-init.js` missing from all 3 versioned snapshots | ⬜ Not started |
+| C2 | Server | `bin/setup-apt-repo.sh` referenced but does not exist | ⬜ Not started |
+| C3 | CI/CD | APT repo update scripts never deployed by CI | ⬜ Not started |
+| C4 | Docs | CHANGELOG.md missing 21 of 42 git tags | ⬜ Not started |
+| C5 | Server | `gen-update-json.py` uses wrong platform key (`linux-arm64` vs `linux-aarch64`) | ⬜ Not started |
+| C6 | Server | `gen-update-json.py` has hardcoded stale `pub_date` | ⬜ Not started |
+| C7 | PWA | All `sw.js` files have cache name `rsa-1-5-2` (stale since v1.5.2) | ⬜ Not started |
+
+### Phase 2: High Priority
+| Ref | Area | Finding | Status |
+|-----|------|---------|--------|
+| H1 | CI/CD | Hardcoded server IP `<PWA_SERVER_IP>` in 8+ places | ⬜ Not started |
+| H2 | CI/CD | Hardcoded SSH username `<SSH_USER>@` in all deploy steps | ⬜ Not started |
+| H3 | CI/CD | `ssh-keyscan` without fingerprint verification | ⬜ Not started |
+| H4 | CI/CD | `setup-webhook.yml` uses `StrictHostKeyChecking=no` | ⬜ Not started |
+| H5 | CI/CD | `build-release.yml` has dead `setup_webhook` input | ⬜ Not started |
+| H6 | PWA | `RSA_APP_VERSION` (2.4.0) ≠ `RSA_VERSION` (2.4.1) | ⬜ Not started |
+| H7 | PWA | `src-tauri/tauri.conf.json` version (2.4.0) ≠ plugin (2.4.1) | ⬜ Not started |
+| H8 | PWA | `src-tauri/Cargo.toml` version (2.4.0) ≠ plugin (2.4.1) | ⬜ Not started |
+| H9 | PWA | `connect-src *` in PWA CSP is overly permissive | ⬜ Not started |
+| H10 | DB | `SCHEMA_VERSION` never checked — no migration framework | ⬜ Not started |
+| H11 | DB | `aggregate_heatmap()` uses `DATE(created_at)` — prevents index usage | ⬜ Not started |
+| H12–H16 | Tests | 5 major code paths with zero test coverage | ⬜ Not started |
+| H17–H23 | Docs | 7 documentation contradictions and phantom references | ⬜ Not started |
+| H24–H28 | Server/Tests | Webhook error handling, secret exposure, stale bootstrap version | ⬜ Not started |
+
+### Phase 3: Medium Priority (29 items)
+See `TODO.md` §3 for full list.
+
+### Phase 4: Low Priority (36 items)
+See `TODO.md` §4 for full list.
+
+---
+
+## 7. Remaining Work (Legacy — superseded by §6)
 
 ### P1: Environment-aware plugin ✅
-
-1. **Make `RSA_APP_URL` configurable**: Plugin should detect environment and use the correct PWA URL — ✅ `rsa_detect_app_url()` in `rich-statistics.php`, commit `df82c7c`
-2. **Add `env` flag to `config.js`**: Deploy environment-specific config on dev/test subdomains — ✅ `config.js` auto-detects from hostname; `config-dev.js` and `config-test.js` available for override
+1. **Make `RSA_APP_URL` configurable** — ✅ `rsa_detect_app_url()` in `rich-statistics.php`
+2. **Add `env` flag to `config.js`** — ✅ `config.js` auto-detects from hostname
 
 ### P2: CI / Quality
-
 1. Add PHPCS check to CI workflows — ✅ Added to all 4 workflows
-2. Add E2E test pipeline
+2. Add E2E test pipeline — ⬜ Not started
 3. Add upgrade/migration test coverage — ✅ 9 migration tests in DbTest.php + 10 env detection tests
 
 ### P3: Signatures ✅
-
-1. **Run CI build to generate signed `update.json`**: `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_KEY_PASSWORD` wired in all 3 workflow files; `.sig` files pushed to all environments; `rsa-gen-update-json` called. Auto-resolved on next tag push
+1. **Run CI build to generate signed `update.json`** — Auto-resolved on next tag push
 
 ### P4: WordPress.org
-
-1. Create `readme.txt` and plugin assets — ✅ `readme.txt` with full 2.x changelog; `bin/deploy-wporg.sh` automates SVN submission
-2. SVN submission to WordPress.org plugin directory — ⏳ `bin/deploy-wporg.sh` ready; requires screenshots in `wporg-assets/` then run the script
+1. Create `readme.txt` and plugin assets — ✅ `readme.txt` with full 2.x changelog
+2. SVN submission — ⏳ `bin/deploy-wporg.sh` ready; requires screenshots in `wporg-assets/`
 
 ### P5: Monitoring / Operations
-
-1. Uptime monitoring for all three subdomains — ✅ Handled by external system
-2. Error tracking for production — 📝 Recommended setup documented in §8.2
-3. Documented rollback procedure — ✅ Documented in §8.3
+1. Uptime monitoring — ✅ Handled by external system
+2. Error tracking — 📝 Documented in §8.2
+3. Rollback procedure — ✅ Documented in §8.3
 4. Database backup strategy — ✅ Documented in §8.4
 
----
-
-## 7. Documentation Plan
-
+### Documentation Plan (Legacy)
 | Ref | File | Task | Status |
 |-----|------|------|--------|
-| D1 | `includes/class-rest-api.php:3` | Change `[PREMIUM] REST API` to `REST API` | ✅ Done |
-| D2 | `includes/class-rest-api.php:10` | Remove `@fs_premium_only` | ✅ Done |
-| D3 | `includes/class-rest-api.php:13` | Update `manage_options` to `rsa_manage_statistics` | ✅ Done |
-| D4 | AGENTS.md | Add reference to ROADMAP.md; update External Services section with all 3 subdomains | ✅ Done |
-| D5 | README.md | Add Release Tracks table, dev/test install instructions, server endpoint tables | ✅ Done |
-| D6 | CONTRIBUTING.md | Add Branch Structure section, release process, environment endpoints | ✅ Done |
+| D1 | `class-rest-api.php:3` | Change `[PREMIUM] REST API` to `REST API` | ✅ Done |
+| D2 | `class-rest-api.php:10` | Remove `@fs_premium_only` | ✅ Done |
+| D3 | `class-rest-api.php:13` | Update `manage_options` to `rsa_manage_statistics` | ✅ Done |
+| D4 | AGENTS.md | Add reference to ROADMAP.md | ✅ Done |
+| D5 | README.md | Add Release Tracks table, dev/test install instructions | ✅ Done |
+| D6 | CONTRIBUTING.md | Add Branch Structure section | ✅ Done |
 | D7 | GitHub Wiki | Create with dev/test installation documentation | ✅ Done |
 
 ---
@@ -178,7 +208,7 @@ These are discrepancies discovered during verification of the initial audit fixe
 
 ### 8.1 Uptime Monitoring
 
-Each environment subdomain should be monitored for HTTP 200 responses. Since no commercial uptime service is configured, a basic cron-based approach is recommended:
+Each environment subdomain should be monitored for HTTP 200 responses.
 
 **Recommended setup (cron on app server, or external):**
 ```
@@ -205,7 +235,7 @@ No error tracking service (Sentry, Bugsnag, etc.) is currently configured.
 **Recommended for production:**
 1. Enable WordPress `WP_DEBUG_LOG` on production server for plugin-level errors
 2. Add a cron that tails and alerts on `wp-content/debug.log` growth
-3. Consider Sentry PHP SDK (`sentry/sdk`) for structured error reporting — gate behind `RSA_APP_ENV === 'production'` to avoid noise from dev/test
+3. Consider Sentry PHP SDK (`sentry/sdk`) for structured error reporting — gate behind `RSA_APP_ENV === 'production'`
 
 **Server-level errors (Apache):**
 ```
@@ -216,21 +246,16 @@ tail -f /var/log/apache2/rs-app_error.log | grep -c '" 5[0-9][0-9] '
 ### 8.3 Rollback Procedure
 
 #### WordPress Plugin Rollback
-
 ```bash
 # 1. Reinstall previous version from Freemius or GitHub Releases
 wp plugin install https://github.com/richardkentgates/rich-statistics/releases/download/v<previous>/rich-statistics-<previous>.zip --force
 
 # 2. Database: no automatic rollback — schema is additive-only via dbDelta()
-#    If a new table was added, it remains but won't cause issues.
-#    If columns were added, they remain but are unused by the older version.
-
 # 3. Clear caches
 wp cache flush
 ```
 
 #### Desktop App Rollback
-
 ```bash
 # Linux (APT)
 sudo apt install rich-statistics=<previous-version>
@@ -239,33 +264,26 @@ sudo apt install rich-statistics=<previous-version>
 sudo dpkg -i rich-statistics-linux-amd64-<previous>.deb
 
 # Windows — download previous .exe from https://app.richstatistics.com/dist/
-# Tauri updater checks update.json which lists the latest version only.
-# Rollback requires manual .exe download and install.
 ```
 
 #### App Server Rollback
-
 ```bash
 # 1. Revert docs/app/ to previous commit
 cd /var/www/rs-app/public_html
 sudo git checkout <previous-hash> -- docs/app/
-
 # 2. Flush CDN/cache if applicable
 # 3. Verify: curl -I https://app.richstatistics.com/
 ```
 
 #### CI Pipeline Rollback
-
 ```bash
 # 1. Revert the offending merge commit on the relevant branch
 git revert <merge-commit-hash>
 git push origin <branch>
-
-# 2. The CI will re-deploy the previous state via webhook
-# 3. For releases: delete the tag, re-tag the previous commit, force-push
+# 2. For releases: delete the tag, re-tag the previous commit, force-push
 git tag -d v<bad-release>
 git tag v<previous-release> <previous-hash>
-git push origin --tags --force   # requires --force on main
+git push origin --tags --force
 ```
 
 ### 8.4 Database Backup Strategy
@@ -273,7 +291,6 @@ git push origin --tags --force   # requires --force on main
 #### Current State
 - Database backup is **not** configured as part of the plugin or CI
 - WordPress sites using this plugin rely on their host's backup solution
-- No plugin-level export/import for analytics data (CSV export exists for reporting)
 
 #### Recommended Strategy
 
@@ -300,15 +317,4 @@ find /backups/analytics/ -mtime +3 -delete
 gunzip < /backups/wordpress/2026-05-11.sql.gz | mysql wordpress_db
 ```
 
-**Export for migration (plugin CLI):**
-```bash
-# Export raw analytics data for manual migration
-wp rich-stats export --period=all --data_type=pageviews > pageviews.csv
-wp rich-stats export --period=all --data_type=sessions > sessions.csv
-```
-
-> **Note:** The plugin's `rsa_remove_data_on_uninstall` option is off by default. If enabled and the plugin is deleted, all analytics tables are dropped — ensure backups exist before uninstalling.<｜end▁of▁thinking｜>
-
-<｜｜DSML｜｜tool_calls>
-<｜｜DSML｜｜invoke name="todowrite">
-<｜｜DSML｜｜parameter name="todos" string="false">[{"priority":"high","content":"ROADMAP cleanup — mark completed P1 items, sync remaining work to current state","status":"completed"},{"priority":"high","content":"Migration tests — add DB schema upgrade/downgrade test coverage","status":"completed"},{"priority":"high","content":"Ops docs — document rollback procedure, backup strategy, monitoring plan","status":"completed"},{"priority":"medium","content":"GitHub Wiki — create dev/test installation wiki pages","status":"in_progress"}]
+> **Note:** The plugin's `rsa_remove_data_on_uninstall` option is off by default. If enabled and the plugin is deleted, all analytics tables are dropped — ensure backups exist before uninstalling.

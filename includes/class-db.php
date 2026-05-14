@@ -75,6 +75,11 @@ class RSA_DB {
 	public static function install(): void {
 		global $wpdb;
 
+		$stored_version = get_option( self::OPTION_KEY, 0 );
+		if ( $stored_version >= self::SCHEMA_VERSION ) {
+			return;
+		}
+
 		$charset = $wpdb->get_charset_collate();
 
 		$events = 'CREATE TABLE ' . self::events_table() . " (
@@ -360,6 +365,7 @@ class RSA_DB {
 		global $wpdb;
 
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+		$today     = gmdate( 'Y-m-d', strtotime( '0 day' ) );
 
 		$wpdb->query(
 			$wpdb->prepare(
@@ -370,11 +376,12 @@ class RSA_DB {
 				        COUNT(*),
 				        %s
 				 FROM `{$wpdb->prefix}rsa_clicks`
-				 WHERE DATE(created_at) = %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL
+				 WHERE created_at >= %s AND created_at < %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL
 				 GROUP BY page, ROUND(x_pct / 2) * 2, ROUND(y_pct / 2) * 2
 				 ON DUPLICATE KEY UPDATE weight = weight + VALUES(weight)",
 				$yesterday,
-				$yesterday
+				$yesterday . ' 00:00:00',
+				$today . ' 00:00:00'
 			)
 		);
 	}

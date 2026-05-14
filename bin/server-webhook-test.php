@@ -16,7 +16,7 @@ if ( ( $_SERVER["REQUEST_METHOD"] ?? "" ) !== "POST" ) {
 }
 
 $trigger = "/var/www/rs-app-test/.deploy-trigger";
-file_put_contents( $trigger, time() . "\n" );
+@file_put_contents( $trigger, time() . "\n" );
 
 http_response_code( 202 );
 header( "Content-Type: text/plain" );

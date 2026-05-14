@@ -7,7 +7,7 @@ set -euo pipefail
 
 SSH="ssh -o BatchMode=yes"
 SCP="scp -o BatchMode=yes"
-SERVER="<SSH_USER>@<PWA_SERVER_IP>"
+SERVER="${RSA_SERVER_USER:-richardkentgates}@${RSA_SERVER_IP:-<PWA_SERVER_IP>}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Deploying server scripts..."

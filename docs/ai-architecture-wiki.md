@@ -51,7 +51,7 @@ The plugin exposes a single REST endpoint at `/wp-json/rsa/v1/ai/tool`. It accep
 | `heatmap` | Viewport-relative click coordinates |
 | `woocommerce` | Conversion funnel, top products, revenue |
 
-All returned data is privacy-safe — IP addresses, email addresses, and session IDs are stripped before returning.
+All returned data is privacy-safe — IP addresses and raw User-Agent strings are never stored or returned. Session IDs are pseudonymous UUIDs. Email-shaped query parameters are stripped from page paths. Premium tool responses (clicks, heatmap, woocommerce) contain no customer name, email, address, or other PII.
 
 ### App: Bring Your Own LLM
 
@@ -107,3 +107,4 @@ curl -X POST https://yoursite.com/wp-json/rsa/v1/ai/tool \
 - Free tools are available to any authenticated user; premium tools require an active Freemius licence
 - No data from the tool endpoint is cached on external servers — it's delivered directly to the requesting app
 - The app's AI provider key is stored in `localStorage` on the user's device, never transmitted to the WordPress site
+- Data returned by `/ai/tool` contains no IP addresses, raw User-Agent strings, or customer PII. Session IDs are pseudonymous UUIDs. Page paths have email-shaped query parameters stripped.
