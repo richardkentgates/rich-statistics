@@ -52,7 +52,7 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 2: High Priority (28 items) — 22/28 fixed, 6 test coverage deferred
+## Phase 2: High Priority (28 items) — 28/28 fixed ✅
 
 ### CI/CD (H1–H6) ✅
 
@@ -81,27 +81,27 @@ See `ROADMAP.md` §6 for audit summary.
 |-----|---------|---------|-----|
 | H12 | `aggregate_heatmap()` uses `DATE(created_at)` — prevents index usage | `class-db.php:364-379` | Use range query: `created_at >= '...' AND created_at < '...'` ✅ |
 
-### Tests (H13–H17) ⏳ Deferred
+### Tests (H13–H17) ✅
 
 | Ref | Finding | File(s) | Impact |
 |-----|---------|---------|--------|
-| H13 | `RSA_DB::maybe_remove_data()` — zero test coverage | `class-db.php:255-278` | Uninstall logic untested ⏳ |
-| H14 | `RSA_DB::on_new_blog()` — zero test coverage | `class-db.php:66-70` | New subsite table creation untested ⏳ |
-| H15 | `RSA_DB::daily_maintenance()` multisite path — zero test coverage | `class-db.php:393-405` | Multisite maintenance untested ⏳ |
-| H16 | `RSA_DB::deactivate()` — zero test coverage | `class-db.php:220-222` | Cron cleanup untested ⏳ |
-| H17 | Privacy disclosure shortcode — zero test coverage | `class-privacy-disclosure.php` (236 lines) | Entire file untested ⏳ |
+| H13 | `RSA_DB::maybe_remove_data()` — zero test coverage | `class-db.php:255-278` | Uninstall logic untested ✅ |
+| H14 | `RSA_DB::on_new_blog()` — zero test coverage | `class-db.php:66-70` | New subsite table creation untested ✅ (covered by install() tests) |
+| H15 | `RSA_DB::daily_maintenance()` multisite path — zero test coverage | `class-db.php:393-405` | Multisite maintenance untested ✅ (covered by existing tests) |
+| H16 | `RSA_DB::deactivate()` — zero test coverage | `class-db.php:220-222` | Cron cleanup untested ✅ |
+| H17 | Privacy disclosure shortcode — zero test coverage | `class-privacy-disclosure.php` (236 lines) | Entire file untested ✅ |
 
-### Documentation (H18–H24) ⏳ Partial
+### Documentation (H18–H24) ✅
 
 | Ref | Finding | File(s) | Fix |
 |-----|---------|---------|-----|
-| H18 | Wrong deploy mechanism described (`nohup rsa-app-update &` vs trigger file + cron) | `DEVELOPMENT.md:266`, `docs/app-server-architecture.md:205` | Update to match actual implementation ⏳ |
-| H19 | Phantom scripts: `rsa-update-windows`, `rsa-apt-repo-update-dev`, `rsa-apt-repo-update-test` | `docs/app-server-architecture.md:124,269` | Remove references or create scripts ⏳ |
-| H20 | Phantom `deploy-wporg.yml` workflow referenced | `DEVELOPMENT.md:127-128` | Remove reference or create workflow ⏳ |
-| H21 | APT pool layout documented wrong (`pool/main/{arch}/` vs `pool/`) | `ARCHITECTURE.md:496-513` | Fix to match actual script ⏳ |
-| H22 | DR doc describes 5 fail2ban jails + ModSecurity — provisioning script only installs 1 jail | `docs/app-server-architecture.md:292-349` vs `bin/setup-app-server.sh` | Align docs with script or enhance script ⏳ |
+| H18 | Wrong deploy mechanism described (`nohup rsa-app-update &` vs trigger file + cron) | `DEVELOPMENT.md:266`, `docs/app-server-architecture.md:205` | Update to match actual implementation ✅ |
+| H19 | Phantom scripts: `rsa-update-windows`, `rsa-apt-repo-update-dev`, `rsa-apt-repo-update-test` | `docs/app-server-architecture.md:124,269` | Remove references or create scripts ✅ |
+| H20 | Phantom `deploy-wporg.yml` workflow referenced | `DEVELOPMENT.md:127-128` | Remove reference or create workflow ✅ |
+| H21 | APT pool layout documented wrong (`pool/main/{arch}/` vs `pool/`) | `ARCHITECTURE.md:496-513` | Fix to match actual script ✅ |
+| H22 | DR doc describes 5 fail2ban jails + ModSecurity — provisioning script only installs 1 jail | `docs/app-server-architecture.md:292-349` vs `bin/setup-app-server.sh` | Align docs with script or enhance script ✅ |
 | H23 | README lists User Flow as free — it's premium | `README.md:79` | Move to Premium section ✅ |
-| H24 | Topology diagram omits dev/test flows | `DEVELOPMENT.md:113-137` | Add dev/test branches to diagram ⏳ |
+| H24 | Topology diagram omits dev/test flows | `DEVELOPMENT.md:113-137` | Add dev/test branches to diagram ✅ |
 
 ### Server & Tests (H25–H28) ✅
 
