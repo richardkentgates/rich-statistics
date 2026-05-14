@@ -224,9 +224,22 @@ RSA_Tracker::handle_ingest()
 
 Two independent scoring layers, summed and capped at 10. Requests scoring ≥ the configured threshold (default 3) are silently discarded.
 
-**Layer 1 — JavaScript (client-side bitmask sent with payload):** Checks browser environment signals and sends a pass/fail bitmask. The specific signals checked are intentionally undisclosed to prevent circumvention.
+**Layer 1 — JavaScript (client-side bitmask sent with payload):** Evaluates the following browser environment signals and sends them as a bitmask integer. Individual signal values are never stored — only the combined bot score is saved with the event record:
 
-**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):** Checks User-Agent patterns and HTTP request headers. Specific patterns are intentionally undisclosed.
+| Signal Constant | What It Checks |
+|---|---|
+| `CS_WEBDRIVER` (1) | `navigator.webdriver` present |
+| `CS_NO_PLUGINS` (2) | `navigator.plugins.length === 0` |
+| `CS_NO_LANGUAGES` (4) | `navigator.languages` empty or missing |
+| `CS_ZERO_SCREEN` (8) | `screen.width === 0` or `screen.height === 0` |
+| `CS_NO_TOUCH_API` (16) | `'ontouchstart' in window` is false on non-desktop |
+| `CS_INSTANT_LOAD` (32) | `performance.timing` shows near-zero load time |
+| `CS_NO_CANVAS` (64) | Canvas 2D context unavailable |
+| `CS_HIDDEN_ON_ARRIVAL` (128) | `document.hidden` true on load |
+| `CS_NO_HUMAN_EVENT` (256) | No mouse/keyboard/scroll events within timeout |
+| `CS_CHROME_MISSING_OBJ` (512) | Chrome-specific `window.chrome` missing |
+
+**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):** Checks User-Agent against known bot patterns (Googlebot, Bingbot, curl, python-requests, etc.) and suspicious patterns (headlesschrome, phantomjs, selenium, etc.). Also checks for missing `Accept-Language` and `Accept` headers. Raw UA and headers are never stored.
 
 Requests are never blocked; scoring ≥ threshold results in silent discard. This avoids false positives breaking legitimate tracking and prevents probing of the threshold.
 

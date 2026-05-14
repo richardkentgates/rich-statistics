@@ -83,7 +83,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
 | WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin dashboard with cross-site AI, network-wide disable switch |
-| Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests |
+| Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests. IP hashed for rate limiting (60s TTL), never stored. Use `[rich_statistics_privacy_disclosure]` shortcode for full regulatory mapping. |
 
 ## Desktop Apps
 
@@ -101,7 +101,7 @@ All desktop apps include automatic updates via the built-in Tauri updater. Linux
 
 | Feature | Description |
 |---|---|
-| Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click |
+| Click tracking | Protocol tracking (tel/mailto/geo/sms/download) with destination capture — phone number, email address, coordinates, SMS number, or file URL recorded per click. CSS selector-based click tracking also records element tag, ID, class, text, and viewport position. |
 | Heatmap | Viewport-relative thermal overlay on any page URL |
 | WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
 | REST API | Full `rsa/v1` API powered by WP Application Passwords |
@@ -234,13 +234,36 @@ After activation, navigate to **Rich Statistics → Preferences** in the WordPre
 Rich Statistics is designed to be **privacy-first**:
 
 - **No cookies** — sessions use `sessionStorage` only (cleared when tab closes)
-- **No PII** — IP addresses, full URLs with personal data, and email addresses are never stored
+- **No PII stored** — IP addresses are hashed for rate limiting (60s TTL) then discarded; raw IPs are never stored
 - **No third-party requests** — Chart.js is bundled locally; no CDN calls at runtime
 - **Referrers truncated** — only the domain is stored, not the full referrer URL
 - **Sensitive query params stripped** — any query parameter that looks like an email or is longer than 40 characters is removed from stored page paths
 - **Self-hosted** — all data stays on your server
+- **User-Agent parsed, not stored** — only derived OS/browser/version are saved; raw UA string is discarded
 
-For detailed compliance information, see the [Privacy section of our documentation](https://statistics.richardkentgates.com#privacy).
+### Data Collected
+
+On every page view the plugin collects: session UUID (sessionStorage), page path (sanitized), referrer domain, OS, browser, browser version, language, timezone, viewport dimensions, time on page, UTM campaign parameters, and a bot detection score. Server-side, the IP address is SHA-256 hashed for rate limiting (transient, 60s TTL) and the User-Agent is parsed then discarded. Full details in the `RSA_Tracker` and `RSA_Bot_Detection` classes.
+
+### Privacy Disclosure Shortcode
+
+Place `[rich_statistics_privacy_disclosure]` on any public page or post to render a visitor-facing disclosure table. It tells your visitors exactly what data their browser sends to your analytics, what is stored, what is not, and their rights under GDPR, ePrivacy, CCPA/CPRA, VCDPA, CPA, CTDPA, UCPA, TDPSA, and COPPA. Premium feature data (clicks, heatmaps, WooCommerce) is included automatically when the active license qualifies.
+
+### Compliance Summary
+
+| Regulation | Status | Basis |
+|---|---|---|
+| GDPR (EU) | Compliant | Art. 6(1)(f) legitimate interest; no PII; no consent banner required for pseudonymous analytics |
+| ePrivacy Directive | Compliant | No cookies, no device fingerprinting |
+| CCPA/CPRA (California) | Compliant | No "personal information" as defined; no sale/share of data |
+| VCDPA (Virginia) | Compliant | No personal data; no targeted advertising or profiling |
+| CPA (Colorado) | Compliant | No personal data; no targeted advertising |
+| CTDPA (Connecticut) | Compliant | Pseudonymous data exempt; internal operations exemption |
+| UCPA (Utah) | Compliant | Pseudonymous analytics exempt |
+| TDPSA (Texas) | Compliant | Pseudonymous analytics exempt |
+| COPPA (US Federal) | Compliant | No child-directed data collection; no PII |
+
+> **Note:** Compliance claims are based on the plugin's data collection behavior. Site operators should consult legal counsel for their specific use case, especially when combining this plugin with other tracking tools or processing personal data elsewhere on the site.
 
 ---
 
