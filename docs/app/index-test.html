@@ -37,6 +37,19 @@ body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 
 			Install App
 		</button>
 	</div>
+	<div id="rsa-login-desktop-install" class="rsa-login-desktop-install" hidden>
+		<h3 style="font-size:16px;margin:24px 0 8px;">Or install the desktop app</h3>
+		<p style="font-size:13px;color:#888;margin-bottom:16px;">Native desktop experience with offline support.</p>
+		<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+			<a href="https://test.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
+				<strong>Linux</strong> .deb
+			</a>
+			<a href="https://test.richstatistics.com/dist/rich-statistics-windows(Test).exe" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
+				<strong>Windows</strong> .exe
+			</a>
+		</div>
+		<p style="font-size:11px;color:#aaa;margin-top:12px;">APT recommended for auto-updates: <code>sudo apt install rich-statistics</code></p>
+	</div>
 </div>
 
 <!-- Main app shell (hidden until logged in) -->
