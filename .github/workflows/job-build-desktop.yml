@@ -155,9 +155,10 @@ jobs:
           $SCP "bin/server-gen-update-json.sh" "${SERVER}:/tmp/rsa-gen-update-json"
           $SCP "bin/server-gen-update-json-dev.sh" "${SERVER}:/tmp/rsa-gen-update-json-dev"
           $SCP "bin/server-gen-update-json-test.sh" "${SERVER}:/tmp/rsa-gen-update-json-test"
+          $SCP "bin/server-apt-repo-update.sh" "${SERVER}:/tmp/rsa-apt-repo-update"
 
           # Verify and install in a single SSH session to avoid /tmp race condition.
-          $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py && sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test"
+          $SSH "$SERVER" "ls -la /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/gen-update-json.py /tmp/rsa-apt-repo-update && sudo cp /tmp/rsa-gen-update-json /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-dev /usr/local/bin/ && sudo cp /tmp/rsa-gen-update-json-test /usr/local/bin/ && sudo cp /tmp/gen-update-json.py /usr/local/bin/ && sudo cp /tmp/rsa-apt-repo-update /usr/local/bin/ && sudo chmod +x /usr/local/bin/rsa-gen-update-json /usr/local/bin/rsa-gen-update-json-dev /usr/local/bin/rsa-gen-update-json-test /usr/local/bin/gen-update-json.py /usr/local/bin/rsa-apt-repo-update && sudo rm /tmp/gen-update-json.py /tmp/rsa-gen-update-json /tmp/rsa-gen-update-json-dev /tmp/rsa-gen-update-json-test /tmp/rsa-apt-repo-update"
 
           echo "Server scripts deployed."
 
