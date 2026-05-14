@@ -23,8 +23,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Guard: require tag or version input
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version == '' && !startsWith(github.ref, 'refs/tags/')
+      - name: "Guard: require tag or version input"
+        if: "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version == '' && github.ref_type != 'tag' }}"
         run: |
           echo "::error::Release workflow requires a git tag (v*) or a version input."
           exit 1
