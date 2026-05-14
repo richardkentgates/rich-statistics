@@ -99,6 +99,7 @@ INCLUDE_FILES=(
     readme.txt
     LICENSE
     CHANGELOG.md
+    composer.json
 );
 
 # Copy directories
