@@ -24,9 +24,11 @@ function rsa_privacy_disclosure_shortcode(): string {
 	$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
 	?>
 <div class="rsa-privacy-disclosure">
-	<h2><?php
-	/* translators: %s: Site name */
-	printf( esc_html__( 'Analytics Data Collected by %s', 'rich-statistics' ), esc_html( $site_name ) ); ?></h2>
+	<h2><?php echo esc_html( sprintf(
+		/* translators: %s: Site name */
+		__( 'Analytics Data Collected by %s', 'rich-statistics' ),
+		$site_name
+	) ); ?></h2>
 	<p><?php esc_html_e( 'This site uses a self-hosted analytics system to understand how visitors use the site. Below is a complete list of what data is collected when you visit, how it is used, and your rights under applicable privacy laws.', 'rich-statistics' ); ?></p>
 
 	<h3><?php esc_html_e( 'What We Collect', 'rich-statistics' ); ?></h3>
@@ -168,9 +170,16 @@ function rsa_privacy_disclosure_shortcode(): string {
 	<p class="rsa-privacy-footer">
 		<?php
 		/* translators: %s: Plugin version */
-		printf( esc_html__( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ), esc_html( defined( 'RSA_VERSION' ) ? RSA_VERSION : '' ) );
+		echo esc_html( sprintf(
+			__( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ),
+			defined( 'RSA_VERSION' ) ? RSA_VERSION : ''
+		) );
 		/* translators: %s: Site name */
-		printf( esc_html__( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ), esc_html( $site_name ) ); ?>
+		echo esc_html( sprintf(
+			__( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ),
+			$site_name
+		) );
+		?>
 	</p>
 </div>
 
