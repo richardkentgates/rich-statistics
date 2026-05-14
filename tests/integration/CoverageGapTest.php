@@ -173,7 +173,8 @@ class CoverageGapTest extends WP_UnitTestCase {
 	public function test_activate_single_site(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_events';
-		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' );
 		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::activate( false );
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -203,7 +204,8 @@ class CoverageGapTest extends WP_UnitTestCase {
 	public function test_on_new_blog_event_installs_tables(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_events';
-		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' );
 		delete_option( RSA_DB::OPTION_KEY );
 		// Call install() directly since on_new_blog_event checks RSA_FILE which isn't defined in tests.
 		RSA_DB::install();
