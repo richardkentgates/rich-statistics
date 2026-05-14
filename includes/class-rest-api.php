@@ -1141,9 +1141,9 @@ class RSA_Rest_API {
 		set_transient( $ip_key, $ip_count + 1, 60 );
 
 		// Save and restore $_POST and $_SERVER to avoid polluting global state.
-		$saved_post   = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
-		$saved_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
-		$_POST        = $r->get_params();
+		$saved_post                = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
+		$saved_method              = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
+		$_POST                     = $r->get_params();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
 		try {

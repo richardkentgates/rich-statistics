@@ -32,7 +32,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 	 */
 	public function test_cors_headers_present_on_rest_response(): void {
 		wp_set_current_user( self::$admin->ID );
-		$request = new WP_REST_Request( 'GET', '/rsa/v1/overview' );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/overview' );
 		$response = static::$server->dispatch( $request );
 		// WordPress REST API handles CORS at the server level, not per-route.
 		// Verify the route responds successfully.
@@ -96,7 +96,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 		if ( ! function_exists( 'rsa_strip_pii' ) ) {
 			$this->markTestSkipped( 'rsa_strip_pii not defined' );
 		}
-		$ipv6 = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+		$ipv6   = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
 		$result = rsa_strip_pii( $ipv6 );
 		$this->assertNotEmpty( $result, 'IPv6 address should not be stripped to empty' );
 	}
@@ -108,7 +108,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 	 */
 	public function test_export_requires_auth(): void {
 		wp_set_current_user( 0 );
-		$request = new WP_REST_Request( 'GET', '/rsa/v1/export' );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/export' );
 		$response = static::$server->dispatch( $request );
 		$this->assertContains( $response->get_status(), array( 401, 403 ) );
 	}
@@ -134,7 +134,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 	 */
 	public function test_user_flow_journey_requires_auth(): void {
 		wp_set_current_user( 0 );
-		$request = new WP_REST_Request( 'GET', '/rsa/v1/user-flow/journey' );
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/user-flow/journey' );
 		$response = static::$server->dispatch( $request );
 		$this->assertContains( $response->get_status(), array( 401, 403 ) );
 	}
@@ -173,8 +173,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 	public function test_activate_single_site(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_events';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' );
+		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared
 		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::activate( false );
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -204,8 +203,7 @@ class CoverageGapTest extends WP_UnitTestCase {
 	public function test_on_new_blog_event_installs_tables(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'rsa_events';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' );
+		$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared
 		delete_option( RSA_DB::OPTION_KEY );
 		// Call install() directly since on_new_blog_event checks RSA_FILE which isn't defined in tests.
 		RSA_DB::install();

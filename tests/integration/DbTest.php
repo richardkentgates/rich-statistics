@@ -227,7 +227,7 @@ class DbTest extends WP_UnitTestCase {
 		update_option( 'rsa_remove_data_on_uninstall', 0 );
 		RSA_DB::maybe_remove_data();
 		global $wpdb;
-		$table = $wpdb->prefix . 'rsa_events';
+		$table  = $wpdb->prefix . 'rsa_events';
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$this->assertSame( $table, $result, 'Tables should still exist when rsa_remove_data_on_uninstall is 0' );
 	}
