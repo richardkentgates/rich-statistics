@@ -77,16 +77,18 @@ install_test_suite() {
     fi
     mkdir -p "$WP_TESTS_DIR"
 
-    # Try the requested tag/branch first; fall back to trunk on failure
-    svn_co_with_fallback() {
-        local path="$1"
-        local dest="$2"
-        svn co --quiet --no-auth-cache "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/${path}/" "${dest}" || \
-            svn co --quiet --no-auth-cache "https://develop.svn.wordpress.org/trunk/${path}/" "${dest}"
-    }
+    # Clone WordPress develop from GitHub (no SVN dependency)
+    local wp_dev_dir="/tmp/wordpress-develop"
+    if [ ! -d "$wp_dev_dir" ]; then
+        if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
+            git clone --depth=1 --branch "$WP_VERSION" https://github.com/WordPress/wordpress-develop.git "$wp_dev_dir"
+        else
+            git clone --depth=1 https://github.com/WordPress/wordpress-develop.git "$wp_dev_dir"
+        fi
+    fi
 
-    svn_co_with_fallback "tests/phpunit/includes" "$WP_TESTS_DIR/includes"
-    svn_co_with_fallback "tests/phpunit/data"     "$WP_TESTS_DIR/data"
+    cp -r "$wp_dev_dir/tests/phpunit/includes" "$WP_TESTS_DIR/includes"
+    cp -r "$wp_dev_dir/tests/phpunit/data" "$WP_TESTS_DIR/data"
 
     # Always create a src/ symlink so ABSPATH works whether the config uses
     # dirname(__FILE__).'/src/' (old format) or the actual WP_CORE_DIR path.
@@ -95,10 +97,7 @@ install_test_suite() {
     fi
 
     if [ ! -f "$WP_TESTS_DIR"/wp-tests-config.php ]; then
-        download "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php" \
-            "$WP_TESTS_DIR"/wp-tests-config.php || \
-            download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" \
-                "$WP_TESTS_DIR"/wp-tests-config.php
+        cp "$wp_dev_dir/wp-tests-config-sample.php" "$WP_TESTS_DIR"/wp-tests-config.php
         WP_CORE_DIR_ESC="${WP_CORE_DIR//\//\\/}"
         sed -i "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR"/wp-tests-config.php
         sed -i "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR"/wp-tests-config.php
@@ -137,25 +136,6 @@ install_db() {
 	mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS" --host="$DB_HOST" 2>/dev/null || true
 }
 
-install_woocommerce() {
-	if [ "${SKIP_WOOCOMMERCE}" = "true" ]; then
-		return
-	fi
-	local wc_dir="${WP_CORE_DIR}/wp-content/plugins/woocommerce"
-	if [ -d "$wc_dir" ]; then
-		return
-	fi
-	mkdir -p "$(dirname "$wc_dir")"
-	download "https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip" "/tmp/woocommerce.zip"
-	unzip -q "/tmp/woocommerce.zip" -d /tmp/
-	if [ -d "/tmp/woocommerce" ]; then
-		mv /tmp/woocommerce "$wc_dir"
-		rm -f /tmp/woocommerce.zip
-		echo "Installed WooCommerce to $wc_dir"
-	fi
-}
-
 install_wp
 install_test_suite
 install_db
-install_woocommerce
