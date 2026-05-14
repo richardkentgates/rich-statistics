@@ -22,13 +22,16 @@ function rsa_privacy_disclosure_shortcode(): string {
 	ob_start();
 	$site_name  = get_bloginfo( 'name' );
 	$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
+
+	/* translators: %s: Site name */
+	$title          = sprintf( __( 'Analytics Data Collected by %s', 'rich-statistics' ), $site_name );
+	/* translators: %s: Plugin version */
+	$footer_version = sprintf( __( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ), defined( 'RSA_VERSION' ) ? RSA_VERSION : '' );
+	/* translators: %s: Site name */
+	$footer_contact = sprintf( __( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ), $site_name );
 	?>
 <div class="rsa-privacy-disclosure">
-	<h2><?php echo esc_html( sprintf(
-		/* translators: %s: Site name */
-		__( 'Analytics Data Collected by %s', 'rich-statistics' ),
-		$site_name
-	) ); ?></h2>
+	<h2><?php echo esc_html( $title ); ?></h2>
 	<p><?php esc_html_e( 'This site uses a self-hosted analytics system to understand how visitors use the site. Below is a complete list of what data is collected when you visit, how it is used, and your rights under applicable privacy laws.', 'rich-statistics' ); ?></p>
 
 	<h3><?php esc_html_e( 'What We Collect', 'rich-statistics' ); ?></h3>
@@ -168,18 +171,8 @@ function rsa_privacy_disclosure_shortcode(): string {
 	</table>
 
 	<p class="rsa-privacy-footer">
-		<?php
-		/* translators: %s: Plugin version */
-		echo esc_html( sprintf(
-			__( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ),
-			defined( 'RSA_VERSION' ) ? RSA_VERSION : ''
-		) );
-		/* translators: %s: Site name */
-		echo esc_html( sprintf(
-			__( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ),
-			$site_name
-		) );
-		?>
+		<?php echo esc_html( $footer_version ); ?>
+		<?php echo esc_html( $footer_contact ); ?>
 	</p>
 </div>
 
