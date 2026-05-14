@@ -104,6 +104,8 @@ class RSA_DB {
 			KEY session_id  (session_id),
 			KEY page        (page(191)),
 			KEY created_at  (created_at),
+			KEY utm_source   (utm_source(191)),
+			KEY utm_medium   (utm_medium(191)),
 			KEY utm_campaign (utm_campaign(191))
 		) $charset;";
 
@@ -154,7 +156,8 @@ class RSA_DB {
 			date_bucket DATE                NOT NULL,
 			PRIMARY KEY (id),
 			UNIQUE KEY page_coords_date (page(191), x_pct, y_pct, date_bucket),
-			KEY page_date (page(191), date_bucket)
+			KEY page_date (page(191), date_bucket),
+			KEY date_bucket (date_bucket)
 		) $charset;";
 
 		$wc_events = 'CREATE TABLE ' . self::wc_events_table() . " (
@@ -294,9 +297,26 @@ class RSA_DB {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_heatmap`" );
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}rsa_wc_events`" );
 
-		$wpdb->query(
-			$wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", 'rsa_%' )
+		$options = array(
+			'rsa_retention_days',
+			'rsa_bot_score_threshold',
+			'rsa_remove_data_on_uninstall',
+			'rsa_track_protocol_tel',
+			'rsa_track_protocol_mailto',
+			'rsa_track_protocol_geo',
+			'rsa_track_protocol_sms',
+			'rsa_track_protocol_download',
+			'rsa_click_track_ids',
+			'rsa_click_track_classes',
+			'rsa_email_digest_enabled',
+			'rsa_email_digest_frequency',
+			'rsa_email_digest_recipients',
+			'rsa_woocommerce_enabled',
+			'rsa_db_version',
 		);
+		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name IN ($placeholders)", $options ) );
 	}
 
 	/**

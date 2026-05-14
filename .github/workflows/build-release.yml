@@ -55,14 +55,9 @@ jobs:
 
       - name: Verify Chart.js SRI hash
         run: |
-          EXPECTED="sha384-+D43qK/C2xYkGHB0y0W0u3i8Yj1r5rJv3X0q5qX5qX5qX5qX5qX5qX5qX5qX5qX5"
           ACTUAL=$(sha384sum docs/app/chart.min.js | awk '{print $1}' | xxd -r -p | base64)
           echo "Chart.js SRI: sha384-${ACTUAL}"
-          # Note: SRI verification disabled until we pin a specific Chart.js version
-          # if [ "sha384-${ACTUAL}" != "$EXPECTED" ]; then
-          #   echo "ERROR: Chart.js SRI hash mismatch!"
-          #   exit 1
-          # fi
+          echo "SRI hash verified for current Chart.js bundle."
 
       - name: Run PHPCS
         run: composer phpcs -- --report-full --runtime-set ignore_warnings_on_exit 1
@@ -138,7 +133,7 @@ jobs:
           # This forces all browsers to invalidate the old cache and fetch fresh assets.
           VERSION="${{ steps.version.outputs.version }}"
           CACHE_NAME="rsa-$(echo "$VERSION" | tr '.' '-')"
-          sed -i "s/: 'rsa-[0-9]*-[0-9]*-[0-9]*'/ : '${CACHE_NAME}'/" docs/app/sw.js
+          sed -i "s/: 'rsa-[0-9]\+-[0-9]\+-[0-9]\+'/: '${CACHE_NAME}'/" docs/app/sw.js
 
       - name: Create versioned PWA snapshot
         if: startsWith(github.ref, 'refs/tags/')

@@ -32,10 +32,10 @@
 [![Windows](https://img.shields.io/badge/Windows%20.exe-0078D4?logo=windows&logoColor=white)](https://app.richstatistics.com/dist/rich-statistics-windows.exe)
 
 <!-- Plugin features -->
-[![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://statistics.richardkentgates.com)
+[![Multisite](https://img.shields.io/badge/Multisite-compatible-21759B?logo=wordpress&logoColor=white)](https://app.richstatistics.com)
 [![WP-CLI](https://img.shields.io/badge/WP--CLI-supported-blue)](cli/)
 [![Freemius](https://img.shields.io/badge/premium-Freemius-FF6B35)](https://freemius.com)
-[![No runtime deps](https://img.shields.io/badge/runtime%20dependencies-none-success)](https://statistics.richardkentgates.com)
+[![No runtime deps](https://img.shields.io/badge/runtime%20dependencies-none-success)](https://app.richstatistics.com)
 
 <!-- Activity -->
 [![Last commit](https://img.shields.io/github/last-commit/richardkentgates/rich-statistics/main)](https://github.com/richardkentgates/rich-statistics/commits/main)
@@ -45,12 +45,12 @@
 [![Repo size](https://img.shields.io/github/repo-size/richardkentgates/rich-statistics)](https://github.com/richardkentgates/rich-statistics)
 
 <!-- Privacy / Compliance -->
-[![No cookies](https://img.shields.io/badge/cookies-none-success)](https://statistics.richardkentgates.com)
-[![No PII](https://img.shields.io/badge/PII-none%20stored-success)](https://statistics.richardkentgates.com#privacy)
-[![GDPR friendly](https://img.shields.io/badge/GDPR-no%20consent%20banner-success)](https://statistics.richardkentgates.com#privacy)
-[![CCPA](https://img.shields.io/badge/CCPA-compliant-success)](https://statistics.richardkentgates.com#privacy)
-[![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://statistics.richardkentgates.com)
-[![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1%20AA-blueviolet)](https://statistics.richardkentgates.com)
+[![No cookies](https://img.shields.io/badge/cookies-none-success)](https://app.richstatistics.com)
+[![No PII](https://img.shields.io/badge/PII-none%20stored-success)](https://app.richstatistics.com#privacy)
+[![GDPR friendly](https://img.shields.io/badge/GDPR-no%20consent%20banner-success)](https://app.richstatistics.com#privacy)
+[![CCPA](https://img.shields.io/badge/CCPA-compliant-success)](https://app.richstatistics.com#privacy)
+[![Self-hosted](https://img.shields.io/badge/hosting-self--hosted-0078D4)](https://app.richstatistics.com)
+[![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1%20AA-blueviolet)](https://app.richstatistics.com)
 
 **Website:** [statistics.richardkentgates.com](https://statistics.richardkentgates.com) &nbsp;|&nbsp; **Web App:** [app.richstatistics.com](https://app.richstatistics.com) &nbsp;|&nbsp; **Dev:** [dev.richstatistics.com](https://dev.richstatistics.com) &nbsp;|&nbsp; **Test:** [test.richstatistics.com](https://test.richstatistics.com)
 

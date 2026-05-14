@@ -23,6 +23,12 @@ if ( ( $_SERVER['REQUEST_METHOD'] ?? '' ) !== 'POST' ) {
 	exit;
 }
 
+$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+if ( $content_type && ! str_contains( $content_type, 'application/json' ) && ! str_contains( $content_type, 'text/plain' ) ) {
+	http_response_code( 415 );
+	exit;
+}
+
 // Write a trigger file — the cron job at * * * * * picks it up.
 $trigger_dir = '/var/www/rs-app';
 $trigger     = $trigger_dir . '/.deploy-trigger';
