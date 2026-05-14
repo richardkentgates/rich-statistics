@@ -287,15 +287,15 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 **Repository structure:**
 ```
 main         ← tagged releases only (v2.x.x)
-  └── test   ← QA/staging branch; pre-release verification
-        └── develop ← integration branch; all features merge here first
+  └── test   ← beta/staging branch; pre-release QA
+        └── develop ← active development branch; all features merge here first
               └── feature/* ← short-lived feature branches (PR → develop)
               └── fix/*     ← bug-fix branches (PR → develop)
 ```
 
 - **`main`** is always in a releasable state and matches the latest tag.
 - **`develop`** is the target for all PRs. Feature/bug branches branch from and PR into `develop`.
-- **`test`** receives merges from `develop` for pre-release QA. After sign-off, `test` merges into `main`.
+- **`test`** receives merges from `develop` for beta/staging QA. After sign-off, `test` merges into `main`.
 - Tags (`v2.x.x`) are applied to `main` after the release PR merges. The tag triggers `build-release.yml`.
 - CI (`tests.yml`) runs on push/PR to `main`, `develop`, and `test`.
 

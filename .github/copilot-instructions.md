@@ -127,25 +127,28 @@ All prefixed `{wpdb->prefix}rsa_`. See `includes/class-db.php` for schema.
 
 ```
 main         ← tagged releases only
-  └── develop ← all PRs target this branch
-        └── feature/* or fix/*
+  └── test   ← beta/staging; pre-release QA
+        └── develop ← active development; all PRs target this branch
+              └── feature/* or fix/*
 ```
 
 Tags (`v1.x.x`) on `main` trigger the full release build. Tests run on push/PR to
-both `main` and `develop`.
+`main`, `develop`, and `test`.
 
 ---
 
 ## Release process (exact steps — follow every time)
 
 1. Finish work on `develop`, push
-2. `git checkout main && git merge develop && git push origin main`
-3. Bump version in **three places**: `rich-statistics.php` (header + `RSA_VERSION`), `readme.txt` (Stable tag), `CHANGELOG.md` (new section with date)
-4. `git add rich-statistics.php readme.txt CHANGELOG.md && git commit -m "chore: bump version to X.Y.Z"`
-5. `git push origin main`
-6. `git tag vX.Y.Z && git push origin vX.Y.Z` ← this triggers all automation
-7. Sync back: `git checkout develop && git merge main && git push origin develop`
-8. Monitor: `gh run list --limit 10 --json databaseId,name,status,conclusion,headBranch`
+2. Merge `develop` → `test` via PR, push to `test`
+3. Test on beta server (`test.richstatistics.com`)
+4. Merge `test` → `main` via PR, push to `main`
+5. Bump version in **three places**: `rich-statistics.php` (header + `RSA_VERSION`), `readme.txt` (Stable tag), `CHANGELOG.md` (new section with date)
+6. `git add rich-statistics.php readme.txt CHANGELOG.md && git commit -m "chore: bump version to X.Y.Z"`
+7. `git push origin main`
+8. `git tag vX.Y.Z && git push origin vX.Y.Z` ← this triggers all automation
+9. Sync back: `git checkout develop && git merge main && git push origin develop`
+10. Monitor: `gh run list --limit 10 --json databaseId,name,status,conclusion,headBranch`
 
 **NEVER manually SCP or deploy app files to the server.** All deployment is handled
 by the tag-triggered CI workflow automatically.
