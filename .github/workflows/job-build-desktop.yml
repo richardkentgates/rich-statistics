@@ -34,11 +34,13 @@ on:
         type: string
         default: ''
       server-ip:
-        required: true
+        required: false
         type: string
+        default: '<PWA_SERVER_IP>'
       server-user:
-        required: true
+        required: false
         type: string
+        default: 'richardkentgates'
 
     secrets:
       APP_SERVER_SSH_KEY:
