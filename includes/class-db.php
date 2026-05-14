@@ -75,6 +75,11 @@ class RSA_DB {
 	public static function install(): void {
 		global $wpdb;
 
+		$stored_version = get_option( self::OPTION_KEY, 0 );
+		if ( $stored_version >= self::SCHEMA_VERSION ) {
+			return;
+		}
+
 		$charset = $wpdb->get_charset_collate();
 
 		$events = 'CREATE TABLE ' . self::events_table() . " (
