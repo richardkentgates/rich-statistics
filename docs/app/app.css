@@ -239,11 +239,6 @@ html, body {
 .rsa-nav-link.rsa-nav-premium { opacity: .7; display: flex; align-items: center; justify-content: space-between; }
 .rsa-nav-badge { font-size: 9px; opacity: .5; text-transform: uppercase; letter-spacing: .4px; }
 
-/* AI status card */
-.rsa-ai-status-detecting { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #f0f4ff; color: #4a6fa5; border: 1px solid #d0d9f0; }
-.rsa-ai-status-connected { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-.rsa-ai-status-disconnected { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
 .rsa-nav-footer {
 	padding: 12px 14px;
 	border-top: 1px solid rgba(255,255,255,.08);
