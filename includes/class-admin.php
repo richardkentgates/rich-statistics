@@ -536,6 +536,9 @@ class RSA_Admin {
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-user-flow' ) ) {
+			if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+				return [ 'view' => 'user-flow', 'data' => [ 'path_flow' => [] ], 'period' => $period ];
+			}
 			$entry_source = sanitize_text_field( wp_unslash( $_GET['entry_source'] ?? '' ) );
 			$focus_page   = sanitize_text_field( wp_unslash( $_GET['focus_page'] ?? '' ) );
 			$min_sessions = max( 1, absint( $_GET['min_sessions'] ?? 1 ) );
@@ -559,6 +562,9 @@ class RSA_Admin {
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-click-map' ) ) {
+			if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+				return [ 'view' => 'click-map', 'data' => [], 'period' => $period ];
+			}
 			$page = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) );
 			return [
 				'view'   => 'click-map',
@@ -566,7 +572,21 @@ class RSA_Admin {
 				'period' => $period,
 			];
 		}
+		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-heatmap' ) ) {
+			if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+				return [ 'view' => 'heatmap', 'data' => [], 'period' => $period ];
+			}
+			$page = sanitize_text_field( wp_unslash( $_GET['page_filter'] ?? '' ) );
+			return [
+				'view'   => 'heatmap',
+				'data'   => RSA_Analytics::get_heatmap( $page, $period ),
+				'period' => $period,
+			];
+		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-woocommerce' ) ) {
+			if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+				return [ 'view' => 'woocommerce', 'data' => [], 'period' => $period ];
+			}
 			return [
 				'view'   => 'woocommerce',
 				'data'   => RSA_Analytics::get_woocommerce(
