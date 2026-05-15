@@ -61,6 +61,9 @@
 		if ( ( state.siteUrl && state.credentials ) || nonceAuth ) {
 			renderSiteSwitcher();
 			showApp();
+			if ( ! state.isPremium ) {
+				markPremiumNav();
+			}
 			renderView( state.view );
 			syncUserSettings();
 		} else {
@@ -945,6 +948,20 @@
 			export       : 'Export',
 			woocommerce  : 'WooCommerce',
 		};
+
+	/** Mark premium nav links with a visual indicator for free users. */
+	function markPremiumNav() {
+		Object.keys( premiumFeatures ).forEach( function ( view ) {
+			var link = document.querySelector( '.rsa-nav-link[data-view="' + view + '"]' );
+			if ( link ) {
+				link.classList.add( 'rsa-nav-premium' );
+				var badge = document.createElement( 'span' );
+				badge.className = 'rsa-nav-badge';
+				badge.textContent = 'Premium';
+				link.appendChild( badge );
+			}
+		} );
+	}
 
 		function switchView( view ) {
 			// Deactivate old view
@@ -1969,6 +1986,7 @@
 	// Campaigns
 	// -----------------------------------------------------------------------
 	function renderCampaigns( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		var filters = { medium: '' };
 
 		function buildParams() {
@@ -2066,6 +2084,7 @@
 	// User Flow
 	// -----------------------------------------------------------------------
 	function renderUserFlow( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		var filters    = { entry_source: '', focus_page: '', min_sessions: 1, steps: 4 };
 		var activeView = 'explorer'; // 'explorer' | 'journey'
 
@@ -2430,6 +2449,7 @@
 	// Clicks (premium)
 	// -----------------------------------------------------------------------
 	function renderClicks( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		apiGet( 'clicks', { period: state.period } ).then( function ( data ) {
 			if ( data.premium_required ) {
 				container.innerHTML = '<div class="rsa-premium-notice">' +
@@ -2466,6 +2486,7 @@
 	// Heatmap
 	// -----------------------------------------------------------------------
 	function renderHeatmap( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		container.innerHTML =
 			'<div class="rsa-chart-card">' +
 				'<h3>Click Heatmap</h3>' +
@@ -2741,6 +2762,7 @@
 	// WooCommerce
 	// -----------------------------------------------------------------------
 	function renderWoocommerce( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		apiGet( 'woocommerce', { period: state.period } ).then( function ( data ) {
 			if ( ! data.woocommerce_active ) {
 				container.innerHTML = '<div class="rsa-chart-card"><p class="rsa-field-hint" style="text-align:center">WooCommerce is not active on this site.</p></div>';
@@ -2932,6 +2954,7 @@
 	// Export
 	// -----------------------------------------------------------------------
 	function renderExport( container ) {
+		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		var periodLabels = {
 			'7d'       : 'Last 7 days',
 			'30d'      : 'Last 30 days',
