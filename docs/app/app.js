@@ -3124,8 +3124,303 @@
 
 		setLoading( false );
 	}
+		},
+		lmstudio: {
+			endpoint: 'http://localhost:1234/v1/chat/completions',
+			models: [],
+			needsKey: false,
+			label: 'LM Studio (Local)',
+			detectEndpoint: function () { return 'http://localhost:1234/v1/models'; },
+			parseModels: function ( data ) {
+				if ( data.data && Array.isArray( data.data ) )
+					return data.data.map( function ( m ) { return m.id || m.name || m; } ).filter( Boolean );
+				return [];
+			}
+		},
+		llamacpp: {
+			endpoint: 'http://localhost:8080/v1/chat/completions',
+			models: [],
+			needsKey: false,
+			label: 'llama.cpp (Local)',
+			detectEndpoint: function () { return 'http://localhost:8080/v1/models'; },
+			parseModels: function ( data ) {
+				if ( data.data && Array.isArray( data.data ) )
+					return data.data.map( function ( m ) { return m.id || m.name || m; } ).filter( Boolean );
+				return [];
+			}
+		},
+		custom: {
+			endpoint: '',
+			models: [],
+			needsKey: true,
+			label: 'Custom'
+		}
+	};
 
+	/** Update the model select based on provider selection. */
+	function applyProviderPreset( providerKey ) {
+		var preset = providerPresets[ providerKey ] || providerPresets.custom;
+		var epField = document.getElementById( 'rsa-ai-endpoint' );
+		var epRow = document.getElementById( 'rsa-ai-endpoint-row' );
+		var modelRow = document.getElementById( 'rsa-ai-model-row' );
+		var keyRow = document.getElementById( 'rsa-ai-key-row' );
+		var keyField = document.getElementById( 'rsa-ai-key' );
+		var statusCard = document.getElementById( 'rsa-ai-status-card' );
+		var modelSelect = document.getElementById( 'rsa-ai-model' );
+		var customModelRow = document.getElementById( 'rsa-ai-custom-model-row' );
+		var customModelField = document.getElementById( 'rsa-ai-custom-model' );
 
+		// Endpoint: show as read-only code, or editable input for Custom
+		if ( epField ) {
+			epField.value = preset.endpoint || '';
+			if ( providerKey === 'custom' ) {
+				epField.readOnly = false;
+				epField.style.background = '#fff';
+				epField.style.border = '1px solid #ddd';
+			} else {
+				epField.readOnly = true;
+				epField.style.background = '#f5f5f5';
+				epField.style.border = '1px solid #e0e0e0';
+				epField.style.cursor = 'default';
+			}
+		}
+		if ( epRow ) epRow.style.display = '';
+
+		// API Key row: only shown for OpenAI / Custom
+		if ( keyRow ) keyRow.style.display = preset.needsKey ? '' : 'none';
+		if ( keyField && ! preset.needsKey ) keyField.value = '';
+
+		// Model: clear and hide until detection
+		if ( modelSelect ) {
+			modelSelect.innerHTML = '<option value="">Select a model…</option>';
+			modelSelect.disabled = true;
+		}
+		if ( customModelField ) customModelField.value = '';
+		if ( customModelRow ) customModelRow.style.display = 'none';
+		if ( modelRow ) modelRow.style.display = 'none';
+
+		// Status card: show for local providers
+		if ( statusCard ) {
+			if ( providerKey === 'openai' || providerKey === 'custom' ) {
+				statusCard.style.display = 'none';
+			} else {
+				statusCard.style.display = '';
+				statusCard.className = 'rsa-ai-status-detecting';
+				statusCard.innerHTML = 'Connecting to ' + preset.label + '…';
+				autoDetectLocal( preset );
+			}
+		}
+	}
+
+	/** Auto-detect models from a local provider preset. */
+	function autoDetectLocal( preset ) {
+		if ( ! preset.detectEndpoint ) return;
+		var statusCard = document.getElementById( 'rsa-ai-status-card' );
+		var modelRow = document.getElementById( 'rsa-ai-model-row' );
+		var modelSelect = document.getElementById( 'rsa-ai-model' );
+		var customModelRow = document.getElementById( 'rsa-ai-custom-model-row' );
+		var customModelField = document.getElementById( 'rsa-ai-custom-model' );
+
+		var detectUrl = typeof preset.detectEndpoint === 'function' ? preset.detectEndpoint() : preset.detectEndpoint;
+		fetch( detectUrl, { signal: AbortSignal.timeout( 4000 ) } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( data ) {
+				var models = preset.parseModels( data );
+				if ( statusCard ) {
+					statusCard.className = 'rsa-ai-status-connected';
+					statusCard.innerHTML = '<strong>Connected</strong> — ' + models.length + ' model' + ( models.length > 1 ? 's' : '' ) + ' found';
+				}
+				if ( models.length ) {
+					if ( modelSelect ) {
+						modelSelect.disabled = false;
+						modelSelect.innerHTML = '';
+						models.forEach( function ( m ) {
+							var opt = document.createElement( 'option' );
+							opt.value = m;
+							opt.textContent = m;
+							modelSelect.appendChild( opt );
+						} );
+						var opt = document.createElement( 'option' );
+						opt.value = '__custom__';
+						opt.textContent = 'Custom…';
+						modelSelect.appendChild( opt );
+						modelSelect.value = models[0];
+					}
+					if ( modelRow ) modelRow.style.display = '';
+					if ( customModelRow ) customModelRow.style.display = 'none';
+				} else {
+					// Connected but no models — show custom input
+					if ( modelSelect ) { modelSelect.disabled = true; modelSelect.innerHTML = '<option value="">No models found</option>'; }
+					if ( customModelField ) customModelField.value = '';
+					if ( customModelRow ) customModelRow.style.display = '';
+					if ( modelRow ) modelRow.style.display = '';
+					if ( statusCard ) {
+						statusCard.innerHTML += '<br><button id="rsa-ai-retry" class="rsa-btn" style="margin-top:6px;padding:4px 10px;font-size:12px;">Retry detection</button>';
+					}
+				}
+			} )
+			.catch( function () {
+				if ( statusCard ) {
+					var label = preset.label.replace( ' (Local)', '' );
+					statusCard.className = 'rsa-ai-status-disconnected';
+					statusCard.innerHTML = '<strong>Could not reach ' + label + '.</strong> Make sure it is running, then click Retry. If using a custom port, select <strong>Custom</strong> below and enter the endpoint manually.' +
+						'<br><button id="rsa-ai-retry" class="rsa-btn" style="margin-top:6px;padding:4px 10px;font-size:12px;">Retry detection</button>';
+				}
+				// Show model input anyway so user can type model name
+				if ( modelSelect ) { modelSelect.disabled = true; modelSelect.innerHTML = '<option value="">Detection failed</option>'; }
+				if ( customModelField ) customModelField.value = '';
+				if ( customModelRow ) customModelRow.style.display = '';
+				if ( modelRow ) modelRow.style.display = '';
+			} );
+	}
+
+	// -----------------------------------------------------------------------
+	// AI Settings
+	// -----------------------------------------------------------------------
+	function renderAiSettings( container ) {
+		var ap = state.aiProvider || {};
+		var currentEndpoint = ap.endpoint || 'https://api.openai.com/v1/chat/completions';
+		var currentModel = ap.model || '';
+
+		// Infer provider from saved endpoint
+		var inferredProvider = 'custom';
+		if ( currentEndpoint.indexOf( 'api.openai.com' ) !== -1 ) inferredProvider = 'openai';
+		else if ( currentEndpoint.indexOf( ':11434' ) !== -1 ) inferredProvider = 'ollama';
+		else if ( currentEndpoint.indexOf( ':1234' ) !== -1 ) inferredProvider = 'lmstudio';
+		else if ( currentEndpoint.indexOf( ':8080' ) !== -1 ) inferredProvider = 'llamacpp';
+
+		container.innerHTML =
+			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
+			'<h2 style="font-size:20px;margin-bottom:8px;">AI Assistant Provider</h2>' +
+			'<p style="color:#888;font-size:13px;margin-bottom:24px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Pick a provider below — local models are detected automatically.</p>' +
+
+			'<div class="rsa-card" style="margin-bottom:16px;">' +
+				'<div class="rsa-card-header"><strong>Provider</strong></div>' +
+				'<div style="padding:16px;">' +
+
+					// Provider selector — the primary action
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-provider">Which AI provider do you want to use?</label>' +
+						'<select id="rsa-ai-provider" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:15px;box-sizing:border-box;">' +
+							'<option value="openai"'   + ( inferredProvider === 'openai'   ? ' selected' : '' ) + '>OpenAI (cloud)</option>' +
+							'<option value="ollama"'   + ( inferredProvider === 'ollama'   ? ' selected' : '' ) + '>Ollama (local)</option>' +
+							'<option value="lmstudio"' + ( inferredProvider === 'lmstudio' ? ' selected' : '' ) + '>LM Studio (local)</option>' +
+							'<option value="llamacpp"' + ( inferredProvider === 'llamacpp' ? ' selected' : '' ) + '>llama.cpp (local)</option>' +
+							'<option value="custom"'   + ( inferredProvider === 'custom'   ? ' selected' : '' ) + '>Custom server</option>' +
+						'</select>' +
+					'</div>' +
+
+					// Connection status card (hidden for OpenAI/Custom)
+					'<div id="rsa-ai-status-card" class="rsa-ai-status-detecting"' +
+						( inferredProvider === 'openai' || inferredProvider === 'custom' ? ' style="display:none;"' : '' ) + '></div>' +
+
+					// Endpoint — read-only display for presets, editable for Custom
+					'<div class="rsa-form-row" id="rsa-ai-endpoint-row"' +
+						( inferredProvider === 'custom' ? '' : ' style="display:none;"' ) + '>' +
+						'<label class="rsa-filter-label" for="rsa-ai-endpoint">API Endpoint</label>' +
+						'<input type="url" id="rsa-ai-endpoint" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;' +
+							( inferredProvider === 'custom' ? '' : ' background:#f5f5f5;cursor:default;' ) + '"' +
+							' value="' + esc( currentEndpoint ) + '"' +
+							' placeholder="https://api.openai.com/v1/chat/completions"' +
+							( inferredProvider === 'custom' ? '' : ' readonly' ) + '>' +
+					'</div>' +
+
+					// API Key (hidden for local providers)
+					'<div class="rsa-form-row" id="rsa-ai-key-row"' +
+						( providerPresets[ inferredProvider ].needsKey ? '' : ' style="display:none;"' ) + '>' +
+						'<label class="rsa-filter-label" for="rsa-ai-key">API Key</label>' +
+						'<input type="password" id="rsa-ai-key" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ap.apiKey || '' ) + '"' +
+							' placeholder="sk-... (not needed for local providers)">' +
+					'</div>' +
+
+					// Model — dropdown populated by detection, hidden until connected
+					'<div class="rsa-form-row" id="rsa-ai-model-row"' +
+						( inferredProvider === 'openai' || inferredProvider === 'custom' ? ' style="display:none;"' : '' ) + '>' +
+						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
+						'<select id="rsa-ai-model" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							( inferredProvider !== 'openai' && inferredProvider !== 'custom' ? ' disabled' : '' ) + '>' +
+							'<option value="">Select a model…</option>' +
+							( inferredProvider === 'openai' ?
+								'<option value="gpt-4o-mini"' + ( currentModel === 'gpt-4o-mini' ? ' selected' : '' ) + '>gpt-4o-mini</option>' +
+								'<option value="gpt-4o"' + ( currentModel === 'gpt-4o' ? ' selected' : '' ) + '>gpt-4o</option>' +
+								'<option value="gpt-4-turbo"' + ( currentModel === 'gpt-4-turbo' ? ' selected' : '' ) + '>gpt-4-turbo</option>' +
+								'<option value="gpt-3.5-turbo"' + ( currentModel === 'gpt-3.5-turbo' ? ' selected' : '' ) + '>gpt-3.5-turbo</option>' +
+								'<option value="__custom__"' + ( currentModel && [ 'gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo' ].indexOf( currentModel ) === -1 ? ' selected' : '' ) + '>Custom…</option>'
+							: '' ) +
+						'</select>' +
+					'</div>' +
+
+					// Custom model text input (hidden until "Custom…" selected)
+					'<div class="rsa-form-row" id="rsa-ai-custom-model-row" style="display:none;">' +
+						'<label class="rsa-filter-label" for="rsa-ai-custom-model">Model name</label>' +
+						'<input type="text" id="rsa-ai-custom-model" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( currentModel ) + '"' +
+							' placeholder="e.g. gpt-4o-mini">' +
+					'</div>' +
+
+					// Voice & Speech (unchanged)
+					'<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px;">' +
+						'<strong style="font-size:13px;display:block;margin-bottom:8px;">Voice &amp; Speech</strong>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-input"' +
+								( ap.voiceInput ? ' checked' : '' ) + '>' +
+							' Voice input (microphone) — speak your questions' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-voice-output"' +
+								( ap.voiceOutput ? ' checked' : '' ) + '>' +
+							' Voice output (speaker) — hear answers read aloud' +
+						'</label>' +
+						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
+							'<input type="checkbox" id="rsa-ai-auto-speak"' +
+								( ap.autoSpeak ? ' checked' : '' ) + '>' +
+							' Auto-speak new answers' +
+						'</label>' +
+						'<div style="display:flex;gap:12px;margin-top:8px;">' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-lang" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Language</label>' +
+								'<select id="rsa-ai-voice-lang" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">' +
+									'<option value="en-US"' + ( ap.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
+									'<option value="en-GB"' + ( ap.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
+									'<option value="es-ES"' + ( ap.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
+									'<option value="fr-FR"' + ( ap.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
+									'<option value="de-DE"' + ( ap.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
+								'</select>' +
+							'</div>' +
+							'<div style="flex:1;">' +
+								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( ap.voiceSpeed || '1.0' ) + '</span></label>' +
+								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
+									' value="' + ( ap.voiceSpeed || '1.0' ) + '"' +
+									' style="width:100%;">' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+
+					'<div style="margin-top:12px;display:flex;gap:8px;">' +
+						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
+						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
+					'</div>' +
+				'</div>' +
+			'</div>' +
+			'</div>';
+
+		// If Ollama/LM Studio/llama.cpp was saved previously, trigger detection on load
+		if ( inferredProvider !== 'openai' && inferredProvider !== 'custom' ) {
+			var preset = providerPresets[ inferredProvider ];
+			if ( preset && preset.detectEndpoint ) {
+				setTimeout( function () {
+					autoDetectLocal( preset );
+				}, 100 );
+			}
+		}
+
+		setLoading( false );
+	}
+
+	// -----------------------------------------------------------------------
+	// Export
+	// -----------------------------------------------------------------------
 	function renderExport( container ) {
 		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		var periodLabels = {
