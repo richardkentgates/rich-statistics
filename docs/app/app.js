@@ -626,6 +626,11 @@
 				if ( ! json || ! json.data ) return;
 				var info = json.data;
 
+				// Sync premium status from the server
+				if ( info.is_premium !== undefined ) {
+					state.isPremium = !! info.is_premium;
+				}
+
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
