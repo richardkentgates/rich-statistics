@@ -505,6 +505,9 @@ class RSA_Admin {
 			];
 		}
 		if ( str_contains( $hook, 'rich-statistics_page_rich-statistics-campaigns' ) ) {
+			if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+				return [ 'view' => 'campaigns', 'data' => [], 'mediums' => [], 'period' => $period ];
+			}
 			$medium      = sanitize_text_field( wp_unslash( $_GET['utm_medium'] ?? '' ) );
 			$cam_filters = [
 				'medium'    => $medium,
@@ -616,6 +619,7 @@ class RSA_Admin {
 		self::render( 'referrers' ); }
 	/** Render the campaigns view. */
 	public static function page_campaigns(): void {
+		self::require_premium_or_exit();
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
 		}
@@ -769,6 +773,9 @@ class RSA_Admin {
 	/** Handle CSV export request. */
 	public static function handle_export_csv(): void {
 		check_admin_referer( 'rsa_export_csv' );
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+			wp_die( esc_html__( 'This feature requires a premium licence.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do this.', 'rich-statistics' ) );
 		}

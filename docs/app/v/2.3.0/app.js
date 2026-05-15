@@ -919,6 +919,7 @@
 	}
 
 		var premiumFeatures = {
+			'campaigns'  : 'Campaigns',
 			'user-flow'  : 'User Flow',
 			clicks       : 'Click Tracking',
 			heatmap      : 'Heatmap',
