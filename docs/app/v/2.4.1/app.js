@@ -938,6 +938,7 @@
 	}
 
 		var premiumFeatures = {
+			'campaigns'  : 'Campaigns',
 			'user-flow'  : 'User Flow',
 			clicks       : 'Click Tracking',
 			heatmap      : 'Heatmap',
@@ -1310,7 +1311,7 @@
 			'</div>';
 
 		// Fetch tools and build insights
-		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ];
+		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
 
 		Promise.all( tools.map( function ( tool ) {
 			return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
@@ -1470,7 +1471,7 @@
 			sendBtn.textContent = '...';
 			_speakNext = ap.autoSpeak && ! wasVoice;
 
-			var toolsToFetch = [ 'overview', 'pages', 'audience', 'referrers', 'behavior', 'campaigns' ];
+			var toolsToFetch = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
 
 			Promise.all( toolsToFetch.map( function ( tool ) {
 				return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
