@@ -1130,29 +1130,7 @@
 				if ( val ) val.textContent = e.target.value;
 			}
 		} );
-		document.addEventListener( 'change', function ( e ) {
-			if ( e.target.id === 'rsa-ai-provider' ) {
-				applyProviderPreset( e.target.value );
-			}
-		} );
 		document.addEventListener( 'click', function ( e ) {
-			if ( e.target.id === 'rsa-ai-detect-models' ) {
-				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
-				var status = document.getElementById( 'rsa-ai-detect-status' );
-				if ( status ) status.textContent = 'Detecting…';
-				detectModels( endpoint ).then( function ( models ) {
-					if ( models.length ) {
-						populateModelList( models );
-						var modelField = document.getElementById( 'rsa-ai-model' );
-						if ( modelField && ! modelField.value ) modelField.value = models[0];
-						if ( status ) status.innerHTML = 'Found ' + models.length + ' model' + ( models.length > 1 ? 's' : '' );
-					} else {
-						if ( status ) status.textContent = 'No models detected at this endpoint';
-					}
-				} ).catch( function () {
-					if ( status ) status.textContent = 'Detection failed';
-				} );
-			}
 			if ( e.target.id === 'rsa-ai-save' ) {
 				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
 				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
@@ -1181,11 +1159,9 @@
 			if ( e.target.id === 'rsa-ai-clear' ) {
 				state.aiProvider = null;
 				localStorage.removeItem( 'rsa_ai_provider' );
-				document.getElementById( 'rsa-ai-provider' ).value = 'openai';
 				document.getElementById( 'rsa-ai-endpoint' ).value = 'https://api.openai.com/v1/chat/completions';
 				document.getElementById( 'rsa-ai-key' ).value = '';
 				document.getElementById( 'rsa-ai-model' ).value = 'gpt-4o-mini';
-				populateModelList( providerPresets.openai.models );
 				var vi = document.getElementById( 'rsa-ai-voice-input' );
 				if ( vi ) vi.checked = false;
 				var vo = document.getElementById( 'rsa-ai-voice-output' );
@@ -1194,8 +1170,6 @@
 				if ( as ) as.checked = false;
 				var vs = document.getElementById( 'rsa-ai-voice-speed' );
 				if ( vs ) vs.value = 1.0;
-				var ds = document.getElementById( 'rsa-ai-detect-status' );
-				if ( ds ) ds.textContent = '';
 			}
 		} );
 	}
@@ -2900,164 +2874,9 @@
 	}
 
 	// -----------------------------------------------------------------------
-	// Provider presets for AI settings
-	// -----------------------------------------------------------------------
-	var providerPresets = {
-		openai: {
-			endpoint: 'https://api.openai.com/v1/chat/completions',
-			models: [ 'gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo' ],
-			needsKey: true,
-			label: 'OpenAI'
-		},
-		ollama: {
-			endpoint: 'http://localhost:11434/v1/chat/completions',
-			models: [ 'llama3.2', 'llama3.1', 'mistral', 'codellama', 'mixtral' ],
-			needsKey: false,
-			label: 'Ollama (Local)',
-			detectEndpoint: function () { return 'http://localhost:11434/api/tags'; },
-			parseModels: function ( data ) {
-				if ( data.models && Array.isArray( data.models ) )
-					return data.models.map( function ( m ) { return m.name || ( typeof m === 'string' ? m : '' ); } ).filter( Boolean );
-				return [];
-			}
-		},
-		lmstudio: {
-			endpoint: 'http://localhost:1234/v1/chat/completions',
-			models: [],
-			needsKey: false,
-			label: 'LM Studio (Local)',
-			detectEndpoint: function () { return 'http://localhost:1234/v1/models'; },
-			parseModels: function ( data ) {
-				if ( data.data && Array.isArray( data.data ) )
-					return data.data.map( function ( m ) { return m.id || m.name || m; } ).filter( Boolean );
-				return [];
-			}
-		},
-		llamacpp: {
-			endpoint: 'http://localhost:8080/v1/chat/completions',
-			models: [],
-			needsKey: false,
-			label: 'llama.cpp (Local)',
-			detectEndpoint: function () { return 'http://localhost:8080/v1/models'; },
-			parseModels: function ( data ) {
-				if ( data.data && Array.isArray( data.data ) )
-					return data.data.map( function ( m ) { return m.id || m.name || m; } ).filter( Boolean );
-				return [];
-			}
-		},
-		custom: {
-			endpoint: '',
-			models: [],
-			needsKey: true,
-			label: 'Custom'
-		}
-	};
-
-	/** Detect available models from a provider endpoint. */
-	function detectModels( endpoint ) {
-		if ( ! endpoint ) return Promise.resolve( [] );
-
-		// Derive base URL from the chat endpoint
-		var base = endpoint.replace( /\/chat\/completions\/?$/, '' ).replace( /\/v1\/?$/, '' );
-		if ( ! base ) base = endpoint;
-
-		// Try OpenAI-compatible /v1/models first
-		return fetch( base + '/v1/models', { signal: AbortSignal.timeout( 4000 ) } )
-			.then( function ( r ) { return r.json(); } )
-			.then( function ( data ) {
-				if ( data.data && Array.isArray( data.data ) )
-					return data.data.map( function ( m ) { return m.id || m.name || ''; } ).filter( Boolean );
-				return [];
-			} )
-			.catch( function () {
-				// Fallback: try Ollama's /api/tags if on port 11434
-				if ( endpoint.indexOf( ':11434' ) !== -1 ) {
-					return fetch( 'http://localhost:11434/api/tags', { signal: AbortSignal.timeout( 4000 ) } )
-						.then( function ( r ) { return r.json(); } )
-						.then( function ( data ) {
-							if ( data.models && Array.isArray( data.models ) )
-								return data.models.map( function ( m ) { return m.name || ( typeof m === 'string' ? m : '' ); } ).filter( Boolean );
-							return [];
-						} )
-						.catch( function () { return []; } );
-				}
-				return [];
-			} );
-	}
-
-	/** Populate the model datalist with given array of model names. */
-	function populateModelList( models ) {
-		var list = document.getElementById( 'rsa-ai-model-list' );
-		if ( ! list ) return;
-		list.innerHTML = '';
-		models.forEach( function ( m ) {
-			var opt = document.createElement( 'option' );
-			opt.value = m;
-			list.appendChild( opt );
-		} );
-	}
-
-	/** Update the model field based on provider selection. */
-	function applyProviderPreset( providerKey ) {
-		var preset = providerPresets[ providerKey ] || providerPresets.custom;
-		var epField = document.getElementById( 'rsa-ai-endpoint' );
-		var modelField = document.getElementById( 'rsa-ai-model' );
-		var keyField = document.getElementById( 'rsa-ai-key' );
-		var keyRow = document.getElementById( 'rsa-ai-key-row' );
-
-		if ( epField ) epField.value = preset.endpoint || '';
-		if ( modelField ) {
-			modelField.value = preset.models[0] || '';
-			populateModelList( preset.models );
-		}
-		if ( keyRow ) keyRow.style.display = preset.needsKey ? '' : 'none';
-		if ( keyField && ! preset.needsKey ) keyField.value = '';
-
-		// Auto-detect for local providers
-		if ( providerKey !== 'openai' && providerKey !== 'custom' ) {
-			autoDetectLocal( preset );
-		}
-	}
-
-	/** Auto-detect models from a local provider preset. */
-	function autoDetectLocal( preset ) {
-		if ( ! preset.detectEndpoint ) return;
-		var status = document.getElementById( 'rsa-ai-detect-status' );
-		if ( status ) status.textContent = 'Detecting…';
-		var detectUrl = typeof preset.detectEndpoint === 'function' ? preset.detectEndpoint() : preset.detectEndpoint;
-		fetch( detectUrl, { signal: AbortSignal.timeout( 3000 ) } )
-			.then( function ( r ) { return r.json(); } )
-			.then( function ( data ) {
-				var models = preset.parseModels( data );
-				if ( models.length ) {
-					populateModelList( models );
-					var modelField = document.getElementById( 'rsa-ai-model' );
-					if ( modelField && ! modelField.value ) modelField.value = models[0];
-					if ( status ) status.innerHTML = 'Found ' + models.length + ' model' + ( models.length > 1 ? 's' : '' );
-				} else {
-					if ( status ) status.textContent = 'No models detected';
-				}
-			} )
-			.catch( function () {
-				if ( status ) status.textContent = 'Could not reach local server';
-			} );
-	}
-
-	// -----------------------------------------------------------------------
 	// AI Settings
 	// -----------------------------------------------------------------------
 	function renderAiSettings( container ) {
-		var ap = state.aiProvider || {};
-		var currentEndpoint = ap.endpoint || 'https://api.openai.com/v1/chat/completions';
-		var currentModel = ap.model || 'gpt-4o-mini';
-
-		// Infer provider from saved endpoint
-		var inferredProvider = 'custom';
-		if ( currentEndpoint.indexOf( 'api.openai.com' ) !== -1 ) inferredProvider = 'openai';
-		else if ( currentEndpoint.indexOf( ':11434' ) !== -1 ) inferredProvider = 'ollama';
-		else if ( currentEndpoint.indexOf( ':1234' ) !== -1 ) inferredProvider = 'lmstudio';
-		else if ( currentEndpoint.indexOf( ':8080' ) !== -1 ) inferredProvider = 'llamacpp';
-
 		container.innerHTML =
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
 			'<h2 style="font-size:20px;margin-bottom:8px;">AI Assistant Provider</h2>' +
@@ -3066,89 +2885,60 @@
 			'<div class="rsa-card" style="margin-bottom:16px;">' +
 				'<div class="rsa-card-header"><strong>Provider Settings</strong></div>' +
 				'<div style="padding:16px;">' +
-
-					// Provider selector
-					'<div class="rsa-form-row">' +
-						'<label class="rsa-filter-label" for="rsa-ai-provider">Provider</label>' +
-						'<select id="rsa-ai-provider" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;' +
-							( inferredProvider === 'custom' ? 'color:#888;' : '' ) + '">' +
-							'<option value="openai"'   + ( inferredProvider === 'openai'   ? ' selected' : '' ) + '>OpenAI</option>' +
-							'<option value="ollama"'   + ( inferredProvider === 'ollama'   ? ' selected' : '' ) + '>Ollama (Local)</option>' +
-							'<option value="lmstudio"' + ( inferredProvider === 'lmstudio' ? ' selected' : '' ) + '>LM Studio (Local)</option>' +
-							'<option value="llamacpp"' + ( inferredProvider === 'llamacpp' ? ' selected' : '' ) + '>llama.cpp (Local)</option>' +
-							'<option value="custom"'   + ( inferredProvider === 'custom'   ? ' selected' : '' ) + '>Custom</option>' +
-						'</select>' +
-					'</div>' +
-
-					// API Endpoint (always editable)
 					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-endpoint">API Endpoint</label>' +
-						'<input type="url" id="rsa-ai-endpoint" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( currentEndpoint ) + '"' +
+						'<input type="url" id="rsa-ai-endpoint" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.endpoint ) || 'https://api.openai.com/v1/chat/completions' ) + '"' +
 							' placeholder="https://api.openai.com/v1/chat/completions">' +
-						'<span id="rsa-ai-endpoint-status" style="font-size:11px;color:#888;"></span>' +
 					'</div>' +
-
-					// API Key (hidden for local providers)
-					'<div class="rsa-form-row" id="rsa-ai-key-row"' +
-						( ! providerPresets[ inferredProvider ].needsKey ? ' style="display:none;"' : '' ) + '>' +
+					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-key">API Key</label>' +
-						'<input type="password" id="rsa-ai-key" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( ap.apiKey || '' ) + '"' +
-							' placeholder="sk-... (not needed for local providers)">' +
+						'<input type="password" id="rsa-ai-key" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.apiKey ) || '' ) + '"' +
+							' placeholder="sk-... (not needed for local Ollama)">' +
 					'</div>' +
-
-					// Model with detection
 					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
-						'<div style="display:flex;gap:6px;align-items:center;">' +
-							'<input type="text" id="rsa-ai-model" list="rsa-ai-model-list" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-								' value="' + esc( currentModel ) + '"' +
-								' placeholder="gpt-4o-mini">' +
-							'<datalist id="rsa-ai-model-list"></datalist>' +
-							'<button id="rsa-ai-detect-models" class="rsa-btn rsa-btn-ghost" style="padding:8px 12px;white-space:nowrap;">Detect</button>' +
-						'</div>' +
-						'<span id="rsa-ai-detect-status" style="font-size:11px;color:#888;display:block;margin-top:4px;"></span>' +
+						'<input type="text" id="rsa-ai-model" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini' ) + '"' +
+							' placeholder="gpt-4o-mini">' +
 					'</div>' +
-
-					// Voice settings (unchanged)
 					'<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px;">' +
 						'<strong style="font-size:13px;display:block;margin-bottom:8px;">Voice &amp; Speech</strong>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-voice-input"' +
-								( ap.voiceInput ? ' checked' : '' ) + '>' +
+								( state.aiProvider && state.aiProvider.voiceInput ? ' checked' : '' ) + '>' +
 							' Voice input (microphone) — speak your questions' +
 						'</label>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-voice-output"' +
-								( ap.voiceOutput ? ' checked' : '' ) + '>' +
+								( state.aiProvider && state.aiProvider.voiceOutput ? ' checked' : '' ) + '>' +
 							' Voice output (speaker) — hear answers read aloud' +
 						'</label>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-auto-speak"' +
-								( ap.autoSpeak ? ' checked' : '' ) + '>' +
+								( state.aiProvider && state.aiProvider.autoSpeak ? ' checked' : '' ) + '>' +
 							' Auto-speak new answers' +
 						'</label>' +
 						'<div style="display:flex;gap:12px;margin-top:8px;">' +
 							'<div style="flex:1;">' +
 								'<label for="rsa-ai-voice-lang" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Language</label>' +
 								'<select id="rsa-ai-voice-lang" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">' +
-									'<option value="en-US"' + ( ap.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
-									'<option value="en-GB"' + ( ap.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
-									'<option value="es-ES"' + ( ap.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
-									'<option value="fr-FR"' + ( ap.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
-									'<option value="de-DE"' + ( ap.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
+									'<option value="en-US"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
+									'<option value="en-GB"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
+									'<option value="es-ES"' + ( state.aiProvider && state.aiProvider.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
+									'<option value="fr-FR"' + ( state.aiProvider && state.aiProvider.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
+									'<option value="de-DE"' + ( state.aiProvider && state.aiProvider.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
 								'</select>' +
 							'</div>' +
 							'<div style="flex:1;">' +
-								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( ap.voiceSpeed || '1.0' ) + '</span></label>' +
+								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( state.aiProvider ? state.aiProvider.voiceSpeed : '1.0' ) + '</span></label>' +
 								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
-									' value="' + ( ap.voiceSpeed || '1.0' ) + '"' +
+									' value="' + ( state.aiProvider && state.aiProvider.voiceSpeed ? state.aiProvider.voiceSpeed : '1.0' ) + '"' +
 									' style="width:100%;">' +
 							'</div>' +
 						'</div>' +
 					'</div>' +
-
 					'<div style="margin-top:12px;display:flex;gap:8px;">' +
 						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
 						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
@@ -3156,10 +2946,6 @@
 				'</div>' +
 			'</div>' +
 			'</div>';
-
-		// Populate model datalist from saved provider preset
-		var savedPreset = providerPresets[ inferredProvider ] || providerPresets.custom;
-		populateModelList( savedPreset.models );
 
 		setLoading( false );
 	}
