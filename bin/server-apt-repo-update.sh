@@ -4,8 +4,7 @@
 # signed package metadata.
 #
 # Called by the CI build-desktop job via SSH immediately after each .deb is
-# uploaded. Deployed as three copies: rsa-apt-repo-update,
-# rsa-apt-repo-update-dev, rsa-apt-repo-update-test — each with its own paths.
+# uploaded to /var/www/rs-app/public_html/dist/.
 #
 # Usage:
 #   sudo /usr/local/bin/rsa-apt-repo-update <arch> <version>
@@ -14,7 +13,7 @@
 #   sudo /usr/local/bin/rsa-apt-repo-update arm64 1.4.8
 #
 # What this does:
-#   1. Copies the uploaded .deb from dist/ into the pool
+#   1. Copies the uploaded .deb from /var/www/rs-app/public_html/dist/ into the pool
 #      with the standard versioned name  (rich-statistics_<ver>_<arch>.deb)
 #   2. Regenerates the Packages / Packages.gz file for every architecture
 #   3. Regenerates the Release file via apt-ftparchive
@@ -27,27 +26,10 @@
 # =============================================================================
 set -euo pipefail
 
-SCRIPT_NAME="$(basename "$0")"
-
-case "${SCRIPT_NAME}" in
-    *-dev)
-        APT_DIR="/var/www/rs-app-dev/apt"
-        DESKTOP_DIR="/var/www/rs-app-dev/dist"
-        KEY_UID="Rich Statistics APT Signing Key <apt@dev.richstatistics.com>"
-        ;;
-    *-test)
-        APT_DIR="/var/www/rs-app-test/apt"
-        DESKTOP_DIR="/var/www/rs-app-test/dist"
-        KEY_UID="Rich Statistics APT Signing Key <apt@test.richstatistics.com>"
-        ;;
-    *)
-        APT_DIR="/var/www/rs-app/apt"
-        DESKTOP_DIR="/var/www/rs-app/public_html/dist"
-        KEY_UID="Rich Statistics APT Signing Key <apt@app.richstatistics.com>"
-        ;;
-esac
-
-LOG_TAG="${SCRIPT_NAME}"
+APT_DIR="/var/www/rs-app/apt"
+DESKTOP_DIR="/var/www/rs-app/public_html/dist"
+KEY_UID="Rich Statistics APT Signing Key <apt@app.richstatistics.com>"
+LOG_TAG="rsa-apt-repo-update"
 
 log() { logger -t "${LOG_TAG}" "$*" || true; echo "$(date -u +%FT%TZ)  $*"; }
 

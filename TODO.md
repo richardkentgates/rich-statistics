@@ -17,20 +17,20 @@ See `ROADMAP.md` §6 for audit summary.
 - **Area:** Server Infrastructure
 - **Referenced by:** `bin/setup-app-server.sh:197`, `ARCHITECTURE.md:478`, `ARCHITECTURE.md:520`, `docs/app-server-architecture.md:247`
 - **Impact:** Fresh server provisioning fails at APT initialization step
-- **Fix:** Script exists and is functional ✅
+- **Fix:** Create the script or remove all references
 
 ### C3. APT repo update scripts never deployed by CI
 - **Area:** CI/CD
 - **File:** `.github/workflows/job-build-desktop.yml`
 - **Impact:** If server is rebuilt, `rsa-apt-repo-update`, `-dev`, `-test` are missing and APT updates break silently
-- **Fix:** Added deployment of `bin/server-apt-repo-update.sh` to CI "Deploy server scripts" step ✅; `bin/deploy-server-scripts.sh` also updated for manual deployment ✅
+- **Fix:** Add deployment of `bin/server-apt-repo-update.sh` to the "Deploy server scripts" step, copying it to all three target names
 
 ### C4. CHANGELOG.md missing 21 of 42 git tags
 - **Area:** Documentation
 - **File:** `CHANGELOG.md`
 - **Missing versions:** v2.4.1, v2.2.9, v2.2.0, v2.1.1–v2.1.9, v1.4.1–v1.4.3, v1.4.9–v1.4.10, v1.0.1–v1.2.0
 - **Impact:** Users and reviewers cannot track what changed between releases
-- **Fix:** Regenerated from git tags — all 42 versions now documented ✅
+- **Fix:** Regenerate from `git log --oneline` between all tags; fix `[Unreleased]` ordering (should be first)
 
 ### C5. `gen-update-json.py` uses wrong platform key for ARM64
 - **Area:** Server Infrastructure
@@ -114,7 +114,7 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 3: Medium Priority (29 items) — 27/29 fixed
+## Phase 3: Medium Priority (29 items) — 17/29 fixed
 
 ### CI/CD (M1–M9)
 
@@ -144,16 +144,16 @@ See `ROADMAP.md` §6 for audit summary.
 
 | Ref | Finding | Status |
 |-----|---------|--------|
-| M15 | No tests for CORS handling | ✅ Fixed — CoverageGapTest |
-| M16 | No tests for `remove_cookie_auth()` | ✅ Fixed — CoverageGapTest |
-| M17 | No tests for `post_track()` REST endpoint | ✅ Fixed — CoverageGapTest |
-| M18 | No tests for `post_verify_otp()` rate limiting | ✅ Fixed — CoverageGapTest |
+| M15 | No tests for CORS handling | ⏳ |
+| M16 | No tests for `remove_cookie_auth()` | ⏳ |
+| M17 | No tests for `post_track()` REST endpoint | ⏳ |
+| M18 | No tests for `post_verify_otp()` rate limiting | ⏳ |
 | M19 | No tests for `strip_pii()` IPv6 handling | ✅ Removed — IP never used in visitor tracking |
-| M20 | `/export` endpoint has no integration tests | ✅ Fixed — CoverageGapTest |
-| M21 | `/user-flow/journey` and `/user-flow/sources` no response shape tests | ✅ Fixed — CoverageGapTest |
-| M22 | `RSA_DB::activate()` network-wide path untested | ✅ Fixed — CoverageGapTest |
-| M23 | `RSA_DB::register_hooks()` untested | ✅ Fixed — CoverageGapTest |
-| M24 | `RSA_DB::on_new_blog_event()` execution untested | ✅ Fixed — CoverageGapTest |
+| M20 | `/export` endpoint has no integration tests | ⏳ |
+| M21 | `/user-flow/journey` and `/user-flow/sources` no response shape tests | ⏳ |
+| M22 | `RSA_DB::activate()` network-wide path untested | ⏳ |
+| M23 | `RSA_DB::register_hooks()` untested | ⏳ |
+| M24 | `RSA_DB::on_new_blog_event()` execution untested | ⏳ |
 
 ### Server & Docs (M25–M29)
 

@@ -5,16 +5,6 @@ All notable changes to Rich Statistics are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.2] - 2026-05-14
-
-### Fixed
-- `AnalyticsTest` now uses `DELETE` instead of `TRUNCATE` for WordPress test transaction compatibility
-
-## [2.4.1] - 2026-05-14
-
-### Fixed
-- Server script deployment inlined in CI workflow to avoid path resolution issues
-
 ## [2.4.0] - 2026-05-13
 
 ### Added
@@ -68,12 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin Checker: 0 errors
 - CI workflow refactoring: reusable sub-workflows
 - Added WordPress admin Install page
-
-## [2.2.9] - 2026-05-11
-
-### Added
-- PWA AI Chat view with premium gating and navigation link
-- App server architecture documentation for disaster recovery
 
 ## [2.2.8] - 2026-05-11
 
@@ -147,56 +131,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - PWA UX improvements for mobile viewport
 
-## [2.2.0] - 2026-05-08
-
-### Fixed
-- Added Python setup step for Windows CI build
-
-## [2.1.9] - 2026-05-08
-
-### Fixed
-- Windows CI now uses `python` for JSON parsing
-
-## [2.1.8] - 2026-05-08
-
-### Fixed
-- UTF8 encoding specified without BOM for Windows compatibility
-
-## [2.1.7] - 2026-05-08
-
-### Fixed
-- Windows version stamp now uses `-Raw` and `WriteAllText` for `tauri.conf.json`
-
-## [2.1.6] - 2026-05-08
-
-### Fixed
-- Windows CI version stamping
-
-## [2.1.5] - 2026-05-08
-
-### Fixed
-- Proper regex for `tauri.conf.json` version stamp on Windows
-
-## [2.1.4] - 2026-05-08
-
-### Fixed
-- Simple string replacement for `tauri.conf.json` version on Windows
-
-## [2.1.3] - 2026-05-08
-
-### Fixed
-- Proper JSON parsing for `tauri.conf.json` on Windows CI
-
-## [2.1.2] - 2026-05-08
-
-### Changed
-- Version bumped to 2.1.2 for release build
-
-## [2.1.1] - 2026-05-08
-
-### Added
-- Test environment with `rs-test.richardkentgates.com` endpoint
-
 ## [2.1.0] - 2026-05-08
 
 ### Added
@@ -250,16 +184,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Legacy `.rsasite` file import (replaced by OTP flow)
 
-## [1.4.10] - 2026-03-20
-
-### Added
-- Offline and site-unreachable banners with persistent data cache
-
-## [1.4.9] - 2026-03-20
-
-### Changed
-- Version bumped to 1.4.9
-
 ## [1.4.8] - 2026-03-10
 
 ### Fixed
@@ -300,22 +224,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bot detection false positives
 - PHP 8.3 compatibility
 
-## [1.4.3] - 2026-03-19
-
-### Changed
-- Version bumped to 1.4.3
-
-## [1.4.2] - 2026-03-19
-
-### Fixed
-- CI SSH authentication to app server now uses `webfactory/ssh-agent`
-
-## [1.4.1] - 2026-03-18
-
-### Fixed
-- Mobile hamburger menu rendering
-- Heatmap desktop height calculation
-
 ## [1.4.0] - 2026-01-30
 
 ### Added
@@ -335,22 +243,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Database migration reliability
-
-## [1.2.0] - 2026-03-17
-
-### Fixed
-- i18n and a11y improvements in OTP/connect flow
-
-## [1.1.0] - 2026-03-16
-
-### Added
-- `href_value` destination capture
-- REST API and PWA fixes
-
-## [1.0.1] - 2026-03-16
-
-### Changed
-- Version bumped to 1.0.1
 
 ## [1.0.0] - 2025-10-01
 
