@@ -51,7 +51,8 @@ fn start_ollama(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 fn stop_ollama(app: tauri::AppHandle) -> Result<(), String> {
-    let mut guard = app.state::<OllamaProcess>().0.lock().unwrap();
+    let state = app.state::<OllamaProcess>();
+    let mut guard = state.0.lock().unwrap();
     if let Some(mut child) = guard.take() {
         child.kill().map_err(|e| format!("Failed to stop Ollama: {}", e))?;
     }
