@@ -736,6 +736,7 @@ class RSA_Rest_API {
 				'env'             => RSA_APP_ENV,
 				'site_name'       => get_bloginfo( 'name' ),
 				'site_url'        => get_site_url(),
+				'is_premium'      => function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only(),
 			]
 		);
 	}
