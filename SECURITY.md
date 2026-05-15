@@ -40,7 +40,7 @@ Rich Statistics is built with the following security properties:
 
 | Property | Implementation |
 |---|---|
-| No PII at rest | IP addresses hashed (SHA-256) for rate limiting, stored in transient (60s TTL), never in database; referrers stored as domain only; email-shaped query params stripped; raw User-Agent parsed then discarded |
+| No PII at rest | IP addresses never read or stored for visitor tracking; referrers stored as domain only; email-shaped query params stripped; raw User-Agent parsed then discarded |
 | No third-party requests | Chart.js bundled locally; no CDN or external analytics calls |
 | Nonce verification | All AJAX handlers and forms verify `wp_nonce` |
 | Capability checks | All admin actions require `rsa_manage_statistics` capability |

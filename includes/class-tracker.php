@@ -125,12 +125,6 @@ class RSA_Tracker {
 			wp_send_json_error( 'invalid_nonce', 403 );
 		}
 
-		// Per-IP rate limiting — runs before bot scoring to reject high-volume
-		// requests early and prevent wasted CPU on bot detection.
-		if ( self::is_ip_rate_limited() ) {
-			wp_send_json_success( [ 'ok' => true ] );
-		}
-
 		$payload = self::parse_payload();
 		if ( is_wp_error( $payload ) ) {
 			wp_send_json_error( $payload->get_error_message(), 400 );
@@ -312,23 +306,6 @@ class RSA_Tracker {
 	private static function is_rate_limited( string $session_id ): bool {
 		$key   = 'rsa_rl_' . substr( md5( $session_id ), 0, 16 );
 		$count = (int) get_transient( $key );
-		if ( $count >= self::RATE_LIMIT_PER_MIN ) {
-			return true;
-		}
-		set_transient( $key, $count + 1, 60 );
-		return false;
-	}
-
-	/**
-	 * Per-IP rate limiting — prevents attackers from bypassing the per-session
-	 * limiter by generating unlimited session IDs.
-	 *
-	 * @return bool True if the IP is rate limited.
-	 */
-	private static function is_ip_rate_limited(): bool {
-		$ip_raw = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
-		$key    = 'rsa_rl_ip_' . hash( 'sha256', $ip_raw );
-		$count  = (int) get_transient( $key );
 		if ( $count >= self::RATE_LIMIT_PER_MIN ) {
 			return true;
 		}

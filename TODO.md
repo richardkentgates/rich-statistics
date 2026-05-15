@@ -148,7 +148,7 @@ See `ROADMAP.md` §6 for audit summary.
 | M16 | No tests for `remove_cookie_auth()` | ⏳ |
 | M17 | No tests for `post_track()` REST endpoint | ⏳ |
 | M18 | No tests for `post_verify_otp()` rate limiting | ⏳ |
-| M19 | No tests for `strip_pii()` IPv6 handling | ⏳ |
+| M19 | No tests for `strip_pii()` IPv6 handling | ✅ Removed — IP never used in visitor tracking |
 | M20 | `/export` endpoint has no integration tests | ⏳ |
 | M21 | `/user-flow/journey` and `/user-flow/sources` no response shape tests | ⏳ |
 | M22 | `RSA_DB::activate()` network-wide path untested | ⏳ |

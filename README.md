@@ -82,7 +82,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | Email digests | Daily/weekly/monthly HTML digest via `wp_mail` |
 | WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin dashboard with cross-site AI, network-wide disable switch |
-| Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests. IP hashed for rate limiting (60s TTL), never stored. Use `[rich_statistics_privacy_disclosure]` shortcode for full regulatory mapping. |
+| Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests. IP addresses never read or stored for visitor tracking. Use `[rich_statistics_privacy_disclosure]` shortcode for full regulatory mapping. |
 
 ## Desktop Apps
 
@@ -234,7 +234,7 @@ After activation, navigate to **Rich Statistics → Preferences** in the WordPre
 Rich Statistics is designed to be **privacy-first**:
 
 - **No cookies** — sessions use `sessionStorage` only (cleared when tab closes)
-- **No PII stored** — IP addresses are hashed for rate limiting (60s TTL) then discarded; raw IPs are never stored
+- **No PII stored** — IP addresses are never read or stored for visitor tracking; raw IPs are never stored
 - **No third-party requests** — Chart.js is bundled locally; no CDN calls at runtime
 - **Referrers truncated** — only the domain is stored, not the full referrer URL
 - **Sensitive query params stripped** — any query parameter that looks like an email or is longer than 40 characters is removed from stored page paths
@@ -243,7 +243,7 @@ Rich Statistics is designed to be **privacy-first**:
 
 ### Data Collected
 
-On every page view the plugin collects: session UUID (sessionStorage), page path (sanitized), referrer domain, OS, browser, browser version, language, timezone, viewport dimensions, time on page, UTM campaign parameters, and a bot detection score. Server-side, the IP address is SHA-256 hashed for rate limiting (transient, 60s TTL) and the User-Agent is parsed then discarded. Full details in the `RSA_Tracker` and `RSA_Bot_Detection` classes.
+On every page view the plugin collects: session UUID (sessionStorage), page path (sanitized), referrer domain, OS, browser, browser version, language, timezone, viewport dimensions, time on page, UTM campaign parameters, and a bot detection score. Server-side, the User-Agent is parsed then discarded. Full details in the `RSA_Tracker` and `RSA_Bot_Detection` classes.
 
 ### Privacy Disclosure Shortcode
 
