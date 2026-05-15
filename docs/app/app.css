@@ -236,6 +236,8 @@ html, body {
 
 .rsa-nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
 .rsa-nav-link.rsa-active { color: #fff; background: var(--rsa-accent); }
+.rsa-nav-link.rsa-nav-premium { opacity: .7; display: flex; align-items: center; justify-content: space-between; }
+.rsa-nav-badge { font-size: 9px; opacity: .5; text-transform: uppercase; letter-spacing: .4px; }
 
 .rsa-nav-footer {
 	padding: 12px 14px;
