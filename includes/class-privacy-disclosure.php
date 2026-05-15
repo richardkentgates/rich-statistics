@@ -89,22 +89,18 @@ function rsa_privacy_disclosure_shortcode(): string {
 				<td><?php esc_html_e( 'How many seconds you spent on each page.', 'rich-statistics' ); ?></td>
 				<td><?php esc_html_e( 'To measure engagement.', 'rich-statistics' ); ?></td>
 			</tr>
-			<tr>
-				<td><?php esc_html_e( 'Campaign Parameters', 'rich-statistics' ); ?></td>
-				<td><?php esc_html_e( 'utm_source, utm_medium, and utm_campaign from the URL if present.', 'rich-statistics' ); ?></td>
-				<td><?php esc_html_e( 'To measure the effectiveness of marketing campaigns.', 'rich-statistics' ); ?></td>
-			</tr>
-			<tr>
-				<td><?php esc_html_e( 'IP Address', 'rich-statistics' ); ?></td>
-				<td><?php esc_html_e( 'Hashed with SHA-256 and stored temporarily (60 seconds) to prevent abuse. The raw IP is never written to the database.', 'rich-statistics' ); ?></td>
-				<td><?php esc_html_e( 'Rate limiting only.', 'rich-statistics' ); ?></td>
-			</tr>
-		</tbody>
-	</table>
+		<tr>
+			<td><?php esc_html_e( 'Campaign Parameters', 'rich-statistics' ); ?></td>
+			<td><?php esc_html_e( 'utm_source, utm_medium, and utm_campaign from the URL if present.', 'rich-statistics' ); ?></td>
+			<td><?php esc_html_e( 'To measure the effectiveness of marketing campaigns.', 'rich-statistics' ); ?></td>
+		</tr>
+	</tbody>
+</table>
 
-	<h3><?php esc_html_e( 'What We Do Not Collect', 'rich-statistics' ); ?></h3>
-	<ul>
-		<li><?php esc_html_e( 'No cookies', 'rich-statistics' ); ?></li>
+<h3><?php esc_html_e( 'What We Do Not Collect', 'rich-statistics' ); ?></h3>
+<ul>
+	<li><?php esc_html_e( 'No IP address — not even hashed or temporarily stored', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No cookies', 'rich-statistics' ); ?></li>
 		<li><?php esc_html_e( 'No name, email, phone number, or address', 'rich-statistics' ); ?></li>
 		<li><?php esc_html_e( 'No tracking across other websites', 'rich-statistics' ); ?></li>
 		<li><?php esc_html_e( 'No data shared with or sold to third parties', 'rich-statistics' ); ?></li>

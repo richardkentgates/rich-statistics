@@ -239,7 +239,7 @@ Two independent scoring layers, summed and capped at 10. Requests scoring ≥ th
 | `CS_NO_HUMAN_EVENT` (256) | No mouse/keyboard/scroll events within timeout |
 | `CS_CHROME_MISSING_OBJ` (512) | Chrome-specific `window.chrome` missing |
 
-**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):** Checks User-Agent against known bot patterns (Googlebot, Bingbot, curl, python-requests, etc.) and suspicious patterns (headlesschrome, phantomjs, selenium, etc.). Also checks for missing `Accept-Language` and `Accept` headers. Raw UA and headers are never stored.
+**Layer 2 — PHP server-side (reads only UA + 2 headers, never `REMOTE_ADDR`):** Checks User-Agent against known bot patterns (Googlebot, Bingbot, curl, python-requests, etc.) and suspicious patterns (headlesschrome, phantomjs, selenium, etc.). Also checks for missing `Accept-Language` and `Accept` headers. Raw UA and headers are never stored. The only `REMOTE_ADDR` access in the entire plugin is the OTP verification endpoint (`POST /verify-otp`), where it is hashed and used solely as a transient rate-limit key for admin authentication security — never for visitor analytics.
 
 Requests are never blocked; scoring ≥ threshold results in silent discard. This avoids false positives breaking legitimate tracking and prevents probing of the threshold.
 

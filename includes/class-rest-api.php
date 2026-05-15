@@ -1130,16 +1130,6 @@ class RSA_Rest_API {
 	 * @return WP_REST_Response
 	 */
 	public static function post_track( WP_REST_Request $r ): WP_REST_Response {
-		// Per-IP rate limiting — prevents session-ID-based bypass of the
-		// per-session limiter in RSA_Tracker::is_rate_limited().
-		$ip_raw   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
-		$ip_key   = 'rsa_rl_ip_' . hash( 'sha256', $ip_raw );
-		$ip_count = (int) get_transient( $ip_key );
-		if ( $ip_count >= RSA_Tracker::RATE_LIMIT_PER_MIN ) {
-			return new WP_REST_Response( [ 'ok' => false, 'error' => 'rate_limited' ], 429 );
-		}
-		set_transient( $ip_key, $ip_count + 1, 60 );
-
 		// Save and restore $_POST and $_SERVER to avoid polluting global state.
 		$saved_post                = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified below before use
 		$saved_method              = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';

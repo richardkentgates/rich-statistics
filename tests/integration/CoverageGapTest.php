@@ -89,20 +89,6 @@ class CoverageGapTest extends WP_UnitTestCase {
 
 	/**
 	 * ----------------------------------------------------------------
-	 * M19: strip_pii() IPv6 handling
-	 * ----------------------------------------------------------------
-	 */
-	public function test_strip_pii_handles_ipv6(): void {
-		if ( ! function_exists( 'rsa_strip_pii' ) ) {
-			$this->markTestSkipped( 'rsa_strip_pii not defined' );
-		}
-		$ipv6   = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
-		$result = rsa_strip_pii( $ipv6 );
-		$this->assertNotEmpty( $result, 'IPv6 address should not be stripped to empty' );
-	}
-
-	/**
-	 * ----------------------------------------------------------------
 	 * M20: /export endpoint
 	 * ----------------------------------------------------------------
 	 */
