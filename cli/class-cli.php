@@ -93,6 +93,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * @subcommand top-pages
 	 */
 	public function top_pages( array $args, array $assoc ): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			WP_CLI::error( __( 'You do not have permission to use Rich Statistics commands.', 'rich-statistics' ) );
+		}
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$limit  = max( 1, (int) ( $assoc['limit'] ?? 10 ) );
 		$this->maybe_switch_blog( $assoc );
@@ -134,6 +137,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * @subcommand audience
 	 */
 	public function audience( array $args, array $assoc ): void {
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			WP_CLI::error( __( 'You do not have permission to use Rich Statistics commands.', 'rich-statistics' ) );
+		}
 		$period = $this->validate_period( $assoc['period'] ?? '30d' );
 		$this->maybe_switch_blog( $assoc );
 

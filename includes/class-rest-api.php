@@ -313,7 +313,7 @@ class RSA_Rest_API {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ __CLASS__, 'get_campaigns' ],
-				'permission_callback' => $basic,
+				'permission_callback' => $premium,
 				'args'                => array_merge(
 					$read_args,
 					[
