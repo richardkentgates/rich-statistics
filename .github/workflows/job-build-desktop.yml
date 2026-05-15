@@ -36,7 +36,7 @@ on:
       server-ip:
         required: false
         type: string
-        default: '<PWA_SERVER_IP>'
+        default: '104.197.231.120'
       server-user:
         required: false
         type: string
