@@ -44,15 +44,15 @@ jobs:
       - name: Download ZIP artifact
         uses: actions/download-artifact@v4
         with:
-          name: rich-statistics-${{ github.event.inputs.version || github.ref_name }}
+          name: rich-statistics-${{ github.ref_name }}
           path: build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/rich-statistics-${{ steps.version.outputs.version }}.zip
-            build/rich-statistics-${{ steps.version.outputs.version }}.zip.sha256
+            build/rich-statistics-${{ github.ref_name }}.zip
+            build/rich-statistics-${{ github.ref_name }}.zip.sha256
           generate_release_notes: true
           body: |
             ## Rich Statistics ${{ steps.version.outputs.version }}
@@ -61,7 +61,7 @@ jobs:
 
             ### SHA256 Checksum
             ```
-            $(cat build/rich-statistics-${{ steps.version.outputs.version }}.zip.sha256)
+            $(cat build/rich-statistics-${{ github.ref_name }}.zip.sha256)
             ```
 
             ### Upload to Freemius
