@@ -61,8 +61,8 @@ class AnalyticsTest extends WP_UnitTestCase {
 	}
 	public function test_get_overview_returns_zero_with_no_data(): void {
 		global $wpdb;
-		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_events`" );
-		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_sessions`" );
+		$wpdb->query( "DELETE FROM `{$wpdb->prefix}rsa_events`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$wpdb->query( "DELETE FROM `{$wpdb->prefix}rsa_sessions`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$result = RSA_Analytics::get_overview( '7d' );
 		$this->assertSame( 0, (int) $result['pageviews'] );
 		$this->assertSame( 0, (int) $result['sessions'] );
