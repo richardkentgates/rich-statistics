@@ -1,5 +1,6 @@
 # =============================================================================
-# Promote: Release to stable (main) or beta (test branch tag)
+# Promote to Production: Release to stable (main) or beta (test branch tag)
+# Triggered manually on the test branch when a release candidate is verified.
 # =============================================================================
 name: Promote to Production
 

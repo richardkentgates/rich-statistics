@@ -1,0 +1,41 @@
+# =============================================================================
+# Promote to Test: Merge develop → test
+# Triggered manually on the develop branch when code is ready for QA.
+# =============================================================================
+name: Promote to Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    name: Merge develop → test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base test \
+            --head develop \
+            --title "chore: promote to test" \
+            --body "Automated promote workflow. Merges develop → test for QA." \
+            --label automate)
+          echo "Created PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch
