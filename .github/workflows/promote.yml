@@ -1,0 +1,53 @@
+# =============================================================================
+# Promote: Merge test → main, tag, and trigger build-release.yml
+# Triggered manually when a release candidate on the test branch is verified.
+# =============================================================================
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (e.g. 2.4.14) — leave blank to read from rich-statistics.php'
+        required: false
+        type: string
+
+jobs:
+  promote:
+    name: Promote test → main + tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout test
+        uses: actions/checkout@v4
+        with:
+          ref: test
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(grep "define( 'RSA_VERSION'" rich-statistics.php | sed "s/.*'\([0-9.]*\)'.*/\1/")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge test into main
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge --no-ff test -m "chore: promote v${{ steps.version.outputs.version }} to production"
+
+      - name: Tag release
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin main --tags
