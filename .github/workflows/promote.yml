@@ -24,31 +24,31 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout test
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: test
+          ref: main
           fetch-depth: 0
-
-      - name: Resolve version
-        id: version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(grep "define( 'RSA_VERSION'" rich-statistics.php | sed "s/.*'\([0-9.]*\)'.*/\1/")
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          fi
 
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Push test → main + tag
+      - name: Fetch test and resolve version
+        id: version
         run: |
-          git push origin test:main
-          git fetch origin main
-          HASH=$(git rev-parse origin/main)
-          git tag "v${{ steps.version.outputs.version }}" "${HASH}"
+          git fetch origin test
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(git show origin/test:rich-statistics.php | grep "define( 'RSA_VERSION'" | sed "s/.*'\([0-9.]*\)'.*/\1/")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Merge test into main + tag
+        run: |
+          git merge origin/test --no-edit -X theirs
+          git push origin main
+          git tag "v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
