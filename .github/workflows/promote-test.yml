@@ -35,7 +35,6 @@ jobs:
             --base test \
             --head develop \
             --title "chore: promote to test" \
-            --body "Automated promote workflow. Merges develop → test for QA." \
-            --label automate)
+            --body "Automated promote workflow. Merges develop → test for QA.")
           echo "Created PR: $PR_URL"
           gh pr merge "$PR_URL" --squash --delete-branch
