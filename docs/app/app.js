@@ -38,11 +38,9 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
-		refreshTimer: null,      // setInterval id for auto-refresh
-		aiProvider  : null,      // { apiKey, endpoint, model, voiceInput, voiceOutput, voiceLang, voiceSpeed, autoSpeak } or null
-		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
-		isPremium   : false,     // from RSA_CONFIG.isPremium
+		isPremium   : false,
 		upgradeUrl  : '',        // Freemius upgrade URL
+		channel     : 'stable',  // release channel from /info endpoint
 	};
 
 	// -----------------------------------------------------------------------
@@ -524,7 +522,7 @@
 
 	/**
 	 * Returns the current semver extracted from the Tauri local URL, e.g.
-	 * http://tauri.localhost/1.4.1/  →  "1.4.1", or null if at root.
+	 * http://tauri.localhost/v/2.4.15/stable/  →  "2.4.15", or null if at root.
 	 */
 	function getTauriCurrentVersion() {
 		var m = window.location.pathname.match( /^\/(?:v\/)?([0-9]+\.[0-9]+\.[0-9]+)\// );
@@ -535,23 +533,38 @@
 	 * Navigate to a bundled versioned folder in the Tauri local server.
 	 * Falls back to the latest bundled version if the requested one isn't found,
 	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 *
+	 * @param {string} pluginVersion - Semver version string.
+	 * @param {string} [channel] - Release channel ('stable' or 'beta'). Default 'stable'.
 	 */
-	function tauriNavigateToVersion( pluginVersion ) {
+	function tauriNavigateToVersion( pluginVersion, channel ) {
+		channel = channel || 'stable';
 		// Reject anything that is not a clean semver — prevents path traversal
 		// if the API response were ever tampered with.
 		if ( ! /^\d+\.\d+\.\d+$/.test( pluginVersion ) ) return;
 		var current = getTauriCurrentVersion();
 		if ( current === pluginVersion ) return; // Already on correct version
 
-		fetch( '/versions.json' )
+		var versionUrl  = '/v/' + pluginVersion + '/' + channel + '/';
+		var indexUrl    = versionUrl + 'index.html';
+		var versionsFile = channel === 'beta' ? '/versions-beta.json' : '/versions.json';
+
+		fetch( versionsFile )
 			.then( function ( r ) { return r.ok ? r.json() : []; } )
+			.then( function ( bundled ) {
+				// Fall back to versions.json if beta list is empty
+				if ( ! bundled.length && versionsFile === '/versions-beta.json' ) {
+					return fetch( '/versions.json' ).then( function ( r ) { return r.ok ? r.json() : []; } );
+				}
+				return bundled;
+			} )
 			.then( function ( bundled ) {
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
 					// Verify the versioned folder is actually present before navigating.
-					fetch( '/v/' + pluginVersion + '/index.html', { method: 'HEAD' } )
+					fetch( indexUrl, { method: 'HEAD' } )
 						.then( function ( r ) {
 							if ( r.ok ) {
-								window.location.href = '/v/' + pluginVersion + '/';
+								window.location.href = versionUrl;
 							}
 						} )
 						.catch( function () {} );
@@ -585,7 +598,7 @@
 					} )
 					.catch( function () {} );
 				if ( latest && current !== latest ) {
-					window.location.href = '/v/' + latest + '/';
+					window.location.href = '/v/' + latest + '/stable/';
 				}
 			} )
 			.catch( function () {} );
@@ -631,12 +644,15 @@
 					state.isPremium = !! info.is_premium;
 				}
 
+				// Store release channel for version routing
+				state.channel = info.channel === 'beta' ? 'beta' : 'stable';
+
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
 				// In Tauri: route to the matching bundled version folder (local, no external URLs).
 				if ( isTauri() ) {
-					tauriNavigateToVersion( info.version );
+					tauriNavigateToVersion( info.version, state.channel );
 					localStorage.setItem( versionKey, info.version );
 					return;
 				}

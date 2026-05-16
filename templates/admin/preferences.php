@@ -246,6 +246,26 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		<?php endif; ?>
 	</div>
 
+	<!-- Beta Channel -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'Release Channel', 'rich-statistics' ); ?></h2></div>
+		<table class="form-table">
+			<tr>
+				<th><label for="rsa_beta_channel"><?php esc_html_e( 'Beta releases', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="checkbox" id="rsa_beta_channel" name="rsa_beta_channel" value="1"
+							<?php checked( get_option( 'rsa_beta_channel' ), 1 ); ?>>
+					<label for="rsa_beta_channel">
+						<?php esc_html_e( 'Receive test/beta releases before they are generally available.', 'rich-statistics' ); ?>
+					</label>
+					<p class="description">
+						<?php esc_html_e( 'The desktop app will also route to the matching beta PWA snapshot when connected to this site.', 'rich-statistics' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+	</div>
+
 	<!-- Email Reports -->
 	<div class="rsa-card rsa-card-full">
 		<div class="rsa-card-header"><h2><?php esc_html_e( 'Email Reports', 'rich-statistics' ); ?></h2></div>
