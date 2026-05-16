@@ -1,6 +1,7 @@
 # =============================================================================
 # Promote: Merge test → main, tag, and trigger build-release.yml
 # Triggered manually when a release candidate on the test branch is verified.
+# Uses gh CLI to create a PR (respected by branch protection) then merges.
 # =============================================================================
 name: Promote to Production
 
@@ -18,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout test
@@ -36,18 +38,21 @@ jobs:
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Configure git
+      - name: Create and merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Merge test into main
-        run: |
-          git fetch origin main
-          git checkout main
-          git merge --no-ff test -m "chore: promote v${{ steps.version.outputs.version }} to production"
+          PR_URL=$(gh pr create \
+            --base main \
+            --head test \
+            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
+            --body "Automated promote workflow. Merges test → main and tags v${{ steps.version.outputs.version }}." \
+            --label automate)
+          echo "Created PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch
 
       - name: Tag release
         run: |
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin main --tags
+          git fetch origin main
+          git tag "v${{ steps.version.outputs.version }}" origin/main
+          git push origin "v${{ steps.version.outputs.version }}"
