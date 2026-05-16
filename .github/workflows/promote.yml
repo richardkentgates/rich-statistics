@@ -22,7 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout test
@@ -46,17 +45,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge test → main + tag
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Push test → main + tag
         run: |
-          PR_URL=$(gh pr create \
-            --base main \
-            --head test \
-            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
-            --body "Automated promote workflow.")
-          echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash --delete-branch
+          git push origin test:main
           git fetch origin main
-          git tag "v${{ steps.version.outputs.version }}" origin/main
+          HASH=$(git rev-parse origin/main)
+          git tag "v${{ steps.version.outputs.version }}" "${HASH}"
           git push origin "v${{ steps.version.outputs.version }}"
