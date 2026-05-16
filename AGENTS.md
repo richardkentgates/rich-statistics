@@ -116,14 +116,19 @@ changes. Version parity prevents this.
 ```
 feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
                         │
-                   merge PR
+                 ╔══════════════════════════╗
+                 ║ Promote to Test (manual) ║
+                 ║ .github/workflows/promote-test.yml
+                 ║ Merges develop → test    ║
+                 ╚══════════════════════════╝
                         ↓
                       test ──push──→ auto-deploy: rs-test
                         │
                  ╔══════════════════════════╗
-                 ║  Promote Workflow (manual)║
+                 ║  Promote to Production   ║
                  ║  .github/workflows/promote.yml
-                 ║  Merges test → main + tag  ║
+                 ║  Stable: merge test→main + tag
+                 ║  Beta:   tag test only   ║
                  ╚══════════════════════════╝
                         ↓
                       main ──tag v*──→ build-release.yml → rs-app
@@ -137,18 +142,17 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 
 ### Release Process (ENFORCED)
 
-**Do NOT push directly to `main`.** Branch protection blocks it.
+**Do NOT push directly to `main` or `test`.** Branch protection + PR workflow enforce it.
 
 1. Work on `develop` (auto-deploys to `dev.richstatistics.com`)
-2. Merge `develop` → `test` (auto-deploys to `test.richstatistics.com`)
-3. Verify on test environment
-4. Run the **Promote to Production** workflow:
-   - Go to GitHub → Actions → Promote to Production → "Run workflow" on `test` branch
-   - Optionally specify a version, or leave blank to auto-read from `rich-statistics.php`
-   - Workflow merges `test` → `main`, tags `v{version}`, triggers `build-release.yml`
+2. Run **Promote to Test**: GitHub → Actions → Promote to Test → Run on `develop`
+3. Verify on `test.richstatistics.com`
+4. Run **Promote to Production**:
+   - **Stable**: GitHub → Actions → Promote to Production → Run on `test` → channel `stable`
+   - **Beta**:   GitHub → Actions → Promote to Production → Run on `test` → channel `beta`
 
-**This is the only way to release.** Any agent or session must follow this flow.
-Branch protection on `main` enforces it server-side — no one can bypass it.
+**This is the only way to promote code between environments.**
+Any agent or session must follow this flow.
 
 Each branch has its own:
 - WordPress plugin ZIP (CI artifact)
