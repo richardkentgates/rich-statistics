@@ -1,6 +1,5 @@
 # =============================================================================
-# Promote: Merge test → main, tag, and trigger build-release.yml
-# Triggered manually when a release candidate on the test branch is verified.
+# Promote: Release to stable (main) or beta (test branch tag)
 # =============================================================================
 name: Promote to Production
 
@@ -8,16 +7,25 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to tag (e.g. 2.4.14) — leave blank to read from rich-statistics.php'
+        description: 'Version to tag — leave blank to auto-read from rich-statistics.php'
         required: false
         type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'stable'
+        type: choice
+        options:
+          - stable
+          - beta
 
 jobs:
   promote:
-    name: Promote test → main + tag
+    name: Promote ${{ inputs.channel || 'stable' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout test
@@ -41,13 +49,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge test into main
+      - name: Stable release — merge test → main + tag
+        if: ${{ inputs.channel != 'beta' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          PR_URL=$(gh pr create \
+            --base main \
+            --head test \
+            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
+            --body "Automated promote workflow." \
+            --label automate)
+          echo "Created PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch
           git fetch origin main
-          git checkout main
-          git merge --no-ff test -m "chore: promote v${{ steps.version.outputs.version }} to production"
+          git tag "v${{ steps.version.outputs.version }}" origin/main
+          git push origin "v${{ steps.version.outputs.version }}"
 
-      - name: Tag release
+      - name: Beta release — tag test branch
+        if: ${{ inputs.channel == 'beta' }}
         run: |
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin main --tags
+          git tag "v${{ steps.version.outputs.version }}-beta.1"
+          git push origin "v${{ steps.version.outputs.version }}-beta.1"
