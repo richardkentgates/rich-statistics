@@ -120,7 +120,11 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
                         ↓
                       test ──push──→ auto-deploy: rs-test
                         │
-                   merge PR
+                 ╔══════════════════════════╗
+                 ║  Promote Workflow (manual)║
+                 ║  .github/workflows/promote.yml
+                 ║  Merges test → main + tag  ║
+                 ╚══════════════════════════╝
                         ↓
                       main ──tag v*──→ build-release.yml → rs-app
 ```
@@ -130,6 +134,21 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 | `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
 | `develop` | Development | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge development |
 | `test` | Beta / Staging | `test.richstatistics.com` | `build-test.yml` (push) | Pre-release QA |
+
+### Release Process (ENFORCED)
+
+**Do NOT push directly to `main`.** Branch protection blocks it.
+
+1. Work on `develop` (auto-deploys to `dev.richstatistics.com`)
+2. Merge `develop` → `test` (auto-deploys to `test.richstatistics.com`)
+3. Verify on test environment
+4. Run the **Promote to Production** workflow:
+   - Go to GitHub → Actions → Promote to Production → "Run workflow" on `test` branch
+   - Optionally specify a version, or leave blank to auto-read from `rich-statistics.php`
+   - Workflow merges `test` → `main`, tags `v{version}`, triggers `build-release.yml`
+
+**This is the only way to release.** Any agent or session must follow this flow.
+Branch protection on `main` enforces it server-side — no one can bypass it.
 
 Each branch has its own:
 - WordPress plugin ZIP (CI artifact)
