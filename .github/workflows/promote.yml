@@ -54,8 +54,7 @@ jobs:
             --base main \
             --head test \
             --title "chore: promote v${{ steps.version.outputs.version }} to production" \
-            --body "Automated promote workflow." \
-            --label automate)
+            --body "Automated promote workflow.")
           echo "Created PR: $PR_URL"
           gh pr merge "$PR_URL" --squash --delete-branch
           git fetch origin main
