@@ -1,7 +1,5 @@
 # =============================================================================
-# Promote: Merge test → main, tag, and trigger build-release.yml
-# Triggered manually when a release candidate on the test branch is verified.
-# Uses gh CLI to create a PR (respected by branch protection) then merges.
+# Promote: Release to stable (main) or beta (test branch tag)
 # =============================================================================
 name: Promote to Production
 
@@ -9,13 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to tag (e.g. 2.4.14) — leave blank to read from rich-statistics.php'
+        description: 'Version to tag — leave blank to auto-read from rich-statistics.php'
         required: false
         type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'stable'
+        type: choice
+        options:
+          - stable
+          - beta
 
 jobs:
   promote:
-    name: Promote test → main + tag
+    name: Promote ${{ inputs.channel || 'stable' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,7 +44,13 @@ jobs:
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create and merge PR
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Stable release — merge test → main + tag
+        if: ${{ inputs.channel != 'beta' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -46,13 +58,16 @@ jobs:
             --base main \
             --head test \
             --title "chore: promote v${{ steps.version.outputs.version }} to production" \
-            --body "Automated promote workflow. Merges test → main and tags v${{ steps.version.outputs.version }}." \
+            --body "Automated promote workflow." \
             --label automate)
           echo "Created PR: $PR_URL"
           gh pr merge "$PR_URL" --squash --delete-branch
-
-      - name: Tag release
-        run: |
           git fetch origin main
           git tag "v${{ steps.version.outputs.version }}" origin/main
           git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Beta release — tag test branch
+        if: ${{ inputs.channel == 'beta' }}
+        run: |
+          git tag "v${{ steps.version.outputs.version }}-beta.1"
+          git push origin "v${{ steps.version.outputs.version }}-beta.1"

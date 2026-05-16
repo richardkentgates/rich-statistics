@@ -145,8 +145,14 @@ jobs:
             echo "No snapshot changes to commit."
           else
             git commit -m "chore: add versioned PWA snapshot v${VERSION} [skip ci]"
-            git fetch origin main
-            git push origin HEAD:main
+            # Beta tags push to test branch, stable tags push to main
+            if echo "${GITHUB_REF_NAME}" | grep -q "beta"; then
+              git fetch origin test
+              git push origin HEAD:test
+            else
+              git fetch origin main
+              git push origin HEAD:main
+            fi
           fi
 
   build-desktop:
