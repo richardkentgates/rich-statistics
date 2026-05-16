@@ -163,27 +163,29 @@ ZIP_SIZE=$(du -sh "${BUILD_DIR}/${ZIP_NAME}" | cut -f1)
 info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
 
 # -----------------------------------------------------------------------
-# Publish versioned app snapshot to docs/app/{version}/
+# Publish versioned app snapshot to docs/app/v/{version}/{channel}/
 # -----------------------------------------------------------------------
-# Each version gets its own immutable folder on the GitHub Pages site
-# (statistics.richardkentgates.com/app/1.x.x/).  The service worker
-# caches it forever and app.js redirects there automatically on plugin
-# update — no cache clearing, no sign-out.
+# Creates both stable/ and beta/ subdirectories with identical content.
+# Channel differentiation is purely path-based — app.js navigates to
+# v/{version}/{channel}/ based on info.channel from the plugin.
 APP_SRC="docs/app"
 APP_VERSIONED="docs/app/v/${VERSION}"
 
-if [ -d "$APP_VERSIONED" ]; then
-    warn "Versioned app folder already exists: ${APP_VERSIONED} — skipping."
+if [ -d "${APP_VERSIONED}/stable" ]; then
+    warn "Versioned app folder already exists: ${APP_VERSIONED}/stable — skipping."
 else
-    info "Publishing versioned app snapshot: ${APP_VERSIONED}/"
-    mkdir -p "$APP_VERSIONED"
-    for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
-        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${APP_VERSIONED}/${f}"
+    for CHANNEL in stable beta; do
+        CHANNEL_DIR="${APP_VERSIONED}/${CHANNEL}"
+        info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
+        mkdir -p "$CHANNEL_DIR"
+        for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+        done
+        for f in index-dev.html index-test.html config-dev.js config-test.js; do
+            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+        done
+        [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${CHANNEL_DIR}/icons"
     done
-    for f in index-dev.html index-test.html config-dev.js config-test.js; do
-        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${APP_VERSIONED}/${f}"
-    done
-    [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${APP_VERSIONED}/icons"
-    info "Versioned snapshot ready: ${APP_VERSIONED}/"
+    info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
     info "Commit and push docs/ to publish to GitHub Pages."
 fi

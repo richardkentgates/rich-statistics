@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout develop
@@ -27,15 +26,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create and merge PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Push develop → test
         run: |
-          PR_URL=$(gh pr create \
-            --base test \
-            --head develop \
-            --title "chore: promote to test" \
-            --body "Automated promote workflow. Merges develop → test for QA." \
-            --label automate)
-          echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash --delete-branch
+          git push --force origin develop:test

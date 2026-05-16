@@ -93,21 +93,40 @@ composer phpcbf
 
 ## Version Parity (CRITICAL)
 
-**Every released version MUST have a bundled PWA snapshot in `docs/app/v/{version}/`.**
+**Every released version MUST have a bundled PWA snapshot in `docs/app/v/{version}/{channel}/`.**
 
 The desktop app bundles versioned PWA snapshots. Users may have dozens of WordPress sites
 running different plugin versions — the app detects each site's plugin version via
-`/wp-json/rsa/v1/info` and serves the matching PWA files from `docs/app/v/{version}/`.
+`/wp-json/rsa/v1/info` and serves the matching PWA files from `docs/app/v/{version}/{channel}/`.
+
+**Channel structure:** Each version directory MUST contain `stable/` and `beta/` subdirectories
+with identical PWA files. Channel differentiation is purely path-based — the app navigates to
+the appropriate subdirectory based on `info.channel` from the plugin.
+
+```
+docs/app/v/
+├── 2.4.1/
+│   ├── stable/   ← PWA files (served for stable channel users)
+│   │   ├── index.html, app.js, app.css, ...
+│   │   └── icons/
+│   └── beta/     ← Same files (served for beta channel users)
+│       ├── index.html, app.js, app.css, ...
+│       └── icons/
+├── 2.4.2/
+│   └── ...
+```
 
 **Rules:**
 - **NEVER manually delete** a versioned snapshot folder from `docs/app/v/`. The CI prunes
   automatically to the last 12 versions on each release tag.
 - **NEVER skip** a version — if v2.3.0 and v2.4.0 exist, v2.3.1 through v2.3.x must also exist.
-- `docs/app/versions.json` is **auto-generated** by CI from the `v/` directory contents. Never edit it manually.
-- The `build-release.yml` workflow creates the snapshot, prunes to the last 12, and updates `versions.json` on every tag push.
+- `docs/app/versions.json` and `docs/app/versions-beta.json` are **auto-generated** by CI from the `v/` directory contents. Never edit them manually. Both contain the same list of version numbers.
+- The `build-release.yml` workflow creates the snapshot (both `stable/` and `beta/` subdirs), prunes to the last 12, and updates both JSON files on every tag push.
 - The `build-desktop` job copies the snapshot into the `.deb` bundle before `tauri build`.
 
-If a user on plugin v2.2.5 opens the desktop app, it navigates to `/v/2.2.5/`. If that folder
+**⚠️ Known issue:** Snapshots prior to v2.4.16 use the OLD flat format (`v/{version}/file.js` instead of `v/{version}/{channel}/file.js`). These need migration to the channel-subdirectory format. See `ROADMAP.md §9.3` and `TODO.md BC-1`.
+
+If a user on plugin v2.2.5 opens the desktop app, it navigates to `/v/2.2.5/stable/`. If that folder
 is missing, the app falls back to the latest bundled version — which may have incompatible API
 changes. Version parity prevents this.
 

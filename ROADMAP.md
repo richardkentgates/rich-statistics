@@ -206,6 +206,236 @@ See `TODO.md` §4 for full list.
 
 ## 8. Operations Guide
 
+---
+
+## 9. Beta Channel & Freemius Integration Audit (May 2026)
+
+### 9.1 Multi-Layer Architecture
+
+The beta channel flows through 5 software layers:
+
+```
+WordPress Settings (checkbox rsa_beta_channel)
+  → wp_option 'rsa_beta_channel' (0|1)
+    → /info endpoint: { channel: 'beta'|'stable' }
+      → PWA app.js: state.channel = info.channel
+        → Tauri: tauriNavigateToVersion(version, channel)
+          → navigates to /v/{version}/{channel}/index.html
+            → reads versions-beta.json or versions.json
+```
+
+- **Freemius sync**: `class-admin.php:958-969` calls `PUT /plugin-tags/beta-mode.json` on save — tells Freemius to serve beta plugin updates
+- **CI snapshot creation**: `build-release.yml` creates both `stable/` and `beta/` subdirs per version
+- **CI `versions.json` + `versions-beta.json`**: Both generated with identical version lists (channel differentiation is purely path-based)
+
+### 9.2 Server Reality (Verified via SSH 2026-05-16)
+
+| Env | Server | Web Root | Last Deployed | versions.json | versions-beta.json |
+|-----|--------|----------|---------------|---------------|-------------------|
+| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.16 (`main`) | ✅ 6 entries | ✅ Present |
+| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.1 (`develop`) | ✅ 4 entries | ❌ **Missing** |
+| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.1 (`test`) | ✅ 4 entries | ❌ **Missing** |
+| **Test (Plugin)** | `34.56.56.233` | `/srv/www/wordpress` | WordPress integration tests | N/A | N/A |
+
+All 3 PWA environments run on the same server (`104.197.231.120`), sharing the same wildcard SSL cert.
+
+### 9.3 Snapshot Format Analysis
+
+**Three different formats exist across the codebase:**
+
+| Method | Location | Format Created | Status |
+|--------|----------|---------------|--------|
+| `build.sh` | Local dev build script | `v/{version}/<files>` (flat) | ❌ Stale |
+| `build-release.yml` | CI release workflow | `v/{version}/{stable,beta}/<files>` | ✅ Active |
+| `job-build-desktop.yml` | CI desktop build | `v/{version}/{stable,beta}/<files>` | ✅ Active |
+
+**On production server (39 version directories):**
+- 38 versions are **flat** (`v/2.4.1/app.js` — old format)
+- Only `v/2.4.16/` has `stable/` + `beta/` subdirectories (first CI-built version)
+- **This is a critical compatibility break**: the root `app.js` navigates to `/v/{version}/{channel}/index.html` — all versions before 2.4.16 will 404 in new desktop builds
+
+### 9.4 Gaps Discovered During Audit
+
+| # | Severity | Gap | Layer | Impact |
+|---|----------|-----|-------|--------|
+| BC-1 | **CRITICAL** | Snapshot format mismatch: old flat vs new channel subdirs | Snapshots | New Tauri builds 404 on all versions before 2.4.16 |
+| BC-2 | **CRITICAL** | `versions-beta.json` missing from dev/test environments | Server | Beta routing unavailable on dev/test.richstatistics.com |
+| BC-3 | **HIGH** | Beta tag in `promote.yml` hardcoded to `.beta.1` — no increment | CI/CD | 2nd beta release for same version fails (tag collision) |
+| BC-4 | **HIGH** | `tauriNavigateToVersion` fallback hardcoded to `/stable/` | PWA | Beta users always redirected to stable on fallback |
+| BC-5 | **HIGH** | `build.sh` creates flat snapshots — doesn't match CI format | Dev tooling | Local builds produce different structure than releases |
+| BC-6 | **HIGH** | Apache vhost has no `LocationMatch` for immutable caching | Server | All PWA assets served without immutable Cache-Control |
+| BC-7 | **HIGH** | `update.json` signatures are empty strings | Server | Tauri auto-updater won't validate binary signatures |
+| BC-8 | **MEDIUM** | Server accumulates 39+ snapshots — CI only keeps 12 | Server | No server-side pruning; grows unbounded |
+| BC-9 | **MEDIUM** | No snapshot for `2.4.2` or `2.4.3` in repo | Repo | `RSA_VERSION=2.4.3` but last snapshot is 2.4.1 |
+| BC-10 | **MEDIUM** | Version constants drift: plugin header=2.4.1, RSA_VERSION=2.4.3 | Repo | Confusion; update checks may be inconsistent |
+| BC-11 | **LOW** | No defensive regex guard on `channel` in app.js | PWA | Currently safe due to ternary chain, but fragile |
+| BC-12 | **LOW** | `setup-webhook.yml` always deploys production webhook handler | CI/CD | Dev/test webhooks deployed via this workflow validate against production token file |
+
+### 9.5 Freemius ZIP Upload via GitHub Actions (New Feature)
+
+**Principle:** The Freemius upload happens inside the CI pipeline, not on the app server. No server-side scripts or Apache involvement — purely a `build-release.yml` step, the same pattern as SCP to the app server.
+
+**Current state:** `build-release.yml` creates a GitHub Release with the plugin ZIP but then only documents a manual step:
+```
+### Upload to Freemius
+Download the ZIP above and upload it at:
+https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
+```
+
+**Target state:** `build-release.yml` automatically uploads the plugin ZIP to Freemius as a new version, gated by channel (stable → regular release, beta → pre-release).
+
+**Where it fits in the workflow:**
+
+```
+promote.yml (test→main + tag)
+  └── tag push v*.*.* triggers build-release.yml
+       ├── job-build-zip: creates rich-statistics-{ver}.zip
+       │     ↓
+       ├── NEW STEP: Upload ZIP to Freemius Developer API
+       │     ↓
+       ├── Create GitHub Release (existing)
+       ├── Create PWA snapshots (existing)
+       ├── job-build-desktop (existing)
+       └── ping-deploy (existing)
+```
+
+**Freemius Developer API endpoint:**
+
+```
+POST https://api.freemius.com/v1/products/{product_id}/releases.json
+Authorization: Bearer {developer_secret_key}
+Content-Type: multipart/form-data
+```
+
+Fields:
+| Field | Value | Notes |
+|-------|-------|-------|
+| `version` | `${{ steps.version.outputs.version }}` | e.g. `2.4.3` |
+| `file` | `build/rich-statistics-{version}.zip` | The plugin ZIP artifact |
+| `release_notes` | Changelog entry for this version | Extract from `CHANGELOG.md` |
+| `is_beta` | `true` for beta channel tags | e.g. `v2.4.3-beta.1` |
+
+**Implementation plan:**
+
+1. **Add GitHub secret** — `FREEMIUS_SECRET_KEY` (obtained from Freemius Dashboard → Developer → API Keys)
+2. **Add step to `build-release.yml`** after the `build-zip` job completes (or as a dependent job):
+   ```yaml
+   upload-freemius:
+     name: Upload to Freemius
+     runs-on: ubuntu-latest
+     needs: build-zip
+     steps:
+       - uses: actions/download-artifact@v4
+         with:
+           name: rich-statistics-${{ github.ref_name }}
+           path: build
+       - name: Determine channel
+         id: channel
+         run: |
+           if echo "${{ github.ref_name }}" | grep -q "beta"; then
+             echo "is_beta=true" >> $GITHUB_OUTPUT
+           else
+             echo "is_beta=false" >> $GITHUB_OUTPUT
+           fi
+       - name: Upload to Freemius
+         env:
+           FREEMIUS_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+           VERSION: ${{ steps.version.outputs.version }}
+           IS_BETA: ${{ steps.channel.outputs.is_beta }}
+         run: |
+           curl -s -X POST "https://api.freemius.com/v1/products/25954/releases.json" \
+             -H "Authorization: Bearer ${FREEMIUS_KEY}" \
+             -F "version=${VERSION}" \
+             -F "file=@build/rich-statistics-${VERSION}.zip" \
+             -F "is_beta=${IS_BETA}"
+   ```
+
+3. **Beta channel handling:**
+   - Tags like `v2.4.3-beta.1` → `is_beta=true` → Freemius marks as pre-release
+   - Tags like `v2.4.3` → `is_beta=false` → Freemius marks as stable release
+   - This mirrors how `build-release.yml` already routes beta tags to the `test` branch for PWA snapshots
+
+4. **Notes:**
+   - The Freemius API returns the new release ID on success — log it in CI output
+   - On failure, the release still exists as a GitHub Release (Freemius upload failure is non-blocking)
+   - Product ID is `25954` (matches the `WP_FS__PRODUCT_25954_MULTISITE` constant in `rich-statistics.php`)
+
+### 9.6 Promotion Workflow Enforcement
+
+| Step | From → To | Workflow | Trigger | Status |
+|------|-----------|----------|---------|--------|
+| 1 | `develop → test` | `promote-test.yml` | Manual dispatch on develop | ✅ In place |
+| 2 | `test → main` (stable) | `promote.yml` | Manual dispatch on test | ✅ In place |
+| 2b | Tag `test` (beta) | `promote.yml` | Manual dispatch on test | ✅ In place |
+
+Both workflows use `gh pr create` + `gh pr merge --squash`, respecting GitHub branch protection.
+
+**Gap:** Beta tag always `.1` — need increment logic for re-cuts.
+
+### 9.7 Snapshot Migration Plan
+
+To fix BC-1 (flat → channel subdirs), all existing flat snapshots need conversion:
+
+```bash
+for dir in /var/www/rs-app/public_html/v/*/; do
+    version=$(basename "$dir")
+    # Skip if already has subdirectories
+    [ -d "$dir/stable" ] && continue
+    # Migrate flat files into stable/
+    mkdir -p "$dir/stable"
+    for f in "$dir"/*; do
+        [ -f "$f" ] && mv "$f" "$dir/stable/"
+    done
+    [ -d "$dir/icons" ] && mv "$dir/icons" "$dir/stable/"
+    # Copy stable to beta (identical content)
+    cp -r "$dir/stable" "$dir/beta"
+done
+```
+
+This must be run on:
+- Production: `/var/www/rs-app/public_html/v/`
+- Dev: `/var/www/rs-app-dev/v/`
+- Test (PWA): `/var/www/rs-app-test/v/`
+
+Each will also need `versions-beta.json` generated from existing `versions.json`:
+
+```bash
+cp versions.json versions-beta.json
+```
+
+### 9.8 Apache Config Update
+
+Current SSL vhost for production (`/etc/apache2/sites-available/app.richstatistics.com-le-ssl.conf`):
+
+```apache
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerName app.richstatistics.com
+    DocumentRoot /var/www/rs-app/public_html
+    # Missing: LocationMatch for immutable caching on versioned paths
+```
+
+**Needs added:**
+
+```apache
+    <LocationMatch "^/v/[0-9]+\.[0-9]+\.[0-9]+/">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+        Header set Access-Control-Allow-Origin "*"
+    </LocationMatch>
+```
+
+Same fix needed for dev/test SSL vhosts.
+
+### 9.9 Update JSON Signature Fix
+
+Current `update.json` has empty signatures — Tauri updater requires valid signatures for auto-updates.
+
+**Root cause to investigate:**
+- Verify `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_KEY_PASSWORD` secrets are correctly set in GitHub
+- Check that `tauri build` step is correctly generating `.sig` files
+- Verify `gen-update-json.py` is matching `.sig` files to their binaries correctly
+- Check `server-gen-update-json.sh` was deployed with the correct `--dir` parameter
+
 ### 8.1 Uptime Monitoring
 
 Each environment subdomain should be monitored for HTTP 200 responses.
