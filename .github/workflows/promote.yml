@@ -46,9 +46,12 @@ jobs:
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Merge test into main + tag
+      - name: Replicate test into main + tag
         run: |
-          git merge origin/test --no-edit -X theirs
+          git fetch origin test
+          git rm -rf .
+          git checkout origin/test -- .
+          git commit -m "chore: promote v${{ steps.version.outputs.version }} to production"
           git push origin main
           git tag "v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
