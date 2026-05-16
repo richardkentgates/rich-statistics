@@ -947,27 +947,14 @@ class RSA_Admin {
 		$safe_roles  = array_values(
 			array_filter(
 				array_map( 'sanitize_key', $raw_roles ),
-				function ( $role ) use ( $valid_roles ) {
-					// Administrators: always allowed, never stored in option.
-					return 'administrator' !== $role && in_array( $role, $valid_roles, true );
-				}
+				function ( $r ) use ( $valid_roles ) {
+					return in_array( $r, $valid_roles, true ); }
 			)
 		);
-		update_option( 'rsa_allowed_roles', $safe_roles );
-
-		// Sync beta channel preference with Freemius.
-		if ( function_exists( 'rs_fs' ) ) {
-			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
-			// Call the same Freemius API endpoint that the AJAX handler uses.
-			rs_fs()->get_api_site_scope()->call(
-				'/plugin-tags/beta-mode.json',
-				'put',
-				[
-					'is_beta' => $is_beta,
-					'fields'  => 'is_beta',
-				]
-			);
+		if ( ! in_array( 'administrator', $safe_roles, true ) ) {
+			$safe_roles[] = 'administrator';
 		}
+		update_option( 'rsa_allowed_roles', $safe_roles );
 
 		wp_safe_redirect(
 			add_query_arg(
