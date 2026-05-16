@@ -9,7 +9,7 @@ Premium features are gated by Freemius (product ID 25954).
 
 | File | Purpose |
 |------|---------|
-| `rich-statistics.php` | Main plugin file (version 2.4.1, RSA_VERSION constant) |
+| `rich-statistics.php` | Main plugin file (version 2.3.0, RSA_VERSION constant) |
 | `includes/class-rest-api.php` | REST API namespace `rsa/v1`, auth callbacks |
 | `includes/class-db.php` | DB schema, migrations, table helpers |
 | `includes/class-tracker.php` | Frontend tracking + ingest |
@@ -24,7 +24,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
-| `docs/app/v/2.4.1/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
+| `docs/app/v/2.3.0/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
 | `src-tauri/` | Tauri 2 desktop app wrapper |
 
 ## Database Tables (each uses `{$wpdb->prefix}rsa_` prefix)
@@ -84,7 +84,7 @@ composer phpcbf
 ### Adding a premium feature
 1. Gate the admin template with `rs_fs()->can_use_premium_code__premium_only()`
 2. Gate the REST endpoint with `$premium` callback
-3. Add to `premiumFeatures` map in `docs/app/v/2.4.1/app.js`
+3. Add to `premiumFeatures` map in `docs/app/v/2.3.0/app.js`
 
 ### Creating a new PWA version
 1. Copy the latest version folder under `docs/app/v/`
@@ -180,73 +180,6 @@ All three build workflows share reusable sub-workflows for ZIP and desktop build
 ### `setup-webhook.yml` (manual only)
 - **Trigger**: `workflow_dispatch` with environment choice
 - **Purpose**: One-time bootstrap of webhook handler + update script on any environment (production/dev/test)
-
-## Test WordPress Server
-
-**DO NOT use `<PWA_SERVER_IP>` for plugin testing** — that server only hosts PWA files and desktop binaries.
-
-SSH into the test WordPress server and locate:
-
-| Resource | Path |
-|----------|------|
-| WordPress root | `/srv/www/wordpress/` |
-| wp-config | `/srv/www/wp-config.php` (one level above WordPress root) |
-| Plugin directory | `/srv/www/wordpress/wp-content/plugins/rich-statistics/` |
-| Shared plugins vendor | `/srv/www/wordpress/wp-content/plugins/vendor/` |
-| Shared tests directory | `/srv/www/wordpress/wp-content/plugins/tests/` |
-| WordPress test library | `/tmp/wordpress-tests-lib/` |
-| Test DB config | `/tmp/wordpress-tests-lib/wp-tests-config.php` |
-
-### Plugin Checker
-
-```bash
-# WordPress Plugin Checker (WP-CLI command)
-wp plugin check rich-statistics --path=/srv/www/wordpress
-# Located at: /srv/www/wordpress/wp-content/plugins/plugin-check/
-```
-
-### PHPUnit on Server
-
-```bash
-# Integration tests (requires WordPress + MySQL)
-cd /srv/www/wordpress/wp-content/plugins
-php vendor/phpunit/phpunit/phpunit --configuration phpunit.integration.xml --no-coverage
-
-# Config: /srv/www/wordpress/wp-content/plugins/phpunit.integration.xml
-# Bootstrap: /srv/www/wordpress/wp-content/plugins/tests/bootstrap.php
-```
-
-### Deploying a New Plugin Version
-
-```bash
-# 1. Build ZIP locally
-bash build.sh
-
-# 2. Upload to server
-scp build/rich-statistics-<version>.zip <test-server>:/tmp/
-
-# 3. Extract with proper WordPress permissions (dirs 755, files 644, www-data ownership)
-ssh <test-server> "
-  sudo rm -rf /srv/www/wordpress/wp-content/plugins/rich-statistics
-  sudo unzip -o /tmp/rich-statistics-<version>.zip -d /srv/www/wordpress/wp-content/plugins/
-  sudo find /srv/www/wordpress/wp-content/plugins/rich-statistics -type d -exec chmod 755 {} \;
-  sudo find /srv/www/wordpress/wp-content/plugins/rich-statistics -type f -exec chmod 644 {} \;
-  sudo chown -R www-data:www-data /srv/www/wordpress/wp-content/plugins/rich-statistics
-  rm /tmp/rich-statistics-<version>.zip
-"
-
-# 4. Verify
-wp plugin get rich-statistics --path=/srv/www/wordpress --field=version
-curl -s <wordpress-url>/wp-json/rsa/v1/info
-```
-
-### WP-CLI
-
-```bash
-wp plugin list --path=/srv/www/wordpress
-wp plugin status rich-statistics --path=/srv/www/wordpress
-wp option get siteurl --path=/srv/www/wordpress
-```
 
 ## Infrastructure
 
