@@ -1,6 +1,10 @@
 # =============================================================================
-# Promote to Production: Release to stable (main) or beta (test branch tag)
+# Promote to Production: Merge test → main and tag.
 # Triggered manually on the test branch when a release candidate is verified.
+#
+# Every release ships both stable and beta PWA snapshots (build-release.yml
+# creates both automatically). The beta channel is a per-site preference
+# set in WordPress admin — not a CI release-time choice.
 # =============================================================================
 name: Promote to Production
 
@@ -11,18 +15,10 @@ on:
         description: 'Version to tag — leave blank to auto-read from rich-statistics.php'
         required: false
         type: string
-      channel:
-        description: 'Release channel'
-        required: true
-        default: 'stable'
-        type: choice
-        options:
-          - stable
-          - beta
 
 jobs:
   promote:
-    name: Promote ${{ inputs.channel || 'stable' }}
+    name: Merge test → main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -50,8 +46,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Stable release — merge test → main + tag
-        if: ${{ inputs.channel != 'beta' }}
+      - name: Merge test → main + tag
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -66,9 +61,3 @@ jobs:
           git fetch origin main
           git tag "v${{ steps.version.outputs.version }}" origin/main
           git push origin "v${{ steps.version.outputs.version }}"
-
-      - name: Beta release — tag test branch
-        if: ${{ inputs.channel == 'beta' }}
-        run: |
-          git tag "v${{ steps.version.outputs.version }}-beta.1"
-          git push origin "v${{ steps.version.outputs.version }}-beta.1"

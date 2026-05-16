@@ -18,6 +18,59 @@ jobs:
       artifact-name: rich-statistics
       retention-days: 30
 
+  upload-freemius:
+    name: Upload ZIP to Freemius
+    runs-on: ubuntu-latest
+    needs: build-zip
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rich-statistics-${{ github.ref_name }}
+          path: build
+
+      - name: Determine channel
+        id: channel
+        run: |
+          if echo "${{ github.ref_name }}" | grep -q "beta"; then
+            echo "is_beta=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload to Freemius
+        env:
+          FREEMIUS_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+          VERSION: ${{ github.ref_name }}
+          IS_BETA: ${{ steps.channel.outputs.is_beta }}
+        run: |
+          if [ -z "${FREEMIUS_KEY}" ]; then
+            echo "::warning::FREEMIUS_SECRET_KEY not set — skipping Freemius upload"
+            exit 0
+          fi
+          ZIP="build/rich-statistics-${VERSION}.zip"
+          if [ ! -f "$ZIP" ]; then
+            echo "ERROR: ZIP not found: $ZIP"
+            exit 1
+          fi
+          echo "Uploading ${VERSION} (is_beta=${IS_BETA}) to Freemius..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://api.freemius.com/v1/products/25954/releases.json" \
+            -H "Authorization: Bearer ${FREEMIUS_KEY}" \
+            -F "version=${VERSION#v}" \
+            -F "file=@${ZIP}" \
+            -F "is_beta=${IS_BETA}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "HTTP ${HTTP_CODE}: ${BODY}"
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "Freemius upload successful"
+          else
+            echo "::warning::Freemius upload failed (HTTP ${HTTP_CODE}) — release continues"
+          fi
+
   release:
     name: PWA snapshot + GitHub Release
     runs-on: ubuntu-latest
@@ -64,9 +117,8 @@ jobs:
             $(cat build/rich-statistics-${{ github.ref_name }}.zip.sha256)
             ```
 
-            ### Upload to Freemius
-            Download the ZIP above and upload it at:
-            https://dashboard.freemius.com → Your Plugin → Versions → Add New Version
+            ### Freemius
+            Automatically uploaded as a new version via CI.
 
       - name: Bump SW cache name
         run: |

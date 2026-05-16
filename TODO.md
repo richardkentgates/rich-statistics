@@ -5,7 +5,34 @@ See `ROADMAP.md` §6 for audit summary.
 
 ---
 
-## Phase 1: Critical (7 items) — Ship with next release
+## Phase 1: Critical — Ship with next release
+
+### BC-1: Snapshot format mismatch — flat vs channel subdirectories
+- **Area:** Snapshots / PWA / Server
+- **Files:** `docs/app/v/*/`, all 3 server environments, `docs/app/app.js`
+- **Impact:** New Tauri desktop builds navigate to `/v/{version}/{channel}/index.html` but 38 of 39 existing snapshots on production have flat files at `/v/{version}/index.html`. New desktop builds will 404 on all versions before 2.4.16.
+- **Fix:**
+  1. Run migration script on all 3 server environments to convert flat → `stable/` + `beta/` subdirs
+  2. Also run migration in the repo's `docs/app/v/` directories
+  3. Update `app.js` to try flat path as fallback if channel-subdir 404s (backward compat)
+  4. Update `build.sh` to match CI channel-subdir format
+- **Server migration command:**
+  ```bash
+  for dir in /var/www/rs-app/public_html/v/*/; do
+      version=$(basename "$dir")
+      [ -d "$dir/stable" ] && continue
+      mkdir -p "$dir/stable"
+      for f in "$dir"/*; do [ -f "$f" ] && mv "$f" "$dir/stable/"; done
+      [ -d "$dir/icons" ] && mv "$dir/icons" "$dir/stable/"
+      cp -r "$dir/stable" "$dir/beta"
+  done
+  ```
+
+### BC-2: `versions-beta.json` missing from dev and test environments
+- **Area:** Server
+- **Files:** `/var/www/rs-app-dev/`, `/var/www/rs-app-test/`
+- **Impact:** Beta channel routing unavailable on dev/test.richstatistics.com — `app.js` fetch to `/versions-beta.json` returns 404
+- **Fix:** Copy `versions.json` to `versions-beta.json` on dev and test PWA environments
 
 ### C1. `sw-init.js` missing from all versioned snapshots
 - **Area:** PWA
@@ -13,24 +40,11 @@ See `ROADMAP.md` §6 for audit summary.
 - **Impact:** Service worker registration fails silently for anyone using a versioned PWA
 - **Fix:** Copy `docs/app/sw-init.js` into all three `v/*/` directories
 
-### C2. `bin/setup-apt-repo.sh` does not exist
-- **Area:** Server Infrastructure
-- **Referenced by:** `bin/setup-app-server.sh:197`, `ARCHITECTURE.md:478`, `ARCHITECTURE.md:520`, `docs/app-server-architecture.md:247`
-- **Impact:** Fresh server provisioning fails at APT initialization step
-- **Fix:** Script exists and is functional ✅
-
-### C3. APT repo update scripts never deployed by CI
-- **Area:** CI/CD
-- **File:** `.github/workflows/job-build-desktop.yml`
-- **Impact:** If server is rebuilt, `rsa-apt-repo-update`, `-dev`, `-test` are missing and APT updates break silently
-- **Fix:** Added deployment of `bin/server-apt-repo-update.sh` to CI "Deploy server scripts" step ✅; `bin/deploy-server-scripts.sh` also updated for manual deployment ✅
-
-### C4. CHANGELOG.md missing 21 of 42 git tags
-- **Area:** Documentation
-- **File:** `CHANGELOG.md`
-- **Missing versions:** v2.4.1, v2.2.9, v2.2.0, v2.1.1–v2.1.9, v1.4.1–v1.4.3, v1.4.9–v1.4.10, v1.0.1–v1.2.0
-- **Impact:** Users and reviewers cannot track what changed between releases
-- **Fix:** Regenerated from git tags — all 42 versions now documented ✅
+### C7. All `sw.js` files have stale cache name `rsa-1-5-2`
+- **Area:** PWA
+- **Files:** `docs/app/sw.js`, `docs/app/v/2.3.0/sw.js`, `docs/app/v/2.4.0/sw.js`, `docs/app/v/2.4.1/sw.js`
+- **Impact:** Users on old cache won't get new assets; cache never invalidated since v1.5.2
+- **Fix:** Bump to `'rsa-2-4-1'` in all sw.js files (root + all snapshots)
 
 ### C5. `gen-update-json.py` uses wrong platform key for ARM64
 - **Area:** Server Infrastructure
@@ -44,11 +58,113 @@ See `ROADMAP.md` §6 for audit summary.
 - **Impact:** Every `update.json` has `"pub_date": "2026-01-01T00:00:00Z"` regardless of actual build date
 - **Fix:** Use `datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')`
 
-### C7. All `sw.js` files have stale cache name `rsa-1-5-2`
+---
+
+## Phase 2: High Priority
+
+### BC-3: Beta tag hardcoded to `.beta.1` — no increment
+- **Area:** CI/CD
+- **File:** `.github/workflows/promote.yml:70-74`
+- **Impact:** Second beta release for the same version will fail (tag collision)
+- **Fix:** Add tag increment logic:
+  ```bash
+  EXISTING=$(git tag -l "v${VERSION}-beta.*" | sort -V | tail -1)
+  if [ -n "$EXISTING" ]; then
+      SUFFIX=${EXISTING##*-beta.}
+      NEXT=$((SUFFIX + 1))
+      TAG="v${VERSION}-beta.${NEXT}"
+  else
+      TAG="v${VERSION}-beta.1"
+  fi
+  ```
+
+### BC-4: Fallback URL hardcoded to `/stable/` for beta users
 - **Area:** PWA
-- **Files:** `docs/app/sw.js`, `docs/app/v/2.3.0/sw.js`, `docs/app/v/2.4.0/sw.js`, `docs/app/v/2.4.1/sw.js`
-- **Impact:** Users on old cache won't get new assets; cache never invalidated since v1.5.2
-- **Fix:** Bump to `'rsa-2-4-1'` in all sw.js files (root + all snapshots)
+- **File:** `docs/app/app.js:601`
+- **Impact:** Beta channel users redirected to stable snapshot when their version isn't bundled
+- **Fix:** Pass `channel` to fallback URL instead of hardcoding `'stable'`
+
+### BC-6: Apache vhost missing immutable cache headers for `/v/` paths
+- **Area:** Server
+- **Files:** `/etc/apache2/sites-available/app.richstatistics.com-le-ssl.conf`, `dev.*`, `test.*`
+- **Impact:** Versioned PWA assets served without `Cache-Control: immutable` — browsers revalidate on every load
+- **Fix:** Add to all 3 SSL vhosts:
+  ```apache
+  <LocationMatch "^/v/[0-9]+\.[0-9]+\.[0-9]+/">
+      Header set Cache-Control "public, max-age=31536000, immutable"
+      Header set Access-Control-Allow-Origin "*"
+  </LocationMatch>
+  ```
+
+### BC-7: `update.json` signatures are empty
+- **Area:** Server / CI/CD
+- **File:** `/var/www/rs-app/public_html/dist/update.json`
+- **Impact:** Tauri updater will reject unsigned updates
+- **Fix:** Investigate signing pipeline — verify `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_KEY_PASSWORD` secrets; check `.sig` file generation and `gen-update-json.py` matching logic
+
+### BC-9/10: Version snapshot gap and constant drift
+- **Area:** Repo
+- **Files:** `rich-statistics.php`, `docs/app/v/`
+- **Impact:** `RSA_VERSION=2.4.3` but no snapshot for 2.4.2 or 2.4.3; plugin header says `2.4.1`
+- **Fix:** Create missing snapshots, sync version constants
+
+### H1-H6: CI/CD Hardcoded values & security
+- **Area:** CI/CD
+- **Files:** `.github/workflows/job-build-desktop.yml`, `setup-webhook.yml`, `bin/*`
+- **Items:** Server IP, SSH username, host key verification, StrictHostKeyChecking, dead input
+- **Status:** These were marked "✅ Fixed" in prior audit — verify they're truly resolved
+
+### CI/CD: Add Freemius ZIP upload to `build-release.yml`
+- **Area:** CI/CD (New Feature)
+- **File:** `.github/workflows/build-release.yml`
+- **Impact:** Plugin ZIP currently requires manual upload to Freemius dashboard after each release
+- **Fix:** Add a new `upload-freemius` job to `build-release.yml` that downloads the ZIP artifact and POSTs it to `https://api.freemius.com/v1/products/25954/releases.json` with the Freemius Developer API. Channel-aware: beta tags send `is_beta=true`, stable tags send `is_beta=false`.
+- **Prerequisite:** Add `FREEMIUS_SECRET_KEY` GitHub secret (get from Freemius Dashboard → Developer → API Keys)
+- **Only involves GitHub Actions** — no server-side scripts, no Apache config, no cron jobs
+
+---
+
+## Phase 3: Medium Priority
+
+### BC-5: `build.sh` creates flat snapshots
+- **Area:** Dev tooling
+- **File:** `build.sh:166-189`
+- **Impact:** Local builds produce different directory structure than CI releases
+- **Fix:** Update to create `v/{version}/{stable,beta}/` subdirectories matching CI
+
+### BC-8: Server accumulates snapshots with no pruning
+- **Area:** Server
+- **Files:** `bin/server-update-webapp.sh`, dev/test variants
+- **Impact:** 39 versions on production, growing unbounded
+- **Fix:** Add prune step matching CI logic (keep last 12) to server update scripts
+
+### BC-11: No defensive regex guard on `channel` in app.js
+- **Area:** PWA
+- **File:** `docs/app/app.js`
+- **Impact:** Currently safe but fragile — future code changes could introduce vulnerability
+- **Fix:** Add `channel = /^(stable|beta)$/.test(channel) ? channel : 'stable'`
+
+### BC-12: `setup-webhook.yml` always deploys production webhook
+- **Area:** CI/CD
+- **File:** `.github/workflows/setup-webhook.yml:66`
+- **Impact:** Dev/test environments deployed via this workflow validate against production token
+- **Fix:** Use environment-appropriate webhook file (`server-webhook-dev.php` for dev, etc.)
+
+### C2-C3: APT setup & CI deployment (previously critical, now verified)
+- **Area:** Server / CI/CD
+- **Status:** ✅ `bin/setup-apt-repo.sh` exists; CI deploys apt scripts. Verified on server.
+
+### C4: CHANGELOG.md
+- **Status:** ✅ Regenerated — all 42 versions documented
+
+### M1-M29: All prior Phase 2-3 items
+- **Status:** All marked ✅ fixed in prior audit — verify during next release cycle
+
+---
+
+## Phase 4: Low Priority
+
+(All items L1-L36 from prior audit — unchanged) See `ROADMAP.md` §9.8+ for Apache config notes.
 
 ---
 

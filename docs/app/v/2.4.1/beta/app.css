@@ -1,0 +1,1412 @@
+/**
+ * Rich Statistics PWA — app.css
+ * Mobile-first, matches admin palette (--rsa-accent: #6366f1)
+ */
+
+/* =========================================================================
+   Custom properties
+   ========================================================================= */
+:root {
+	--rsa-accent      : #4a90b8;
+	--rsa-accent-dark : #2e6f8e;
+	--rsa-bg          : #f8fafc;
+	--rsa-surface     : #ffffff;
+	--rsa-border      : #e2e8f0;
+	--rsa-text        : #1e293b;
+	--rsa-muted       : #64748b;
+	--rsa-danger      : #ef4444;
+	--rsa-success     : #10b981;
+	--rsa-nav-width   : 220px;
+	--rsa-topbar-h    : 52px;
+	--rsa-radius      : 8px;
+	--rsa-shadow      : 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+}
+
+/* =========================================================================
+   Reset / base
+   ========================================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+	height: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-size: 14px;
+	color: var(--rsa-text);
+	background: var(--rsa-bg);
+	/* Prevent the body from being the scroll container — scroll happens inside
+	   .rsa-main-scroll so WebKitGTK can promote it to a GPU compositing layer. */
+	overflow: hidden;
+}
+
+/* =========================================================================
+   Screen visibility (login vs app)
+   ========================================================================= */
+.rsa-screen { min-height: 100vh; }
+[hidden] { display: none !important; }
+
+/* =========================================================================
+   Login screen
+   ========================================================================= */
+.rsa-login-screen {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	background: linear-gradient(135deg, var(--rsa-accent) 0%, var(--rsa-accent-dark) 100%);
+}
+
+.rsa-login-card {
+	width: 100%;
+	max-width: 420px;
+	background: var(--rsa-surface);
+	border-radius: 12px;
+	padding: 36px 32px;
+	box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.rsa-login-logo {
+	font-size: 40px;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.rsa-login-card h1 {
+	text-align: center;
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin-bottom: 4px;
+}
+
+.rsa-login-card > p {
+	text-align: center;
+	color: var(--rsa-muted);
+	margin-bottom: 28px;
+	font-size: 13px;
+}
+
+/* =========================================================================
+   Form elements
+   ========================================================================= */
+.rsa-field {
+	margin-bottom: 18px;
+	display: flex;
+	flex-direction: column;
+}
+
+.rsa-field label {
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+}
+
+.rsa-field input {
+	padding: 10px 12px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 14px;
+	color: var(--rsa-text);
+	background: var(--rsa-surface);
+	transition: border-color .15s, box-shadow .15s;
+	outline: none;
+}
+
+.rsa-field input:focus {
+	border-color: var(--rsa-accent);
+	box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+}
+
+.rsa-field-hint {
+	font-size: 11px;
+	color: var(--rsa-muted);
+	margin-top: 5px;
+}
+
+/* =========================================================================
+   Buttons
+   ========================================================================= */
+.rsa-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 18px;
+	border-radius: var(--rsa-radius);
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	transition: background .15s, opacity .15s;
+}
+
+.rsa-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.rsa-btn-primary {
+	background: var(--rsa-accent);
+	color: #fff;
+}
+
+/* Full-width primary buttons in login/add-site forms */
+.rsa-login-card > .rsa-btn-primary,
+.rsa-login-card > div > .rsa-btn-primary {
+	width: 100%;
+	margin-top: 6px;
+}
+
+.rsa-btn-primary:hover:not(:disabled) { background: var(--rsa-accent-dark); }
+
+.rsa-btn-ghost {
+	background: transparent;
+	color: inherit;
+	border: none;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 8px 10px;
+}
+
+/* =========================================================================
+   Alerts
+   ========================================================================= */
+.rsa-alert {
+	padding: 10px 14px;
+	border-radius: var(--rsa-radius);
+	font-size: 13px;
+	margin-top: 12px;
+}
+.rsa-alert:empty { display: none; }
+
+.rsa-alert-error {
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	color: var(--rsa-danger);
+}
+
+/* =========================================================================
+   App layout
+   ========================================================================= */
+#rsa-app {
+	display: flex;
+	min-height: 100vh;
+}
+
+/* Sidebar nav */
+.rsa-nav {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: var(--rsa-nav-width);
+	background: var(--rsa-text);
+	color: #f1f5f9;
+	display: flex;
+	flex-direction: column;
+	z-index: 100;
+	transform: translateX( -100% );
+	transition: transform .22s ease;
+}
+
+.rsa-nav-open { transform: translateX(0) !important; }
+
+.rsa-nav-brand {
+	padding: 20px 18px 14px;
+	font-size: 16px;
+	font-weight: 700;
+	color: #fff;
+	border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.rsa-nav-list {
+	list-style: none;
+	padding: 10px 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.rsa-nav-link {
+	display: block;
+	padding: 10px 20px;
+	color: #94a3b8;
+	text-decoration: none;
+	font-size: 14px;
+	transition: background .12s, color .12s;
+	border-radius: 0;
+}
+
+.rsa-nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
+.rsa-nav-link.rsa-active { color: #fff; background: var(--rsa-accent); }
+
+.rsa-nav-footer {
+	padding: 12px 14px;
+	border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.rsa-signout-btn { color: #94a3b8; }
+.rsa-signout-btn:hover { color: #fff; }
+
+.rsa-nav-platform-label {
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: #64748b;
+	margin: 10px 10px 2px;
+	padding: 0;
+}
+
+.rsa-linux-download-btn {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	margin-bottom: 6px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255,255,255,.18);
+	border-radius: var(--rsa-radius);
+	background: rgba(255,255,255,.06);
+	color: #e2eaf2;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background .15s, border-color .15s;
+}
+.rsa-linux-download-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.3); }
+.rsa-tux-icon { flex-shrink: 0; }
+.rsa-linux-download-label { display: flex; flex-direction: column; line-height: 1.2; }
+.rsa-linux-download-small { font-size: 10px; font-weight: 400; opacity: .7; text-transform: uppercase; letter-spacing: .06em; }
+
+.rsa-linux-arch-links { display: flex; gap: 6px; margin: 0 0 6px; }
+.rsa-linux-arch-link {
+	flex: 1;
+	text-align: center;
+	padding: 5px 8px;
+	border: 1px solid rgba(255,255,255,.18);
+	border-radius: var(--rsa-radius);
+	background: rgba(255,255,255,.06);
+	color: #a0b8cc;
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background .15s, color .15s, border-color .15s;
+}
+.rsa-linux-arch-link:hover { background: rgba(255,255,255,.13); color: #e2eaf2; border-color: rgba(255,255,255,.3); }
+
+.rsa-install-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	margin-bottom: 6px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255,255,255,.18);
+	border-radius: var(--rsa-radius);
+	background: rgba(255,255,255,.06);
+	color: #e2eaf2;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background .15s, border-color .15s;
+}
+.rsa-install-btn:hover {
+	background: rgba(255,255,255,.13);
+	border-color: rgba(255,255,255,.35);
+	color: #fff;
+}
+
+/* Install button on the light-background login card */
+.rsa-login-install-btn {
+	background: var(--rsa-surface);
+	border-color: var(--rsa-border);
+	color: var(--rsa-text);
+	margin-top: 10px;
+	justify-content: center;
+}
+.rsa-login-install-btn:hover {
+	background: var(--rsa-bg);
+	border-color: var(--rsa-accent);
+	color: var(--rsa-accent-dark);
+}
+
+/* iOS Safari "Add to Home Screen" tip */
+#rsa-ios-tip {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	max-width: 420px;
+	width: calc(100% - 32px);
+	padding: 12px 14px;
+	background: #1e2d3d;
+	color: #e2eaf2;
+	border: 1px solid rgba(255,255,255,.15);
+	border-radius: 12px;
+	font-size: 13px;
+	line-height: 1.4;
+	box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+#rsa-ios-tip span { flex: 1; }
+#rsa-ios-tip-close {
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	color: #94a3b8;
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0 4px;
+}
+
+/* Main content area */
+.rsa-main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	margin-left: 0;
+	transition: margin-left .22s ease;
+	/* Give .rsa-main a fixed height so .rsa-main-scroll is the sole scroll
+	   container. WebKitGTK (Tauri/Linux) composites fixed-height overflow
+	   scroll containers on the GPU, eliminating frame-rate-limited soft scroll. */
+	height: 100vh;
+	overflow: hidden;
+}
+
+/* The actual scrolling viewport — promoted to GPU compositing layer */
+.rsa-main-scroll {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;  /* enables momentum scroll in WebKitGTK */
+	will-change: scroll-position;       /* hints compositor to own this layer  */
+}
+
+/* Connection status banners — sit between topbar and scroll container */
+.rsa-conn-banner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 7px 16px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	flex-shrink: 0;
+}
+.rsa-conn-banner--offline {
+	background: #2a2a2a;
+	color: #c8c8c8;
+}
+.rsa-conn-banner--site-down {
+	background: #4a3000;
+	color: #ffd280;
+}
+
+/* Overlay to close nav on mobile */
+.rsa-nav-open ~ .rsa-main::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.4);
+	z-index: 99;
+}
+
+/* Top bar — fixed within .rsa-main (not sticky inside a scroll container,
+   which causes compositing issues in WebKitGTK) */
+.rsa-topbar {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	padding: 0 16px;
+	height: var(--rsa-topbar-h);
+	background: var(--rsa-surface);
+	border-bottom: 1px solid var(--rsa-border);
+	box-shadow: var(--rsa-shadow);
+	gap: 12px;
+	/* Promote topbar to its own layer so scroll beneath it doesn't cause repaint */
+	will-change: transform;
+}
+
+.rsa-menu-toggle {
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	padding: 4px;
+	line-height: 1;
+	color: var(--rsa-text);
+}
+
+.rsa-topbar-title {
+	flex: 1;
+	font-weight: 600;
+	font-size: 15px;
+}
+
+.rsa-period-select {
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 5px 10px;
+	font-size: 12px;
+	background: var(--rsa-surface);
+	color: var(--rsa-text);
+	cursor: pointer;
+	outline: none;
+}
+
+.rsa-period-select:focus { border-color: var(--rsa-accent); }
+
+.rsa-custom-dates {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: 6px;
+}
+.rsa-date-input {
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 4px 8px;
+	font-size: 12px;
+	background: var(--rsa-surface);
+	color: var(--rsa-text);
+	outline: none;
+	width: 130px;
+}
+.rsa-date-input:focus { border-color: var(--rsa-accent); }
+.rsa-custom-dates-sep { font-size: 12px; color: var(--rsa-muted); }
+
+/* =========================================================================
+   Loading overlay
+   ========================================================================= */
+.rsa-loading-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(248,250,252,.75);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 200;
+}
+
+.rsa-spinner {
+	width: 36px;
+	height: 36px;
+	border: 3px solid var(--rsa-border);
+	border-top-color: var(--rsa-accent);
+	border-radius: 50%;
+	animation: rsaSpin .7s linear infinite;
+}
+
+@keyframes rsaSpin { to { transform: rotate(360deg); } }
+
+/* =========================================================================
+   Views
+   ========================================================================= */
+.rsa-view { padding: 20px 16px; }
+
+/* =========================================================================
+   KPI grid
+   ========================================================================= */
+.rsa-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.rsa-kpi-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 16px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-kpi-value {
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--rsa-accent);
+	line-height: 1.1;
+}
+
+.rsa-kpi-label {
+	font-size: 11px;
+	color: var(--rsa-muted);
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	margin-top: 4px;
+}
+
+/* =========================================================================
+   Charts
+   ========================================================================= */
+.rsa-chart-wrap {
+	position: relative;
+	height: 240px;
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 12px;
+	margin-bottom: 20px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+.rsa-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.rsa-chart-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 14px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-chart-card h3 {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 10px;
+}
+
+.rsa-chart-card canvas { height: 160px !important; }
+
+/* Heatmap layout */
+.rsa-hm-card { padding: 16px 20px; }
+.rsa-hm-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 14px;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.rsa-hm-path { font-size: 13px; font-weight: 600; color: var(--rsa-text); font-family: monospace; }
+.rsa-hm-meta { font-size: 12px; color: var(--rsa-muted); }
+.rsa-hm-body { display: flex; gap: 20px; align-items: flex-start; }
+.rsa-hm-canvas-wrap { flex: 0 0 52%; min-width: 0; position: relative; }
+#c-heatmap { height: auto !important; width: 100% !important; aspect-ratio: 540 / 756; border-radius: var(--rsa-radius); }
+
+/* Legend bar */
+.rsa-hm-legend {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+	font-size: 11px;
+	color: var(--rsa-muted);
+}
+.rsa-hm-legend-bar {
+	flex: 1;
+	height: 6px;
+	border-radius: 3px;
+	background: linear-gradient(to right, #4a90b8, #90c060, #f5c518, #e8532a);
+}
+
+/* Click-element table */
+.rsa-hm-table-wrap { flex: 1; min-width: 0; max-height: 500px; overflow-y: auto; }
+.rsa-hm-table-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--rsa-muted);
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	margin: 0 0 10px;
+}
+.rsa-hm-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+.rsa-hm-table thead th {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--rsa-muted);
+	text-align: left;
+	padding: 0 4px 6px;
+	border-bottom: 1px solid var(--rsa-border);
+}
+.rsa-hm-table thead th:last-child { text-align: right; }
+.rsa-hm-table tbody td {
+	padding: 6px 4px;
+	border-bottom: 1px solid var(--rsa-border);
+	vertical-align: middle;
+}
+.rsa-hm-table tbody tr:last-child td { border-bottom: none; }
+.rsa-hm-label { max-width: 0; width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rsa-hm-tag {
+	display: inline-block;
+	margin-left: 5px;
+	padding: 1px 5px;
+	font-size: 10px;
+	font-family: monospace;
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 3px;
+	color: var(--rsa-muted);
+	vertical-align: middle;
+}
+.rsa-hm-bar-cell { width: 36%; min-width: 48px; padding: 6px 8px; }
+.rsa-hm-bar-bg {
+	height: 6px;
+	background: var(--rsa-bg);
+	border-radius: 3px;
+	overflow: hidden;
+}
+.rsa-hm-bar-fill {
+	height: 100%;
+	background: var(--rsa-accent);
+	border-radius: 3px;
+	min-width: 2px;
+}
+.rsa-hm-count { text-align: right; white-space: nowrap; color: var(--rsa-muted); font-size: 12px; }
+
+@media (max-width: 680px) {
+	.rsa-hm-body { flex-direction: column; }
+	.rsa-hm-canvas-wrap { flex: none; width: 100%; }
+	.rsa-hm-table-wrap { max-height: 360px; width: 100%; }
+}
+
+/* Hotspot hover tooltip */
+.rsa-hm-tip {
+	position: absolute;
+	z-index: 20;
+	background: #1a2636;
+	border: 1px solid rgba(74,144,184,0.4);
+	border-radius: 6px;
+	padding: 8px 10px;
+	pointer-events: none;
+	min-width: 150px;
+	max-width: 220px;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
+.rsa-hm-tip-head {
+	font-size: 11px;
+	font-weight: 600;
+	color: rgba(74,144,184,0.9);
+	margin-bottom: 6px;
+}
+.rsa-hm-tip-tbl {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+	color: #c8d8e8;
+}
+.rsa-hm-tip-tbl td { padding: 2px 0; vertical-align: top; }
+.rsa-hm-tip-tbl td:last-child {
+	text-align: right;
+	padding-left: 10px;
+	white-space: nowrap;
+	color: rgba(255,255,255,0.5);
+}
+
+.rsa-table-card {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 14px;
+	margin-bottom: 20px;
+	box-shadow: var(--rsa-shadow);
+}
+
+.rsa-table-card h3 {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	margin-bottom: 10px;
+}
+
+/* =========================================================================
+   Tables
+   ========================================================================= */
+.rsa-table-wrap {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	overflow: hidden;
+	box-shadow: var(--rsa-shadow);
+	margin-bottom: 20px;
+	overflow-x: auto;
+}
+
+.rsa-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.rsa-table th {
+	background: #f1f5f9;
+	padding: 10px 12px;
+	text-align: left;
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--rsa-muted);
+	white-space: nowrap;
+}
+
+.rsa-table td {
+	padding: 10px 12px;
+	border-top: 1px solid var(--rsa-border);
+	vertical-align: middle;
+}
+
+.rsa-table tbody tr:hover { background: #f8fafc; }
+
+.rsa-td-path {
+	max-width: 180px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: monospace;
+	font-size: 12px;
+}
+
+/* =========================================================================
+   Premium notice
+   ========================================================================= */
+.rsa-premium-notice {
+	background: #fffbeb;
+	border: 1px solid #fcd34d;
+	border-radius: var(--rsa-radius);
+	padding: 20px;
+	text-align: center;
+	color: #92400e;
+}
+
+/* =========================================================================
+   Responsive — desktop (sidebar always visible)
+   ========================================================================= */
+@media ( min-width: 768px ) {
+	.rsa-nav {
+		transform: translateX(0);
+		position: sticky;
+		top: 0;
+		align-self: flex-start;
+		height: 100vh;
+	}
+
+	.rsa-main {
+		margin-left: 0; /* flex takes care of it */
+	}
+
+	.rsa-menu-toggle { display: none; }
+
+	/* Restore pointer events — no overlay needed on desktop */
+	.rsa-nav-open ~ .rsa-main::before { display: none; }
+
+	.rsa-view { padding: 24px 28px; }
+
+	.rsa-chart-wrap { height: 280px; }
+
+	/* Heatmap — cap height so the full canvas fits on screen without scrolling */
+	.rsa-hm-canvas-wrap { flex: 0 0 auto; }
+	#c-heatmap {
+		width: auto !important;
+		height: min( calc(100vh - 210px), 560px ) !important;
+		aspect-ratio: 540 / 756;
+	}
+	.rsa-hm-table-wrap { max-height: min( calc(100vh - 210px), 560px ); }
+
+	.rsa-grid-2 { grid-template-columns: 1fr 1fr; }
+
+	.rsa-chart-card canvas { height: 200px !important; }
+
+	.rsa-td-path { max-width: 320px; }
+}
+
+/* =========================================================================
+   Site switcher
+   ========================================================================= */
+.rsa-site-switcher {
+	position: relative;
+	padding: 8px 12px 10px;
+	border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.rsa-switcher-btn {
+	width: 100%;
+	background: rgba(255,255,255,.1);
+	border: 1px solid rgba(255,255,255,.2);
+	border-radius: var(--rsa-radius);
+	padding: 5px 10px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	color: #fff;
+	gap: 6px;
+}
+.rsa-switcher-btn:hover { background: rgba(255,255,255,.18); }
+
+#rsa-active-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex: 1;
+	text-align: left;
+}
+
+.rsa-switcher-caret { font-size: 10px; flex-shrink: 0; opacity: .7; }
+
+.rsa-site-menu {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	top: calc(100% - 2px);
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	box-shadow: 0 4px 16px rgba(0,0,0,.15);
+	z-index: 300;
+	overflow: hidden;
+}
+
+.rsa-site-menu-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--rsa-text);
+	border-bottom: 1px solid var(--rsa-border);
+}
+.rsa-site-menu-item:hover { background: var(--rsa-bg); }
+.rsa-site-menu-item.rsa-active { color: var(--rsa-accent); font-weight: 600; }
+
+.rsa-site-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rsa-site-menu-remove {
+	background: none;
+	border: none;
+	color: var(--rsa-muted);
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 1;
+	padding: 0 2px;
+	flex-shrink: 0;
+}
+.rsa-site-menu-remove:hover { color: var(--rsa-danger); }
+
+.rsa-site-menu-add {
+	display: block;
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 9px 12px;
+	text-align: left;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--rsa-accent);
+	font-weight: 500;
+}
+.rsa-site-menu-add:hover { background: var(--rsa-bg); }
+
+/* =========================================================================
+   Import hint (login screen)
+   ========================================================================= */
+.rsa-import-hint {
+	margin-top: 16px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--rsa-muted);
+}
+
+.rsa-import-label {
+	color: var(--rsa-accent);
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.rsa-import-block {
+	display: block;
+	text-align: center;
+	padding: 12px;
+	border: 2px dashed var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	color: var(--rsa-accent);
+	cursor: pointer;
+	margin-bottom: 16px;
+	font-size: 14px;
+	transition: border-color .15s, background .15s;
+}
+.rsa-import-block:hover {
+	border-color: var(--rsa-accent);
+	background: rgba(99,102,241,.04);
+}
+
+/* =========================================================================
+   Add-Site overlay
+   ========================================================================= */
+.rsa-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	z-index: 500;
+}
+.rsa-overlay .rsa-login-card { max-width: 440px; width: 100%; }
+
+.rsa-divider {
+	text-align: center;
+	color: var(--rsa-muted);
+	font-size: 12px;
+	margin: 14px 0;
+	position: relative;
+}
+.rsa-divider::before,
+.rsa-divider::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	width: calc(50% - 52px);
+	height: 1px;
+	background: var(--rsa-border);
+}
+.rsa-divider::before { left: 0; }
+.rsa-divider::after  { right: 0; }
+
+.rsa-field-row {
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+}
+.rsa-field-row .rsa-btn,
+.rsa-field-row .rsa-btn-ghost { flex: 1; }
+
+/* -----------------------------------------------------------------------
+   Campaigns empty state
+----------------------------------------------------------------------- */
+.rsa-empty {
+padding: 32px 16px;
+text-align: center;
+color: var(--rsa-muted);
+line-height: 1.7;
+}
+.rsa-empty code {
+background: var(--rsa-surface);
+border: 1px solid var(--rsa-border);
+border-radius: 4px;
+padding: 1px 5px;
+font-size: 12px;
+}
+
+/* -----------------------------------------------------------------------
+   Install page
+----------------------------------------------------------------------- */
+.rsa-install-card {
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	padding: 14px 0 6px;
+}
+.rsa-install-card + .rsa-install-card { border-top: 1px solid var(--rsa-border); padding-top: 14px; }
+.rsa-install-card--done { opacity: .75; }
+.rsa-install-card--warn { background: #fffbea; border: 1px solid #f0d060; border-radius: var(--rsa-radius); padding: 12px 14px; }
+.rsa-install-card-icon {
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	border-radius: 8px;
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+}
+.rsa-install-icon-safari { background: #f0f8ff; }
+.rsa-install-card-body { flex: 1; min-width: 0; }
+.rsa-install-card-body h3 {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin: 0 0 6px;
+	text-transform: none;
+	letter-spacing: 0;
+}
+.rsa-install-steps {
+	padding-left: 18px;
+	margin: 0 0 8px;
+	color: var(--rsa-text);
+	font-size: 13px;
+	line-height: 1.7;
+}
+.rsa-install-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--rsa-muted);
+	vertical-align: middle;
+}
+.rsa-install-method-label {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .06em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+}
+.rsa-install-code {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	padding: 10px 12px;
+	font-size: 12px;
+	line-height: 1.6;
+	font-family: 'Courier New', Courier, monospace;
+	overflow-x: auto;
+	white-space: pre;
+	color: var(--rsa-text);
+	margin: 0;
+}
+.rsa-install-deb-link { flex: 0 0 auto; width: auto; padding: 6px 18px; }
+.rsa-install-compat-table { margin-top: 8px; }
+.rsa-install-page-btn { justify-content: center; }
+.rsa-install-btn-pending { font-style: italic; }
+
+/* -----------------------------------------------------------------------
+   User Flow step cards
+----------------------------------------------------------------------- */
+.rsa-uf-wrap {
+display: flex;
+flex-direction: row;
+gap: 20px;
+padding: 16px 0;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+}
+.rsa-uf-step {
+background: var(--rsa-surface);
+border: 1px solid var(--rsa-border);
+border-radius: 10px;
+overflow: hidden;
+min-width: 220px;
+flex-shrink: 0;
+}
+.rsa-uf-step-hd {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+background: var(--rsa-bg);
+border-bottom: 1px solid var(--rsa-border);
+}
+.rsa-uf-step-label {
+font-weight: 600;
+font-size: 13px;
+}
+.rsa-uf-step-pct {
+font-size: 12px;
+color: var(--rsa-muted);
+}
+.rsa-uf-table { margin: 0; }
+.rsa-uf-table td { padding: 7px 14px; }
+.rsa-uf-exit td { color: var(--rsa-muted); font-style: italic; }
+
+/* -----------------------------------------------------------------------
+   Filter bar (Pages / Referrers / Campaigns views)
+----------------------------------------------------------------------- */
+.rsa-filter-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 16px;
+	padding: 12px 14px;
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+}
+.rsa-filter-bar select,
+.rsa-filter-bar input[type="text"],
+.rsa-filter-bar input[type="date"] {
+	padding: 7px 10px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 13px;
+	color: var(--rsa-text);
+	background: var(--rsa-bg);
+	min-width: 130px;
+}
+.rsa-filter-bar .rsa-sort-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--rsa-muted);
+	white-space: nowrap;
+}
+.rsa-filter-label {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--rsa-muted);
+	margin-bottom: 6px;
+}
+
+/* Sortable column header links */
+.rsa-table th a {
+	color: inherit;
+	text-decoration: none;
+	white-space: nowrap;
+}
+.rsa-table th a:hover { color: var(--rsa-accent); }
+
+/* Share bar cell */
+.rsa-bar-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 120px;
+}
+.rsa-bar-fill {
+	height: 8px;
+	background: var(--rsa-accent);
+	border-radius: 4px;
+	min-width: 2px;
+	opacity: 0.65;
+}
+
+/* Export form */
+.rsa-export-form .rsa-form-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 16px;
+}
+.rsa-export-form select,
+.rsa-export-form input[type="date"] {
+	padding: 8px 10px;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	font-size: 14px;
+	color: var(--rsa-text);
+	background: var(--rsa-bg);
+	width: 100%;
+	box-sizing: border-box;
+}
+.rsa-custom-dates {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 6px;
+}
+.rsa-custom-dates input { flex: 1; }
+
+/* -----------------------------------------------------------------------
+   View toggle (Path Explorer / Journey Table)
+   --------------------------------------------------------------------- */
+.rsa-view-toggle {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+/* -----------------------------------------------------------------------
+   Path Explorer — Funnel summary bar
+   --------------------------------------------------------------------- */
+.rsa-funnel {
+	display: flex;
+	align-items: flex-end;
+	gap: 4px;
+	height: 80px;
+	margin-bottom: 16px;
+	padding: 0 4px;
+}
+.rsa-funnel-step {
+	flex: 1;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	height: 100%;
+	min-width: 60px;
+}
+.rsa-funnel-step-bg {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: var(--rsa-accent);
+	opacity: 0.18;
+	border-radius: 4px 4px 0 0;
+}
+.rsa-funnel-step-label {
+	position: relative;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--rsa-muted);
+	text-align: center;
+	z-index: 1;
+}
+.rsa-funnel-step-count {
+	position: relative;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	text-align: center;
+	z-index: 1;
+}
+.rsa-funnel-step-pct {
+	position: relative;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	text-align: center;
+	z-index: 1;
+}
+.rsa-funnel-step-pct.is-drop { color: #e05252; }
+
+/* -----------------------------------------------------------------------
+   Path Explorer — Miller columns
+   --------------------------------------------------------------------- */
+.rsa-explorer {
+	display: flex;
+	flex-direction: row;
+	gap: 0;
+	overflow-x: auto;
+	border: 1px solid var(--rsa-border);
+	border-radius: var(--rsa-radius);
+	background: var(--rsa-surface);
+}
+.rsa-explorer-col {
+	flex: 0 0 240px;
+	min-width: 200px;
+	border-right: 1px solid var(--rsa-border);
+}
+.rsa-explorer-col:last-child { border-right: none; }
+.rsa-explorer-col-hdr {
+	padding: 8px 12px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--rsa-muted);
+	border-bottom: 1px solid var(--rsa-border);
+	background: var(--rsa-bg);
+}
+.rsa-explorer-col-list {
+	padding: 4px 0;
+	max-height: 380px;
+	overflow-y: auto;
+}
+.rsa-explorer-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 7px 10px;
+	font-size: 13px;
+	border-bottom: 1px solid var(--rsa-border);
+	overflow: hidden;
+	min-height: 36px;
+}
+.rsa-explorer-item:last-child { border-bottom: none; }
+.rsa-explorer-item.is-clickable { cursor: pointer; }
+.rsa-explorer-item.is-clickable:hover { background: rgba(74, 144, 184, 0.06); }
+.rsa-explorer-item.is-selected { background: rgba(74, 144, 184, 0.12); }
+.rsa-explorer-item.is-exit { opacity: 0.55; }
+.rsa-explorer-item-bar {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--rsa-accent);
+	opacity: 0.08;
+	pointer-events: none;
+	z-index: 0;
+}
+.rsa-explorer-item-label {
+	position: relative;
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--rsa-text);
+	z-index: 1;
+}
+.rsa-explorer-item-meta {
+	position: relative;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+	z-index: 1;
+}
+.rsa-explorer-item-arrow {
+	font-size: 15px;
+	color: var(--rsa-muted);
+	flex-shrink: 0;
+	margin-left: 2px;
+	z-index: 1;
+}
+
+/* =========================================================================
+   Desktop app update banner (Tauri only — shown when plugin version is
+   newer than the highest bundled app version)
+   ========================================================================= */
+#rsa-desktop-update-banner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: #7c3a00;
+	border-bottom: 1px solid #a84d00;
+	color: #fde8c8;
+	font-size: 13px;
+	padding: 9px 16px;
+	position: sticky;
+	top: 0;
+	z-index: 999;
+	flex-wrap: wrap;
+}
+.rsa-desktop-update-icon {
+	font-size: 16px;
+	flex-shrink: 0;
+}
+#rsa-desktop-update-banner span {
+	flex: 1;
+	min-width: 0;
+}
+#rsa-desktop-update-banner a {
+	color: #ffd699;
+	font-weight: 600;
+	white-space: nowrap;
+	text-decoration: underline;
+}
+#rsa-desktop-update-dismiss {
+	background: none;
+	border: none;
+	color: #fde8c8;
+	font-size: 18px;
+	cursor: pointer;
+	padding: 0 4px;
+	line-height: 1;
+	flex-shrink: 0;
+	opacity: 0.7;
+}
+#rsa-desktop-update-dismiss:hover { opacity: 1; }
