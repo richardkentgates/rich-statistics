@@ -28,5 +28,4 @@ jobs:
 
       - name: Push develop → test
         run: |
-          git fetch origin test
-          git push origin develop:test
+          git push --force origin develop:test

@@ -47,7 +47,7 @@ jobs:
 
       - name: Push test → main + tag
         run: |
-          git push origin test:main
+          git push --force origin test:main
           git fetch origin main
           HASH=$(git rev-parse origin/main)
           git tag "v${{ steps.version.outputs.version }}" "${HASH}"
