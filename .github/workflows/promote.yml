@@ -62,10 +62,13 @@ jobs:
             --body "Automated promote workflow." \
             --label automate)
           echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash --delete-branch
+          gh pr merge "$PR_URL" --squash
           git fetch origin main
           git tag "v${{ steps.version.outputs.version }}" origin/main
+          # Push tag for remote tracking. This doesn't trigger build-release
+          # (GITHUB_TOKEN events are suppressed). Instead, dispatch directly.
           git push origin "v${{ steps.version.outputs.version }}"
+          gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
 
       - name: Beta release — tag test branch
         if: ${{ inputs.channel == 'beta' }}

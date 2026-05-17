@@ -38,4 +38,4 @@ jobs:
             --body "Automated promote workflow. Merges develop → test for QA." \
             --label automate)
           echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash --delete-branch
+          gh pr merge "$PR_URL" --squash
