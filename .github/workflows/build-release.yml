@@ -75,13 +75,14 @@ jobs:
           PLUGIN_ID=25954
 
           # Find version tag on Freemius
-          RESOURCE="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags.json?search=${VERSION}"
+          # NOTE: HMAC signs the base path only (no query params)
+          BASE_PATH="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags.json"
           DATE=$(date -u '+%a, %d %b %Y %H:%M:%S GMT')
-          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${RESOURCE}"
+          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${BASE_PATH}"
           SIGNATURE=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary | base64)
           AUTH="FS#${FREEMIUS_DEV_ID}:${SIGNATURE}"
 
-          RESPONSE=$(curl -sS "https://api.freemius.com${RESOURCE}" \
+          RESPONSE=$(curl -sS "https://api.freemius.com${BASE_PATH}?search=${VERSION}" \
             -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
           import sys,json
@@ -99,13 +100,13 @@ jobs:
           fi
 
           echo "Found v${VERSION} tag ID ${TAG_ID} — setting release_mode=released"
-          RESOURCE_PUT="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
+          TAG_PATH="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
           DATE_PUT=$(date -u '+%a, %d %b %Y %H:%M:%S GMT')
-          STRING_TO_SIGN_PUT="PUT\n\napplication/json\n${DATE_PUT}\n${RESOURCE_PUT}"
+          STRING_TO_SIGN_PUT="PUT\n\napplication/json\n${DATE_PUT}\n${TAG_PATH}"
           SIGNATURE_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary | base64)
           AUTH_PUT="FS#${FREEMIUS_DEV_ID}:${SIGNATURE_PUT}"
 
-          curl -sS -X PUT "https://api.freemius.com${RESOURCE_PUT}" \
+          curl -sS -X PUT "https://api.freemius.com${TAG_PATH}" \
             -H "Authorization: ${AUTH_PUT}" -H "Content-Type: application/json" -H "Date: ${DATE_PUT}" \
             -d '{"release_mode": "released"}' \
             | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'Released v{d.get(\"version\",\"\")}: release_mode={d.get(\"release_mode\",\"\")} status={d.get(\"status\",\"\")}')"
