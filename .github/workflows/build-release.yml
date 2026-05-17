@@ -177,25 +177,8 @@ jobs:
           pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
           PYEOF
 
-      - name: Commit and push snapshot back to main
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/app/
-          if git diff --cached --quiet; then
-            echo "No snapshot changes to commit."
-          else
-            git commit -m "chore: add versioned PWA snapshot v${VERSION} [skip ci]"
-            # Beta tags push to test branch, stable tags push to main
-            if echo "${GITHUB_REF_NAME}" | grep -q "beta"; then
-              git fetch origin test
-              git push origin HEAD:test
-            else
-              git fetch origin main
-              git push origin HEAD:main
-            fi
-          fi
+      - name: Snapshot already committed on develop — CI does not push to any branch
+        run: echo "Snapshots are created by build.sh on develop and flow through PR promotion."
 
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml

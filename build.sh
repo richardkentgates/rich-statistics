@@ -165,27 +165,66 @@ info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
 # -----------------------------------------------------------------------
 # Publish versioned app snapshot to docs/app/v/{version}/{channel}/
 # -----------------------------------------------------------------------
-# Creates both stable/ and beta/ subdirectories with identical content.
-# Channel differentiation is purely path-based — app.js navigates to
-# v/{version}/{channel}/ based on info.channel from the plugin.
 APP_SRC="docs/app"
 APP_VERSIONED="docs/app/v/${VERSION}"
 
-if [ -d "${APP_VERSIONED}/stable" ]; then
-    warn "Versioned app folder already exists: ${APP_VERSIONED}/stable — skipping."
-else
-    for CHANNEL in stable beta; do
-        CHANNEL_DIR="${APP_VERSIONED}/${CHANNEL}"
-        info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
-        mkdir -p "$CHANNEL_DIR"
-        for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
-            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
-        done
-        for f in index-dev.html index-test.html config-dev.js config-test.js; do
-            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
-        done
-        [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${CHANNEL_DIR}/icons"
+# Bump SW cache name to match release version
+CACHE_NAME="rsa-$(echo "${VERSION}" | tr '.' '-')"
+sed -i "s/: 'rsa-[0-9]\+-[0-9]\+-[0-9]\+'/: '${CACHE_NAME}'/" "${APP_SRC}/sw.js"
+info "Bumped SW cache name to ${CACHE_NAME}"
+
+# Create versioned snapshot directories (stable + beta)
+for CHANNEL in stable beta; do
+    CHANNEL_DIR="${APP_VERSIONED}/${CHANNEL}"
+    if [ -d "$CHANNEL_DIR" ]; then
+        warn "Versioned app folder already exists: ${CHANNEL_DIR} — skipping."
+        continue
+    fi
+    info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
+    mkdir -p "$CHANNEL_DIR"
+    for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
     done
-    info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
-    info "Commit and push docs/ to publish to GitHub Pages."
-fi
+    for f in index-dev.html index-test.html config-dev.js config-test.js; do
+        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+    done
+    [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${CHANNEL_DIR}/icons"
+done
+
+# Regenerate versions.json + versions-beta.json from v/ directory
+python3 << 'PYEOF'
+import json, pathlib
+v_dir = pathlib.Path('docs/app/v')
+versions = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
+pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(versions))
+PYEOF
+info "Regenerated versions.json and versions-beta.json"
+
+# Prune old snapshot directories (keep last 12)
+python3 << 'PYEOF'
+import json, shutil, pathlib
+v_dir = pathlib.Path('docs/app/v')
+all_v = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+keep = set(all_v[-12:])
+for d in v_dir.iterdir():
+    if d.is_dir() and d.name not in keep:
+        shutil.rmtree(d)
+        print(f"pruned {d.name}")
+remaining = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
+pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
+PYEOF
+info "Pruned snapshots to last 12 versions"
+info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
+info "Commit and push docs/ to publish."
+info "Run: git add docs/ && git commit -m 'chore: add versioned PWA snapshot v${VERSION}'"
