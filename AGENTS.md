@@ -153,7 +153,7 @@ feature/foo ──PR──→ develop ──push──→ build-develop.yml → 
                         ↓
             build-release.yml (triggered via workflow_dispatch)
             ├── Plugin ZIP → GitHub Release
-            ├── Plugin ZIP → Freemius (buttonizer/freemius-deploy)
+            ├── Plugin ZIP → Freemius (PHP SDK via bin/deploy-freemius.php)
             ├── PWA snapshots → docs/app/v/{version}/{stable,beta}/
             ├── Desktop builds → server dist/
             └── Ping deploy → app.richstatistics.com/_deploy/
@@ -196,7 +196,7 @@ Failure to follow these rules will break the pipeline and delete branches:
 
 4. **Version bump**: Before promoting, ensure `RSA_VERSION` in `rich-statistics.php` matches the intended release version (auto-detected by the promote workflow). Also update the plugin header `Version:` and `readme.txt` `Stable tag:`.
 
-5. **Freemius upload**: Handled by the `upload-freemius` job in `build-release.yml` using `buttonizer/freemius-deploy@v0.1.3`. Requires `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_DEV_ID`, `SECRET_KEY` secrets. Non-beta tags upload in `pending` mode (admin must manually release in Freemius dashboard).
+5. **Freemius upload**: Handled by the `upload-freemius` job in `build-release.yml` using `bin/deploy-freemius.php` (Freemius PHP SDK). Requires `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_DEV_ID`, `SECRET_KEY` secrets. Non-beta tags upload in `pending` mode (admin must manually release in Freemius dashboard).
 
 ## Server Endpoints
 
@@ -251,7 +251,7 @@ All three build workflows share reusable sub-workflows for ZIP and desktop build
 ### `build-release.yml` (tagged on main)
 - **Trigger**: `workflow_dispatch` (dispatched by promote.yml after tagging), OR tag push (`v*`)
 - **build-zip**: Plugin ZIP via `job-build-zip` with proper version
-- **upload-freemius**: Uploads ZIP to Freemius via `buttonizer/freemius-deploy@v0.1.3` (stable: `pending`, beta: `beta`)
+- **upload-freemius**: Uploads ZIP to Freemius via `bin/deploy-freemius.php` (Freemius PHP SDK) (stable: `pending`, beta: `beta`)
 - **release**: Plugin ZIP, GitHub Release, versioned PWA snapshot (`docs/app/v/<version>/{stable,beta}/`)
 - **build-desktop**: Desktop binaries via `job-build-desktop` with `stamp-version: true`, pushed to `rs-app/dist/`
 - **ping-deploy**: Syncs PWA to `rs-app` via webhook
@@ -316,7 +316,7 @@ See `ROADMAP.md` §6 for the full prioritized list.
 - Plugin Checker: 0 errors on test server ✅
 - Created uninstall.php (was missing) ✅
 - App server architecture DR documentation ✅
-- Freemius CI upload via `buttonizer/freemius-deploy@v0.1.3` ✅
+- Freemius CI upload via `bin/deploy-freemius.php` (Freemius PHP SDK) ✅
 - Beta channel parity (BC-1 through BC-12) ✅
 - Fixed `--delete-branch` destroying source branches in promote workflows ✅
 - Fixed GITHUB_TOKEN workflow trigger suppression via `gh workflow run` ✅
