@@ -39,3 +39,6 @@ jobs:
             --label automate)
           echo "Created PR: $PR_URL"
           gh pr merge "$PR_URL" --squash
+          # Push events from GITHUB_TOKEN don't trigger new workflows.
+          # Dispatch build-test directly to run CI on the merged test branch.
+          gh workflow run "Build Test" --ref test
