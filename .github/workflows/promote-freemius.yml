@@ -1,0 +1,49 @@
+name: Promote Freemius Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to promote (e.g. 2.4.19)'
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promote version to released on Freemius
+        env:
+          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
+          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
+          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.inputs.version }}"
+          PLUGIN_ID=25954
+
+          HMAC_SIGN() {
+            local method="$1" resource="$2" md5="" ct="application/json"
+            local date="$(date -u '+%a, %d %b %Y %H:%M:%S GMT')"
+            local s="${method}\n${md5}\n${ct}\n${date}\n${resource}"
+            local sig="$(echo -en "${s}" | openssl dgst -sha256 -hmac "${SECRET_KEY}" -binary | base64)"
+            echo "FS#${DEV_ID}:${sig}|${date}"
+          }
+
+          # Find tag by version
+          RESOURCE="/v1/developers/${PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags.json"
+          IFS='|' read -r AUTH DATE <<< "$(HMAC_SIGN GET "${RESOURCE}")"
+          TAG_ID=$(curl -fsS "https://api.freemius.com${RESOURCE}?search=${VERSION}" \
+            -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); tags=d if isinstance(d,list) else d.get('tags',d.get('data',[])); [print(t['id']) for t in tags if t.get('version')=='${VERSION}']")
+
+          if [ -z "$TAG_ID" ]; then
+            echo "Version ${VERSION} not found on Freemius"
+            exit 1
+          fi
+
+          RESOURCE_PUT="/v1/developers/${PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
+          IFS='|' read -r AUTH_PUT DATE_PUT <<< "$(HMAC_SIGN PUT "${RESOURCE_PUT}")"
+          curl -fsS -X PUT "https://api.freemius.com${RESOURCE_PUT}" \
+            -H "Authorization: ${AUTH_PUT}" -H "Content-Type: application/json" -H "Date: ${DATE_PUT}" \
+            -d '{"release_mode": "released"}' \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Promoted v{d.get(\"version\",\"\")}: release_mode={d.get(\"release_mode\",\"\")} status={d.get(\"status\",\"\")}')"
