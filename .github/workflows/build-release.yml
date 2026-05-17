@@ -31,35 +31,87 @@ jobs:
           name: rich-statistics-${{ github.ref_name }}
           path: build
 
-      - name: Determine release mode
+      - name: Determine channel
         id: channel
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           if echo "${{ github.ref_name }}" | grep -q "beta"; then
-            echo "release_mode=beta" >> $GITHUB_OUTPUT
+            echo "is_beta=true" >> $GITHUB_OUTPUT
           else
-            echo "release_mode=pending" >> $GITHUB_OUTPUT
+            echo "is_beta=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Copy ZIP to workspace root
         run: |
           cp "build/rich-statistics-${{ github.ref_name }}.zip" "rich-statistics-${{ github.ref_name }}.zip"
 
-      - name: Deploy to Freemius
-        uses: buttonizer/freemius-deploy@v0.1.3
-        with:
-          file_name: rich-statistics-${{ github.ref_name }}.zip
-          release_mode: ${{ steps.channel.outputs.release_mode }}
-          version: ${{ steps.channel.outputs.version }}
-          sandbox: false
-        env:
-          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
-          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
-          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
-          PLUGIN_SLUG: rich-statistics
-          PLUGIN_ID: 25954
+      - name: Deploy to Freemius (upload + promote)
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.channel.outputs.version }}"
+          IS_BETA="${{ steps.channel.outputs.is_beta }}"
+          RELEASE_MODE="beta"
+          [ "$IS_BETA" = "false" ] && RELEASE_MODE="released"
+
+          # HMAC-SHA256 signature per Freemius developer API spec
+          DEV_ID="${{ secrets.FREEMIUS_DEV_ID }}"
+          PUBLIC_KEY="${{ secrets.FREEMIUS_PUBLIC_KEY }}"
+          SECRET_KEY="${{ secrets.FREEMIUS_SECRET_KEY }}"
+          PLUGIN_ID=25954
+
+          # Build the string to sign
+          METHOD="POST"
+          CONTENT_MD5=""
+          CONTENT_TYPE="application/json"
+          DATE=$(date -u '+%a, %d %b %Y %H:%M:%S GMT')
+          RESOURCE="/v1/developers/${PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags.json"
+          STRING_TO_SIGN="${METHOD}\n${CONTENT_MD5}\n${CONTENT_TYPE}\n${DATE}\n${RESOURCE}"
+
+          SIGNATURE=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${SECRET_KEY}" -binary | base64)
+          AUTH="FS#${DEV_ID}:${SIGNATURE}"
+
+          # Check if version already exists
+          EXISTING=$(curl -fsS "https://api.freemius.com${RESOURCE}?search=${VERSION}" \
+            -H "Authorization: ${AUTH}" \
+            -H "Content-Type: ${CONTENT_TYPE}" \
+            -H "Date: ${DATE}" 2>/dev/null | python3 -c "
+          import sys,json
+          try:
+              data=json.load(sys.stdin)
+              tags=data if isinstance(data,list) else data.get('tags',data.get('data',[]))
+              for t in tags:
+                  if t.get('version')=='${VERSION}':
+                      print(t.get('id',''))
+                      break
+          except: pass
+          " || true)
+
+          if [ -n "$EXISTING" ]; then
+            echo "Version ${VERSION} already exists (tag ID: ${EXISTING}) — promoting to ${RELEASE_MODE}"
+            RESOURCE_PUT="/v1/developers/${PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags/${EXISTING}.json"
+            STRING_TO_SIGN_PUT="PUT\n${CONTENT_MD5}\n${CONTENT_TYPE}\n${DATE}\n${RESOURCE_PUT}"
+            SIGNATURE_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${SECRET_KEY}" -binary | base64)
+            AUTH_PUT="FS#${DEV_ID}:${SIGNATURE_PUT}"
+            curl -fsS -X PUT "https://api.freemius.com${RESOURCE_PUT}" \
+              -H "Authorization: ${AUTH_PUT}" \
+              -H "Content-Type: ${CONTENT_TYPE}" \
+              -H "Date: ${DATE}" \
+              -d "{\"release_mode\": \"${RELEASE_MODE}\"}" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Promoted: release_mode={d.get(\"release_mode\",\"unknown\")}')"
+          else
+            echo "Version ${VERSION} does not exist — uploading as ${RELEASE_MODE}"
+            curl -fsS -X POST "https://api.freemius.com${RESOURCE}" \
+              -H "Authorization: ${AUTH}" \
+              -H "Content-Type: ${CONTENT_TYPE}" \
+              -H "Date: ${DATE}" \
+              -F "version=${VERSION}" \
+              -F "release_mode=${RELEASE_MODE}" \
+              -F "file=@rich-statistics-${{ github.ref_name }}.zip" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Uploaded: version={d.get(\"version\",\"\")} release_mode={d.get(\"release_mode\",\"\")}')"
+          fi
 
   release:
     name: PWA snapshot + GitHub Release
