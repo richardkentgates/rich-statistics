@@ -75,16 +75,16 @@ jobs:
           PLUGIN_ID=25954
 
           # Developer scope — matching buttonizer/freemius-deploy SDK init.
-          # Auth header per FreemiusWordPress.php::GenerateAuthorizationParams():
-          #   FS {scope_entity_id}:{scope_entity_public_key}:{base64url(hmac-sha256)}
+          # The buttonizer uses the standalone Freemius PHP SDK (freemius-php-sdk),
+          # which ALWAYS passes Content-Type: application/json in the string-to-sign
+          # for ALL methods (including GET). The WordPress SDK differs on this point.
+          # Auth header: FS {scope_entity_id}:{scope_entity_public_key}:{base64url(hmac-sha256)}
           # String to sign: METHOD\\nContent-MD5\\nContent-Type\\nDate\\nResourceUrl
-          # For GET: Content-MD5 empty, Content-Type empty (three \\n between method and date)
-          # For PUT: Content-MD5 = md5(body), Content-Type = application/json
 
           GET_PATH="/v1/developers/${FREEMIUS_DEV_ID}/plugins/${PLUGIN_ID}/tags.json"
           DATE=$(date -u -R)
-          # GET: no content-md5, no content-type
-          STRING_TO_SIGN="GET\n\n\n${DATE}\n${GET_PATH}"
+          # GET: content-md5 empty, content-type = application/json (standalone SDK always sends it)
+          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${GET_PATH}"
           HMAC_BIN=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
           # Base64Url: replace +/ with -_, remove padding =
           HMAC_B64=$(echo -n "${HMAC_BIN}" | base64 | tr '+/' '-_' | tr -d '=')
@@ -92,7 +92,7 @@ jobs:
 
           echo "GET ${GET_PATH}?search=${VERSION}"
           RESPONSE=$(curl -sS "https://api.freemius.com${GET_PATH}?search=${VERSION}" \
-            -H "Authorization: ${AUTH}" -H "Date: ${DATE}")
+            -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
           echo "Response: ${RESPONSE:0:400}"
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
           import sys,json
@@ -110,7 +110,8 @@ jobs:
           fi
 
           echo "Found v${VERSION} tag ID ${TAG_ID} — setting release_mode=released"
-          BODY='{"release_mode": "released"}'
+          # Match PHP json_encode output: no space after colon
+          BODY='{"release_mode":"released"}'
           CONTENT_MD5=$(printf '%s' "${BODY}" | md5sum | cut -d' ' -f1)
           PUT_PATH="/v1/developers/${FREEMIUS_DEV_ID}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
           DATE_PUT=$(date -u -R)
