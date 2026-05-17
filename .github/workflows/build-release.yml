@@ -74,22 +74,25 @@ jobs:
           VERSION="${{ steps.channel.outputs.version }}"
           PLUGIN_ID=25954
 
-          # Use same auth as Freemius PHP SDK: plugin scope
-          # CanonizePath('tags') → /v1/plugins/{plugin_id}/tags.json
-          # Auth: FS {plugin_id}:{public_key}:{base64url(hmac-sha256(string, secret))}
-          # Date format: date('r') = e.g. "Sun, 17 May 2026 11:30:35 +0000"
+          # Developer scope — matching buttonizer/freemius-deploy SDK init.
+          # Auth header per FreemiusWordPress.php::GenerateAuthorizationParams():
+          #   FS {scope_entity_id}:{scope_entity_public_key}:{base64url(hmac-sha256)}
           # String to sign: METHOD\\nContent-MD5\\nContent-Type\\nDate\\nResourceUrl
-          GET_PATH="/v1/plugins/${PLUGIN_ID}/tags.json"
+          # For GET: Content-MD5 empty, Content-Type empty (three \\n between method and date)
+          # For PUT: Content-MD5 = md5(body), Content-Type = application/json
+
+          GET_PATH="/v1/developers/${FREEMIUS_DEV_ID}/plugins/${PLUGIN_ID}/tags.json"
           DATE=$(date -u -R)
-          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${GET_PATH}"
+          # GET: no content-md5, no content-type
+          STRING_TO_SIGN="GET\n\n\n${DATE}\n${GET_PATH}"
           HMAC_BIN=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
           # Base64Url: replace +/ with -_, remove padding =
           HMAC_B64=$(echo -n "${HMAC_BIN}" | base64 | tr '+/' '-_' | tr -d '=')
-          AUTH="FS ${PLUGIN_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64}"
+          AUTH="FS ${FREEMIUS_DEV_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64}"
 
           echo "GET ${GET_PATH}?search=${VERSION}"
           RESPONSE=$(curl -sS "https://api.freemius.com${GET_PATH}?search=${VERSION}" \
-            -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
+            -H "Authorization: ${AUTH}" -H "Date: ${DATE}")
           echo "Response: ${RESPONSE:0:400}"
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
           import sys,json
@@ -107,16 +110,22 @@ jobs:
           fi
 
           echo "Found v${VERSION} tag ID ${TAG_ID} — setting release_mode=released"
-          PUT_PATH="/v1/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
+          BODY='{"release_mode": "released"}'
+          CONTENT_MD5=$(printf '%s' "${BODY}" | md5sum | cut -d' ' -f1)
+          PUT_PATH="/v1/developers/${FREEMIUS_DEV_ID}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
           DATE_PUT=$(date -u -R)
-          STRING_TO_SIGN_PUT="PUT\n\napplication/json\n${DATE_PUT}\n${PUT_PATH}"
+          # PUT: content-md5, content-type
+          STRING_TO_SIGN_PUT="PUT\n${CONTENT_MD5}\napplication/json\n${DATE_PUT}\n${PUT_PATH}"
           HMAC_BIN_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
           HMAC_B64_PUT=$(echo -n "${HMAC_BIN_PUT}" | base64 | tr '+/' '-_' | tr -d '=')
-          AUTH_PUT="FS ${PLUGIN_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64_PUT}"
+          AUTH_PUT="FS ${FREEMIUS_DEV_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64_PUT}"
 
           curl -sS -X PUT "https://api.freemius.com${PUT_PATH}" \
-            -H "Authorization: ${AUTH_PUT}" -H "Content-Type: application/json" -H "Date: ${DATE_PUT}" \
-            -d '{"release_mode": "released"}' \
+            -H "Authorization: ${AUTH_PUT}" \
+            -H "Content-Type: application/json" \
+            -H "Content-MD5: ${CONTENT_MD5}" \
+            -H "Date: ${DATE_PUT}" \
+            -d "${BODY}" \
             | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'Released v{d.get(\"version\",\"\")}: release_mode={d.get(\"release_mode\",\"\")} status={d.get(\"status\",\"\")}')"
 
   release:
