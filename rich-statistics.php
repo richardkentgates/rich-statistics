@@ -187,6 +187,8 @@ if ( function_exists( 'rs_fs' ) ) {
 	rs_fs()->add_action( 'after_uninstall', 'rs_fs_uninstall_cleanup' );
 
 	function rs_fs_uninstall_cleanup() {
+		wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
+		wp_clear_scheduled_hook( 'rsa_send_digest' );
 		if ( is_multisite() ) {
 			$sites = get_sites(
 				array(
@@ -199,7 +201,6 @@ if ( function_exists( 'rs_fs' ) ) {
 				RSA_DB::maybe_remove_data();
 				restore_current_blog();
 			}
-			// Remove network-level options
 			delete_site_option( 'rsa_network_settings' );
 		} else {
 			RSA_DB::maybe_remove_data();
