@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
       actions: write
 
     steps:
@@ -51,23 +50,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Stable release — merge test → main + tag
+      - name: Stable release — sync test → main + tag
         if: ${{ inputs.channel != 'beta' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PR_URL=$(gh pr create \
-            --base main \
-            --head test \
-            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
-            --body "Automated promote workflow." \
-            --label automate)
-          echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash
-          git fetch origin main
+          # Force-sync main to test, then tag HEAD of main.
+          # Avoids squash-merge divergence that causes merge conflicts on
+          # subsequent promotions.
+          git push origin test:main --force
           git tag "v${{ steps.version.outputs.version }}" origin/main
-          # Push tag for remote tracking. This doesn't trigger build-release
-          # (GITHUB_TOKEN events are suppressed). Instead, dispatch directly.
           git push origin "v${{ steps.version.outputs.version }}"
           gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
 
