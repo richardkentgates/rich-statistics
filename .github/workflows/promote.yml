@@ -53,5 +53,5 @@ jobs:
           git checkout origin/test -- .
           git commit -m "chore: promote v${{ steps.version.outputs.version }} to production"
           git push origin main
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          git tag --force "v${{ steps.version.outputs.version }}"
+          git push --force origin "v${{ steps.version.outputs.version }}"

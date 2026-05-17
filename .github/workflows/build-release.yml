@@ -31,45 +31,35 @@ jobs:
           name: rich-statistics-${{ github.ref_name }}
           path: build
 
-      - name: Determine channel
+      - name: Determine release mode
         id: channel
         run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
           if echo "${{ github.ref_name }}" | grep -q "beta"; then
-            echo "is_beta=true" >> $GITHUB_OUTPUT
+            echo "release_mode=beta" >> $GITHUB_OUTPUT
           else
-            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "release_mode=pending" >> $GITHUB_OUTPUT
           fi
 
-      - name: Upload to Freemius
-        env:
-          FREEMIUS_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
-          VERSION: ${{ github.ref_name }}
-          IS_BETA: ${{ steps.channel.outputs.is_beta }}
+      - name: Copy ZIP to workspace root
         run: |
-          if [ -z "${FREEMIUS_KEY}" ]; then
-            echo "::warning::FREEMIUS_SECRET_KEY not set — skipping Freemius upload"
-            exit 0
-          fi
-          ZIP="build/rich-statistics-${VERSION}.zip"
-          if [ ! -f "$ZIP" ]; then
-            echo "ERROR: ZIP not found: $ZIP"
-            exit 1
-          fi
-          echo "Uploading ${VERSION} (is_beta=${IS_BETA}) to Freemius..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://api.freemius.com/v1/products/25954/releases.json" \
-            -H "Authorization: Bearer ${FREEMIUS_KEY}" \
-            -F "version=${VERSION#v}" \
-            -F "file=@${ZIP}" \
-            -F "is_beta=${IS_BETA}")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          echo "HTTP ${HTTP_CODE}: ${BODY}"
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "Freemius upload successful"
-          else
-            echo "::warning::Freemius upload failed (HTTP ${HTTP_CODE}) — release continues"
-          fi
+          cp "build/rich-statistics-${{ github.ref_name }}.zip" "rich-statistics-${{ github.ref_name }}.zip"
+
+      - name: Deploy to Freemius
+        uses: buttonizer/freemius-deploy@v0.1.3
+        with:
+          file_name: rich-statistics-${{ github.ref_name }}.zip
+          release_mode: ${{ steps.channel.outputs.release_mode }}
+          version: ${{ steps.channel.outputs.version }}
+          sandbox: false
+        env:
+          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
+          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
+          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+          PLUGIN_SLUG: rich-statistics
+          PLUGIN_ID: 25954
 
   release:
     name: PWA snapshot + GitHub Release
