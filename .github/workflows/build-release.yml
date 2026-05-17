@@ -85,9 +85,11 @@ jobs:
           DATE=$(date -u -R)
           # GET: content-md5 empty, content-type = application/json (standalone SDK always sends it)
           STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${GET_PATH}"
-          HMAC_BIN=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
-          # Base64Url: replace +/ with -_, remove padding =
-          HMAC_B64=$(echo -n "${HMAC_BIN}" | base64 | tr '+/' '-_' | tr -d '=')
+          # IMPORTANT: PHP SDK uses hash_hmac(..., false) which returns a hex string,
+          # then base64_encode(hex_string) — NOT the binary hash. Must match exactly.
+          HMAC_HEX=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" | awk '{print $NF}')
+          # Base64Url of the hex string: replace +/ with -_, remove padding =
+          HMAC_B64=$(echo -n "${HMAC_HEX}" | base64 | tr '+/' '-_' | tr -d '=')
           AUTH="FS ${FREEMIUS_DEV_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64}"
 
           echo "GET ${GET_PATH}?search=${VERSION}"
@@ -117,8 +119,9 @@ jobs:
           DATE_PUT=$(date -u -R)
           # PUT: content-md5, content-type
           STRING_TO_SIGN_PUT="PUT\n${CONTENT_MD5}\napplication/json\n${DATE_PUT}\n${PUT_PATH}"
-          HMAC_BIN_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
-          HMAC_B64_PUT=$(echo -n "${HMAC_BIN_PUT}" | base64 | tr '+/' '-_' | tr -d '=')
+          # HMAC from hex string (matching PHP hash_hmac default), not binary
+          HMAC_HEX_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" | awk '{print $NF}')
+          HMAC_B64_PUT=$(echo -n "${HMAC_HEX_PUT}" | base64 | tr '+/' '-_' | tr -d '=')
           AUTH_PUT="FS ${FREEMIUS_DEV_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64_PUT}"
 
           curl -sS -X PUT "https://api.freemius.com${PUT_PATH}" \
