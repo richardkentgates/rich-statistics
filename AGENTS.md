@@ -133,24 +133,30 @@ changes. Version parity prevents this.
 ## Branch Structure
 
 ```
-feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
+feature/foo ──PR──→ develop ──push──→ build-develop.yml → rs-dev (auto-deploy)
                         │
                  ╔══════════════════════════╗
                  ║ Promote to Test (manual) ║
                  ║ .github/workflows/promote-test.yml
-                 ║ Merges develop → test    ║
+                 ║ PR develop→test (squash) ║
                  ╚══════════════════════════╝
                         ↓
-                      test ──push──→ auto-deploy: rs-test
+                      test ──push──→ build-test.yml → rs-test (auto-deploy)
                         │
                  ╔══════════════════════════╗
                  ║  Promote to Production   ║
                  ║  .github/workflows/promote.yml
-                 ║  Stable: merge test→main + tag
+                 ║  Stable: PR test→main    ║
+                 ║    + tag + workflow_dispatch
                  ║  Beta:   tag test only   ║
                  ╚══════════════════════════╝
                         ↓
-                      main ──tag v*──→ build-release.yml → rs-app
+            build-release.yml (triggered via workflow_dispatch)
+            ├── Plugin ZIP → GitHub Release
+            ├── Plugin ZIP → Freemius (buttonizer/freemius-deploy)
+            ├── PWA snapshots → docs/app/v/{version}/{stable,beta}/
+            ├── Desktop builds → server dist/
+            └── Ping deploy → app.richstatistics.com/_deploy/
 ```
 
 | Branch | Environment | Server | CI Workflow | Branch Type |
@@ -178,6 +184,20 @@ Each branch has its own:
 - PWA web app (deployed via webhook)
 - Linux `.deb` + Windows `.exe` desktop binaries (pushed to server `dist/`)
 
+### Promote Workflow Rules (CRITICAL)
+
+Failure to follow these rules will break the pipeline and delete branches:
+
+1. **NEVER use `--delete-branch`** in `gh pr merge` commands. It destroys the source branch (develop or test) which breaks all downstream auto-deploys until manually restored.
+
+2. **GITHUB_TOKEN push events cannot trigger new workflows** (GitHub anti-recursion). The promote workflow must use `gh workflow run "Build Release"` directly instead of relying on tag push events.
+
+3. **Build-release triggers**: After creating and pushing a tag via the promote workflow, call `gh workflow run "Build Release" --ref "v{version}"` to dispatch the release pipeline. The tag push itself won't trigger it.
+
+4. **Version bump**: Before promoting, ensure `RSA_VERSION` in `rich-statistics.php` matches the intended release version (auto-detected by the promote workflow). Also update the plugin header `Version:` and `readme.txt` `Stable tag:`.
+
+5. **Freemius upload**: Handled by the `upload-freemius` job in `build-release.yml` using `buttonizer/freemius-deploy@v0.1.3`. Requires `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_DEV_ID`, `SECRET_KEY` secrets. Non-beta tags upload in `pending` mode (admin must manually release in Freemius dashboard).
+
 ## Server Endpoints
 
 | Resource | Production | Dev | Test |
@@ -189,6 +209,21 @@ Each branch has its own:
 | Server path | `/var/www/rs-app/public_html/` | `/var/www/rs-app-dev/` | `/var/www/rs-app-test/` |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Webhook token | `/etc/rsa-webhook-token` | `/etc/rsa-webhook-token-dev` | `/etc/rsa-webhook-token-test` |
+
+### Deploy Mechanism
+
+Each environment has a webhook endpoint (`/_deploy/`) and a cron-based deploy poller:
+
+1. CI workflow calls `curl -X POST -H "X-Deploy-Token: $TOKEN" https://{env}/_deploy/`
+2. Webhook PHP writes timestamp to `{env}/.deploy-trigger`
+3. Cron runs every minute (3 crons: dev, test, prod), checks trigger age (< 120s)
+4. If valid, deletes trigger and runs `rsa-app-update-{env}` which sparse-clones `docs/app/` from the matching branch
+5. Records deployed branch in `.deployed-version`
+
+**Troubleshooting:**
+- If deploy seems stuck, trigger manually: `curl -X POST -H "X-Deploy-Token: $(cat /etc/rsa-webhook-token-{env})" https://{env}.richstatistics.com/_deploy/`
+- If the source branch was deleted (see Promote Workflow Rules #1), rebuild it: `git push origin origin/main:refs/heads/{branch}`
+- Check cron is running: `grep "rsa-deploy-cron" /var/log/syslog | tail -5`
 
 ## CI Pipelines
 
@@ -214,8 +249,10 @@ All three build workflows share reusable sub-workflows for ZIP and desktop build
 - **build-desktop**: Desktop binaries via `job-build-desktop`, pushed to `rs-test/dist/`
 
 ### `build-release.yml` (tagged on main)
-- **Trigger**: Tag push (`v*`), or `workflow_dispatch`
-- **build**: Plugin ZIP, versioned PWA snapshot (`docs/app/v/<version>/`), GitHub Release
+- **Trigger**: `workflow_dispatch` (dispatched by promote.yml after tagging), OR tag push (`v*`)
+- **build-zip**: Plugin ZIP via `job-build-zip` with proper version
+- **upload-freemius**: Uploads ZIP to Freemius via `buttonizer/freemius-deploy@v0.1.3` (stable: `pending`, beta: `beta`)
+- **release**: Plugin ZIP, GitHub Release, versioned PWA snapshot (`docs/app/v/<version>/{stable,beta}/`)
 - **build-desktop**: Desktop binaries via `job-build-desktop` with `stamp-version: true`, pushed to `rs-app/dist/`
 - **ping-deploy**: Syncs PWA to `rs-app` via webhook
 
@@ -279,3 +316,10 @@ See `ROADMAP.md` §6 for the full prioritized list.
 - Plugin Checker: 0 errors on test server ✅
 - Created uninstall.php (was missing) ✅
 - App server architecture DR documentation ✅
+- Freemius CI upload via `buttonizer/freemius-deploy@v0.1.3` ✅
+- Beta channel parity (BC-1 through BC-12) ✅
+- Fixed `--delete-branch` destroying source branches in promote workflows ✅
+- Fixed GITHUB_TOKEN workflow trigger suppression via `gh workflow run` ✅
+- Fixed APT repo pool dirs on dev/test servers ✅
+- Fixed deploy script log messages (hardcoded "main") ✅
+- Restored PR-based promotion (develop→test, test→main) ✅

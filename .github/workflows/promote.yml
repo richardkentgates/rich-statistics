@@ -1,10 +1,6 @@
 # =============================================================================
-# Promote to Production: Merge test → main and tag.
+# Promote to Production: Release to stable (main) or beta (test branch tag)
 # Triggered manually on the test branch when a release candidate is verified.
-#
-# Every release ships both stable and beta PWA snapshots (build-release.yml
-# creates both automatically). The beta channel is a per-site preference
-# set in WordPress admin — not a CI release-time choice.
 # =============================================================================
 name: Promote to Production
 
@@ -15,43 +11,67 @@ on:
         description: 'Version to tag — leave blank to auto-read from rich-statistics.php'
         required: false
         type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'stable'
+        type: choice
+        options:
+          - stable
+          - beta
 
 jobs:
   promote:
-    name: Merge test → main
+    name: Promote ${{ inputs.channel || 'stable' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
-      - name: Checkout main
+      - name: Checkout test
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: test
           fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(grep "define( 'RSA_VERSION'" rich-statistics.php | sed "s/.*'\([0-9.]*\)'.*/\1/")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch test and resolve version
-        id: version
+      - name: Stable release — merge test → main + tag
+        if: ${{ inputs.channel != 'beta' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git fetch origin test
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(git show origin/test:rich-statistics.php | grep "define( 'RSA_VERSION'" | sed "s/.*'\([0-9.]*\)'.*/\1/")
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          fi
+          PR_URL=$(gh pr create \
+            --base main \
+            --head test \
+            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
+            --body "Automated promote workflow." \
+            --label automate)
+          echo "Created PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash
+          git fetch origin main
+          git tag "v${{ steps.version.outputs.version }}" origin/main
+          # Push tag for remote tracking. This doesn't trigger build-release
+          # (GITHUB_TOKEN events are suppressed). Instead, dispatch directly.
+          git push origin "v${{ steps.version.outputs.version }}"
+          gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
 
-      - name: Replicate test into main + tag
+      - name: Beta release — tag test branch
+        if: ${{ inputs.channel == 'beta' }}
         run: |
-          git fetch origin test
-          git rm -rf .
-          git checkout origin/test -- .
-          git commit -m "chore: promote v${{ steps.version.outputs.version }} to production"
-          git push origin main
-          git tag --force "v${{ steps.version.outputs.version }}"
-          git push --force origin "v${{ steps.version.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}-beta.1"
+          git push origin "v${{ steps.version.outputs.version }}-beta.1"
