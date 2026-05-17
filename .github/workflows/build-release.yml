@@ -87,15 +87,28 @@ jobs:
           STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${GET_PATH}"
           # IMPORTANT: PHP SDK uses hash_hmac(..., false) which returns a hex string,
           # then base64_encode(hex_string) — NOT the binary hash. Must match exactly.
-          HMAC_HEX=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" | awk '{print $NF}')
+          HMAC_HEX=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" | awk '{print $NF}' || echo "HMAC_ERROR")
+          if [ -z "${HMAC_HEX}" ] || [ "${HMAC_HEX}" = "HMAC_ERROR" ]; then
+            echo "FATAL: HMAC computation failed"
+            exit 1
+          fi
+          echo "HMAC_HEX length: ${#HMAC_HEX}"
           # Base64Url of the hex string: replace +/ with -_, remove padding =
           HMAC_B64=$(echo -n "${HMAC_HEX}" | base64 | tr '+/' '-_' | tr -d '=')
           AUTH="FS ${FREEMIUS_DEV_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64}"
 
           echo "GET ${GET_PATH}?search=${VERSION}"
-          RESPONSE=$(curl -sS "https://api.freemius.com${GET_PATH}?search=${VERSION}" \
-            -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
-          echo "Response: ${RESPONSE:0:400}"
+          set +e
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/fs_response.txt \
+            "https://api.freemius.com${GET_PATH}?search=${VERSION}" \
+            -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}" 2>&1)
+          CURL_EXIT=$?
+          set -e
+          echo "Curl exit code: ${CURL_EXIT}"
+          echo "HTTP status: ${HTTP_CODE}"
+          HEADERS=$(head -5 /tmp/fs_response.txt 2>/dev/null || echo "no file")
+          echo "Response file size: $(wc -c < /tmp/fs_response.txt 2>/dev/null || echo 0)"
+          RESPONSE=$(cat /tmp/fs_response.txt 2>/dev/null || echo '{"error":"empty"}')
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
           import sys,json
           d=json.load(sys.stdin)
