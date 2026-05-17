@@ -82,7 +82,10 @@ jobs:
           SIGNATURE=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary | base64)
           AUTH="FS#${FREEMIUS_DEV_ID}:${SIGNATURE}"
 
-          RESPONSE=$(curl -sS "https://api.freemius.com${BASE_PATH}" \
+          FULL_URL="https://api.freemius.com${BASE_PATH}"
+          echo "🔍 Requesting: ${FULL_URL}"
+          echo "🔍 AUTH prefix: ${AUTH:0:20}..."
+          RESPONSE=$(curl -sS "${FULL_URL}" \
             -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
           echo "🔍 API response (first 300 chars): ${RESPONSE:0:300}"
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
