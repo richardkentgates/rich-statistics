@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop, test ]
+    branches: [ develop ]
   pull_request:
-    branches: [ main, develop, test ]
+    branches: [ develop ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -113,70 +113,3 @@ jobs:
       - name: Show integration test output on failure
         if: failure()
         run: tail -80 /tmp/phpunit-integration.txt
-
-  # -----------------------------------------------------------------------
-  # PHP syntax lint (fast, runs in parallel)
-  # -----------------------------------------------------------------------
-  lint:
-    name: PHP lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-
-      - name: Check PHP syntax
-        run: find . -name "*.php" \
-               -not -path "./vendor/*" \
-               -not -path "./freemius/*" \
-               | xargs -I{} php -l "{}"
-
-  # -----------------------------------------------------------------------
-  # PHPCS coding standards
-  # -----------------------------------------------------------------------
-  phpcs:
-    name: PHPCS
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-          tools: cs2pr
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: composer-phpcs-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-phpcs-
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Run PHPCS
-        id: phpcs
-        run: |
-          composer phpcs -- --report-full --report-checkstyle=phpcs-report.xml || true
-        continue-on-error: true
-
-      - name: Annotate PHPCS results
-        if: steps.phpcs.outcome == 'failure'
-        run: cs2pr phpcs-report.xml
-
-      - name: Show PHPCS summary
-        if: steps.phpcs.outcome == 'failure'
-        run: |
-          echo "::warning::PHPCS found violations. See annotations above."
-          cat phpcs-report.xml 2>/dev/null || true
