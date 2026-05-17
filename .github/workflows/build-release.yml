@@ -74,20 +74,23 @@ jobs:
           VERSION="${{ steps.channel.outputs.version }}"
           PLUGIN_ID=25954
 
-          # Find version tag on Freemius
-          # NOTE: HMAC signs the base path only (no query params)
-          BASE_PATH="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags.json"
-          DATE=$(date -u '+%a, %d %b %Y %H:%M:%S GMT')
-          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${BASE_PATH}"
-          SIGNATURE=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary | base64)
-          AUTH="FS#${FREEMIUS_DEV_ID}:${SIGNATURE}"
+          # Use same auth as Freemius PHP SDK: plugin scope
+          # CanonizePath('tags') → /v1/plugins/{plugin_id}/tags.json
+          # Auth: FS {plugin_id}:{public_key}:{base64url(hmac-sha256(string, secret))}
+          # Date format: date('r') = e.g. "Sun, 17 May 2026 11:30:35 +0000"
+          # String to sign: METHOD\\nContent-MD5\\nContent-Type\\nDate\\nResourceUrl
+          GET_PATH="/v1/plugins/${PLUGIN_ID}/tags.json"
+          DATE=$(date -u -R)
+          STRING_TO_SIGN="GET\n\napplication/json\n${DATE}\n${GET_PATH}"
+          HMAC_BIN=$(echo -en "${STRING_TO_SIGN}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
+          # Base64Url: replace +/ with -_, remove padding =
+          HMAC_B64=$(echo -n "${HMAC_BIN}" | base64 | tr '+/' '-_' | tr -d '=')
+          AUTH="FS ${PLUGIN_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64}"
 
-          FULL_URL="https://api.freemius.com${BASE_PATH}"
-          echo "🔍 Requesting: ${FULL_URL}"
-          echo "🔍 AUTH prefix: ${AUTH:0:20}..."
-          RESPONSE=$(curl -sS "${FULL_URL}" \
+          echo "GET ${GET_PATH}?search=${VERSION}"
+          RESPONSE=$(curl -sS "https://api.freemius.com${GET_PATH}?search=${VERSION}" \
             -H "Authorization: ${AUTH}" -H "Content-Type: application/json" -H "Date: ${DATE}")
-          echo "🔍 API response (first 300 chars): ${RESPONSE:0:300}"
+          echo "Response: ${RESPONSE:0:400}"
           TAG_ID=$(echo "${RESPONSE}" | python3 -c "
           import sys,json
           d=json.load(sys.stdin)
@@ -99,18 +102,19 @@ jobs:
           " 2>/dev/null || true)
 
           if [ -z "$TAG_ID" ]; then
-            echo "Version ${VERSION} not found on Freemius — skipping promote (buttonizer already uploaded)"
+            echo "Version ${VERSION} not found on Freemius — skipping promote"
             exit 0
           fi
 
           echo "Found v${VERSION} tag ID ${TAG_ID} — setting release_mode=released"
-          TAG_PATH="/v1/developers/${FREEMIUS_PUBLIC_KEY}/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
-          DATE_PUT=$(date -u '+%a, %d %b %Y %H:%M:%S GMT')
-          STRING_TO_SIGN_PUT="PUT\n\napplication/json\n${DATE_PUT}\n${TAG_PATH}"
-          SIGNATURE_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary | base64)
-          AUTH_PUT="FS#${FREEMIUS_DEV_ID}:${SIGNATURE_PUT}"
+          PUT_PATH="/v1/plugins/${PLUGIN_ID}/tags/${TAG_ID}.json"
+          DATE_PUT=$(date -u -R)
+          STRING_TO_SIGN_PUT="PUT\n\napplication/json\n${DATE_PUT}\n${PUT_PATH}"
+          HMAC_BIN_PUT=$(echo -en "${STRING_TO_SIGN_PUT}" | openssl dgst -sha256 -hmac "${FREEMIUS_SECRET_KEY}" -binary)
+          HMAC_B64_PUT=$(echo -n "${HMAC_BIN_PUT}" | base64 | tr '+/' '-_' | tr -d '=')
+          AUTH_PUT="FS ${PLUGIN_ID}:${FREEMIUS_PUBLIC_KEY}:${HMAC_B64_PUT}"
 
-          curl -sS -X PUT "https://api.freemius.com${TAG_PATH}" \
+          curl -sS -X PUT "https://api.freemius.com${PUT_PATH}" \
             -H "Authorization: ${AUTH_PUT}" -H "Content-Type: application/json" -H "Date: ${DATE_PUT}" \
             -d '{"release_mode": "released"}' \
             | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'Released v{d.get(\"version\",\"\")}: release_mode={d.get(\"release_mode\",\"\")} status={d.get(\"status\",\"\")}')"
