@@ -1,6 +1,8 @@
 # =============================================================================
 # Promote to Test: Merge develop → test
 # Triggered manually on the develop branch when code is ready for QA.
+# Uses --merge (not --squash) to keep git history connected and avoid
+# the branch divergence that caused merge conflicts with squash merges.
 # =============================================================================
 name: Promote to Test
 
@@ -39,7 +41,8 @@ jobs:
             --body "Automated promote workflow. Merges develop → test for QA." \
             --label automate)
           echo "Created PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash
+          # Use --merge (not --squash) so history stays connected
+          gh pr merge "$PR_URL" --merge
           # Push events from GITHUB_TOKEN don't trigger new workflows.
           # Dispatch build-test directly to run CI on the merged test branch.
           gh workflow run "Build Test" --ref test
