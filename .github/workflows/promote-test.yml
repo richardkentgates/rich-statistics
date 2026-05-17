@@ -1,8 +1,8 @@
 # =============================================================================
-# Promote to Test: Sync develop → test
+# Promote to Test: Merge develop → test
 # Triggered manually on the develop branch when code is ready for QA.
-# Uses force-push so test always matches develop exactly (avoids squash-merge
-# divergence that causes merge conflicts on subsequent promotions).
+# Uses --merge (not --squash) to keep git history connected and avoid
+# the branch divergence that caused merge conflicts with squash merges.
 # =============================================================================
 name: Promote to Test
 
@@ -11,10 +11,11 @@ on:
 
 jobs:
   promote:
-    name: Sync develop → test
+    name: Merge develop → test
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       actions: write
 
     steps:
@@ -23,19 +24,25 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Force-sync test to match develop
-        run: |
-          git push origin develop:test --force
-
-      - name: Dispatch Build Test
+      - name: Create and merge PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          PR_URL=$(gh pr create \
+            --base test \
+            --head develop \
+            --title "chore: promote to test" \
+            --body "Automated promote workflow. Merges develop → test for QA." \
+            --label automate)
+          echo "Created PR: $PR_URL"
+          # Use --merge (not --squash) so history stays connected
+          gh pr merge "$PR_URL" --merge
+          # Push events from GITHUB_TOKEN don't trigger new workflows.
+          # Dispatch build-test directly to run CI on the merged test branch.
           gh workflow run "Build Test" --ref test
