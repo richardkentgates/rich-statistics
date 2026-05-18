@@ -66,8 +66,10 @@ jobs:
           # Use --merge (not --squash) so history stays connected
           gh pr merge "$PR_URL" --merge
           git fetch origin main
-          git tag "v${{ steps.version.outputs.version }}" origin/main
-          git push origin "v${{ steps.version.outputs.version }}"
+          # Force update the tag — if it already existed from a previous release
+          # at the same version, the merge commit replaces it.
+          git tag -f "v${{ steps.version.outputs.version }}" origin/main
+          git push -f origin "v${{ steps.version.outputs.version }}"
           gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
 
       - name: Beta release — tag test branch

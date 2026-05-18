@@ -114,5 +114,6 @@ echo "Done. Version {$version} (tag ID {$tag_id}) set to release_mode={$release_
 
 // Optional: Output tag info for debugging
 if (isset($update->version)) {
-    echo "Version: {$update->version}, Status: {$update->status}\n";
+    $status = $update->status ?? 'unknown';
+    echo "Version: {$update->version}, Status: {$status}\n";
 }
