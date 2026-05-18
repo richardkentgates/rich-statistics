@@ -81,9 +81,8 @@
 		bindAddSite();
 		bindInstallPrompt();
 		bindAiSettings();
-		showIosInstallTip();
 
-		// Connection banners — check initial state and listen for changes.
+		// Connection banners
 		if ( navigator.onLine === false ) {
 			setConnBanner( 'offline' );
 		}
@@ -979,10 +978,6 @@
 			var link = document.querySelector( '.rsa-nav-link[data-view="' + view + '"]' );
 			if ( link ) {
 				link.classList.add( 'rsa-nav-premium' );
-				var badge = document.createElement( 'span' );
-				badge.className = 'rsa-nav-badge';
-				badge.textContent = 'Premium';
-				link.appendChild( badge );
 			}
 		} );
 	}
@@ -1088,28 +1083,6 @@
 	}
 
 	// -----------------------------------------------------------------------
-	// iOS Safari install tip
-	// -----------------------------------------------------------------------
-	function showIosInstallTip() {
-		var ua         = navigator.userAgent || '';
-		var isIos      = /iphone|ipad|ipod/i.test( ua );
-		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|android/i.test( ua );
-		var standalone = 'standalone' in window.navigator && window.navigator.standalone;
-		if ( ! isIos || ! isSafari || standalone ) return;
-
-		var tip = document.createElement( 'div' );
-		tip.id = 'rsa-ios-tip';
-		tip.setAttribute( 'role', 'status' );
-		tip.innerHTML =
-			'<span>Tap <strong>Share</strong> ↗ then <strong>“Add to Home Screen”</strong> to install this app.</span>' +
-			'<button type="button" aria-label="Dismiss" id="rsa-ios-tip-close">×</button>';
-		document.body.appendChild( tip );
-		document.getElementById( 'rsa-ios-tip-close' ).addEventListener( 'click', function () {
-			tip.remove();
-			try { localStorage.setItem( 'rsa_ios_tip_dismissed', '1' ); } catch ( e ) {}
-		} );
-	}
-
 	// -----------------------------------------------------------------------
 	// PWA install prompt
 	// -----------------------------------------------------------------------

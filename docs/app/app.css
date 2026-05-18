@@ -923,39 +923,6 @@ html, body {
 .rsa-site-menu-add:hover { background: var(--rsa-bg); }
 
 /* =========================================================================
-   Import hint (login screen)
-   ========================================================================= */
-.rsa-import-hint {
-	margin-top: 16px;
-	text-align: center;
-	font-size: 13px;
-	color: var(--rsa-muted);
-}
-
-.rsa-import-label {
-	color: var(--rsa-accent);
-	cursor: pointer;
-	text-decoration: underline;
-}
-
-.rsa-import-block {
-	display: block;
-	text-align: center;
-	padding: 12px;
-	border: 2px dashed var(--rsa-border);
-	border-radius: var(--rsa-radius);
-	color: var(--rsa-accent);
-	cursor: pointer;
-	margin-bottom: 16px;
-	font-size: 14px;
-	transition: border-color .15s, background .15s;
-}
-.rsa-import-block:hover {
-	border-color: var(--rsa-accent);
-	background: rgba(99,102,241,.04);
-}
-
-/* =========================================================================
    Add-Site overlay
    ========================================================================= */
 .rsa-overlay {
