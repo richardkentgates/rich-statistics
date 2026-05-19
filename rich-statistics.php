@@ -76,7 +76,9 @@ if ( function_exists( 'rs_fs' ) ) {
 	 * `function_exists` CALL ABOVE TO PROPERLY WORK.
 	 */
 	if ( ! function_exists( 'rs_fs' ) ) {
-		// Create a helper function for easy SDK access.
+		/**
+		 * Create a helper function for easy SDK access.
+		 */
 		function rs_fs() {
 			global $rs_fs;
 
@@ -87,7 +89,7 @@ if ( function_exists( 'rs_fs' ) ) {
 				}
 
 				// Include Freemius SDK.
-				require_once dirname( __FILE__ ) . '/vendor/freemius/start.php';
+				require_once __DIR__ . '/vendor/freemius/start.php';
 
 				$rs_fs = fs_dynamic_init( array(
 					'id'                  => '25954',
