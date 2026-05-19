@@ -16,7 +16,7 @@
 var versionMatch = self.location.pathname.match( /\/([0-9]+\.[0-9]+\.[0-9]+)\//);
 var CACHE_NAME = versionMatch
 	? 'rsa-v' + versionMatch[1].replace( /\./g, '-' )
-	  : 'rsa-2-4-3'; // bumped on each release so the root-level SW is treated as new
+	  : 'rsa-2-4-21'; // bumped on each release so the root-level SW is treated as new
 var IMMUTABLE = !! versionMatch;
 
 const SHELL_ASSETS = [
