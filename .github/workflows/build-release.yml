@@ -50,7 +50,7 @@ jobs:
       - name: Download ZIP artifact
         uses: actions/download-artifact@v4
         with:
-          name: rich-statistics-${{ github.ref_name }}
+          name: rich-statistics-${{ steps.version.outputs.version }}
           path: build
 
       - name: Determine channel
@@ -67,7 +67,7 @@ jobs:
 
       - name: Copy ZIP to workspace root
         run: |
-          cp "build/rich-statistics-${{ github.ref_name }}.zip" "rich-statistics-${{ github.ref_name }}.zip"
+          cp "build/rich-statistics-${{ steps.version.outputs.version }}.zip" "rich-statistics-${{ steps.version.outputs.version }}.zip"
 
       - name: Deploy to Freemius via SDK
         env:
@@ -78,7 +78,7 @@ jobs:
           PLUGIN_ID: 25954
         run: |
           php bin/deploy-freemius.php \
-            "rich-statistics-${{ github.ref_name }}.zip" \
+            "rich-statistics-${{ steps.version.outputs.version }}.zip" \
             "${{ steps.channel.outputs.version }}" \
             "${{ steps.channel.outputs.release_mode }}"
 
@@ -108,15 +108,15 @@ jobs:
       - name: Download ZIP artifact
         uses: actions/download-artifact@v4
         with:
-          name: rich-statistics-${{ github.ref_name }}
+          name: rich-statistics-${{ steps.version.outputs.version }}
           path: build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/rich-statistics-${{ github.ref_name }}.zip
-            build/rich-statistics-${{ github.ref_name }}.zip.sha256
+            build/rich-statistics-${{ steps.version.outputs.version }}.zip
+            build/rich-statistics-${{ steps.version.outputs.version }}.zip.sha256
           generate_release_notes: true
           body: |
             ## Rich Statistics ${{ steps.version.outputs.version }}
@@ -125,7 +125,7 @@ jobs:
 
             ### SHA256 Checksum
             ```
-            $(cat build/rich-statistics-${{ github.ref_name }}.zip.sha256)
+            $(cat build/rich-statistics-${{ steps.version.outputs.version }}.zip.sha256)
             ```
 
             ### Freemius
