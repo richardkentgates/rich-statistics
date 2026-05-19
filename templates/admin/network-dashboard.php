@@ -130,7 +130,7 @@ $has_ai       = ! empty( $ai_endpoint );
 			</tr>
 			<tr>
 				<th><label for="rsa_network_ai_key"><?php esc_html_e( 'API Key', 'rich-statistics' ); ?></label></th>
-				<td><input type="password" id="rsa_network_ai_key" name="rsa_network_ai_key" class="regular-text" value="<?php echo $ai_key ? '********' : ''; ?>" placeholder="sk-..."></td>
+				<td><input type="password" id="rsa_network_ai_key" name="rsa_network_ai_key" class="regular-text" value="<?php echo $ai_key ? esc_attr( '********' ) : ''; ?>" placeholder="sk-..."></td>
 			</tr>
 			<tr>
 				<th><label for="rsa_network_ai_model"><?php esc_html_e( 'Model', 'rich-statistics' ); ?></label></th>
