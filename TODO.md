@@ -26,12 +26,12 @@ All items below confirmed against actual code.
 
 | Ref | Finding |
 |-----|---------|
-| L1 | `network-dashboard.php:133` — `$ai_key` without `esc_attr()` |
+| L1 | `network-dashboard.php:133` — `$ai_key` without `esc_attr()` | ✅ Fixed |
 | L2 | `network-dashboard.php:195-198` — JS vars without `wp_json_encode()` |
-| L3 | 11 templates with bare `wp_die()` — no error message |
-| L4 | `class-pwa-download.php:138` — `@unlink()` error silencing |
-| L5 | `cli/class-cli.php:381` — `file_put_contents()` instead of WP_Filesystem |
-| L6 | 18 templates use `current_time('timestamp')` — discouraged by WPCS |
+| L3 | 11 templates with bare `wp_die()` — no error message | ✅ Verified — standard WordPress security guards |
+| L4 | `class-pwa-download.php:138` — `@unlink()` error silencing | ✅ Fixed — replaced with `file_exists()` + `unlink()` |
+| L5 | `cli/class-cli.php:381` — `file_put_contents()` instead of WP_Filesystem | ✅ Verified — CLI context doesn't need WP_Filesystem |
+| L6 | 18 templates use `current_time('timestamp')` — discouraged by WPCS | ✅ Verified — already fixed (0 matches) |
 | L7 | `class-analytics.php` — 13 direct DB call warnings (expected) |
 | L8 | `class-db.php` — 29 direct DB call warnings (expected) |
 | L9 | `class-admin.php` — 11 direct DB call warnings |
@@ -41,8 +41,8 @@ All items below confirmed against actual code.
 
 | Ref | Finding |
 |-----|---------|
-| L11 | `manifest.json` has empty `screenshots: []` |
-| L12 | `index.html` error divs have inconsistent indentation |
+| L11 | `manifest.json` has empty `screenshots: []` | ✅ Fixed — removed empty array |
+| L12 | `index.html` error divs have inconsistent indentation | ✅ Fixed |
 | L13 | `src-tauri/icons/icon-192.png` missing from Tauri icons |
 | L14 | Tauri config references PWA icons instead of own icon set |
 | L15 | `total_time` SMALLINT cap at 65,535 seconds (~18 hours) |
@@ -53,25 +53,25 @@ All items below confirmed against actual code.
 
 | Ref | Finding |
 |-----|---------|
-| L18 | `job-build-zip.yml` artifact name includes version twice (cosmetic) |
+| L18 | `job-build-zip.yml` artifact name includes version twice (cosmetic) | ✅ Verified — not actually duplicated |
 | L19 | `setup-webhook.yml` requires manual follow-up (by design) |
-| L20 | ROADMAP.md Node.js 20 deprecation claim is inaccurate |
+| L20 | ROADMAP.md Node.js 20 deprecation claim is inaccurate | ✅ Verified — already fixed |
 
 ### Server (L21–L23)
 
 | Ref | Finding |
 |-----|---------|
-| L21 | `server-update-webapp.sh` clones from `main` always (hotfixes deploy immediately) |
-| L22 | Webhook path traversal not validated (not exploitable with hardcoded path) |
-| L23 | `deploy-server-scripts.sh` is redundant with CI workflow |
+| L21 | `server-update-webapp.sh` clones from `main` always (hotfixes deploy immediately) | ✅ By design — documented in script header |
+| L22 | Webhook path traversal not validated (not exploitable with hardcoded path) | ✅ Not exploitable |
+| L23 | `deploy-server-scripts.sh` is redundant with CI workflow | ✅ Fixed — removed redundant script |
 
 ### Docs (L24–L29)
 
 | Ref | Finding |
 |-----|---------|
-| L24 | `CHANGELOG.md` `[Unreleased]` after `[2.4.0]` — wrong order |
+| L24 | `CHANGELOG.md` `[Unreleased]` after `[2.4.0]` — wrong order | ✅ Fixed — moved to top |
 | L25 | `CONTRIBUTING.md` and `AGENTS.md` duplicate version parity section verbatim |
-| L26 | `DEVELOPMENT.md` §10 shows `update.json` with empty signatures as expected state |
+| L26 | `DEVELOPMENT.md` §10 shows `update.json` with empty signatures as expected state | ✅ Verified — already fixed |
 | L27 | `ARCHITECTURE.md` says schema applied via `dbDelta()` with no migration history |
 | L28 | `README.md` vs `AGENTS.md` feature tier contradictions |
 | L29 | `ROADMAP.md` §34 — `config.js` env flag documented in ROADMAP but not README |
@@ -118,6 +118,12 @@ All items below confirmed against actual code.
 | H26 | Secret exposure fixed | `setup-app-server.sh` no longer echoes secret paths to stdout |
 | H27 | Separate cron log files | `rsa-deploy-cron`, `-dev`, `-test` |
 | H28 | tests/bootstrap.php version synced | `RSA_VERSION = '2.4.20'` |
+| L1 | esc_attr() on $ai_key | `network-dashboard.php:133` uses `esc_attr()` |
+| L4 | @unlink() replaced | `class-pwa-download.php` uses `file_exists()` + `unlink()` |
+| L11 | Empty screenshots removed | `manifest.json` no longer has empty array |
+| L12 | Error div indentation fixed | `index.html` consistent indentation |
+| L23 | Redundant deploy script removed | `bin/deploy-server-scripts.sh` deleted |
+| L24 | CHANGELOG.md order fixed | `[Unreleased]` moved to top |
 | M1 | SSH retry logic | `max_retries=3` with 10s backoff |
 | M2 | Chart.js SRI enforcement | `job-build-zip.yml` verifies against `docs/app/chart.sri` |
 | M3 | Node.js 20 pinned | `node-version: '20'` |

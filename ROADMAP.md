@@ -127,7 +127,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | Documentation | ✅ Good | 0 | 0 | 0 | 6 |
 | Database | ✅ Good | 0 | 0 | 0 | 5 |
 | Tests | ⚠️ Needs work | 0 | 1 | 0 | 7 |
-| **TOTAL** | | **0** | **1** | **0** | **33** |
+| **TOTAL** | | **0** | **1** | **0** | **27** |
 
 ### Phase 1: Critical (ship with next release)
 | Ref | Area | Finding | Status |
