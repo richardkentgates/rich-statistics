@@ -49,10 +49,21 @@ html, body {
    ========================================================================= */
 .rsa-login-screen {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	padding: 24px 16px;
+	gap: 24px;
 	background: linear-gradient(135deg, var(--rsa-accent) 0%, var(--rsa-accent-dark) 100%);
+}
+
+.rsa-login-wrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+	width: 100%;
+	max-width: 520px;
 }
 
 .rsa-login-card {
@@ -83,6 +94,90 @@ html, body {
 	color: var(--rsa-muted);
 	margin-bottom: 28px;
 	font-size: 13px;
+}
+
+/* Install card — shown below login card on welcome screen */
+.rsa-install-card {
+	width: 100%;
+	background: var(--rsa-surface);
+	border-radius: 12px;
+	padding: 24px 20px;
+	box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+
+.rsa-install-title {
+	text-align: center;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin: 0 0 4px;
+}
+
+.rsa-install-subtitle {
+	text-align: center;
+	color: var(--rsa-muted);
+	margin: 0 0 20px;
+	font-size: 12px;
+}
+
+.rsa-install-section {
+	margin-bottom: 16px;
+}
+
+.rsa-install-section:last-of-type {
+	margin-bottom: 12px;
+}
+
+.rsa-install-section h3 {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rsa-text);
+	margin: 0 0 6px;
+}
+
+.rsa-install-code {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 11px;
+	line-height: 1.5;
+	overflow-x: auto;
+	margin: 0;
+	font-family: ui-monospace, SFMono-Regular, monospace;
+	color: var(--rsa-text);
+}
+
+.rsa-install-code code {
+	font-family: inherit;
+}
+
+.rsa-install-links {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-install-link {
+	display: inline-block;
+	padding: 6px 12px;
+	border: 1px solid var(--rsa-border);
+	border-radius: 4px;
+	text-decoration: none;
+	font-size: 12px;
+	color: var(--rsa-accent);
+	transition: background .15s;
+}
+
+.rsa-install-link:hover {
+	background: var(--rsa-bg);
+}
+
+.rsa-install-note {
+	text-align: center;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	margin: 12px 0 0;
 }
 
 /* =========================================================================
