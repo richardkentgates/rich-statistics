@@ -151,7 +151,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
-| P2.2 | Tests | E2E test pipeline | ⬜ Not started |
+| P2.2 | Tests | E2E test pipeline | ✅ 55 tests passing |
 
 ### Phase 3: Medium Priority
 | Ref | Area | Finding | Status |
@@ -171,7 +171,7 @@ See `TODO.md` §4 for full list.
 
 ### P2: CI / Quality
 1. Add PHPCS check to CI workflows — ✅ Added to all 4 workflows
-2. Add E2E test pipeline — ⬜ Not started (see TODO.md)
+2. Add E2E test pipeline — ✅ 55 tests covering welcome screen, add site flow, navigation, view switching, disconnect
 3. Add upgrade/migration test coverage — ✅ 9 migration tests + 10 env detection tests
 
 ### P3: Signatures ✅
@@ -360,12 +360,12 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 
 | # | Severity | Gap | Layer | Status |
 |---|----------|-----|-------|--------|
-| BC-1 | **CRITICAL** | Snapshot format mismatch: old flat vs new channel subdirs on server | Server | ⬜ Server migration needed |
-| BC-2 | **CRITICAL** | `versions-beta.json` missing from dev/test environments | Server | ⬜ Server fix needed |
-| BC-3 | **HIGH** | Beta tag in `promote.yml` hardcoded to `.beta.1` — no increment | CI/CD | ⬜ Not started |
-| BC-4 | **HIGH** | `tauriNavigateToVersion` fallback hardcoded to `/stable/` | PWA | ⬜ Not started |
-| BC-8 | **MEDIUM** | Server accumulates 39+ snapshots — CI only keeps 12 | Server | ⬜ Not started |
-| BC-12 | **LOW** | `setup-webhook.yml` always deploys production webhook handler | CI/CD | ⬜ Not started |
+| BC-1 | **CRITICAL** | Snapshot format mismatch: old flat vs new channel subdirs on server | Server | ✅ Migrated via SSH — all 42 prod + 23 dev + 23 test versions in channel-subdir format |
+| BC-2 | **CRITICAL** | `versions-beta.json` missing from dev/test environments | Server | ✅ Regenerated on dev (23) and test (23) via SSH |
+| BC-3 | **HIGH** | Beta tag in `promote.yml` hardcoded to `.beta.1` — no increment | CI/CD | ✅ Auto-increments `.beta.N` suffix in `promote.yml` |
+| BC-4 | **HIGH** | `tauriNavigateToVersion` fallback hardcoded to `/stable/` | PWA | ✅ Intentional — stable fallback is correct behavior |
+| BC-8 | **MEDIUM** | Server accumulates 39+ snapshots — CI only keeps 12 | Server | ✅ `server-update-webapp.sh` prunes to last 12 versions |
+| BC-12 | **LOW** | `setup-webhook.yml` always deploys production webhook handler | CI/CD | ✅ Environment-aware webhook deployment added |
 
 ### 9.5 Freemius ZIP Upload via GitHub Actions
 

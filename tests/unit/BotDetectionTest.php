@@ -136,6 +136,46 @@ class BotDetectionTest extends TestCase {
 
 	/**
 	 * ----------------------------------------------------------------
+	 * Missing Accept-Language header (L35)
+	 * ----------------------------------------------------------------
+	 */
+	public function test_missing_accept_language_adds_two_points(): void {
+		$score = RSA_Bot_Detection::score( 0, 'Mozilla/5.0 Chrome/121', array() );
+		$this->assertGreaterThanOrEqual( 2, $score, 'Missing Accept-Language should add >= 2 points' );
+	}
+
+	public function test_present_accept_language_does_not_add_points(): void {
+		$server = array(
+			'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9',
+			'HTTP_ACCEPT'          => 'text/html',
+		);
+		$score  = RSA_Bot_Detection::score( 0, 'Mozilla/5.0 Chrome/121', $server );
+		$this->assertSame( 0, $score, 'Present Accept-Language should not add points' );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * Score capping at 10 (L36)
+	 * ----------------------------------------------------------------
+	 */
+	public function test_score_capped_at_ten(): void {
+		// All server signals max out + all client signals = well over 10
+		$all_client = RSA_Bot_Detection::CS_WEBDRIVER
+			| RSA_Bot_Detection::CS_NO_PLUGINS
+			| RSA_Bot_Detection::CS_NO_LANGUAGES
+			| RSA_Bot_Detection::CS_ZERO_SCREEN
+			| RSA_Bot_Detection::CS_NO_TOUCH_API
+			| RSA_Bot_Detection::CS_INSTANT_LOAD
+			| RSA_Bot_Detection::CS_NO_CANVAS
+			| RSA_Bot_Detection::CS_HIDDEN_ON_ARRIVAL
+			| RSA_Bot_Detection::CS_NO_HUMAN_EVENT
+			| RSA_Bot_Detection::CS_CHROME_MISSING_OBJ;
+		$score = RSA_Bot_Detection::score( $all_client, 'HeadlessChrome/121', array() );
+		$this->assertSame( 10, $score, 'Score should be capped at 10' );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
 	 * UA parsing — OS
 	 * ----------------------------------------------------------------
 	 */

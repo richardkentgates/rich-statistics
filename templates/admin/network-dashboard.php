@@ -192,13 +192,13 @@ $has_ai       = ! empty( $ai_endpoint );
 	'use strict';
 	var nonce = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
 	var siteData = <?php echo wp_json_encode( $site_data ); ?>;
-	var hasVoiceInput  = <?php echo $voice_input ? 'true' : 'false'; ?>;
-	var hasVoiceOutput = <?php echo $voice_output ? 'true' : 'false'; ?>;
-	var voiceLang = '<?php echo esc_js( $voice_lang ); ?>';
-	var voiceSpeed = <?php echo (float) $voice_speed; ?>;
-	var apiEndpoint = '<?php echo esc_js( $ai_endpoint ); ?>';
-	var apiKey = '<?php echo esc_js( $ai_key ); ?>';
-	var apiModel = '<?php echo esc_js( $ai_model ); ?>';
+	var hasVoiceInput  = <?php echo wp_json_encode( (bool) $voice_input ); ?>;
+	var hasVoiceOutput = <?php echo wp_json_encode( (bool) $voice_output ); ?>;
+	var voiceLang = <?php echo wp_json_encode( $voice_lang ); ?>;
+	var voiceSpeed = <?php echo wp_json_encode( (float) $voice_speed ); ?>;
+	var apiEndpoint = <?php echo wp_json_encode( $ai_endpoint ); ?>;
+	var apiKey = <?php echo wp_json_encode( $ai_key ); ?>;
+	var apiModel = <?php echo wp_json_encode( $ai_model ); ?>;
 	var l10n = 
 	<?php
 	echo wp_json_encode( array(
