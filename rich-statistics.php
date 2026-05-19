@@ -100,6 +100,7 @@ if ( ! function_exists( 'rs_fs' ) ) {
 				'is_premium'       => false,
 				'has_addons'       => false,
 				'has_paid_plans'   => true,
+				'premium_suffix'   => '',
 				'is_org_compliant' => true,
 				'menu'             => array(
 					'slug'    => 'rich-statistics',
