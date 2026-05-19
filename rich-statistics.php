@@ -90,21 +90,21 @@ if ( ! function_exists( 'rs_fs' ) ) {
 			}
 
 			// Include Freemius SDK.
-			require_once dirname( __FILE__ ) . '/vendor/freemius/start.php';
+			require_once __DIR__ . '/vendor/freemius/start.php';
 
 			$rs_fs = fs_dynamic_init( array(
-				'id'                  => '25954',
-				'slug'                => 'rich-statistics',
-				'type'                => 'plugin',
-				'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
-				'is_premium'          => false,
-				'has_addons'          => false,
-				'has_paid_plans'      => false,
-				'is_org_compliant'    => true,
-				'menu'                => array(
-					'slug'           => 'rich-statistics',
-					'support'        => false,
-					'network'        => true,
+				'id'               => '25954',
+				'slug'             => 'rich-statistics',
+				'type'             => 'plugin',
+				'public_key'       => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
+				'is_premium'       => false,
+				'has_addons'       => false,
+				'has_paid_plans'   => false,
+				'is_org_compliant' => true,
+				'menu'             => array(
+					'slug'    => 'rich-statistics',
+					'support' => false,
+					'network' => true,
 				),
 			) );
 		}
@@ -118,138 +118,138 @@ if ( ! function_exists( 'rs_fs' ) ) {
 	do_action( 'rs_fs_loaded' );
 }
 
-	// --------------------------------------------------------------------
-	// Autoload core classes
-	// --------------------------------------------------------------------
-	$rsa_classes = array(
-		'RSA_DB',
-		'RSA_Bot_Detection',
-		'RSA_Tracker',
-		'RSA_Analytics',
-		'RSA_Admin',
-		'RSA_Email',
-		'RSA_Privacy_Disclosure',
-	);
+// --------------------------------------------------------------------
+// Autoload core classes
+// --------------------------------------------------------------------
+$rsa_classes = array(
+	'RSA_DB',
+	'RSA_Bot_Detection',
+	'RSA_Tracker',
+	'RSA_Analytics',
+	'RSA_Admin',
+	'RSA_Email',
+	'RSA_Privacy_Disclosure',
+);
 
-	foreach ( $rsa_classes as $class ) {
+foreach ( $rsa_classes as $class ) {
+	$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
+	if ( file_exists( $file ) ) {
+		require_once $file;
+	}
+}
+
+// WP-CLI
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once RSA_DIR . 'cli/class-cli.php';
+	WP_CLI::add_command( 'rich-stats', 'RSA_CLI' );
+}
+
+// Premium-only classes (gated by Freemius — entire block stripped from free version)
+if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
+	$rsa_premium = array(
+		'RSA_Click_Tracking',
+		'RSA_Heatmap',
+		'RSA_Rest_API',
+		'RSA_Pwa_Download',
+		'RSA_Woocommerce',
+	);
+	foreach ( $rsa_premium as $class ) {
 		$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
 		if ( file_exists( $file ) ) {
 			require_once $file;
 		}
 	}
+}
 
-	// WP-CLI
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		require_once RSA_DIR . 'cli/class-cli.php';
-		WP_CLI::add_command( 'rich-stats', 'RSA_CLI' );
+// --------------------------------------------------------------------
+// Activation / Deactivation / Uninstall hooks
+// --------------------------------------------------------------------
+register_activation_hook( RSA_FILE, array( 'RSA_DB', 'activate' ) );
+register_activation_hook(
+	RSA_FILE,
+	function () {
+		RSA_Admin::register_app_rewrite();
+		flush_rewrite_rules();
 	}
+);
+register_deactivation_hook( RSA_FILE, array( 'RSA_DB', 'deactivate' ) );
 
-	// Premium-only classes (gated by Freemius — entire block stripped from free version)
-	if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
-		$rsa_premium = array(
-			'RSA_Click_Tracking',
-			'RSA_Heatmap',
-			'RSA_Rest_API',
-			'RSA_Pwa_Download',
-			'RSA_Woocommerce',
+// Uninstall — hooked via Freemius so the uninstall event + user feedback
+// is reported to Freemius before our cleanup runs.
+rs_fs()->add_action( 'after_uninstall', 'rs_fs_uninstall_cleanup' );
+
+function rs_fs_uninstall_cleanup() {
+	wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
+	wp_clear_scheduled_hook( 'rsa_send_digest' );
+	if ( is_multisite() ) {
+		$sites = get_sites(
+			array(
+				'fields' => 'ids',
+				'number' => 0,
+			)
 		);
-		foreach ( $rsa_premium as $class ) {
-			$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
-			if ( file_exists( $file ) ) {
-				require_once $file;
-			}
-		}
-	}
-
-	// --------------------------------------------------------------------
-	// Activation / Deactivation / Uninstall hooks
-	// --------------------------------------------------------------------
-	register_activation_hook( RSA_FILE, array( 'RSA_DB', 'activate' ) );
-	register_activation_hook(
-		RSA_FILE,
-		function () {
-			RSA_Admin::register_app_rewrite();
-			flush_rewrite_rules();
-		}
-	);
-	register_deactivation_hook( RSA_FILE, array( 'RSA_DB', 'deactivate' ) );
-
-	// Uninstall — hooked via Freemius so the uninstall event + user feedback
-	// is reported to Freemius before our cleanup runs.
-	rs_fs()->add_action( 'after_uninstall', 'rs_fs_uninstall_cleanup' );
-
-	function rs_fs_uninstall_cleanup() {
-		wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
-		wp_clear_scheduled_hook( 'rsa_send_digest' );
-		if ( is_multisite() ) {
-			$sites = get_sites(
-				array(
-					'fields' => 'ids',
-					'number' => 0,
-				)
-			);
-			foreach ( $sites as $blog_id ) {
-				switch_to_blog( $blog_id );
-				RSA_DB::maybe_remove_data();
-				restore_current_blog();
-			}
-			delete_site_option( 'rsa_network_settings' );
-		} else {
+		foreach ( $sites as $blog_id ) {
+			switch_to_blog( $blog_id );
 			RSA_DB::maybe_remove_data();
+			restore_current_blog();
 		}
+		delete_site_option( 'rsa_network_settings' );
+	} else {
+		RSA_DB::maybe_remove_data();
 	}
+}
 
-	// --------------------------------------------------------------------
-	// Bootstrap
-	// --------------------------------------------------------------------
-	add_action( 'plugins_loaded', 'rsa_init', 10 );
+// --------------------------------------------------------------------
+// Bootstrap
+// --------------------------------------------------------------------
+add_action( 'plugins_loaded', 'rsa_init', 10 );
 
-	function rsa_init() {
-		// Version gate
-		if ( version_compare( $GLOBALS['wp_version'], RSA_MIN_WP, '<' ) ||
+function rsa_init() {
+	// Version gate
+	if ( version_compare( $GLOBALS['wp_version'], RSA_MIN_WP, '<' ) ||
 		version_compare( PHP_VERSION, RSA_MIN_PHP, '<' ) ) {
-			add_action( 'admin_notices', 'rsa_version_notice' );
-			return;
-		}
+		add_action( 'admin_notices', 'rsa_version_notice' );
+		return;
+	}
 
-		// Boot core
-		RSA_Tracker::init();
-		RSA_Admin::init();
-		RSA_Email::init();
+	// Boot core
+	RSA_Tracker::init();
+	RSA_Admin::init();
+	RSA_Email::init();
 
-		// WooCommerce integration (premium feature — gated via Freemius)
-		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
-			if ( class_exists( 'WooCommerce' ) ) {
-				if ( ! class_exists( 'RSA_Woocommerce' ) ) {
-					require_once RSA_DIR . 'includes/class-woocommerce.php';
-				}
-				RSA_Woocommerce::init();
+	// WooCommerce integration (premium feature — gated via Freemius)
+	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
+		if ( class_exists( 'WooCommerce' ) ) {
+			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
+				require_once RSA_DIR . 'includes/class-woocommerce.php';
 			}
-		}
-
-		// Boot premium
-		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
-			if ( class_exists( 'RSA_Click_Tracking' ) ) {
-				RSA_Click_Tracking::init();
-			}
-			if ( class_exists( 'RSA_Heatmap' ) ) {
-				RSA_Heatmap::init();
-			}
-			if ( class_exists( 'RSA_Rest_API' ) ) {
-				RSA_Rest_API::init();
-			}
-			if ( class_exists( 'RSA_Pwa_Download' ) ) {
-				RSA_Pwa_Download::init();
-			}
+			RSA_Woocommerce::init();
 		}
 	}
 
-	function rsa_version_notice() {
-		$msg = sprintf(
-		/* translators: 1: minimum WP version, 2: minimum PHP version */
-			__( 'Rich Statistics requires WordPress %1$s and PHP %2$s or higher.', 'rich-statistics' ),
-			RSA_MIN_WP,
-			RSA_MIN_PHP
-		);
-		echo '<div class="notice notice-error"><p>' . esc_html( $msg ) . '</p></div>';
+	// Boot premium
+	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
+		if ( class_exists( 'RSA_Click_Tracking' ) ) {
+			RSA_Click_Tracking::init();
+		}
+		if ( class_exists( 'RSA_Heatmap' ) ) {
+			RSA_Heatmap::init();
+		}
+		if ( class_exists( 'RSA_Rest_API' ) ) {
+			RSA_Rest_API::init();
+		}
+		if ( class_exists( 'RSA_Pwa_Download' ) ) {
+			RSA_Pwa_Download::init();
+		}
+	}
+}
+
+function rsa_version_notice() {
+	$msg = sprintf(
+	/* translators: 1: minimum WP version, 2: minimum PHP version */
+		__( 'Rich Statistics requires WordPress %1$s and PHP %2$s or higher.', 'rich-statistics' ),
+		RSA_MIN_WP,
+		RSA_MIN_PHP
+	);
+	echo '<div class="notice notice-error"><p>' . esc_html( $msg ) . '</p></div>';
 }
