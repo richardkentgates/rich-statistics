@@ -60,8 +60,9 @@ test.describe( 'Add Site overlay', () => {
 		await page.goto( '/' );
 		await expect( page.locator( '.rsa-install-card' ) ).toBeVisible();
 		await expect( page.locator( 'text=Install the desktop app' ) ).toBeVisible();
-		await expect( page.locator( 'text=APT — recommended' ) ).toBeVisible();
-		await expect( page.locator( 'text=rich-statistics-windows.exe' ) ).toBeVisible();
+		await expect( page.locator( 'text=Linux (APT)' ) ).toBeVisible();
+		await expect( page.locator( 'text=Recommended' ) ).toBeVisible();
+		await expect( page.locator( 'text=Download installer (.exe)' ) ).toBeVisible();
 	} );
 
 	test( 'OTP input accepts 6-digit code', async ( { page } ) => {
