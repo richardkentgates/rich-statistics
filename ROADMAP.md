@@ -120,26 +120,26 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | Area | Status | Critical | High | Medium | Low |
 |------|--------|----------|------|--------|-----|
 | Plugin Code | ✅ Good | 0 | 0 | 0 | 5 |
-| CI/CD | ✅ Good | 1 | 1 | 1 | 3 |
+| CI/CD | ✅ Good | 0 | 0 | 1 | 3 |
 | Server Infra | ⚠️ Needs work | 2 | 1 | 1 | 2 |
-| PWA | ✅ Good | 1 | 0 | 0 | 3 |
+| PWA | ✅ Good | 0 | 0 | 0 | 3 |
 | Desktop App | ✅ Good | 0 | 0 | 0 | 2 |
 | Documentation | ✅ Good | 0 | 0 | 0 | 6 |
 | Database | ✅ Good | 0 | 0 | 0 | 5 |
-| Tests | ⚠️ Needs work | 0 | 1 | 0 | 7 |
-| **TOTAL** | | **4** | **3** | **2** | **33** |
+| Tests | ✅ Good | 0 | 0 | 0 | 7 |
+| **TOTAL** | | **2** | **1** | **2** | **33** |
 
 ### Phase 1: Critical (ship with next release)
 | Ref | Area | Finding | Status |
 |-----|------|---------|--------|
-| BC-3 | CI/CD | Beta tag hardcoded to `.beta.1` — no increment | ⬜ Not started |
-| BC-4 | PWA | Fallback URL hardcoded to `/stable/` for beta users | ⬜ Not started |
-| C1 | PWA | `sw-init.js` missing from versioned snapshots | ⬜ Not started |
-| H3 | CI/CD | `ssh-keyscan` without fingerprint verification | ⬜ Not started |
-| H6 | CI/CD | `workflow_dispatch` on release without tag creates orphan artifacts | ⬜ Not started |
-| H7-H9 | Plugin | `RSA_APP_VERSION` (2.4.1) ≠ `RSA_VERSION` (2.4.20) | ⬜ Not started |
-| H26 | Server | `setup-app-server.sh` prints secrets to stdout | ⬜ Not started |
-| H28 | Tests | `tests/bootstrap.php` has stale `RSA_VERSION = '2.4.1'` | ⬜ Not started |
+| BC-3 | CI/CD | Beta tag hardcoded to `.beta.1` — no increment | ✅ Fixed — auto-increments `.beta.N` |
+| BC-4 | PWA | Fallback URL hardcoded to `/stable/` for beta users | ✅ Verified correct — stable fallback is intentional |
+| C1 | PWA | `sw-init.js` missing from versioned snapshots | ✅ Fixed — added to build.sh and CI |
+| H3 | CI/CD | `ssh-keyscan` without fingerprint verification | ✅ Fixed — verifies against `EXPECTED_HOST_FINGERPRINT` |
+| H6 | CI/CD | `workflow_dispatch` on release without tag creates orphan artifacts | ✅ Fixed — requires tag or version input |
+| H7-H9 | Plugin | `RSA_APP_VERSION` (2.4.1) ≠ `RSA_VERSION` (2.4.20) | ✅ Fixed — bumped to 2.4.20 |
+| H26 | Server | `setup-app-server.sh` prints secrets to stdout | ✅ Fixed — removed stdout echo, added delete instructions |
+| H28 | Tests | `tests/bootstrap.php` has stale `RSA_VERSION = '2.4.1'` | ✅ Fixed — bumped to 2.4.20 |
 
 ### Phase 2: High Priority
 | Ref | Area | Finding | Status |
@@ -148,7 +148,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | BC-2 | Server | `versions-beta.json` missing from dev/test servers | ⬜ Server fix needed |
 | BC-8 | Server | Server accumulates snapshots with no pruning | ⬜ Not started |
 | BC-12 | CI/CD | `setup-webhook.yml` always deploys production webhook | ⬜ Not started |
-| C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ⬜ Bump on release |
+| C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ⬜ Not started |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ⬜ Not started |
 | P2.2 | Tests | E2E test pipeline | ⬜ Not started |
