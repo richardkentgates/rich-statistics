@@ -91,30 +91,21 @@ if ( function_exists( 'rs_fs' ) ) {
 				// Include Freemius SDK.
 				require_once __DIR__ . '/vendor/freemius/start.php';
 
-				$rs_fs = fs_dynamic_init(
-					array(
-						'id'                  => '25954',
-						'slug'                => 'rich-statistics',
-						'type'                => 'plugin',
-						'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
-						'is_premium'          => true,
-						'premium_suffix'      => 'Publisher',
-						'has_premium_version' => true,
-						'has_addons'          => false,
-						'has_paid_plans'      => true,
-						'is_org_compliant'    => true,
-						'wp_org_gatekeeper'   => 'OA7#BoRiBNqdf52FvzEf!!074aRLPs8fspif$7K1#4u4Csys1fQlCecVcUTOs2mcpeVHi#C2j9d09fOTvbC0HloPT7fFee5WdS3G',
-						'trial'               => array(
-							'days'               => 30,
-							'is_require_payment' => true,
-						),
-						'menu'                => array(
-							'slug'    => 'rich-statistics',
-							'support' => false,
-							'network' => true,
-						),
-					)
-				);
+				$rs_fs = fs_dynamic_init( array(
+					'id'                  => '25954',
+					'slug'                => 'rich-statistics',
+					'type'                => 'plugin',
+					'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
+					'is_premium'          => false,
+					'has_addons'          => false,
+					'has_paid_plans'      => false,
+					'is_org_compliant'    => true,
+					'menu'                => array(
+						'slug'           => 'rich-statistics',
+						'support'        => false,
+						'network'        => true,
+					),
+				) );
 			}
 
 			return $rs_fs;
