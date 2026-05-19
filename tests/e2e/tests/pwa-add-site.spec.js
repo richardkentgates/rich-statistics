@@ -58,7 +58,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'shows desktop install links on welcome screen', async ( { page } ) => {
 		await page.goto( '/' );
-		await expect( page.locator( '.rsa-install-card' ) ).toBeVisible();
+		await expect( page.locator( '.rsa-welcome-install' ) ).toBeVisible();
 		await expect( page.locator( 'text=Install the desktop app' ) ).toBeVisible();
 		await expect( page.locator( 'text=Linux (APT)' ) ).toBeVisible();
 		await expect( page.locator( 'text=Recommended' ) ).toBeVisible();

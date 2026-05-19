@@ -97,7 +97,7 @@ html, body {
 }
 
 /* Install card — shown below login card on welcome screen */
-.rsa-install-card {
+.rsa-welcome-install {
 	width: 100%;
 	background: var(--rsa-surface);
 	border-radius: 12px;
@@ -105,7 +105,7 @@ html, body {
 	box-shadow: 0 8px 30px rgba(0,0,0,.15);
 }
 
-.rsa-install-title {
+.rsa-welcome-install-title {
 	text-align: center;
 	font-size: 16px;
 	font-weight: 700;
@@ -113,7 +113,7 @@ html, body {
 	margin: 0 0 4px;
 }
 
-.rsa-install-subtitle {
+.rsa-welcome-install-subtitle {
 	text-align: center;
 	color: var(--rsa-muted);
 	margin: 0 0 20px;
@@ -178,6 +178,111 @@ html, body {
 	font-size: 11px;
 	color: var(--rsa-muted);
 	margin: 12px 0 0;
+}
+
+/* Install platform cards (welcome screen) */
+.rsa-install-platforms {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.rsa-install-platform {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 8px;
+	padding: 14px 16px;
+	min-width: 0;
+}
+
+.rsa-install-platform-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.rsa-install-platform-icon {
+	font-size: 20px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.rsa-install-platform-header h3 {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rsa-text);
+	margin: 0;
+}
+
+.rsa-install-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	background: var(--rsa-accent);
+	color: #fff;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	vertical-align: middle;
+}
+
+.rsa-install-code {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 11px;
+	line-height: 1.6;
+	overflow-x: auto;
+	max-width: 100%;
+	margin: 0;
+	font-family: ui-monospace, SFMono-Regular, monospace;
+	color: var(--rsa-text);
+	white-space: pre;
+}
+
+.rsa-install-code code {
+	font-family: inherit;
+}
+
+.rsa-install-links {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-install-dl-btn {
+	display: block;
+	width: 100%;
+	text-align: center;
+	padding: 10px 16px;
+	background: var(--rsa-accent);
+	color: #fff;
+	border-radius: 6px;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 600;
+	transition: background .15s;
+}
+
+.rsa-install-dl-btn:hover {
+	background: var(--rsa-accent-dark, #245a73);
+}
+
+.rsa-install-dl-btn--small {
+	display: inline-block;
+	width: auto;
+	padding: 8px 16px;
+	font-size: 12px;
+	background: var(--rsa-surface);
+	color: var(--rsa-accent);
+	border: 1px solid var(--rsa-border);
+}
+
+.rsa-install-dl-btn--small:hover {
+	background: var(--rsa-bg);
 }
 
 /* =========================================================================
