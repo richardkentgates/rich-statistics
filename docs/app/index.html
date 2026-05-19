@@ -40,29 +40,42 @@
 			<h2 class="rsa-install-title">Install the desktop app</h2>
 			<p class="rsa-install-subtitle">Native experience with offline support and auto-updates.</p>
 
-			<div class="rsa-install-section">
-				<h3>Linux (APT — recommended)</h3>
-				<pre class="rsa-install-code"><code>curl -fsSL https://app.richstatistics.com/apt/public.gpg \
+			<div class="rsa-install-platforms">
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">🐧</span>
+						<div>
+							<h3>Linux (APT)</h3>
+							<span class="rsa-install-badge">Recommended</span>
+						</div>
+					</div>
+					<pre class="rsa-install-code"><code>curl -fsSL https://app.richstatistics.com/apt/public.gpg \
   | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
   https://app.richstatistics.com/apt stable main" \
   | sudo tee /etc/apt/sources.list.d/rich-statistics.list
 sudo apt update && sudo apt install rich-statistics</code></pre>
-			</div>
+				</div>
 
-			<div class="rsa-install-section">
-				<h3>Windows</h3>
-				<p>Download and run the installer:</p>
-				<a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" class="rsa-install-link">
-					<strong>rich-statistics-windows.exe</strong>
-				</a>
-			</div>
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">🪟</span>
+						<h3>Windows</h3>
+					</div>
+					<a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" class="rsa-install-dl-btn">
+						Download installer (.exe)
+					</a>
+				</div>
 
-			<div class="rsa-install-section">
-				<h3>Linux (.deb direct)</h3>
-				<div class="rsa-install-links">
-					<a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-install-link">amd64</a>
-					<a href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb" class="rsa-install-link">arm64</a>
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">📦</span>
+						<h3>Linux (.deb direct)</h3>
+					</div>
+					<div class="rsa-install-links">
+						<a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-install-dl-btn rsa-install-dl-btn--small">amd64</a>
+						<a href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb" class="rsa-install-dl-btn rsa-install-dl-btn--small">arm64</a>
+					</div>
 				</div>
 			</div>
 
