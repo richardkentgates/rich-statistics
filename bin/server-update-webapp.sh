@@ -56,6 +56,7 @@ fi
 rsync -a --delete \
     --exclude='[0-9]*.[0-9]*.[0-9]*/' \
     --exclude='dist/' \
+    --exclude='apt/' \
     --exclude='_deploy/' \
     "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 
