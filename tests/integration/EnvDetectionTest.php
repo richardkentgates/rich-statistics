@@ -12,6 +12,9 @@ class EnvDetectionTest extends WP_UnitTestCase {
 	/**
 	 * Duplicate of rsa_detect_app_env() from rich-statistics.php.
 	 * Tests the actual logic without loading the full plugin.
+	 *
+	 * @param string $site_url The site URL to test.
+	 * @return string The detected environment.
 	 */
 	private function detect_env( string $site_url ): string {
 		$host = wp_parse_url( $site_url, PHP_URL_HOST );
@@ -29,6 +32,9 @@ class EnvDetectionTest extends WP_UnitTestCase {
 
 	/**
 	 * Duplicate of rsa_detect_app_url() from rich-statistics.php.
+	 *
+	 * @param string $site_url The site URL to test.
+	 * @return string The detected app URL.
 	 */
 	private function detect_url( string $site_url ): string {
 		$env = $this->detect_env( $site_url );
@@ -90,7 +96,7 @@ class EnvDetectionTest extends WP_UnitTestCase {
 			'https://dev.richstatistics.com' => 'development',
 			'http://localhost'               => 'development',
 			'http://127.0.0.1'               => 'development',
-			'https://test.richstatistics.com'=> 'test',
+			'https://test.richstatistics.com' => 'test',
 		);
 
 		foreach ( $test_urls as $url => $expected ) {
