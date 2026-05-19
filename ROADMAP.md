@@ -120,14 +120,14 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | Area | Status | Critical | High | Medium | Low |
 |------|--------|----------|------|--------|-----|
 | Plugin Code | ✅ Good | 0 | 0 | 0 | 5 |
-| CI/CD | ✅ Good | 0 | 0 | 1 | 3 |
-| Server Infra | ⚠️ Needs work | 2 | 1 | 1 | 2 |
+| CI/CD | ✅ Good | 0 | 0 | 0 | 3 |
+| Server Infra | ⚠️ Needs work | 2 | 0 | 0 | 2 |
 | PWA | ✅ Good | 0 | 0 | 0 | 3 |
 | Desktop App | ✅ Good | 0 | 0 | 0 | 2 |
 | Documentation | ✅ Good | 0 | 0 | 0 | 6 |
 | Database | ✅ Good | 0 | 0 | 0 | 5 |
-| Tests | ✅ Good | 0 | 0 | 0 | 7 |
-| **TOTAL** | | **2** | **1** | **2** | **33** |
+| Tests | ⚠️ Needs work | 0 | 1 | 0 | 7 |
+| **TOTAL** | | **2** | **1** | **0** | **33** |
 
 ### Phase 1: Critical (ship with next release)
 | Ref | Area | Finding | Status |
@@ -146,11 +146,11 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 |-----|------|---------|--------|
 | BC-1 | Server | Snapshot format mismatch on production server (flat → channel subdirs) | ⬜ Server migration needed |
 | BC-2 | Server | `versions-beta.json` missing from dev/test servers | ⬜ Server fix needed |
-| BC-8 | Server | Server accumulates snapshots with no pruning | ⬜ Not started |
-| BC-12 | CI/CD | `setup-webhook.yml` always deploys production webhook | ⬜ Not started |
+| BC-8 | Server | Server accumulates snapshots with no pruning | ✅ Fixed — prunes to last 12 versions |
+| BC-12 | CI/CD | `setup-webhook.yml` always deploys production webhook | ✅ Fixed — deploys env-appropriate webhook |
 | C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
-| M2 | CI/CD | Chart.js SRI hash verification disabled | ⬜ Not started |
-| M25 | Server | Dev/test webhooks don't validate Content-Type | ⬜ Not started |
+| M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
+| M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
 | P2.2 | Tests | E2E test pipeline | ⬜ Not started |
 
 ### Phase 3: Medium Priority
