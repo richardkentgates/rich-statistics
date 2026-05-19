@@ -22,100 +22,101 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( function_exists( 'rs_fs' ) ) {
 	rs_fs()->set_basename( true, __FILE__ );
-} else {
-	// --------------------------------------------------------------------
-	// Environment helpers (must be functions, not closures, for constant defs)
-	// --------------------------------------------------------------------
+}
 
-	if ( ! function_exists( 'rsa_detect_app_env' ) ) {
-		function rsa_detect_app_env(): string {
-			$host = wp_parse_url( get_site_url(), PHP_URL_HOST );
-			if ( ! $host ) {
-				return 'production';
-			}
-			if ( str_contains( $host, 'dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
-				return 'development';
-			}
-			if ( str_contains( $host, 'test.' ) ) {
-				return 'test';
-			}
+// --------------------------------------------------------------------
+// Environment helpers (must be functions, not closures, for constant defs)
+// --------------------------------------------------------------------
+
+if ( ! function_exists( 'rsa_detect_app_env' ) ) {
+	function rsa_detect_app_env(): string {
+		$host = wp_parse_url( get_site_url(), PHP_URL_HOST );
+		if ( ! $host ) {
 			return 'production';
 		}
-	}
-
-	if ( ! function_exists( 'rsa_detect_app_url' ) ) {
-		function rsa_detect_app_url(): string {
-			$env = rsa_detect_app_env();
-			if ( 'development' === $env ) {
-				return 'https://dev.richstatistics.com/';
-			}
-			if ( 'test' === $env ) {
-				return 'https://test.richstatistics.com/';
-			}
-			return 'https://app.richstatistics.com/';
+		if ( str_contains( $host, 'dev.' ) || str_contains( $host, 'localhost' ) || str_contains( $host, '127.0.0.1' ) ) {
+			return 'development';
 		}
+		if ( str_contains( $host, 'test.' ) ) {
+			return 'test';
+		}
+		return 'production';
 	}
+}
 
-	// --------------------------------------------------------------------
-	// Constants
-	// --------------------------------------------------------------------
-	define( 'RSA_VERSION', '2.4.22' );
-	define( 'RSA_FILE', __FILE__ );
-	define( 'RSA_DIR', plugin_dir_path( __FILE__ ) );
-	define( 'RSA_URL', plugin_dir_url( __FILE__ ) );
-	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
-	define( 'RSA_MIN_WP', '6.0' );
-	define( 'RSA_MIN_PHP', '8.0' );
-	define( 'RSA_APP_VERSION', '2.4.22' );
-	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
-	define( 'RSA_APP_URL', rsa_detect_app_url() );
-	define( 'RSA_APP_ENV', rsa_detect_app_env() );
+if ( ! function_exists( 'rsa_detect_app_url' ) ) {
+	function rsa_detect_app_url(): string {
+		$env = rsa_detect_app_env();
+		if ( 'development' === $env ) {
+			return 'https://dev.richstatistics.com/';
+		}
+		if ( 'test' === $env ) {
+			return 'https://test.richstatistics.com/';
+		}
+		return 'https://app.richstatistics.com/';
+	}
+}
 
+// --------------------------------------------------------------------
+// Constants
+// --------------------------------------------------------------------
+define( 'RSA_VERSION', '2.4.22' );
+define( 'RSA_FILE', __FILE__ );
+define( 'RSA_DIR', plugin_dir_path( __FILE__ ) );
+define( 'RSA_URL', plugin_dir_url( __FILE__ ) );
+define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
+define( 'RSA_MIN_WP', '6.0' );
+define( 'RSA_MIN_PHP', '8.0' );
+define( 'RSA_APP_VERSION', '2.4.22' );
+define( 'RSA_MIN_APP_VERSION', '2.0.0' );
+define( 'RSA_APP_URL', rsa_detect_app_url() );
+define( 'RSA_APP_ENV', rsa_detect_app_env() );
+
+/**
+ * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
+ * `function_exists` CALL ABOVE TO PROPERLY WORK.
+ */
+if ( ! function_exists( 'rs_fs' ) ) {
 	/**
-	 * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
-	 * `function_exists` CALL ABOVE TO PROPERLY WORK.
+	 * Create a helper function for easy SDK access.
 	 */
-	if ( ! function_exists( 'rs_fs' ) ) {
-		/**
-		 * Create a helper function for easy SDK access.
-		 */
-		function rs_fs() {
-			global $rs_fs;
+	function rs_fs() {
+		global $rs_fs;
 
-			if ( ! isset( $rs_fs ) ) {
-				// Activate multisite network integration.
-				if ( ! defined( 'WP_FS__PRODUCT_25954_MULTISITE' ) ) {
-					define( 'WP_FS__PRODUCT_25954_MULTISITE', true );
-				}
-
-				// Include Freemius SDK.
-				require_once __DIR__ . '/vendor/freemius/start.php';
-
-				$rs_fs = fs_dynamic_init( array(
-					'id'                  => '25954',
-					'slug'                => 'rich-statistics',
-					'type'                => 'plugin',
-					'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
-					'is_premium'          => false,
-					'has_addons'          => false,
-					'has_paid_plans'      => false,
-					'is_org_compliant'    => true,
-					'menu'                => array(
-						'slug'           => 'rich-statistics',
-						'support'        => false,
-						'network'        => true,
-					),
-				) );
+		if ( ! isset( $rs_fs ) ) {
+			// Activate multisite network integration.
+			if ( ! defined( 'WP_FS__PRODUCT_25954_MULTISITE' ) ) {
+				define( 'WP_FS__PRODUCT_25954_MULTISITE', true );
 			}
 
-			return $rs_fs;
+			// Include Freemius SDK.
+			require_once dirname( __FILE__ ) . '/vendor/freemius/start.php';
+
+			$rs_fs = fs_dynamic_init( array(
+				'id'                  => '25954',
+				'slug'                => 'rich-statistics',
+				'type'                => 'plugin',
+				'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
+				'is_premium'          => false,
+				'has_addons'          => false,
+				'has_paid_plans'      => false,
+				'is_org_compliant'    => true,
+				'menu'                => array(
+					'slug'           => 'rich-statistics',
+					'support'        => false,
+					'network'        => true,
+				),
+			) );
 		}
 
-		// Init Freemius.
-		rs_fs();
-		// Signal that SDK was initiated.
-		do_action( 'rs_fs_loaded' );
+		return $rs_fs;
 	}
+
+	// Init Freemius.
+	rs_fs();
+	// Signal that SDK was initiated.
+	do_action( 'rs_fs_loaded' );
+}
 
 	// --------------------------------------------------------------------
 	// Autoload core classes
