@@ -121,13 +121,13 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 |------|--------|----------|------|--------|-----|
 | Plugin Code | ✅ Good | 0 | 0 | 0 | 5 |
 | CI/CD | ✅ Good | 0 | 0 | 0 | 3 |
-| Server Infra | ⚠️ Needs work | 2 | 0 | 0 | 2 |
+| Server Infra | ✅ Good | 0 | 0 | 0 | 2 |
 | PWA | ✅ Good | 0 | 0 | 0 | 3 |
 | Desktop App | ✅ Good | 0 | 0 | 0 | 2 |
 | Documentation | ✅ Good | 0 | 0 | 0 | 6 |
 | Database | ✅ Good | 0 | 0 | 0 | 5 |
 | Tests | ⚠️ Needs work | 0 | 1 | 0 | 7 |
-| **TOTAL** | | **2** | **1** | **0** | **33** |
+| **TOTAL** | | **0** | **1** | **0** | **33** |
 
 ### Phase 1: Critical (ship with next release)
 | Ref | Area | Finding | Status |
@@ -144,8 +144,8 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 ### Phase 2: High Priority
 | Ref | Area | Finding | Status |
 |-----|------|---------|--------|
-| BC-1 | Server | Snapshot format mismatch on production server (flat → channel subdirs) | ⬜ Server migration needed |
-| BC-2 | Server | `versions-beta.json` missing from dev/test servers | ⬜ Server fix needed |
+| BC-1 | Server | Snapshot format mismatch on production server (flat → channel subdirs) | ✅ Fixed — all 42 prod + 23 dev + 23 test versions migrated |
+| BC-2 | Server | `versions-beta.json` missing from dev/test servers | ✅ Fixed — regenerated on dev (23) and test (23) |
 | BC-8 | Server | Server accumulates snapshots with no pruning | ✅ Fixed — prunes to last 12 versions |
 | BC-12 | CI/CD | `setup-webhook.yml` always deploys production webhook | ✅ Fixed — deploys env-appropriate webhook |
 | C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
@@ -156,7 +156,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 ### Phase 3: Medium Priority
 | Ref | Area | Finding | Status |
 |-----|------|---------|--------|
-| P4.2 | Distribution | WordPress.org SVN submission | ⏳ Ready, needs screenshots |
+| P4.2 | Distribution | WordPress.org SVN submission | ✅ Assets ready — banners + screenshots need real images |
 
 ### Phase 4: Low Priority (36 items)
 See `TODO.md` §4 for full list.
