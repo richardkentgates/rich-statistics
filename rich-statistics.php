@@ -252,5 +252,4 @@ if ( ! function_exists( 'rs_fs' ) ) {
 			RSA_MIN_PHP
 		);
 		echo '<div class="notice notice-error"><p>' . esc_html( $msg ) . '</p></div>';
-	}
-} // end else
+}
