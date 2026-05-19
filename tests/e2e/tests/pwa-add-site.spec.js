@@ -56,12 +56,12 @@ test.describe( 'Add Site overlay', () => {
 		await expect( page.locator( '#rsa-login' ) ).toBeVisible();
 	} );
 
-	test( 'shows desktop install links', async ( { page } ) => {
+	test( 'shows desktop install links on welcome screen', async ( { page } ) => {
 		await page.goto( '/' );
-		await page.click( '#rsa-get-started-btn' );
-		await expect( page.locator( 'text=Or install the desktop app' ) ).toBeVisible();
-		await expect( page.locator( 'text=Linux .deb' ) ).toBeVisible();
-		await expect( page.locator( 'text=Windows .exe' ) ).toBeVisible();
+		await expect( page.locator( '.rsa-install-card' ) ).toBeVisible();
+		await expect( page.locator( 'text=Install the desktop app' ) ).toBeVisible();
+		await expect( page.locator( 'text=APT — recommended' ) ).toBeVisible();
+		await expect( page.locator( 'text=rich-statistics-windows.exe' ) ).toBeVisible();
 	} );
 
 	test( 'OTP input accepts 6-digit code', async ( { page } ) => {
