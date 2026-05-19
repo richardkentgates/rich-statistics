@@ -99,7 +99,7 @@ if ( ! function_exists( 'rs_fs' ) ) {
 				'public_key'       => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
 				'is_premium'       => false,
 				'has_addons'       => false,
-				'has_paid_plans'   => false,
+				'has_paid_plans'   => true,
 				'is_org_compliant' => true,
 				'menu'             => array(
 					'slug'    => 'rich-statistics',
