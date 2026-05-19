@@ -63,7 +63,12 @@ jobs:
           esac
 
           $SSH ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} "sudo mkdir -p ${WEBROOT}/_deploy"
-          $SCP bin/server-webhook.php /tmp/rsa-webhook-index.php
+          case "$ENV" in
+            production) WEBHOOK_SOURCE="bin/server-webhook.php" ;;
+            dev)        WEBHOOK_SOURCE="bin/server-webhook-dev.php" ;;
+            test)       WEBHOOK_SOURCE="bin/server-webhook-test.php" ;;
+          esac
+          $SCP "${WEBHOOK_SOURCE}" /tmp/rsa-webhook-index.php
           $SSH ${{ vars.SERVER_USER }}@${{ vars.SERVER_IP }} \
             "sudo cp /tmp/rsa-webhook-index.php ${WEBROOT}/_deploy/index.php && \
              sudo chown www-data:www-data ${WEBROOT}/_deploy/index.php"

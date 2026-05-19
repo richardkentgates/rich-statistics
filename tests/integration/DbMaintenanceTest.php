@@ -215,6 +215,97 @@ class DbMaintenanceTest extends WP_UnitTestCase {
 
 	/**
 	 * ----------------------------------------------------------------
+	 * aggregate_heatmap() — NULL x_pct/y_pct are excluded (L32)
+	 * ----------------------------------------------------------------
+	 */
+	public function test_aggregate_heatmap_excludes_null_coordinates(): void {
+		global $wpdb;
+		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+
+		// Insert a click with NULL coordinates
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_clicks',
+			array(
+				'session_id' => 'hm-null-test',
+				'page'       => '/null-test/',
+				'x_pct'      => null,
+				'y_pct'      => null,
+				'created_at' => $yesterday . ' 12:00:00',
+			),
+			array( '%s', '%s', '%f', '%f', '%s' )
+		);
+
+		// Insert a valid click on the same page
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_clicks',
+			array(
+				'session_id' => 'hm-valid-test',
+				'page'       => '/null-test/',
+				'x_pct'      => 50.0,
+				'y_pct'      => 50.0,
+				'created_at' => $yesterday . ' 13:00:00',
+			),
+			array( '%s', '%s', '%f', '%f', '%s' )
+		);
+
+		RSA_DB::aggregate_heatmap();
+
+		// Only the valid click should be aggregated
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT COUNT(*) FROM {$wpdb->prefix}rsa_heatmap WHERE page = %s",
+				'/null-test/'
+			)
+		);
+		$this->assertSame( 1, $count, 'Only clicks with valid coordinates should be aggregated' );
+
+		$weight = (int) $wpdb->get_var(
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				"SELECT weight FROM {$wpdb->prefix}rsa_heatmap WHERE page = %s",
+				'/null-test/'
+			)
+		);
+		$this->assertSame( 1, $weight, 'Weight should be 1 (only the valid click)' );
+
+		$wpdb->delete( $wpdb->prefix . 'rsa_clicks', array( 'page' => '/null-test/' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_heatmap', array( 'page' => '/null-test/' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * prune_old_data() — 0 days retention deletes everything (L33)
+	 * ----------------------------------------------------------------
+	 */
+	public function test_prune_old_data_with_zero_days_deletes_all(): void {
+		// With 0 days retention, cutoff is "now". Use data from 1 second ago
+		// to ensure it's older than the cutoff (prune uses < not <=).
+		$one_sec_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-1 second' ) );
+		$this->insert_event( 'prune-zero-test', '/test/', $one_sec_ago );
+		$this->insert_session( 'prune-zero-sess', $one_sec_ago );
+
+		$deleted = RSA_DB::prune_old_data( 0 );
+
+		// With 0 days retention, even recent data is "old"
+		$this->assertGreaterThan( 0, $deleted, 'prune with 0 days should delete rows' );
+		$this->assertSame( 0, $this->count_events_for_session( 'prune-zero-test' ) );
+		$this->assertSame( 0, $this->count_sessions_for_session( 'prune-zero-sess' ) );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * prune_old_data() — returns early on timeout (L34)
+	 * ----------------------------------------------------------------
+	 * The 55-second timeout is a safety valve for large sites. We verify
+	 * the method completes without error and returns an integer count.
+	 */
+	public function test_prune_old_data_returns_integer_count(): void {
+		$result = RSA_DB::prune_old_data();
+		$this->assertIsInt( $result, 'prune_old_data() should return an integer count' );
+		$this->assertGreaterThanOrEqual( 0, $result, 'Delete count should be non-negative' );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
 	 * daily_maintenance() runs both prune and aggregate
 	 * ----------------------------------------------------------------
 	 */

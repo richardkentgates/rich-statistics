@@ -182,7 +182,7 @@ for CHANNEL in stable beta; do
     fi
     info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
     mkdir -p "$CHANNEL_DIR"
-    for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
+    for f in index.html app.js app.css config.js sw.js sw-init.js manifest.json chart.min.js; do
         [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
     done
     for f in index-dev.html index-test.html config-dev.js config-test.js; do

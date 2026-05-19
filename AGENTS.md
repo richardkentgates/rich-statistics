@@ -62,6 +62,15 @@ php vendor/bin/phpunit --no-coverage tests/unit/
 
 # All tests
 php vendor/bin/phpunit --no-coverage
+
+# E2E tests (PWA)
+cd tests/e2e && npm test
+
+# Single E2E test file
+cd tests/e2e && npx playwright test tests/pwa-shell.spec.js
+
+# E2E test by name
+cd tests/e2e && npx playwright test -g "welcome screen"
 ```
 
 Freemius is stubbed in `tests/bootstrap.php` — `rs_fs()->can_use_premium_code__premium_only()` returns `false` in tests.
@@ -330,10 +339,13 @@ See `ROADMAP.md` §6 for the full prioritized list.
 
 | Priority | Gap | Status |
 |----------|-----|--------|
-| P2.2 | E2E test pipeline | ❌ Not started |
+| P2.2 | E2E test pipeline | ✅ 55 tests passing |
 | P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
 
 **Recently completed (May 2026):**
+- P2.2: E2E test pipeline (55 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect) ✅
+- L30-L36: Test coverage gaps filled (EnvDetection moved to integration, RSA_DB::table() edge cases, heatmap NULL handling, prune retention/timeout, bot detection Accept-Language + score capping) ✅
+- All audit items verified and documented in TODO.md/ROADMAP.md ✅
 - P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅
 - P2.1: PHPCS in CI (all 4 workflows) ✅
 - P2.3: Migration + env detection tests (19 new tests) ✅

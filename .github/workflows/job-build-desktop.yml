@@ -158,7 +158,21 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ inputs.server-ip }} >> ~/.ssh/known_hosts
+          # Scan the server's host key
+          ssh-keyscan -H ${{ inputs.server-ip }} > /tmp/ssh-host-keys
+          # Verify fingerprint if expected value is provided
+          if [ -n "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
+            ACTUAL=$(ssh-keygen -lf /tmp/ssh-host-keys | head -1 | awk '{print $2}')
+            if [ "$ACTUAL" != "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
+              echo "ERROR: Host key fingerprint mismatch!"
+              echo "Expected: ${{ vars.EXPECTED_HOST_FINGERPRINT }}"
+              echo "Actual:   $ACTUAL"
+              exit 1
+            fi
+            echo "Host key fingerprint verified."
+          fi
+          cat /tmp/ssh-host-keys >> ~/.ssh/known_hosts
+          rm -f /tmp/ssh-host-keys
 
       - name: Deploy server scripts
         shell: bash
