@@ -135,7 +135,9 @@ class RSA_Pwa_Download {
 		readfile( $tmp_file );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-		@unlink( $tmp_file );
+		if ( file_exists( $tmp_file ) ) {
+			unlink( $tmp_file );
+		}
 		exit;
 	}
 }

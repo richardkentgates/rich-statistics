@@ -38,11 +38,9 @@
 		cache       : {},        // keyed by endpoint+period
 		connState   : 'online',  // 'online' | 'offline' | 'site-down'
 		navOpen     : false,
-		refreshTimer: null,      // setInterval id for auto-refresh
-		aiProvider  : null,      // { apiKey, endpoint, model, voiceInput, voiceOutput, voiceLang, voiceSpeed, autoSpeak } or null
-		_otpVerified: null,      // { siteUrl, username, siteLabel } after step 1
-		isPremium   : false,     // from RSA_CONFIG.isPremium
+		isPremium   : false,
 		upgradeUrl  : '',        // Freemius upgrade URL
+		channel     : 'stable',  // release channel from /info endpoint
 	};
 
 	// -----------------------------------------------------------------------
@@ -83,9 +81,8 @@
 		bindAddSite();
 		bindInstallPrompt();
 		bindAiSettings();
-		showIosInstallTip();
 
-		// Connection banners — check initial state and listen for changes.
+		// Connection banners
 		if ( navigator.onLine === false ) {
 			setConnBanner( 'offline' );
 		}
@@ -524,7 +521,7 @@
 
 	/**
 	 * Returns the current semver extracted from the Tauri local URL, e.g.
-	 * http://tauri.localhost/1.4.1/  →  "1.4.1", or null if at root.
+	 * http://tauri.localhost/v/2.4.15/stable/  →  "2.4.15", or null if at root.
 	 */
 	function getTauriCurrentVersion() {
 		var m = window.location.pathname.match( /^\/(?:v\/)?([0-9]+\.[0-9]+\.[0-9]+)\// );
@@ -535,23 +532,41 @@
 	 * Navigate to a bundled versioned folder in the Tauri local server.
 	 * Falls back to the latest bundled version if the requested one isn't found,
 	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 *
+	 * @param {string} pluginVersion - Semver version string.
+	 * @param {string} [channel] - Release channel ('stable' or 'beta'). Default 'stable'.
 	 */
-	function tauriNavigateToVersion( pluginVersion ) {
+	function tauriNavigateToVersion( pluginVersion, channel ) {
+		channel = /^(stable|beta)$/.test( channel ) ? channel : 'stable';
 		// Reject anything that is not a clean semver — prevents path traversal
 		// if the API response were ever tampered with.
 		if ( ! /^\d+\.\d+\.\d+$/.test( pluginVersion ) ) return;
 		var current = getTauriCurrentVersion();
 		if ( current === pluginVersion ) return; // Already on correct version
 
-		fetch( '/versions.json' )
+		var versionUrl  = '/v/' + pluginVersion + '/' + channel + '/';
+		var indexUrl    = versionUrl + 'index.html';
+		var versionsFile = channel === 'beta' ? '/versions-beta.json' : '/versions.json';
+
+		fetch( versionsFile )
 			.then( function ( r ) { return r.ok ? r.json() : []; } )
+			.then( function ( bundled ) {
+				// Fall back to versions.json if beta list is empty
+				if ( ! bundled.length && versionsFile === '/versions-beta.json' ) {
+					return fetch( '/versions.json' ).then( function ( r ) { return r.ok ? r.json() : []; } );
+				}
+				return bundled;
+			} )
 			.then( function ( bundled ) {
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
 					// Verify the versioned folder is actually present before navigating.
-					fetch( '/v/' + pluginVersion + '/index.html', { method: 'HEAD' } )
+					fetch( indexUrl, { method: 'HEAD' } )
 						.then( function ( r ) {
 							if ( r.ok ) {
-								window.location.href = '/v/' + pluginVersion + '/';
+								window.location.href = versionUrl;
+							} else if ( channel !== 'stable' ) {
+								// Channel subdir not found — try stable as fallback
+								window.location.href = '/v/' + pluginVersion + '/stable/';
 							}
 						} )
 						.catch( function () {} );
@@ -585,7 +600,7 @@
 					} )
 					.catch( function () {} );
 				if ( latest && current !== latest ) {
-					window.location.href = '/v/' + latest + '/';
+					window.location.href = '/v/' + latest + '/' + channel + '/';
 				}
 			} )
 			.catch( function () {} );
@@ -626,12 +641,20 @@
 				if ( ! json || ! json.data ) return;
 				var info = json.data;
 
+				// Sync premium status from the server
+				if ( info.is_premium !== undefined ) {
+					state.isPremium = !! info.is_premium;
+				}
+
+				// Store release channel for version routing
+				state.channel = info.channel === 'beta' ? 'beta' : 'stable';
+
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
 				// In Tauri: route to the matching bundled version folder (local, no external URLs).
 				if ( isTauri() ) {
-					tauriNavigateToVersion( info.version );
+					tauriNavigateToVersion( info.version, state.channel );
 					localStorage.setItem( versionKey, info.version );
 					return;
 				}
@@ -955,10 +978,6 @@
 			var link = document.querySelector( '.rsa-nav-link[data-view="' + view + '"]' );
 			if ( link ) {
 				link.classList.add( 'rsa-nav-premium' );
-				var badge = document.createElement( 'span' );
-				badge.className = 'rsa-nav-badge';
-				badge.textContent = 'Premium';
-				link.appendChild( badge );
 			}
 		} );
 	}
@@ -1064,28 +1083,6 @@
 	}
 
 	// -----------------------------------------------------------------------
-	// iOS Safari install tip
-	// -----------------------------------------------------------------------
-	function showIosInstallTip() {
-		var ua         = navigator.userAgent || '';
-		var isIos      = /iphone|ipad|ipod/i.test( ua );
-		var isSafari   = /safari/i.test( ua ) && ! /chrome|crios|fxios|android/i.test( ua );
-		var standalone = 'standalone' in window.navigator && window.navigator.standalone;
-		if ( ! isIos || ! isSafari || standalone ) return;
-
-		var tip = document.createElement( 'div' );
-		tip.id = 'rsa-ios-tip';
-		tip.setAttribute( 'role', 'status' );
-		tip.innerHTML =
-			'<span>Tap <strong>Share</strong> ↗ then <strong>“Add to Home Screen”</strong> to install this app.</span>' +
-			'<button type="button" aria-label="Dismiss" id="rsa-ios-tip-close">×</button>';
-		document.body.appendChild( tip );
-		document.getElementById( 'rsa-ios-tip-close' ).addEventListener( 'click', function () {
-			tip.remove();
-			try { localStorage.setItem( 'rsa_ios_tip_dismissed', '1' ); } catch ( e ) {}
-		} );
-	}
-
 	// -----------------------------------------------------------------------
 	// PWA install prompt
 	// -----------------------------------------------------------------------
@@ -1130,12 +1127,21 @@
 				if ( val ) val.textContent = e.target.value;
 			}
 		} );
+		document.addEventListener( 'change', function ( e ) {
+			if ( e.target.id === 'rsa-ai-provider' ) {
+				applyProviderPreset( e.target.value );
+			}
+		} );
 		document.addEventListener( 'click', function ( e ) {
+			if ( e.target.id === 'rsa-ai-tauri-detect' ) {
+				onTauriDetect();
+				return;
+			}
 			if ( e.target.id === 'rsa-ai-save' ) {
 				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
 				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
 				var model    = document.getElementById( 'rsa-ai-model' ).value.trim();
-				if ( ! endpoint ) return;
+				if ( ! endpoint || ! model ) return;
 				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
 				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
 				var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
@@ -1144,7 +1150,7 @@
 				state.aiProvider = {
 					endpoint: endpoint,
 					apiKey: apiKey || '',
-					model: model || 'gpt-4o-mini',
+					model: model,
 					voiceInput: voiceInput,
 					voiceOutput: voiceOutput,
 					voiceLang: voiceLang,
@@ -1159,9 +1165,20 @@
 			if ( e.target.id === 'rsa-ai-clear' ) {
 				state.aiProvider = null;
 				localStorage.removeItem( 'rsa_ai_provider' );
-				document.getElementById( 'rsa-ai-endpoint' ).value = 'https://api.openai.com/v1/chat/completions';
-				document.getElementById( 'rsa-ai-key' ).value = '';
-				document.getElementById( 'rsa-ai-model' ).value = 'gpt-4o-mini';
+				var prov = document.getElementById( 'rsa-ai-provider' );
+				if ( prov ) prov.value = 'openai';
+				var ep = document.getElementById( 'rsa-ai-endpoint' );
+				if ( ep ) { ep.value = 'https://api.openai.com/v1/chat/completions'; ep.readOnly = true; ep.style.background = '#f5f5f5'; }
+				var mod = document.getElementById( 'rsa-ai-model' );
+				if ( mod ) mod.value = '';
+				var keyF = document.getElementById( 'rsa-ai-key' );
+				if ( keyF ) keyF.value = '';
+				var keyRow = document.getElementById( 'rsa-ai-key-row' );
+				if ( keyRow ) keyRow.style.display = '';
+				var tauriRow = document.getElementById( 'rsa-ai-tauri-row' );
+				if ( tauriRow ) tauriRow.style.display = 'none';
+				var tauriStatus = document.getElementById( 'rsa-ai-tauri-status' );
+				if ( tauriStatus ) tauriStatus.textContent = '';
 				var vi = document.getElementById( 'rsa-ai-voice-input' );
 				if ( vi ) vi.checked = false;
 				var vo = document.getElementById( 'rsa-ai-voice-output' );
@@ -2874,71 +2891,226 @@
 	}
 
 	// -----------------------------------------------------------------------
+	// Provider presets for AI settings
+	// -----------------------------------------------------------------------
+	var providerPresets = {
+		openai: {
+			endpoint: 'https://api.openai.com/v1/chat/completions',
+			defaultModel: 'gpt-4o-mini',
+			needsKey: true,
+			label: 'OpenAI'
+		},
+		ollama: {
+			endpoint: 'http://localhost:11434/v1/chat/completions',
+			defaultModel: 'llama3.2',
+			needsKey: false,
+			label: 'Ollama'
+		},
+		lmstudio: {
+			endpoint: 'http://localhost:1234/v1/chat/completions',
+			defaultModel: '',
+			needsKey: false,
+			label: 'LM Studio'
+		},
+		llamacpp: {
+			endpoint: 'http://localhost:8080/v1/chat/completions',
+			defaultModel: '',
+			needsKey: false,
+			label: 'llama.cpp'
+		},
+		custom: {
+			endpoint: '',
+			defaultModel: '',
+			needsKey: true,
+			label: 'Custom'
+		}
+	};
+
+	/** Tauri: auto-find and start local provider, return models list. */
+	function tauriDetectLocal( endpoint ) {
+		if ( ! isTauri() || ! window.__TAURI__ ) return Promise.reject();
+		return window.__TAURI__.invoke( 'check_ollama' ).then( function ( status ) {
+			if ( ! status.installed ) throw new Error( 'Ollama not installed' );
+			if ( ! status.running ) {
+				return window.__TAURI__.invoke( 'start_ollama' ).then( function () {
+					return window.__TAURI__.invoke( 'list_ollama_models' );
+				} );
+			}
+			return window.__TAURI__.invoke( 'list_ollama_models' );
+		} );
+	}
+
+	/** Apply provider preset to the form fields. */
+	function applyProviderPreset( providerKey ) {
+		var preset = providerPresets[ providerKey ] || providerPresets.custom;
+		var epField = document.getElementById( 'rsa-ai-endpoint' );
+		var modelField = document.getElementById( 'rsa-ai-model' );
+		var keyRow = document.getElementById( 'rsa-ai-key-row' );
+		var keyField = document.getElementById( 'rsa-ai-key' );
+		var tauriRow = document.getElementById( 'rsa-ai-tauri-row' );
+		var tauriStatus = document.getElementById( 'rsa-ai-tauri-status' );
+
+		if ( epField ) {
+			epField.value = preset.endpoint || '';
+			epField.readOnly = providerKey !== 'custom';
+			epField.style.background = providerKey === 'custom' ? '#fff' : '#f5f5f5';
+		}
+		if ( modelField && preset.defaultModel ) {
+			modelField.placeholder = 'e.g. ' + preset.defaultModel;
+		}
+		if ( keyRow ) keyRow.style.display = preset.needsKey ? '' : 'none';
+		if ( keyField && ! preset.needsKey ) keyField.value = '';
+
+		// Tauri-specific: show detect button for Ollama
+		if ( providerKey === 'ollama' && isTauri() && tauriRow ) {
+			tauriRow.style.display = '';
+			if ( tauriStatus ) tauriStatus.textContent = '';
+		} else if ( tauriRow ) {
+			tauriRow.style.display = 'none';
+		}
+	}
+
+	/** Tauri: detect and populate local models. */
+	function onTauriDetect() {
+		var btn = document.getElementById( 'rsa-ai-tauri-detect' );
+		var status = document.getElementById( 'rsa-ai-tauri-status' );
+		if ( ! btn || ! status ) return;
+		btn.disabled = true;
+		status.textContent = 'Checking for Ollama…';
+		status.style.color = '#888';
+
+		tauriDetectLocal().then( function ( models ) {
+			if ( models && models.length ) {
+				status.textContent = 'Found ' + models.length + ' model' + ( models.length > 1 ? 's' : '' ) + ': ' + models.join( ', ' );
+				status.style.color = '#065f46';
+				var modelField = document.getElementById( 'rsa-ai-model' );
+				if ( modelField && ! modelField.value ) modelField.value = models[0];
+			} else {
+				status.innerHTML = 'Ollama is running but no models found. <a href="#" id="rsa-ai-pull-link">Pull a model</a>';
+				status.style.color = '#991b1b';
+			}
+			btn.disabled = false;
+		} ).catch( function ( err ) {
+			status.textContent = err && err.message ? err.message : 'Could not reach Ollama. Make sure it is installed.';
+			status.style.color = '#991b1b';
+			btn.disabled = false;
+		} );
+	}
+
+	// -----------------------------------------------------------------------
 	// AI Settings
 	// -----------------------------------------------------------------------
 	function renderAiSettings( container ) {
+		var ap = state.aiProvider || {};
+		var currentEndpoint = ap.endpoint || 'https://api.openai.com/v1/chat/completions';
+		var currentModel = ap.model || '';
+
+		// Infer provider from saved endpoint
+		var inferredProvider = 'custom';
+		if ( currentEndpoint.indexOf( 'api.openai.com' ) !== -1 ) inferredProvider = 'openai';
+		else if ( currentEndpoint.indexOf( ':11434' ) !== -1 ) inferredProvider = 'ollama';
+		else if ( currentEndpoint.indexOf( ':1234' ) !== -1 ) inferredProvider = 'lmstudio';
+		else if ( currentEndpoint.indexOf( ':8080' ) !== -1 ) inferredProvider = 'llamacpp';
+
 		container.innerHTML =
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
 			'<h2 style="font-size:20px;margin-bottom:8px;">AI Assistant Provider</h2>' +
-			'<p style="color:#888;font-size:13px;margin-bottom:24px;">The AI assistant calls your chosen LLM to answer questions about your analytics. Provide an OpenAI-compatible endpoint (cloud or local).</p>' +
+			'<p style="color:#888;font-size:13px;margin-bottom:24px;">Configure which LLM the AI assistant uses. Pick a provider, then type the model name.</p>' +
 
 			'<div class="rsa-card" style="margin-bottom:16px;">' +
-				'<div class="rsa-card-header"><strong>Provider Settings</strong></div>' +
+				'<div class="rsa-card-header"><strong>Provider</strong></div>' +
 				'<div style="padding:16px;">' +
+
+					// Provider selector
+					'<div class="rsa-form-row">' +
+						'<label class="rsa-filter-label" for="rsa-ai-provider">Provider</label>' +
+						'<select id="rsa-ai-provider" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:15px;box-sizing:border-box;">' +
+							'<option value="openai"'   + ( inferredProvider === 'openai'   ? ' selected' : '' ) + '>OpenAI</option>' +
+							( isTauri() ?
+							'<option value="ollama"'   + ( inferredProvider === 'ollama'   ? ' selected' : '' ) + '>Ollama</option>' +
+							'<option value="lmstudio"' + ( inferredProvider === 'lmstudio' ? ' selected' : '' ) + '>LM Studio</option>' +
+							'<option value="llamacpp"' + ( inferredProvider === 'llamacpp' ? ' selected' : '' ) + '>llama.cpp</option>'
+							: '' ) +
+							'<option value="custom"'   + ( inferredProvider === 'custom'   ? ' selected' : '' ) + '>Custom</option>' +
+						'</select>' +
+					'</div>' +
+
+					// Endpoint (read-only for presets, editable for Custom)
 					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-endpoint">API Endpoint</label>' +
-						'<input type="url" id="rsa-ai-endpoint" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( ( state.aiProvider && state.aiProvider.endpoint ) || 'https://api.openai.com/v1/chat/completions' ) + '"' +
-							' placeholder="https://api.openai.com/v1/chat/completions">' +
+						'<input type="url" id="rsa-ai-endpoint" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;' +
+							( inferredProvider === 'custom' ? '' : ' background:#f5f5f5;' ) + '"' +
+							' value="' + esc( currentEndpoint ) + '"' +
+							' placeholder="https://api.openai.com/v1/chat/completions"' +
+							( inferredProvider === 'custom' ? '' : ' readonly' ) + '>' +
 					'</div>' +
-					'<div class="rsa-form-row">' +
+
+					// API Key (hidden for local providers)
+					'<div class="rsa-form-row" id="rsa-ai-key-row"' +
+						( providerPresets[ inferredProvider ].needsKey ? '' : ' style="display:none;"' ) + '>' +
 						'<label class="rsa-filter-label" for="rsa-ai-key">API Key</label>' +
-						'<input type="password" id="rsa-ai-key" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( ( state.aiProvider && state.aiProvider.apiKey ) || '' ) + '"' +
-							' placeholder="sk-... (not needed for local Ollama)">' +
+						'<input type="password" id="rsa-ai-key" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( ap.apiKey || '' ) + '"' +
+							' placeholder="sk-...">' +
 					'</div>' +
+
+					// Model (always a text input)
 					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
-						'<input type="text" id="rsa-ai-model" class="regular-text" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( ( state.aiProvider && state.aiProvider.model ) || 'gpt-4o-mini' ) + '"' +
-							' placeholder="gpt-4o-mini">' +
+						'<input type="text" id="rsa-ai-model" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' value="' + esc( currentModel ) + '"' +
+							' placeholder="' + ( providerPresets[ inferredProvider ].defaultModel || 'gpt-4o-mini' ) + '">' +
 					'</div>' +
+
+					// Tauri-specific: local detection (hidden in browser)
+					( isTauri() ? '' +
+					'<div class="rsa-form-row" id="rsa-ai-tauri-row"' +
+						( inferredProvider === 'ollama' ? '' : ' style="display:none;"' ) + '>' +
+						'<label class="rsa-filter-label"></label>' +
+						'<div style="display:flex;align-items:center;gap:8px;">' +
+							'<button id="rsa-ai-tauri-detect" class="rsa-btn rsa-btn-ghost" style="padding:6px 12px;font-size:12px;">Find &amp; Connect Local Ollama</button>' +
+							'<span id="rsa-ai-tauri-status" style="font-size:12px;"></span>' +
+						'</div>' +
+					'</div>' : '' ) +
+
+					// Voice settings
 					'<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:12px;">' +
 						'<strong style="font-size:13px;display:block;margin-bottom:8px;">Voice &amp; Speech</strong>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-voice-input"' +
-								( state.aiProvider && state.aiProvider.voiceInput ? ' checked' : '' ) + '>' +
+								( ap.voiceInput ? ' checked' : '' ) + '>' +
 							' Voice input (microphone) — speak your questions' +
 						'</label>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-voice-output"' +
-								( state.aiProvider && state.aiProvider.voiceOutput ? ' checked' : '' ) + '>' +
+								( ap.voiceOutput ? ' checked' : '' ) + '>' +
 							' Voice output (speaker) — hear answers read aloud' +
 						'</label>' +
 						'<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px;cursor:pointer;">' +
 							'<input type="checkbox" id="rsa-ai-auto-speak"' +
-								( state.aiProvider && state.aiProvider.autoSpeak ? ' checked' : '' ) + '>' +
+								( ap.autoSpeak ? ' checked' : '' ) + '>' +
 							' Auto-speak new answers' +
 						'</label>' +
 						'<div style="display:flex;gap:12px;margin-top:8px;">' +
 							'<div style="flex:1;">' +
 								'<label for="rsa-ai-voice-lang" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Language</label>' +
 								'<select id="rsa-ai-voice-lang" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">' +
-									'<option value="en-US"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
-									'<option value="en-GB"' + ( state.aiProvider && state.aiProvider.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
-									'<option value="es-ES"' + ( state.aiProvider && state.aiProvider.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
-									'<option value="fr-FR"' + ( state.aiProvider && state.aiProvider.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
-									'<option value="de-DE"' + ( state.aiProvider && state.aiProvider.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
+									'<option value="en-US"' + ( ap.voiceLang === 'en-US' ? ' selected' : '' ) + '>English (US)</option>' +
+									'<option value="en-GB"' + ( ap.voiceLang === 'en-GB' ? ' selected' : '' ) + '>English (UK)</option>' +
+									'<option value="es-ES"' + ( ap.voiceLang === 'es-ES' ? ' selected' : '' ) + '>Spanish</option>' +
+									'<option value="fr-FR"' + ( ap.voiceLang === 'fr-FR' ? ' selected' : '' ) + '>French</option>' +
+									'<option value="de-DE"' + ( ap.voiceLang === 'de-DE' ? ' selected' : '' ) + '>German</option>' +
 								'</select>' +
 							'</div>' +
 							'<div style="flex:1;">' +
-								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( state.aiProvider ? state.aiProvider.voiceSpeed : '1.0' ) + '</span></label>' +
+								'<label for="rsa-ai-voice-speed" style="font-size:11px;color:#888;display:block;margin-bottom:2px;">Speed: <span id="rsa-ai-speed-val">' + ( ap.voiceSpeed || '1.0' ) + '</span></label>' +
 								'<input type="range" id="rsa-ai-voice-speed" min="0.5" max="2.0" step="0.1"' +
-									' value="' + ( state.aiProvider && state.aiProvider.voiceSpeed ? state.aiProvider.voiceSpeed : '1.0' ) + '"' +
+									' value="' + ( ap.voiceSpeed || '1.0' ) + '"' +
 									' style="width:100%;">' +
 							'</div>' +
 						'</div>' +
 					'</div>' +
+
 					'<div style="margin-top:12px;display:flex;gap:8px;">' +
 						'<button id="rsa-ai-save" class="rsa-btn rsa-btn-primary" style="padding:8px 16px;">Save AI Settings</button>' +
 						'<button id="rsa-ai-clear" class="rsa-btn rsa-btn-ghost" style="padding:8px 16px;">Clear</button>' +
@@ -2950,9 +3122,7 @@
 		setLoading( false );
 	}
 
-	// -----------------------------------------------------------------------
-	// Export
-	// -----------------------------------------------------------------------
+
 	function renderExport( container ) {
 		if ( ! state.isPremium ) { container.innerHTML = ''; return; }
 		var periodLabels = {

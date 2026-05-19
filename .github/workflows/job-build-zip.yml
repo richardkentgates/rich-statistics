@@ -44,14 +44,28 @@ jobs:
 
       - name: Verify Chart.js SRI hash
         run: |
-          EXPECTED="sha384-+D43qK/C2xYkGHB0y0W0u3i8Yj1r5rJv3X0q5qX5qX5qX5qX5qX5qX5qX5qX5qX5"
-          ACTUAL=$(sha384sum docs/app/chart.min.js | awk '{print $1}' | xxd -r -p | base64)
-          echo "Chart.js SRI: sha384-${ACTUAL}"
-          # Note: SRI verification disabled until we pin a specific Chart.js version
-          # if [ "sha384-${ACTUAL}" != "$EXPECTED" ]; then
-          #   echo "ERROR: Chart.js SRI hash mismatch!"
-          #   exit 1
-          # fi
+          ACTUAL=$(python3 -c "
+          import hashlib, base64
+          with open('docs/app/chart.min.js', 'rb') as f:
+              digest = hashlib.sha384(f.read()).digest()
+              print('sha384-' + base64.b64encode(digest).decode())
+          ")
+          EXPECTED_FILE="docs/app/chart.sri"
+          if [ -f "$EXPECTED_FILE" ]; then
+            EXPECTED=$(cat "$EXPECTED_FILE")
+            if [ "$ACTUAL" != "$EXPECTED" ]; then
+              echo "ERROR: Chart.js SRI hash mismatch!"
+              echo "Expected: $EXPECTED"
+              echo "Actual:   $ACTUAL"
+              echo "To update: regenerate with python3 and commit to docs/app/chart.sri"
+              exit 1
+            fi
+            echo "Chart.js SRI hash verified."
+          else
+            echo "WARNING: docs/app/chart.sri not found — generating baseline."
+            echo "$ACTUAL" > "$EXPECTED_FILE"
+            echo "Commit this file to enforce SRI verification on future builds."
+          fi
 
       - name: Run PHPCS
         run: composer phpcs -- --report-full --runtime-set ignore_warnings_on_exit 1

@@ -66,12 +66,25 @@ jobs:
           # Use --merge (not --squash) so history stays connected
           gh pr merge "$PR_URL" --merge
           git fetch origin main
-          git tag "v${{ steps.version.outputs.version }}" origin/main
-          git push origin "v${{ steps.version.outputs.version }}"
+          # Force update the tag — if it already existed from a previous release
+          # at the same version, the merge commit replaces it.
+          git tag -f "v${{ steps.version.outputs.version }}" origin/main
+          git push -f origin "v${{ steps.version.outputs.version }}"
           gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
 
       - name: Beta release — tag test branch
         if: ${{ inputs.channel == 'beta' }}
         run: |
-          git tag "v${{ steps.version.outputs.version }}-beta.1"
-          git push origin "v${{ steps.version.outputs.version }}-beta.1"
+          VERSION="${{ steps.version.outputs.version }}"
+          # Check for existing beta tags to increment the suffix
+          EXISTING=$(git tag -l "v${VERSION}-beta.*" | sort -V | tail -1)
+          if [ -n "$EXISTING" ]; then
+            SUFFIX=${EXISTING##*-beta.}
+            NEXT=$((SUFFIX + 1))
+            TAG="v${VERSION}-beta.${NEXT}"
+          else
+            TAG="v${VERSION}-beta.1"
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh workflow run "Build Release" --ref "$TAG"

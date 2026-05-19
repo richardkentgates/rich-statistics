@@ -27,7 +27,9 @@ src-tauri/Cargo.lock
 /.phpunit.cache/
 /tests/_output/
 /tests/tmp/
-/tests/e2e/
+/tests/e2e/node_modules/
+/tests/e2e/test-results/
+/tests/e2e/html-report/
 /wordpress-tests-lib/
 /tmp/
 

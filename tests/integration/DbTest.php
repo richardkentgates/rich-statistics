@@ -84,6 +84,26 @@ class DbTest extends WP_UnitTestCase {
 		$this->assertSame( $wpdb->prefix . 'rsa_events', RSA_DB::table( 'events' ) );
 	}
 
+	public function test_table_helper_works_with_all_known_tables(): void {
+		global $wpdb;
+		$tables = array( 'events', 'sessions', 'clicks', 'heatmap', 'wc_events' );
+		foreach ( $tables as $table ) {
+			$result = RSA_DB::table( $table );
+			$this->assertStringContainsString( 'rsa_' . $table, $result, "table() should work for {$table}" );
+		}
+	}
+
+	public function test_table_helper_accepts_arbitrary_suffix(): void {
+		global $wpdb;
+		$this->assertSame( $wpdb->prefix . 'rsa_custom', RSA_DB::table( 'custom' ) );
+		$this->assertSame( $wpdb->prefix . 'rsa_temp_data', RSA_DB::table( 'temp_data' ) );
+	}
+
+	public function test_table_helper_with_empty_string(): void {
+		global $wpdb;
+		$this->assertSame( $wpdb->prefix . 'rsa_', RSA_DB::table( '' ) );
+	}
+
 	/**
 	 * ----------------------------------------------------------------
 	 * prune_old_data() does not error on empty table

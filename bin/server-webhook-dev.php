@@ -15,6 +15,12 @@ if ( ( $_SERVER["REQUEST_METHOD"] ?? "" ) !== "POST" ) {
     exit;
 }
 
+$content_type = $_SERVER["CONTENT_TYPE"] ?? "";
+if ( $content_type && ! str_contains( $content_type, "application/json" ) && ! str_contains( $content_type, "text/plain" ) ) {
+    http_response_code( 415 );
+    exit;
+}
+
 $trigger = "/var/www/rs-app-dev/.deploy-trigger";
 @file_put_contents( $trigger, time() . "\n" );
 

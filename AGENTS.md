@@ -62,6 +62,15 @@ php vendor/bin/phpunit --no-coverage tests/unit/
 
 # All tests
 php vendor/bin/phpunit --no-coverage
+
+# E2E tests (PWA)
+cd tests/e2e && npm test
+
+# Single E2E test file
+cd tests/e2e && npx playwright test tests/pwa-shell.spec.js
+
+# E2E test by name
+cd tests/e2e && npx playwright test -g "welcome screen"
 ```
 
 Freemius is stubbed in `tests/bootstrap.php` — `rs_fs()->can_use_premium_code__premium_only()` returns `false` in tests.
@@ -75,6 +84,44 @@ composer phpcbf
 ```
 
 ## Common Tasks
+
+### Freemius Deploy (CI)
+
+The deploy script at `bin/deploy-freemius.php` handles all Freemius uploads via the official PHP SDK (`bin/freemius-php-api/`).
+
+**How it works:**
+1. `GET plugins/{id}/tags.json` — checks if the version already exists on Freemius
+2. If not found → `POST plugins/{id}/tags.json` with ZIP file — uploads the plugin
+3. `PUT plugins/{id}/tags/{tag_id}.json` — sets `release_mode` to the specified value
+
+Supported `release_mode` values:
+- `released` — stable tags (`v2.4.20`)
+- `beta` — beta tags (`v2.4.20-beta.1`) and test branch builds
+
+The SDK files under `bin/freemius-php-api/freemius/` are excluded from PHPCS (`phpcs.xml.dist`).
+
+**Manual usage:**
+```bash
+php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
+# Example:
+php bin/deploy-freemius.php rich-statistics-2.4.20.zip 2.4.20 released
+```
+
+### Release Flow (correct order)
+
+1. Develop on `develop` push → auto-builds, PWA deploys to dev server
+2. Run **Promote to Test** (GitHub Actions on `develop`) → build and Freemius upload as `beta`
+3. Verify on `test.richstatistics.com` and Freemius dashboard
+4. Run **Promote to Production** with `channel: stable` (GitHub Actions on `test`) → PR test→main, tag, Build Release dispatched
+5. Build Release creates ZIP, uploads to Freemius as `released`, creates GitHub Release, PWA snapshot, desktop builds, deploys to production
+
+**If Build Release fails on an existing tag:** The tag might point to an old commit. Force-update it and re-dispatch:
+```bash
+git fetch origin main
+git tag -f vX.Y.Z origin/main
+git push -f origin vX.Y.Z
+gh workflow run "Build Release" --ref "vX.Y.Z"
+```
 
 ### Adding a new REST endpoint
 1. Add the callback method in `includes/class-rest-api.php`
@@ -196,7 +243,9 @@ Failure to follow these rules will break the pipeline and delete branches:
 
 4. **Version bump**: Before promoting, ensure `RSA_VERSION` in `rich-statistics.php` matches the intended release version (auto-detected by the promote workflow). Also update the plugin header `Version:` and `readme.txt` `Stable tag:`.
 
-5. **Freemius upload**: Handled by the `upload-freemius` job in `build-release.yml` using `bin/deploy-freemius.php` (Freemius PHP SDK). Requires `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_DEV_ID`, `SECRET_KEY` secrets. Non-beta tags upload in `pending` mode (admin must manually release in Freemius dashboard).
+5. **Freemius upload**: Handled by `bin/deploy-freemius.php` (Freemius PHP SDK) in both `build-test.yml` and `build-release.yml`. Stable tags upload with `release_mode=released`, beta tags with `release_mode=beta`. The script checks if the version already exists on Freemius — if so, skips re-upload and just updates `release_mode`. Requires `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_DEV_ID`, `SECRET_KEY` secrets.
+
+6. **Tag already exists**: If the promote workflow fails because `git tag "vX.Y.Z"` already exists (previous release at same version), the tag needs to be force-updated. The promote workflow now uses `git tag -f` and `git push -f origin` to handle this. After force-updating, re-dispatch `gh workflow run "Build Release" --ref "vX.Y.Z"`.
 
 ## Server Endpoints
 
@@ -251,7 +300,7 @@ All three build workflows share reusable sub-workflows for ZIP and desktop build
 ### `build-release.yml` (tagged on main)
 - **Trigger**: `workflow_dispatch` (dispatched by promote.yml after tagging), OR tag push (`v*`)
 - **build-zip**: Plugin ZIP via `job-build-zip` with proper version
-- **upload-freemius**: Uploads ZIP to Freemius via `bin/deploy-freemius.php` (Freemius PHP SDK) (stable: `pending`, beta: `beta`)
+- **upload-freemius**: Uploads ZIP to Freemius via `bin/deploy-freemius.php` (Freemius PHP SDK) (stable: `released`, beta: `beta`)
 - **release**: Plugin ZIP, GitHub Release, versioned PWA snapshot (`docs/app/v/<version>/{stable,beta}/`)
 - **build-desktop**: Desktop binaries via `job-build-desktop` with `stamp-version: true`, pushed to `rs-app/dist/`
 - **ping-deploy**: Syncs PWA to `rs-app` via webhook
@@ -290,10 +339,13 @@ See `ROADMAP.md` §6 for the full prioritized list.
 
 | Priority | Gap | Status |
 |----------|-----|--------|
-| P2.2 | E2E test pipeline | ❌ Not started |
+| P2.2 | E2E test pipeline | ✅ 55 tests passing |
 | P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
 
 **Recently completed (May 2026):**
+- P2.2: E2E test pipeline (55 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect) ✅
+- L30-L36: Test coverage gaps filled (EnvDetection moved to integration, RSA_DB::table() edge cases, heatmap NULL handling, prune retention/timeout, bot detection Accept-Language + score capping) ✅
+- All audit items verified and documented in TODO.md/ROADMAP.md ✅
 - P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅
 - P2.1: PHPCS in CI (all 4 workflows) ✅
 - P2.3: Migration + env detection tests (19 new tests) ✅
@@ -317,6 +369,9 @@ See `ROADMAP.md` §6 for the full prioritized list.
 - Created uninstall.php (was missing) ✅
 - App server architecture DR documentation ✅
 - Freemius CI upload via `bin/deploy-freemius.php` (Freemius PHP SDK) ✅
+- Removed buttonizer/freemius-deploy 3rd-party action — replaced with Freemius PHP SDK ✅
+- Fixed promote.yml: `git tag -f` handles re-releases at same version ✅
+- Documented Freemius deploy flow, manual usage, and troubleshooting in AGENTS.md ✅
 - Beta channel parity (BC-1 through BC-12) ✅
 - Fixed `--delete-branch` destroying source branches in promote workflows ✅
 - Fixed GITHUB_TOKEN workflow trigger suppression via `gh workflow run` ✅

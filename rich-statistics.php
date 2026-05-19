@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           2.4.19
+ * Version:           2.4.21
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
@@ -59,14 +59,14 @@ if ( function_exists( 'rs_fs' ) ) {
 	// --------------------------------------------------------------------
 	// Constants
 	// --------------------------------------------------------------------
-	define( 'RSA_VERSION', '2.4.19' );
+	define( 'RSA_VERSION', '2.4.21' );
 	define( 'RSA_FILE', __FILE__ );
 	define( 'RSA_DIR', plugin_dir_path( __FILE__ ) );
 	define( 'RSA_URL', plugin_dir_url( __FILE__ ) );
 	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 	define( 'RSA_MIN_WP', '6.0' );
 	define( 'RSA_MIN_PHP', '8.0' );
-	define( 'RSA_APP_VERSION', '2.4.1' );
+	define( 'RSA_APP_VERSION', '2.4.21' );
 	define( 'RSA_MIN_APP_VERSION', '2.0.0' );
 	define( 'RSA_APP_URL', rsa_detect_app_url() );
 	define( 'RSA_APP_ENV', rsa_detect_app_env() );
@@ -91,30 +91,21 @@ if ( function_exists( 'rs_fs' ) ) {
 				// Include Freemius SDK.
 				require_once __DIR__ . '/vendor/freemius/start.php';
 
-				$rs_fs = fs_dynamic_init(
-					array(
-						'id'                  => '25954',
-						'slug'                => 'rich-statistics',
-						'type'                => 'plugin',
-						'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
-						'is_premium'          => true,
-						'premium_suffix'      => 'Publisher',
-						'has_premium_version' => true,
-						'has_addons'          => false,
-						'has_paid_plans'      => true,
-						'is_org_compliant'    => true,
-						'wp_org_gatekeeper'   => 'OA7#BoRiBNqdf52FvzEf!!074aRLPs8fspif$7K1#4u4Csys1fQlCecVcUTOs2mcpeVHi#C2j9d09fOTvbC0HloPT7fFee5WdS3G',
-						'trial'               => array(
-							'days'               => 30,
-							'is_require_payment' => true,
-						),
-						'menu'                => array(
-							'slug'    => 'rich-statistics',
-							'support' => false,
-							'network' => true,
-						),
-					)
-				);
+				$rs_fs = fs_dynamic_init( array(
+					'id'                  => '25954',
+					'slug'                => 'rich-statistics',
+					'type'                => 'plugin',
+					'public_key'          => 'pk_ebd3048f311ce1adcbdb6246fc1e5',
+					'is_premium'          => false,
+					'has_addons'          => false,
+					'has_paid_plans'      => false,
+					'is_org_compliant'    => true,
+					'menu'                => array(
+						'slug'           => 'rich-statistics',
+						'support'        => false,
+						'network'        => true,
+					),
+				) );
 			}
 
 			return $rs_fs;

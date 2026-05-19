@@ -5,6 +5,26 @@ All notable changes to Rich Statistics are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `wp-coding-standards/wpcs` added as dev dependency
+- Versioned PWA snapshot `config.js` now includes `env` auto-detection
+- `readme.txt` changelog updated with all 2.x releases
+- `tests/bootstrap.php` now uses `test.richstatistics.com` for `RSA_APP_URL` in test environment
+- Unit test bootstrap now defines `RSA_APP_ENV`, `RSA_APP_VERSION`, `RSA_MIN_APP_VERSION`
+- Ops documentation: rollback procedure, backup strategy, monitoring plan (ROADMAP §8)
+- GitHub Wiki synced: Release Tracks, Installation, Code-Map pages updated
+- WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
+- `wporg-assets/` directory scaffolded for screenshots and banners
+
+### Fixed
+- `build.sh` now uses `docs/app/v/{version}/` (consistent with `build-release.yml`); env config files (`config-dev.js`, `index-dev.html` etc.) included in versioned snapshots
+- `build-release.yml` versioned snapshot now includes env config files
+- Removed orphaned `email-settings.php` and `data-settings.php` templates (fully covered by `preferences.php`)
+- Fixed email test redirect from non-existent `email-settings` page → `preferences` page
+- `build.sh`: removed stale `webapp/` directory reference (no longer exists)
+
 ## [2.4.2] - 2026-05-14
 
 ### Fixed
@@ -36,26 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `templates/admin/ai-chat.php` — AI chat now lives in the PWA/desktop app
 - Admin menu entry for AI Assistant (redirects to Overview)
 - Premium gating of AI chat in PWA — `/ai/tool` endpoint gates tools per-tier, app-side AI engine is free
-
-## [Unreleased]
-
-### Added
-- `wp-coding-standards/wpcs` added as dev dependency
-- Versioned PWA snapshot `config.js` now includes `env` auto-detection
-- `readme.txt` changelog updated with all 2.x releases
-- `tests/bootstrap.php` now uses `test.richstatistics.com` for `RSA_APP_URL` in test environment
-- Unit test bootstrap now defines `RSA_APP_ENV`, `RSA_APP_VERSION`, `RSA_MIN_APP_VERSION`
-- Ops documentation: rollback procedure, backup strategy, monitoring plan (ROADMAP §8)
-- GitHub Wiki synced: Release Tracks, Installation, Code-Map pages updated
-- WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
-- `wporg-assets/` directory scaffolded for screenshots and banners
-
-### Fixed
-- `build.sh` now uses `docs/app/v/{version}/` (consistent with `build-release.yml`); env config files (`config-dev.js`, `index-dev.html` etc.) included in versioned snapshots
-- `build-release.yml` versioned snapshot now includes env config files
-- Removed orphaned `email-settings.php` and `data-settings.php` templates (fully covered by `preferences.php`)
-- Fixed email test redirect from non-existent `email-settings` page → `preferences` page
-- `build.sh`: removed stale `webapp/` directory reference (no longer exists)
 
 ## [2.3.0] - 2026-05-12
 

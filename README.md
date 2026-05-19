@@ -104,8 +104,8 @@ All desktop apps include automatic updates via the built-in Tauri updater. Linux
 | Heatmap | Viewport-relative thermal overlay on any page URL |
 | User Flow | Path Explorer (Miller columns) with drop-off funnel — step-by-step page navigation across sessions |
 | WooCommerce Analytics | Conversion funnel (product views → add-to-cart → orders), top products, and revenue-over-time chart. Requires WooCommerce to be active. |
-| REST API | Full `rsa/v1` API powered by WP Application Passwords |
-| PWA web app | Installable mobile app connected to your site's REST API |
+| REST API | Full `rsa/v1` API — free endpoints (overview, pages, audience, referrers, behavior, campaigns, user-settings) for all users, premium endpoints (clicks, heatmap, export, woocommerce, user-flow, purge-page) with active licence |
+| PWA web app | Installable mobile app — free features work on all sites, premium features gated by licence |
 | AI Analytics Assistant | Conversational insights powered by your own AI provider (configured in the PWA app). Plugin provides structured tool data (`POST /ai/tool`); the app calls your LLM. |
 | Desktop apps | Native Linux (.deb, amd64 + arm64) and Windows (.exe) |
 | Data export | CSV/JSON export of pageviews, sessions, clicks, referrers |
@@ -124,7 +124,7 @@ Rich Statistics maintains three release tracks, each deployed to its own endpoin
 
 Each track has its own:
 - **WordPress plugin** built from its branch
-- **PWA web app** served from its subdomain
+- **PWA web app** served from its subdomain (auto-detects environment from hostname via `config.js`)
 - **Desktop builds** (`.deb` / `.exe`) pushed to its `dist/` directory
 - **APT repository** for Linux package management
 
