@@ -12,6 +12,25 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+/**
+ * Freemius requires this hook to capture uninstall feedback.
+ * Without it, Freemius rejects the plugin upload.
+ *
+ * @see https://freemius.com/help/documentation/wordpress-sdk/uninstall-feedback/
+ */
+if ( ! function_exists( 'rsa_after_uninstall' ) ) {
+	/**
+	 * Freemius uninstall feedback callback.
+	 *
+	 * @param array $all_plugin_slugs Array of plugin slugs being uninstalled.
+	 */
+	function rsa_after_uninstall( $all_plugin_slugs ) {
+		// Freemius handles the feedback form automatically.
+		// No custom action needed — the hook just needs to exist.
+	}
+}
+add_action( 'after_uninstall', 'rsa_after_uninstall' );
+
 global $wpdb;
 
 // ── Clear scheduled cron hooks ─────────────────────────────────────
