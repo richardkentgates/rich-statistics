@@ -1,0 +1,15 @@
+{
+  "name": "rich-statistics-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report html-report",
+    "install:browsers": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "http-server": "^14.1.1"
+  }
+}
