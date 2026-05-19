@@ -66,4 +66,25 @@ rsync -a "${TMPDIR}/repo/docs/app/" "${DEPLOY_DIR}/"
 # ── Record the deployed version ──────────────────────────────────────────
 echo "${LATEST}" > "${VERSION_FILE}"
 
+# ── Prune old versioned snapshots (keep last 12) ────────────────────────
+# Matches CI behavior in build-release.yml — older snapshots are removed
+# so the server disk doesn't grow unbounded. Sites running older plugin
+# versions will fall back to the latest bundled snapshot.
+cd "${DEPLOY_DIR}"
+if [ -d "v" ]; then
+    python3 -c "
+import json, shutil, pathlib, sys
+v_dir = pathlib.Path('v')
+all_v = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+keep = set(all_v[-12:])
+for d in v_dir.iterdir():
+    if d.is_dir() and d.name not in keep:
+        shutil.rmtree(d)
+        print(f'pruned {d}', file=sys.stderr)
+" 2>&1 | while read -r line; do log "$line"; done
+fi
+
 log "Successfully deployed ${LATEST}."
