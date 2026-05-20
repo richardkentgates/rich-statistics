@@ -91,11 +91,11 @@ class EnvDetectionTest extends WP_UnitTestCase {
 		// The real function is defined in rich-statistics.php.
 		// We verify our duplicate matches by testing the same inputs.
 		$test_urls = array(
-			'https://example.com'            => 'production',
-			'https://app.richstatistics.com' => 'production',
-			'https://dev.richstatistics.com' => 'development',
-			'http://localhost'               => 'development',
-			'http://127.0.0.1'               => 'development',
+			'https://example.com'             => 'production',
+			'https://app.richstatistics.com'  => 'production',
+			'https://dev.richstatistics.com'  => 'development',
+			'http://localhost'                => 'development',
+			'http://127.0.0.1'                => 'development',
 			'https://test.richstatistics.com' => 'test',
 		);
 
