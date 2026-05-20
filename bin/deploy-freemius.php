@@ -55,6 +55,15 @@ try {
     exit(1);
 }
 
+// Verify API connectivity
+echo "Testing Freemius API connection...\n";
+if ($api->Test()) {
+    echo "API connection successful.\n";
+} else {
+    fprintf(STDERR, "API connection test failed. Check credentials.\n");
+    exit(1);
+}
+
 // Step 1: Check if version already exists
 echo "Checking existing tags for version {$version}...\n";
 
@@ -86,8 +95,18 @@ if ($existing_tag_id) {
     );
 
     if (!is_object($result) || !isset($result->id)) {
-        fprintf(STDERR, "Upload failed. Response:\n");
-        print_r($result);
+        fprintf(STDERR, "Upload failed.\n");
+        fprintf(STDERR, "Result type: %s\n", gettype($result));
+        if (is_string($result) && strlen($result) > 0) {
+            fprintf(STDERR, "Raw response: %s\n", $result);
+        } elseif (is_object($result) && isset($result->error)) {
+            fprintf(STDERR, "Error: %s\n", json_encode($result->error));
+        } elseif ($result === null || $result === '') {
+            fprintf(STDERR, "Empty response from Freemius API. Check credentials and plugin ID.\n");
+        } else {
+            fprintf(STDERR, "Response: %s\n", var_export($result, true));
+        }
+        fprintf(STDERR, "File size: %d bytes\n", filesize($file_name));
         exit(1);
     }
 

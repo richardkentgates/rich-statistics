@@ -106,6 +106,7 @@ if ( ! function_exists( 'rs_fs' ) ) {
 					'slug'    => 'rich-statistics',
 					'support' => false,
 					'network' => true,
+					'pricing' => false,
 				),
 			) );
 		}
