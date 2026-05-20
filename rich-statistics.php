@@ -101,13 +101,13 @@ if ( ! function_exists( 'rs_fs' ) ) {
 				'has_addons'       => false,
 				'has_paid_plans'   => true,
 				'premium_suffix'   => '',
-				'is_org_compliant' => false,
-			'menu'             => array(
-				'slug'    => 'rich-statistics',
-				'support' => false,
-				'network' => true,
-				'pricing' => false,
-			),
+				'is_org_compliant' => true,
+				'menu'             => array(
+					'slug'    => 'rich-statistics',
+					'support' => false,
+					'network' => true,
+					'pricing' => false,
+				),
 			) );
 		}
 
