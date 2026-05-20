@@ -70,7 +70,7 @@ jobs:
           # at the same version, the merge commit replaces it.
           git tag -f "v${{ steps.version.outputs.version }}" origin/main
           git push -f origin "v${{ steps.version.outputs.version }}"
-          gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}"
+          gh workflow run "Build Release" --ref "v${{ steps.version.outputs.version }}" -f version="${{ steps.version.outputs.version }}"
 
       - name: Beta release — tag test branch
         if: ${{ inputs.channel == 'beta' }}
@@ -87,4 +87,4 @@ jobs:
           fi
           git tag "$TAG"
           git push origin "$TAG"
-          gh workflow run "Build Release" --ref "$TAG"
+          gh workflow run "Build Release" --ref "$TAG" -f version="${VERSION}"
