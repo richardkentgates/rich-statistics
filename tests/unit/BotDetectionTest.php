@@ -170,7 +170,7 @@ class BotDetectionTest extends TestCase {
 			| RSA_Bot_Detection::CS_HIDDEN_ON_ARRIVAL
 			| RSA_Bot_Detection::CS_NO_HUMAN_EVENT
 			| RSA_Bot_Detection::CS_CHROME_MISSING_OBJ;
-		$score = RSA_Bot_Detection::score( $all_client, 'HeadlessChrome/121', array() );
+		$score      = RSA_Bot_Detection::score( $all_client, 'HeadlessChrome/121', array() );
 		$this->assertSame( 10, $score, 'Score should be capped at 10' );
 	}
 
