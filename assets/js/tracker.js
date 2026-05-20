@@ -150,6 +150,13 @@
 	var referrer   = document.referrer || '';
 
 	// ----------------------------------------------------------------
+	// Skip tracking for error redirects (e.g. Freemius license errors)
+	// ----------------------------------------------------------------
+	if ( window.location.search.indexOf( 'error=' ) !== -1 ) {
+		return;
+	}
+
+	// ----------------------------------------------------------------
 	// Session ID — sourced from PHP (window.rsaSessionId), with sessionStorage
 	// as fallback for environments where the inline script is unavailable.
 	// No cookies.
