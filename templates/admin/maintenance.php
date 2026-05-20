@@ -142,7 +142,14 @@ $nonce = wp_create_nonce( 'wp_rest' );
 			},
 			body: JSON.stringify( { page: page } ),
 		} )
-		.then( function ( r ) { return r.json(); } )
+		.then( function ( r ) {
+			if ( ! r.ok ) {
+				return r.json().then( function ( err ) {
+					throw new Error( err.message || 'HTTP ' + r.status );
+				} );
+			}
+			return r.json();
+		} )
 		.then( function ( data ) {
 			if ( data && typeof data.deleted !== 'undefined' ) {
 				showMsg(
@@ -199,20 +206,32 @@ $nonce = wp_create_nonce( 'wp_rest' );
 					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
 					body: JSON.stringify( { page: page } ),
 				} )
-				.then( function ( r ) { return r.json(); } )
+				.then( function ( r ) {
+					if ( ! r.ok ) {
+						return r.json().then( function ( err ) {
+							throw new Error( err.message || 'HTTP ' + r.status );
+						} );
+					}
+					return r.json();
+				} )
 				.then( function ( data ) {
 					totalDeleted += ( data && data.deleted ) ? data.deleted : 0;
 					row.remove();
+				} )
+				.catch( function ( err ) {
+					showMsg( <?php echo wp_json_encode( __( 'Error:', 'rich-statistics' ) ); ?> + ' ' + err.message, true );
 				} )
 				.finally( function () {
 					pending--;
 					if ( pending === 0 ) {
 						bulkBtn.disabled = false;
-						showMsg(
-							<?php echo wp_json_encode( __( 'Bulk purge complete.', 'rich-statistics' ) ); ?> + ' ' +
-							totalDeleted + ' ' + <?php echo wp_json_encode( __( 'total records deleted.', 'rich-statistics' ) ); ?>,
-							false
-						);
+						if ( totalDeleted > 0 ) {
+							showMsg(
+								<?php echo wp_json_encode( __( 'Bulk purge complete.', 'rich-statistics' ) ); ?> + ' ' +
+								totalDeleted + ' ' + <?php echo wp_json_encode( __( 'total records deleted.', 'rich-statistics' ) ); ?>,
+								false
+							);
+						}
 					}
 				} );
 			} );

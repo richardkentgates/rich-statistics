@@ -956,7 +956,7 @@ class RSA_Admin {
 		update_option( 'rsa_allowed_roles', $safe_roles );
 
 		// Sync beta channel preference with Freemius.
-		if ( function_exists( 'rs_fs' ) ) {
+		if ( function_exists( 'rs_fs' ) && rs_fs()->is_connected() ) {
 			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
 			// Call the same Freemius API endpoint that the AJAX handler uses.
 			rs_fs()->get_api_site_scope()->call(
