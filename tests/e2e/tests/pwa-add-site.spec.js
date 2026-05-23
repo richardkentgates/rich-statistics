@@ -145,7 +145,7 @@ test.describe( 'Add Site step 2', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						verified: true,
 						siteUrl: 'https://example.com',
@@ -173,7 +173,7 @@ test.describe( 'Add Site step 2', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						verified: true,
 						siteUrl: 'https://example.com',
@@ -200,7 +200,7 @@ test.describe( 'Add Site step 2', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						verified: true,
 						siteUrl: 'https://example.com',
@@ -226,7 +226,7 @@ test.describe( 'Add Site step 2', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						verified: true,
 						siteUrl: 'https://example.com',

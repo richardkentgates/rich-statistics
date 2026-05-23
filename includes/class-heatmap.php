@@ -18,7 +18,7 @@ class RSA_Heatmap {
 	}
 
 	public static function enqueue_heatmap_assets( string $hook ): void {
-		if ( strpos( $hook, 'rich-statistics-heatmap' ) === false ) {
+		if ( ! str_contains( $hook, 'rich-statistics-heatmap' ) ) {
 			return;
 		}
 

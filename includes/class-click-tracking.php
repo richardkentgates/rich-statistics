@@ -26,7 +26,7 @@ class RSA_Click_Tracking {
 		$raw  = file_get_contents( 'php://input' );
 		$data = json_decode( $raw, true );
 		if ( ! is_array( $data ) ) {
-			$data = $_POST;
+			$data = wp_unslash( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified on line 20
 		}
 
 		$session_id = sanitize_text_field( $data['session_id'] ?? '' );

@@ -21,11 +21,6 @@
     "wp-coding-standards/wpcs": "^3.1",
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
   },
-  "autoload-dev": {
-    "psr-4": {
-      "RichStatistics\\Tests\\": "tests/"
-    }
-  },
   "scripts": {
     "test": "phpunit --configuration phpunit.xml.dist --no-coverage",
     "test-coverage": "phpunit --configuration phpunit.xml.dist --coverage-html build/coverage",
