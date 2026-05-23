@@ -21,30 +21,66 @@
 
 <!-- Welcome / no-sites screen -->
 <div id="rsa-login" class="rsa-screen rsa-login-screen">
-	<div class="rsa-login-card" style="text-align:center">
-		<div class="rsa-login-logo"><img src="icons/icon-192.png" alt="Rich Statistics" style="width:80px;height:80px;border-radius:12px"></div>
-		<h1>Rich Statistics</h1>
-		<p>Analytics dashboard for your WordPress site.</p>
-		<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-get-started-btn">
-			Add Your Site
-		</button>
-		<button type="button" class="rsa-install-btn rsa-login-install-btn" hidden>
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
-			Install App
-		</button>
-	</div>
-	<div id="rsa-login-desktop-install" class="rsa-login-desktop-install" hidden>
-		<h3 style="font-size:16px;margin:24px 0 8px;">Or install the desktop app</h3>
-		<p style="font-size:13px;color:#888;margin-bottom:16px;">Native desktop experience with offline support.</p>
-		<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-			<a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
-				<strong>Linux</strong> .deb
-			</a>
-			<a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" class="rsa-desktop-install-link" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;text-decoration:none;font-size:13px;color:#2e6f8e;">
-				<strong>Windows</strong> .exe
-			</a>
+	<div class="rsa-login-wrapper">
+		<div class="rsa-login-card" style="text-align:center">
+			<div class="rsa-login-logo"><img src="icons/icon-192.png" alt="Rich Statistics" style="width:80px;height:80px;border-radius:12px"></div>
+			<h1>Rich Statistics</h1>
+			<p>Analytics dashboard for your WordPress site.</p>
+			<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-get-started-btn">
+				Add Your Site
+			</button>
+			<button type="button" class="rsa-install-btn rsa-login-install-btn" hidden style="margin-top:12px;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+				Install PWA
+			</button>
 		</div>
-		<p style="font-size:11px;color:#aaa;margin-top:12px;">APT recommended for auto-updates: <code>sudo apt install rich-statistics</code></p>
+
+		<!-- Install options — shown below the login card -->
+		<div class="rsa-welcome-install">
+			<h2 class="rsa-welcome-install-title">Install the desktop app</h2>
+			<p class="rsa-welcome-install-subtitle">Native experience with offline support and auto-updates.</p>
+
+			<div class="rsa-install-platforms">
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">🐧</span>
+						<div>
+							<h3>Linux (APT)</h3>
+							<span class="rsa-install-badge">Recommended</span>
+						</div>
+					</div>
+					<pre class="rsa-install-code"><code>curl -fsSL https://app.richstatistics.com/apt/public.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/rich-statistics.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/rich-statistics.gpg] \
+  https://app.richstatistics.com/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/rich-statistics.list
+sudo apt update && sudo apt install rich-statistics</code></pre>
+				</div>
+
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">🪟</span>
+						<h3>Windows</h3>
+					</div>
+					<a href="https://app.richstatistics.com/dist/rich-statistics-windows.exe" class="rsa-install-dl-btn">
+						Download installer (.exe)
+					</a>
+				</div>
+
+				<div class="rsa-install-platform">
+					<div class="rsa-install-platform-header">
+						<span class="rsa-install-platform-icon">📦</span>
+						<h3>Linux (.deb direct)</h3>
+					</div>
+					<div class="rsa-install-links">
+						<a href="https://app.richstatistics.com/dist/rich-statistics-linux-amd64.deb" class="rsa-install-dl-btn rsa-install-dl-btn--small">amd64</a>
+						<a href="https://app.richstatistics.com/dist/rich-statistics-linux-arm64.deb" class="rsa-install-dl-btn rsa-install-dl-btn--small">arm64</a>
+					</div>
+				</div>
+			</div>
+
+			<p class="rsa-install-note">Already installed? Open Rich Statistics from your application menu.</p>
+		</div>
 	</div>
 </div>
 
@@ -58,7 +94,7 @@
 			<span id="rsa-plugin-version" class="rsa-version-badge"></span>
 		</div>
 		<div class="rsa-site-switcher" id="rsa-site-switcher">
-			<button class="rsa-switcher-btn" id="rsa-switcher-btn">
+			<button class="rsa-switcher-btn" id="rsa-switcher-btn" aria-label="Switch site">
 				<span id="rsa-active-label">—</span>
 				<span class="rsa-switcher-caret">▾</span>
 			</button>
@@ -178,7 +214,7 @@
 				<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-add-verify-btn">Verify Code</button>
 				<button type="button" class="rsa-btn-ghost" id="rsa-add-cancel-btn">Cancel</button>
 			</div>
-				<div id="rsa-add-otp-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
+			<div id="rsa-add-otp-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 		</div>
 
 		<!-- Step 2: Application Password -->
@@ -209,6 +245,7 @@
 			</div>
 				<div id="rsa-add-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 		</div>
+
 	</div>
 </div>
 
