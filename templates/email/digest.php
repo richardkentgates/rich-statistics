@@ -1,4 +1,13 @@
-<?php if ( ! defined( 'ABSPATH' ) ) {
+<?php
+/**
+ * Email digest template.
+ *
+ * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;} ?>
 <!DOCTYPE html>
 <html lang="en">

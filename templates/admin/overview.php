@@ -5,6 +5,8 @@
  * @var string $period  Current period (set via $_GET['period'] or default).
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

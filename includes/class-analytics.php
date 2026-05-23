@@ -7,6 +7,8 @@
  * than pulling rows into PHP.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

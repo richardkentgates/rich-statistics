@@ -1,4 +1,12 @@
 <?php
+/**
+ * Audience breakdown template.
+ *
+ * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
+ */
+
 defined( 'ABSPATH' ) || exit;
 if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
 	wp_die(); }

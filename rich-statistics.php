@@ -14,6 +14,8 @@
  * Network:           true
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -4,6 +4,9 @@
  * as events in the rsa_wc_events table, gated on the rsa_woocommerce_enabled option.
  *
  * @package RichStatistics
+ * @fs_premium_only
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

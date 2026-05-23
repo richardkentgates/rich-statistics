@@ -26,6 +26,8 @@
  *
  * @package RichStatistics
  * @fs_premium_only
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
