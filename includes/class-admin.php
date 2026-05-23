@@ -1231,23 +1231,6 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// API key masking — show only first 4 chars in the form.
-	// ----------------------------------------------------------------
-
-	/**
-	 * Mask an API key showing only the first 4 characters.
-	 *
-	 * @param string $key The API key.
-	 * @return string Masked API key.
-	 */
-	public static function mask_api_key( string $key ): string {
-		if ( '' === $key ) {
-			return '';
-		}
-		return substr( $key, 0, 4 ) . str_repeat( '*', max( 0, strlen( $key ) - 4 ) );
-	} // Retained for API compatibility
-
-	// ----------------------------------------------------------------
 	// Help tabs — appear in the upper-right "Help" dropdown on each page.
 	// ----------------------------------------------------------------
 

@@ -17,6 +17,9 @@ class RSA_Click_Tracking {
 	}
 
 	public static function handle_click(): void {
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+			wp_send_json_error( 'premium_required', 403 );
+		}
 		if ( ! check_ajax_referer( 'rsa_track', 'nonce', false ) ) {
 			wp_send_json_error( 'invalid_nonce', 403 );
 		}
