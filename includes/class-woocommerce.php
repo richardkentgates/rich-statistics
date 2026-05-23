@@ -18,6 +18,10 @@ class RSA_Woocommerce {
 			return;
 		}
 
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->can_use_premium_code__premium_only() ) {
+			return;
+		}
+
 		add_action( 'woocommerce_before_single_product', [ __CLASS__, 'track_product_view' ] );
 
 		add_action( 'woocommerce_add_to_cart', [ __CLASS__, 'track_add_to_cart' ], 10, 6 );
@@ -137,6 +141,10 @@ class RSA_Woocommerce {
 	 * @param array  $meta       Event metadata.
 	 */
 	private static function insert_event( string $event_type, array $meta ): void {
+		if ( RSA_Bot_Detection::is_bot( RSA_Bot_Detection::score( 0, sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- UA header used for bot detection only
+			return;
+		}
+
 		global $wpdb;
 
 		$data    = [

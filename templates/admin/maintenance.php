@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $rows = RSA_Analytics::get_all_tracked_pages();
 
 // Data retention setting (for context note)
-$retention_days = (int) get_option( 'rsa_data_retention_days', 365 );
+$retention_days = (int) get_option( 'rsa_retention_days', 90 );
 
 $status_labels = array(
 	'live'      => array(

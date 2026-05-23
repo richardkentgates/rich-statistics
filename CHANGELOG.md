@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
 - `wporg-assets/` directory scaffolded for screenshots and banners
 
+### Removed
+- AI chat interface from network-dashboard.php (multisite) — AI lives in PWA/desktop app only
+
 ### Fixed
 - `build.sh` now uses `docs/app/v/{version}/` (consistent with `build-release.yml`); env config files (`config-dev.js`, `index-dev.html` etc.) included in versioned snapshots
 - `build-release.yml` versioned snapshot now includes env config files

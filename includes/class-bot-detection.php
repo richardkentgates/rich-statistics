@@ -182,7 +182,7 @@ class RSA_Bot_Detection {
 	 * @return bool True if the score meets or exceeds the threshold.
 	 */
 	public static function is_bot( int $score ): bool {
-		$threshold = (int) get_option( 'rsa_bot_score_threshold', 3 );
+		$threshold = (int) get_option( 'rsa_bot_score_threshold', 5 );
 		return $score >= $threshold;
 	}
 
@@ -214,9 +214,9 @@ class RSA_Bot_Detection {
 			'/ipod/i'               => 'iOS',
 			'/macintosh|mac os x/i' => 'macOS',
 			'/cros/i'               => 'ChromeOS',
-			'/linux/i'              => 'Linux',
 			'/ubuntu/i'             => 'Ubuntu',
 			'/freebsd/i'            => 'FreeBSD',
+			'/linux/i'              => 'Linux',
 		];
 		foreach ( $patterns as $pattern => $label ) {
 			if ( preg_match( $pattern, $ua ) ) {
@@ -255,9 +255,13 @@ class RSA_Bot_Detection {
 		$version_patterns = [
 			'/edg\/([0-9]+)/i',
 			'/opr\/([0-9]+)/i',
+			'/vivaldi\/([0-9]+)/i',
+			'/brave\/([0-9]+)/i',
+			'/samsungbrowser\/([0-9]+)/i',
+			'/ucbrowser\/([0-9]+)/i',
+			'/yabrowser\/([0-9]+)/i',
 			'/firefox\/([0-9]+)/i',
 			'/fxios\/([0-9]+)/i',
-			'/samsungbrowser\/([0-9]+)/i',
 			'/chrome\/([0-9]+)/i',
 			'/crios\/([0-9]+)/i',
 			'/version\/([0-9]+)/i',

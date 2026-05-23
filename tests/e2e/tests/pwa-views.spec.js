@@ -63,7 +63,7 @@ test.describe( 'View containers', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						version: '2.4.20',
 						isPremium: false,
@@ -79,7 +79,7 @@ test.describe( 'View containers', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						visitors: 100,
 						sessions: 150,
@@ -118,7 +118,7 @@ test.describe( 'Responsive behavior', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						version: '2.4.20',
 						isPremium: false,
@@ -134,7 +134,7 @@ test.describe( 'Responsive behavior', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						visitors: 100,
 						sessions: 150,
