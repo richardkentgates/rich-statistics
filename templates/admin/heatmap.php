@@ -121,7 +121,7 @@ window.RSA_CLICKS  = <?php echo wp_json_encode( array_values( $click_data ) ); ?
 	<?php
 	printf(
 	/* translators: %s: page path */
-		esc_html__( 'No heatmap data yet for %s. Data is aggregated nightly from click events.', 'rich-statistics' ),
+		esc_html__( 'No heatmap data yet for %s. Data is aggregated nightly from scroll depth and pointer position events.', 'rich-statistics' ),
 		'<code>' . esc_html( $page_path ) . '</code>'
 	);
 	?>

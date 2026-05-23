@@ -1,6 +1,6 @@
 <?php
 /**
- * [PREMIUM] Heatmap — aggregation scheduling and data ops.
+ * [PREMIUM] Heatmap — admin asset enqueuing for the heatmap page.
  * The canvas overlay renderer is in assets/js/heatmap-overlay.js.
  *
  * @package RichStatistics

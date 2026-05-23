@@ -206,7 +206,8 @@ class RSA_Rest_API {
 			]
 		);
 
-		// Free tier endpoints - available to all authenticated users.
+		// Free tier endpoints — available to authenticated users with the
+		// rsa_manage_statistics capability and permitted app access.
 		register_rest_route(
 			self::NS,
 			'/overview',
@@ -605,7 +606,8 @@ class RSA_Rest_API {
 	// ----------------------------------------------------------------
 
 	/**
-	 * Basic auth - available to all authenticated users (free tier)
+	 * Basic auth — available to authenticated users with the
+	 * rsa_manage_statistics capability and permitted app access.
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
@@ -1165,7 +1167,7 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// AI conversational endpoint (BYOK + Local LLM support).
+	// PII stripping utilities.
 	// ----------------------------------------------------------------
 
 	/**

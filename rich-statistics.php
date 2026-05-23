@@ -73,8 +73,9 @@ define( 'RSA_APP_URL', rsa_detect_app_url() );
 define( 'RSA_APP_ENV', rsa_detect_app_env() );
 
 /**
- * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
- * `function_exists` CALL ABOVE TO PROPERLY WORK.
+ * DO NOT REMOVE THIS if-guard — it prevents a fatal "Cannot redeclare
+ * function rs_fs()" error when another plugin has already loaded the
+ * Freemius SDK, and ensures rs_fs() is always available.
  */
 if ( ! function_exists( 'rs_fs' ) ) {
 	/**
@@ -116,7 +117,6 @@ if ( ! function_exists( 'rs_fs' ) ) {
 
 	// Init Freemius.
 	rs_fs();
-	// Signal that SDK was initiated.
 	do_action( 'rs_fs_loaded' );
 }
 
@@ -219,12 +219,10 @@ function rsa_init() {
 	RSA_Admin::init();
 	RSA_Email::init();
 
-	// WooCommerce integration (premium feature — gated via Freemius)
+	// WooCommerce integration (premium feature — activated with valid license).
+	// Note: the class file is already loaded by the premium autoloader above.
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 		if ( class_exists( 'WooCommerce' ) ) {
-			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
-				require_once RSA_DIR . 'includes/class-woocommerce.php';
-			}
 			RSA_Woocommerce::init();
 		}
 	}

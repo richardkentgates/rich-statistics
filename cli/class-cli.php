@@ -1,7 +1,8 @@
 <?php
 /**
  * WP-CLI commands for Rich Statistics.
- * Available in the FREE tier.
+ * Core commands available in the FREE tier; campaign, user-flow, export,
+ * click, and WooCommerce commands require a Premium licence.
  *
  * Usage:
  *   wp rich-stats overview [--period=30d] [--blog-id=<id>]
@@ -11,7 +12,7 @@
  *   wp rich-stats behavior [--period=30d] [--blog-id=<id>]
  *   wp rich-stats campaigns [--period=30d] [--limit=10] [--blog-id=<id>] (Premium)
  *   wp rich-stats user-flow [--period=30d] [--blog-id=<id>] (Premium)
- *   wp rich-stats export [--format=json|csv] [--period=90d] [--blog-id=<id>]
+ *   wp rich-stats export [--format=json|csv] [--period=90d] [--blog-id=<id>] (Premium)
  *   wp rich-stats purge [--older-than=90] [--dry-run] [--blog-id=<id>]
  *   wp rich-stats email-test [--recipient=you@example.com]
  *   wp rich-stats status
@@ -87,6 +88,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--limit=<n>]
 	 * : Number of pages to show. Default: 10.
 	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
+	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
 	 *
@@ -130,6 +134,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--period=<period>]
 	 * : Default: 30d.
+	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
 	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
@@ -179,6 +186,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--limit=<n>]
 	 * : Number of rows. Default: 10.
 	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
+	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
 	 *
@@ -217,6 +227,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--period=<period>]
 	 * : Default: 30d.
+	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
 	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
@@ -270,6 +283,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--limit=<n>]
 	 * : Number of rows. Default: 10.
 	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
+	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
 	 *
@@ -315,6 +331,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--period=<period>]
 	 * : Default: 30d.
 	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
+	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
 	 *
@@ -359,6 +378,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--output=<file>]
 	 * : Path to write data. Defaults to stdout.
+	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
 	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
@@ -406,6 +428,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--dry-run]
 	 * : Report count without deleting.
+	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before purging. Default: current.
 	 *
 	 * @param array $args  CLI positional arguments.
 	 * @param array $assoc CLI associative arguments.
@@ -526,6 +551,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 * [--page=<path>]
 	 * : Filter by page path. Default: all pages.
 	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp rich-stats clicks --period=7d
@@ -580,6 +608,9 @@ class RSA_CLI extends WP_CLI_Command {
 	 *
 	 * [--limit=<n>]
 	 * : Number of top products to show per table. Default: 10.
+	 *
+	 * [--blog-id=<id>]
+	 * : Multisite: switch to this blog before querying. Default: current.
 	 *
 	 * ## EXAMPLES
 	 *
