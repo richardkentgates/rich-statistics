@@ -63,7 +63,7 @@ $wp_tests_dir = $wp_tests_dir ? $wp_tests_dir : '/tmp/wordpress-tests-lib';
 
 if ( is_dir( $wp_tests_dir ) ) {
 	// RSA plugin URL constants are needed when class files are loaded.
-	define( 'RSA_VERSION', '2.4.25' );
+	define( 'RSA_VERSION', '2.4.26' );
 	define( 'RSA_URL', 'http://example.com/wp-content/plugins/rich-statistics/' );
 	define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 	define( 'RSA_APP_URL', 'https://test.richstatistics.com/' );
@@ -152,7 +152,7 @@ if ( is_dir( $wp_tests_dir ) ) {
  */
 
 define( 'ABSPATH', sys_get_temp_dir() . '/' );
-define( 'RSA_VERSION', '2.4.25' );
+define( 'RSA_VERSION', '2.4.26' );
 define( 'RSA_URL', 'http://example.com/wp-content/plugins/rich-statistics/' );
 define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 define( 'RSA_APP_URL', 'https://test.richstatistics.com/' );
