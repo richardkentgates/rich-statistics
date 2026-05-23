@@ -2,6 +2,8 @@
 /**
  * WooCommerce analytics — product views, add-to-cart events, orders, and revenue.
  *
+ * @fs_premium_only
+ *
  * @package RichStatistics
  */
 

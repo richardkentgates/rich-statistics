@@ -15,7 +15,7 @@
  *                       the Application Password step.
  *
  * Security properties:
- *   • rsa_generate_otp requires manage_options + a valid WP nonce (~24 h TTL).
+ *   • rsa_generate_otp requires a valid WP nonce + user_can_access_app() (role-based).
  *   • OTPs are stored hashed (SHA-256) as transients; the plain code is never
  *     persisted. Transients auto-expire after 15 minutes.
  *   • verify-otp applies per-IP rate-limiting (max 5 wrong attempts / 5 min)
@@ -38,7 +38,8 @@ class RSA_Pwa_Download {
 	}
 
 	/**
-	 * AJAX handler — generates a 6-digit OTP for the current admin user.
+	 * AJAX handler — generates a 6-digit OTP for the current user
+	 * (if permitted by app access role settings).
 	 * Returns JSON: { otp: "482391", expires_in: 900 }.
 	 */
 	public static function handle_generate_otp(): void {

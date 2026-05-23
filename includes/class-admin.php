@@ -277,8 +277,8 @@ class RSA_Admin {
 	 * @return array Submenu pages configuration.
 	 */
 	private static function get_sub_pages(): array {
-		$is_premium    = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
-		$pages         = [
+		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
+		$pages      = [
 			'overview'  => [
 				'title' => __( 'Overview', 'rich-statistics' ),
 				'label' => __( 'Overview', 'rich-statistics' ),
@@ -305,9 +305,7 @@ class RSA_Admin {
 				'cap'   => 'rsa_manage_statistics',
 			],
 		];
-		$upgrade_label = function_exists( 'rs_fs' )
-			? ' <a href="' . esc_url( rs_fs()->get_upgrade_url() ) . '" style="font-size:11px;font-weight:normal;">(' . esc_html__( 'Upgrade', 'rich-statistics' ) . ')</a>'
-			: '';
+
 		if ( class_exists( 'WooCommerce' ) ) {
 			if ( $is_premium ) {
 				// Premium: only add the menu item when tracking is enabled; disabled = hidden entirely.
@@ -322,7 +320,7 @@ class RSA_Admin {
 				// Not premium — show with upgrade prompt.
 				$pages['woocommerce'] = [
 					'title' => __( 'WooCommerce', 'rich-statistics' ),
-					'label' => __( 'WooCommerce', 'rich-statistics' ) . $upgrade_label,
+					'label' => __( 'WooCommerce', 'rich-statistics' ),
 					'cap'   => 'rsa_manage_statistics',
 				];
 			}
@@ -356,27 +354,27 @@ class RSA_Admin {
 		} else {
 			$pages['campaigns'] = [
 				'title' => __( 'Campaigns', 'rich-statistics' ),
-				'label' => __( 'Campaigns', 'rich-statistics' ) . $upgrade_label,
+				'label' => __( 'Campaigns', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
 			$pages['user-flow'] = [
 				'title' => __( 'User Flow', 'rich-statistics' ),
-				'label' => __( 'User Flow', 'rich-statistics' ) . $upgrade_label,
+				'label' => __( 'User Flow', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
 			$pages['click-map'] = [
 				'title' => __( 'Click Tracking', 'rich-statistics' ),
-				'label' => __( 'Click Tracking', 'rich-statistics' ) . $upgrade_label,
+				'label' => __( 'Click Tracking', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
 			$pages['heatmap']   = [
 				'title' => __( 'Heatmap', 'rich-statistics' ),
-				'label' => __( 'Heatmap', 'rich-statistics' ) . $upgrade_label,
+				'label' => __( 'Heatmap', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
 			$pages['export']    = [
 				'title' => __( 'Export', 'rich-statistics' ),
-				'label' => __( 'Export', 'rich-statistics' ) . $upgrade_label,
+				'label' => __( 'Export', 'rich-statistics' ),
 				'cap'   => 'rsa_manage_statistics',
 			];
 		}
@@ -694,10 +692,10 @@ class RSA_Admin {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
 		}
 		self::render( 'network-settings' ); }
-	/** Render the AI chat page (redirects to the app). */
+	/** Render the AI chat page (redirects to the Overview page). Kept for backward compat — may have been bookmarked. */
 	public static function page_ai_chat(): void {
 		wp_safe_redirect( admin_url( 'admin.php?page=rich-statistics-overview' ) );
-		exit; } // Kept for backward compat — may have been bookmarked
+		exit; }
 	/** Render the install page. */
 	public static function page_install(): void {
 		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
@@ -740,7 +738,7 @@ class RSA_Admin {
 	// ----------------------------------------------------------------
 
 	/**
-	 * Get all trackable public pages.
+	 * Get all trackable pages (public post types, all non-trash statuses).
 	 *
 	 * @return array Associative array of path => title.
 	 */
@@ -1223,11 +1221,11 @@ class RSA_Admin {
 	}
 
 	// ----------------------------------------------------------------
-	// API key masking — show only first 8 chars in the form.
+	// API key masking — show only first 4 chars in the form.
 	// ----------------------------------------------------------------
 
 	/**
-	 * Mask an API key showing only the first 8 characters.
+	 * Mask an API key showing only the first 4 characters.
 	 *
 	 * @param string $key The API key.
 	 * @return string Masked API key.
@@ -1319,7 +1317,7 @@ class RSA_Admin {
 				'content' =>
 					'<h2>' . esc_html__( 'Audience Breakdown', 'rich-statistics' ) . '</h2>' .
 					'<p>' . esc_html__( 'Operating system, browser name, browser version, viewport size, language, and timezone are detected from the browser environment using JavaScript and stored as non-identifying aggregate categories.', 'rich-statistics' ) . '</p>' .
-					'<p>' . esc_html__( 'Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px).', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Viewport buckets: Mobile (<640px), Tablet (640–1023px), Desktop (1024–1439px), Wide (≥1440px).', 'rich-statistics' ) . '</p>' .
 					'<p>' . esc_html__( 'Language codes follow the BCP 47 standard as reported by navigator.language (e.g. en-US, fr-FR, de).', 'rich-statistics' ) . '</p>',
 			],
 			'rich-statistics_page_rich-statistics-referrers' => [

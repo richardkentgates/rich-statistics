@@ -1,4 +1,4 @@
-<?php // phpcs:ignoreFile -- class name convention matches autoloader (RSA_ prefix stripped)
+<?php // phpcs:ignoreFile -- reads raw POST/php://input for click event ingest (nonce-verified on line 15)
 /**
  * Click tracking — server-side ingest handler.
  */
