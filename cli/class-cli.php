@@ -20,6 +20,8 @@
  *   wp rich-stats woocommerce [--period=30d] [--limit=10] [--blog-id=<id>] (Premium)
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

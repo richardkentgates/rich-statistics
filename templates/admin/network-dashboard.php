@@ -3,6 +3,8 @@
  * Network Dashboard — cross-site analytics with AI for multisite networks.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

@@ -9,6 +9,8 @@
  * Usage: [rich_statistics_privacy_disclosure]
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

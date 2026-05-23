@@ -4,6 +4,8 @@
  * renders the dashboard, and handles the Settings page.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

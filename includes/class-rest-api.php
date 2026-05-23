@@ -4,16 +4,7 @@
  *
  * @package RichStatistics
  *
- * Namespace    : rsa/v1
- * Auth         : WordPress Application Passwords (core, WP 5.6+)
- *                No custom token system — use a WP user account with
- *                the Application Password generated in their profile.
- *
- * Notes on security:
- * - All read endpoints require 'rsa_manage_statistics' capability.
- * - The ingest POST endpoint (/track) is public but nonce-protected.
- * - Rate-limiting on /track mirrors the AJAX handler.
- * - All outputs are wp_json_encode'd via WP_REST_Response; no raw echo.
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

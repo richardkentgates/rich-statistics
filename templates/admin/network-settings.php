@@ -3,6 +3,8 @@
  * Network Settings page — shown in the Network Admin for multisite.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

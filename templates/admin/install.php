@@ -3,6 +3,8 @@
  * Install page — desktop app downloads and setup instructions.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

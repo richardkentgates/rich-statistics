@@ -6,6 +6,8 @@
  * (admin-ajax.php — avoids REST bootstrap cost on every pageview)
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

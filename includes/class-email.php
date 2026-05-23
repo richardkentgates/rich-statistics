@@ -5,6 +5,8 @@
  * use WP Mail SMTP or similar if needed.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

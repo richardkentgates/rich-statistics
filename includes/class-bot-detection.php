@@ -13,6 +13,8 @@
  * also detects headless browsers and scrapers that try to hide.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
