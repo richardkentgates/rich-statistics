@@ -123,7 +123,7 @@ class RSA_Email {
 
 		$headers = [
 			'Content-Type: text/html; charset=UTF-8',
-			'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
+			'From: ' . sanitize_text_field( get_bloginfo( 'name' ) ) . ' <' . sanitize_email( get_option( 'admin_email' ) ) . '>',
 		];
 
 		$result = wp_mail( $recipients, $subject, $body, $headers );

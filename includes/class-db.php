@@ -338,7 +338,7 @@ class RSA_DB {
 		global $wpdb;
 
 		$days    = $days ?? (int) get_option( 'rsa_retention_days', 90 );
-		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+		$cutoff  = wp_date( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
 		$start   = microtime( true );
 
@@ -368,7 +368,7 @@ class RSA_DB {
 			} while ( $result > 0 );
 		}
 
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
+		$cutoff_date = wp_date( 'Y-m-d', strtotime( "-{$days} days" ) );
 		do {
 			$result   = $wpdb->query(
 				$wpdb->prepare(
@@ -393,8 +393,8 @@ class RSA_DB {
 	public static function aggregate_heatmap(): void {
 		global $wpdb;
 
-		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
-		$today     = gmdate( 'Y-m-d', strtotime( '0 day' ) );
+		$yesterday = wp_date( 'Y-m-d', strtotime( '-1 day' ) );
+		$today     = wp_date( 'Y-m-d', strtotime( '0 day' ) );
 
 		$wpdb->query(
 			$wpdb->prepare(
@@ -413,6 +413,20 @@ class RSA_DB {
 				$today . ' 00:00:00'
 			)
 		);
+
+		// Delete processed raw clicks to prevent double-counting on re-run.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM `{$wpdb->prefix}rsa_clicks` WHERE created_at >= %s AND created_at < %s",
+				$yesterday . ' 00:00:00',
+				$today . ' 00:00:00'
+			)
+		);
+
+		if ( $wpdb->last_error ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'Rich Statistics heatmap aggregation failed: ' . $wpdb->last_error );
+		}
 	}
 
 	/**
@@ -424,7 +438,7 @@ class RSA_DB {
 		if ( get_transient( 'rsa_maintenance_lock' ) ) {
 			return;
 		}
-		set_transient( 'rsa_maintenance_lock', 1, 30 * MINUTE_IN_SECONDS );
+		set_transient( 'rsa_maintenance_lock', 1, HOUR_IN_SECONDS );
 
 		if ( is_multisite() ) {
 			$batch_size = 100;
@@ -450,6 +464,8 @@ class RSA_DB {
 			self::prune_old_data();
 			self::aggregate_heatmap();
 		}
+
+		delete_transient( 'rsa_maintenance_lock' );
 	}
 
 	/**
