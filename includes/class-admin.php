@@ -821,7 +821,7 @@ class RSA_Admin {
 		switch ( $data_type ) {
 			case 'sessions':
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table names from RSA_DB helper, not user input
-				$rows    = $wpdb->get_results(
+				$rows = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
 						'SELECT session_id, entry_page, exit_page, pages_viewed, total_time, browser, os, language, timezone, created_at FROM ' . RSA_DB::sessions_table() . ' WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC',
 						$range['start'],
@@ -834,7 +834,7 @@ class RSA_Admin {
 				break;
 			case 'clicks':
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table names from RSA_DB helper, not user input
-				$rows    = $wpdb->get_results(
+				$rows = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
 						'SELECT session_id, page, element_tag, element_id, element_class, element_text, href_protocol, matched_rule, x_pct, y_pct, created_at FROM ' . RSA_DB::clicks_table() . ' WHERE created_at BETWEEN %s AND %s ORDER BY created_at DESC',
 						$range['start'],
@@ -847,7 +847,7 @@ class RSA_Admin {
 				break;
 			case 'referrers':
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table names from RSA_DB helper, not user input
-				$rows    = $wpdb->get_results(
+				$rows = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
 						'SELECT referrer_domain, COUNT(*) AS pageviews, COUNT(DISTINCT session_id) AS sessions FROM ' . RSA_DB::events_table() . ' WHERE created_at BETWEEN %s AND %s AND bot_score < %d GROUP BY referrer_domain ORDER BY pageviews DESC',
 						$range['start'],
@@ -861,7 +861,7 @@ class RSA_Admin {
 				break;
 			default: // pageviews
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table names from RSA_DB helper, not user input
-				$rows    = $wpdb->get_results(
+				$rows = $wpdb->get_results(
 					$wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CSV export on demand
 						'SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, bot_score, created_at FROM ' . RSA_DB::events_table() . ' WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at DESC',
 						$range['start'],
