@@ -697,7 +697,12 @@ class RSA_Rest_API {
 			'clicks'      => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_click_map( $period, $page ) ),
 			'heatmap'     => array_map( [ __CLASS__, 'strip_pii' ], RSA_Analytics::get_heatmap( $page, $period ) ),
 			'woocommerce' => self::strip_pii( RSA_Analytics::get_woocommerce( $period ) ),
+			default       => new WP_Error( 'invalid_tool', __( 'Invalid AI tool requested.', 'rich-statistics' ), [ 'status' => 400 ] ),
 		};
+
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
 
 		return self::ok(
 			[
@@ -1131,6 +1136,18 @@ class RSA_Rest_API {
 		$_POST                     = $r->get_params();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
+		$die_handler = function ( $message ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is internal, not rendered.
+			throw new Exception( (string) $message );
+		};
+		add_filter(
+			'wp_die_ajax_handler',
+			function () use ( $die_handler ) {
+				return $die_handler;
+			}
+		);
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
 		try {
 			// Verify nonce manually (passed as 'nonce' param).
 			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'rsa_track' ) ) {
@@ -1143,17 +1160,29 @@ class RSA_Rest_API {
 				);
 			}
 
-			// Delegate to the tracker's handle_ingest — capture wp_send_json call.
-			add_filter( 'wp_doing_ajax', '__return_true' );
+			// Delegate to the tracker's handle_ingest.
+			// handle_ingest() calls wp_send_json_success() which calls wp_die().
+			// The die handler above converts that to an Exception so we can catch it
+			// and still run our finally cleanup.
 			ob_start();
-			RSA_Tracker::handle_ingest();
+			try {
+				RSA_Tracker::handle_ingest();
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Exception is expected from wp_die override.
+				// Swallow the expected die from wp_send_json_success.
+			}
 			ob_get_clean();
-			remove_filter( 'wp_doing_ajax', '__return_true' );
 
 			return new WP_REST_Response( [ 'ok' => true ], 200 );
 		} finally {
 			$_POST                     = $saved_post;
 			$_SERVER['REQUEST_METHOD'] = $saved_method;
+			remove_filter( 'wp_doing_ajax', '__return_true' );
+			remove_filter(
+				'wp_die_ajax_handler',
+				function () use ( $die_handler ) {
+					return $die_handler;
+				}
+			);
 		}
 	}
 
