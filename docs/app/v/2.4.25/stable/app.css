@@ -49,10 +49,21 @@ html, body {
    ========================================================================= */
 .rsa-login-screen {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	padding: 24px 16px;
+	gap: 24px;
 	background: linear-gradient(135deg, var(--rsa-accent) 0%, var(--rsa-accent-dark) 100%);
+}
+
+.rsa-login-wrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+	width: 100%;
+	max-width: 520px;
 }
 
 .rsa-login-card {
@@ -83,6 +94,195 @@ html, body {
 	color: var(--rsa-muted);
 	margin-bottom: 28px;
 	font-size: 13px;
+}
+
+/* Install card — shown below login card on welcome screen */
+.rsa-welcome-install {
+	width: 100%;
+	background: var(--rsa-surface);
+	border-radius: 12px;
+	padding: 24px 20px;
+	box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+
+.rsa-welcome-install-title {
+	text-align: center;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--rsa-text);
+	margin: 0 0 4px;
+}
+
+.rsa-welcome-install-subtitle {
+	text-align: center;
+	color: var(--rsa-muted);
+	margin: 0 0 20px;
+	font-size: 12px;
+}
+
+.rsa-install-section {
+	margin-bottom: 16px;
+}
+
+.rsa-install-section:last-of-type {
+	margin-bottom: 12px;
+}
+
+.rsa-install-section h3 {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rsa-text);
+	margin: 0 0 6px;
+}
+
+.rsa-install-code {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 11px;
+	line-height: 1.5;
+	overflow-x: auto;
+	margin: 0;
+	font-family: ui-monospace, SFMono-Regular, monospace;
+	color: var(--rsa-text);
+}
+
+.rsa-install-code code {
+	font-family: inherit;
+}
+
+.rsa-install-links {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-install-link {
+	display: inline-block;
+	padding: 6px 12px;
+	border: 1px solid var(--rsa-border);
+	border-radius: 4px;
+	text-decoration: none;
+	font-size: 12px;
+	color: var(--rsa-accent);
+	transition: background .15s;
+}
+
+.rsa-install-link:hover {
+	background: var(--rsa-bg);
+}
+
+.rsa-install-note {
+	text-align: center;
+	font-size: 11px;
+	color: var(--rsa-muted);
+	margin: 12px 0 0;
+}
+
+/* Install platform cards (welcome screen) */
+.rsa-install-platforms {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.rsa-install-platform {
+	background: var(--rsa-bg);
+	border: 1px solid var(--rsa-border);
+	border-radius: 8px;
+	padding: 14px 16px;
+	min-width: 0;
+}
+
+.rsa-install-platform-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.rsa-install-platform-icon {
+	font-size: 20px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.rsa-install-platform-header h3 {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--rsa-text);
+	margin: 0;
+}
+
+.rsa-install-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	background: var(--rsa-accent);
+	color: #fff;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	vertical-align: middle;
+}
+
+.rsa-install-code {
+	background: var(--rsa-surface);
+	border: 1px solid var(--rsa-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 11px;
+	line-height: 1.6;
+	overflow-x: auto;
+	max-width: 100%;
+	margin: 0;
+	font-family: ui-monospace, SFMono-Regular, monospace;
+	color: var(--rsa-text);
+	white-space: pre;
+}
+
+.rsa-install-code code {
+	font-family: inherit;
+}
+
+.rsa-install-links {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.rsa-install-dl-btn {
+	display: block;
+	width: 100%;
+	text-align: center;
+	padding: 10px 16px;
+	background: var(--rsa-accent);
+	color: #fff;
+	border-radius: 6px;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 600;
+	transition: background .15s;
+}
+
+.rsa-install-dl-btn:hover {
+	background: var(--rsa-accent-dark, #245a73);
+}
+
+.rsa-install-dl-btn--small {
+	display: inline-block;
+	width: auto;
+	padding: 8px 16px;
+	font-size: 12px;
+	background: var(--rsa-surface);
+	color: var(--rsa-accent);
+	border: 1px solid var(--rsa-border);
+}
+
+.rsa-install-dl-btn--small:hover {
+	background: var(--rsa-bg);
 }
 
 /* =========================================================================
@@ -238,11 +438,6 @@ html, body {
 .rsa-nav-link.rsa-active { color: #fff; background: var(--rsa-accent); }
 .rsa-nav-link.rsa-nav-premium { opacity: .7; display: flex; align-items: center; justify-content: space-between; }
 .rsa-nav-badge { font-size: 9px; opacity: .5; text-transform: uppercase; letter-spacing: .4px; }
-
-/* AI status card */
-.rsa-ai-status-detecting { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #f0f4ff; color: #4a6fa5; border: 1px solid #d0d9f0; }
-.rsa-ai-status-connected { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-.rsa-ai-status-disconnected { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
 .rsa-nav-footer {
 	padding: 12px 14px;
@@ -926,39 +1121,6 @@ html, body {
 	font-weight: 500;
 }
 .rsa-site-menu-add:hover { background: var(--rsa-bg); }
-
-/* =========================================================================
-   Import hint (login screen)
-   ========================================================================= */
-.rsa-import-hint {
-	margin-top: 16px;
-	text-align: center;
-	font-size: 13px;
-	color: var(--rsa-muted);
-}
-
-.rsa-import-label {
-	color: var(--rsa-accent);
-	cursor: pointer;
-	text-decoration: underline;
-}
-
-.rsa-import-block {
-	display: block;
-	text-align: center;
-	padding: 12px;
-	border: 2px dashed var(--rsa-border);
-	border-radius: var(--rsa-radius);
-	color: var(--rsa-accent);
-	cursor: pointer;
-	margin-bottom: 16px;
-	font-size: 14px;
-	transition: border-color .15s, background .15s;
-}
-.rsa-import-block:hover {
-	border-color: var(--rsa-accent);
-	background: rgba(99,102,241,.04);
-}
 
 /* =========================================================================
    Add-Site overlay
