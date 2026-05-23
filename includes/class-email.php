@@ -15,7 +15,7 @@ class RSA_Email {
 
 	public static function init(): void {
 		add_action( 'rsa_send_digest', [ __CLASS__, 'send_digest' ] );
-		add_action( 'admin_post_rsa_save_settings', [ __CLASS__, 'reschedule_on_save' ] );
+		add_action( 'admin_post_rsa_save_settings', [ __CLASS__, 'reschedule_on_save' ], 9 );
 		add_action( 'admin_post_rsa_send_test_email', [ __CLASS__, 'handle_test_send' ] );
 
 		add_action( 'init', [ __CLASS__, 'maybe_schedule' ] );

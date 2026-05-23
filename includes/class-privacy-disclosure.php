@@ -15,23 +15,25 @@
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Render the privacy disclosure shortcode.
- *
- * @return string HTML output.
- */
-function rsa_privacy_disclosure_shortcode(): string {
-	ob_start();
-	$site_name  = get_bloginfo( 'name' );
-	$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
+class RSA_Privacy_Disclosure {
 
-	/* translators: %s: Site name */
-	$title = sprintf( __( 'Analytics Data Collected by %s', 'rich-statistics' ), $site_name );
-	/* translators: %s: Plugin version */
-	$footer_version = sprintf( __( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ), defined( 'RSA_VERSION' ) ? RSA_VERSION : '' );
-	/* translators: %s: Site name */
-	$footer_contact = sprintf( __( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ), $site_name );
-	?>
+	/**
+	 * Render the privacy disclosure shortcode.
+	 *
+	 * @return string HTML output.
+	 */
+	public static function shortcode(): string {
+		ob_start();
+		$site_name  = get_bloginfo( 'name' );
+		$is_premium = function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only();
+
+		/* translators: %s: Site name */
+		$title = sprintf( __( 'Analytics Data Collected by %s', 'rich-statistics' ), $site_name );
+		/* translators: %s: Plugin version */
+		$footer_version = sprintf( __( 'This disclosure was generated automatically by Rich Statistics v%s.', 'rich-statistics' ), defined( 'RSA_VERSION' ) ? RSA_VERSION : '' );
+		/* translators: %s: Site name */
+		$footer_contact = sprintf( __( 'For questions about data practices on %s, contact the site administrator.', 'rich-statistics' ), $site_name );
+		?>
 <div class="rsa-privacy-disclosure">
 	<h2><?php echo esc_html( $title ); ?></h2>
 	<p><?php esc_html_e( 'This site uses a self-hosted analytics system to understand how visitors use the site. Below is a complete list of what data is collected when you visit, how it is used, and your rights under applicable privacy laws.', 'rich-statistics' ); ?></p>
@@ -110,7 +112,7 @@ function rsa_privacy_disclosure_shortcode(): string {
 	<li><?php esc_html_e( 'No form inputs, audio, video, or biometric data', 'rich-statistics' ); ?></li>
 	</ul>
 
-	<?php if ( $is_premium ) : ?>
+		<?php if ( $is_premium ) : ?>
 	<h3><?php esc_html_e( 'Additional Interactions (on some pages)', 'rich-statistics' ); ?></h3>
 	<table class="rsa-privacy-table">
 		<thead>
@@ -228,7 +230,9 @@ function rsa_privacy_disclosure_shortcode(): string {
 	color: #666;
 }
 </style>
-	<?php
-	return ob_get_clean();
+		<?php
+		return ob_get_clean();
+	}
 }
-add_shortcode( 'rich_statistics_privacy_disclosure', 'rsa_privacy_disclosure_shortcode' );
+
+add_shortcode( 'rich_statistics_privacy_disclosure', [ RSA_Privacy_Disclosure::class, 'shortcode' ] );

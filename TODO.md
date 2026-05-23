@@ -27,7 +27,7 @@ All items below confirmed against actual code.
 
 | Ref | Finding |
 |-----|---------|
-| L1 | `network-dashboard.php:133` — `$ai_key` without `esc_attr()` | ✅ Fixed |
+| L1 | `network-dashboard.php` — AI chat removed entirely (was `$ai_key` without `esc_attr()`) | ✅ Removed |
 | L2 | `network-dashboard.php:195-198` — JS vars without `wp_json_encode()` | ✅ Verified — already uses `wp_json_encode()` |
 | L3 | 11 templates with bare `wp_die()` — no error message | ✅ Verified — standard WordPress security guards |
 | L4 | `class-pwa-download.php:138` — `@unlink()` error silencing | ✅ Fixed — replaced with `file_exists()` + `unlink()` |
@@ -119,7 +119,7 @@ All items below confirmed against actual code.
 | H26 | Secret exposure fixed | `setup-app-server.sh` no longer echoes secret paths to stdout |
 | H27 | Separate cron log files | `rsa-deploy-cron`, `-dev`, `-test` |
 | H28 | tests/bootstrap.php version synced | `RSA_VERSION = '2.4.20'` |
-| L1 | esc_attr() on $ai_key | `network-dashboard.php:133` uses `esc_attr()` |
+| L1 | $ai_key on network-dashboard | AI chat removed from `network-dashboard.php` entirely |
 | L4 | @unlink() replaced | `class-pwa-download.php` uses `file_exists()` + `unlink()` |
 | L11 | Empty screenshots removed | `manifest.json` no longer has empty array |
 | L12 | Error div indentation fixed | `index.html` consistent indentation |

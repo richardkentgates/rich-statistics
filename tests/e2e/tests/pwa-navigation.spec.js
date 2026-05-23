@@ -8,7 +8,7 @@ test.describe( 'Navigation (site connected)', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						version: '2.4.20',
 						isPremium: false,
@@ -24,7 +24,7 @@ test.describe( 'Navigation (site connected)', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						visitors: 100,
 						sessions: 150,
@@ -150,7 +150,7 @@ test.describe( 'View switching', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						version: '2.4.20',
 						isPremium: false,
@@ -162,7 +162,7 @@ test.describe( 'View switching', () => {
 		} );
 
 		const mockData = {
-			success: true,
+			ok: true,
 			data: {
 				visitors: 100,
 				sessions: 150,
@@ -177,16 +177,16 @@ test.describe( 'View switching', () => {
 			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( mockData ) } );
 		} );
 		await page.route( '**/wp-json/rsa/v1/pages*', async ( route ) => {
-			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { success: true, data: { pages: [] } } ) } );
+			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { ok: true, data: { pages: [] } } ) } );
 		} );
 		await page.route( '**/wp-json/rsa/v1/audience*', async ( route ) => {
-			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { success: true, data: { countries: [], browsers: [], devices: [] } } ) } );
+			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { ok: true, data: { countries: [], browsers: [], devices: [] } } ) } );
 		} );
 		await page.route( '**/wp-json/rsa/v1/referrers*', async ( route ) => {
-			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { success: true, data: { referrers: [] } } ) } );
+			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { ok: true, data: { referrers: [] } } ) } );
 		} );
 		await page.route( '**/wp-json/rsa/v1/behavior*', async ( route ) => {
-			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { success: true, data: { entryPages: [], exitPages: [] } } ) } );
+			await route.fulfill( { status: 200, contentType: 'application/json', body: JSON.stringify( { ok: true, data: { entryPages: [], exitPages: [] } } ) } );
 		} );
 
 		await page.addInitScript( () => {
@@ -249,7 +249,7 @@ test.describe( 'Disconnect flow', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						version: '2.4.20',
 						isPremium: false,
@@ -265,7 +265,7 @@ test.describe( 'Disconnect flow', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
-					success: true,
+					ok: true,
 					data: {
 						visitors: 100,
 						sessions: 150,
