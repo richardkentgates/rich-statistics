@@ -9,6 +9,8 @@
  * Usage: [rich_statistics_privacy_disclosure]
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -101,11 +103,11 @@ function rsa_privacy_disclosure_shortcode(): string {
 <ul>
 	<li><?php esc_html_e( 'No IP address — not even hashed or temporarily stored', 'rich-statistics' ); ?></li>
 	<li><?php esc_html_e( 'No cookies', 'rich-statistics' ); ?></li>
-		<li><?php esc_html_e( 'No name, email, phone number, or address', 'rich-statistics' ); ?></li>
-		<li><?php esc_html_e( 'No tracking across other websites', 'rich-statistics' ); ?></li>
-		<li><?php esc_html_e( 'No data shared with or sold to third parties', 'rich-statistics' ); ?></li>
-		<li><?php esc_html_e( 'No GPS or precise location', 'rich-statistics' ); ?></li>
-		<li><?php esc_html_e( 'No form inputs, audio, video, or biometric data', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No name, email, phone number, or address', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No tracking across other websites', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No data shared with or sold to third parties', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No GPS or precise location', 'rich-statistics' ); ?></li>
+	<li><?php esc_html_e( 'No form inputs, audio, video, or biometric data', 'rich-statistics' ); ?></li>
 	</ul>
 
 	<?php if ( $is_premium ) : ?>

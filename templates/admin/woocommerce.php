@@ -2,7 +2,11 @@
 /**
  * WooCommerce analytics — product views, add-to-cart events, orders, and revenue.
  *
+ * @fs_premium_only
+ *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

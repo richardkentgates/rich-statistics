@@ -3,6 +3,8 @@
  * Network Dashboard — cross-site analytics with AI for multisite networks.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -47,7 +49,7 @@ $has_ai       = ! empty( $ai_endpoint );
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'AI settings saved.', 'rich-statistics' ); ?></p></div>
 	<?php endif; ?>
 
-	<!-- Sub-site Status Table -->
+	<!-- Sub-site Overview Table -->
 	<h2><?php esc_html_e( 'Sub-site Overview', 'rich-statistics' ); ?></h2>
 	<p><?php esc_html_e( 'Per-site analytics for the last 30 days. Click a site name to view its detailed dashboard.', 'rich-statistics' ); ?></p>
 

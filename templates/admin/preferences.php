@@ -3,6 +3,8 @@
  * Preferences — combined tracking, retention, bot detection, email & data settings.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;

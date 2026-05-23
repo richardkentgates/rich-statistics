@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           2.4.24
+ * Version:           2.4.25
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
@@ -14,6 +14,8 @@
  * Network:           true
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,21 +62,22 @@ if ( ! function_exists( 'rsa_detect_app_url' ) ) {
 // --------------------------------------------------------------------
 // Constants
 // --------------------------------------------------------------------
-define( 'RSA_VERSION', '2.4.24' );
+define( 'RSA_VERSION', '2.4.25' );
 define( 'RSA_FILE', __FILE__ );
 define( 'RSA_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RSA_URL', plugin_dir_url( __FILE__ ) );
 define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 define( 'RSA_MIN_WP', '6.0' );
 define( 'RSA_MIN_PHP', '8.0' );
-define( 'RSA_APP_VERSION', '2.4.24' );
+define( 'RSA_APP_VERSION', '2.4.25' );
 define( 'RSA_MIN_APP_VERSION', '2.0.0' );
 define( 'RSA_APP_URL', rsa_detect_app_url() );
 define( 'RSA_APP_ENV', rsa_detect_app_env() );
 
 /**
- * DO NOT REMOVE THIS IF, IT IS ESSENTIAL FOR THE
- * `function_exists` CALL ABOVE TO PROPERLY WORK.
+ * DO NOT REMOVE THIS if-guard — it prevents a fatal "Cannot redeclare
+ * function rs_fs()" error when another plugin has already loaded the
+ * Freemius SDK, and ensures rs_fs() is always available.
  */
 if ( ! function_exists( 'rs_fs' ) ) {
 	/**
@@ -116,7 +119,6 @@ if ( ! function_exists( 'rs_fs' ) ) {
 
 	// Init Freemius.
 	rs_fs();
-	// Signal that SDK was initiated.
 	do_action( 'rs_fs_loaded' );
 }
 
@@ -219,12 +221,10 @@ function rsa_init() {
 	RSA_Admin::init();
 	RSA_Email::init();
 
-	// WooCommerce integration (premium feature — gated via Freemius)
+	// WooCommerce integration (premium feature — activated with valid license).
+	// Note: the class file is already loaded by the premium autoloader above.
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 		if ( class_exists( 'WooCommerce' ) ) {
-			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
-				require_once RSA_DIR . 'includes/class-woocommerce.php';
-			}
 			RSA_Woocommerce::init();
 		}
 	}

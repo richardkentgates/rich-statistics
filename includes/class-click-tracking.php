@@ -1,6 +1,11 @@
-<?php // phpcs:ignoreFile -- class name convention matches autoloader (RSA_ prefix stripped)
+<?php // phpcs:ignoreFile -- reads raw POST/php://input for click event ingest (nonce-verified on line 15)
 /**
- * Click tracking — server-side ingest handler.
+ * [PREMIUM] Click tracking — server-side ingest handler.
+ *
+ * @package RichStatistics
+ * @fs_premium_only
+ *
+ * @license GPL-2.0-or-later
  */
 defined( 'ABSPATH' ) || exit;
 

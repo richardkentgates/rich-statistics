@@ -4,16 +4,7 @@
  *
  * @package RichStatistics
  *
- * Namespace    : rsa/v1
- * Auth         : WordPress Application Passwords (core, WP 5.6+)
- *                No custom token system — use a WP user account with
- *                the Application Password generated in their profile.
- *
- * Notes on security:
- * - All read endpoints require 'rsa_manage_statistics' capability.
- * - The ingest POST endpoint (/track) is public but nonce-protected.
- * - Rate-limiting on /track mirrors the AJAX handler.
- * - All outputs are wp_json_encode'd via WP_REST_Response; no raw echo.
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -206,7 +197,8 @@ class RSA_Rest_API {
 			]
 		);
 
-		// Free tier endpoints - available to all authenticated users.
+		// Free tier endpoints — available to authenticated users with the
+		// rsa_manage_statistics capability and permitted app access.
 		register_rest_route(
 			self::NS,
 			'/overview',
@@ -605,7 +597,8 @@ class RSA_Rest_API {
 	// ----------------------------------------------------------------
 
 	/**
-	 * Basic auth - available to all authenticated users (free tier)
+	 * Basic auth — available to authenticated users with the
+	 * rsa_manage_statistics capability and permitted app access.
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
@@ -1165,7 +1158,7 @@ class RSA_Rest_API {
 	}
 
 	// ----------------------------------------------------------------
-	// AI conversational endpoint (BYOK + Local LLM support).
+	// PII stripping utilities.
 	// ----------------------------------------------------------------
 
 	/**

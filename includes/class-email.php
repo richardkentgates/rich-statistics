@@ -5,6 +5,8 @@
  * use WP Mail SMTP or similar if needed.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -53,6 +55,7 @@ class RSA_Email {
 
 	/**
 	 * Re-schedule after settings are saved (frequency may have changed).
+	 * Runs on the same admin_post_rsa_save_settings hook as RSA_Admin::save_settings.
 	 */
 	public static function reschedule_on_save(): void {
 		self::schedule_next();

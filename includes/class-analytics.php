@@ -7,6 +7,8 @@
  * than pulling rows into PHP.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -1341,10 +1343,6 @@ class RSA_Analytics {
 		}
 		return self::$bot_threshold;
 	}
-
-	// ----------------------------------------------------------------
-	// Maintenance: all tracked paths with live / deleted status
-	// ----------------------------------------------------------------
 
 	// ----------------------------------------------------------------
 	// WooCommerce: product views, add-to-cart events, orders, revenue

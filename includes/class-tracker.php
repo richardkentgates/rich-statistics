@@ -6,6 +6,8 @@
  * (admin-ajax.php — avoids REST bootstrap cost on every pageview)
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -114,7 +116,7 @@ class RSA_Tracker {
 	}
 
 	/**
-	 * Handle the ingest request from the tracker.
+	 * Handle the ingest request from the tracker (AJAX and REST).
 	 */
 	public static function handle_ingest(): void {
 		if ( is_multisite() && get_site_option( 'rsa_network_disable_tracker', 0 ) ) {
@@ -314,10 +316,10 @@ class RSA_Tracker {
 	}
 
 	/**
-	 * Sanitize a page path for storage.
+	 * Sanitize a page path and query string for storage.
 	 *
 	 * @param string $page The raw page path.
-	 * @return string Sanitized page path.
+	 * @return string Sanitized page path with query string (if present).
 	 */
 	private static function sanitize_page( string $page ): string {
 		$parsed = wp_parse_url( $page );

@@ -6,6 +6,8 @@ defined( 'ABSPATH' ) || exit;
  * {@internal ...}
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 class RSA_DB {
 
@@ -65,10 +67,10 @@ class RSA_DB {
 	}
 
 	/**
-	 * Called when a new subsite is created on a network where the plugin is
-	 * network-activated.
+	 * Install tables on a specific subsite (utility — not currently hooked;
+	 * see on_new_blog_event() for the actual wp_initialize_site handler).
 	 *
-	 * @param int $blog_id The new blog ID.
+	 * @param int $blog_id The blog ID.
 	 */
 	public static function on_new_blog( int $blog_id ): void {
 		switch_to_blog( $blog_id );
@@ -237,7 +239,7 @@ class RSA_DB {
 	}
 
 	/**
-	 * Purge all analytics data for one specific page path.
+	 * Purge events, clicks, and heatmap data for one specific page path.
 	 *
 	 * @param string $page Exact page path as stored (e.g. '/about/').
 	 * @return int Total rows deleted.
@@ -358,8 +360,8 @@ class RSA_DB {
 					)
 				);
 				$deleted += (int) $result;
-				// Break if we've been running for 55 seconds — let the next
-				// cron invocation continue where we left off.
+				// Break if we've been running for 55 seconds — the next
+				// cron invocation will start fresh.
 				if ( microtime( true ) - $start > 55 ) {
 					return $deleted;
 				}

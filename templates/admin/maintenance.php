@@ -7,6 +7,8 @@
  * and purge data for orphaned or bogus paths.
  *
  * @package RichStatistics
+ *
+ * @license GPL-2.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
