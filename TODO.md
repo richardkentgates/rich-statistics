@@ -91,40 +91,55 @@ All items below confirmed against actual code.
 
 ### P2.1: Install systemd deploy daemon on all 3 servers
 - **Area:** Server / Operations
-- **Status:** ⏳ Ready to install
+- **Status:** ✅ Installed — active on prod, dev, test. Old cron entries removed.
 - **Files:** `bin/rsa-deploy-daemon`, `bin/rsa-deploy-daemon@.service`
 - **Action:** `systemctl enable --now rsa-deploy-daemon@{prod,dev,test}`
-- **Risk:** Current deploy mechanism is undocumented and unmonitored
+- **Benefit:** Instant deploy reaction, `journalctl` logging, no 60s polling latency
 
 ### P2.2: Backfill missing PWA version snapshots
 - **Area:** PWA / Version parity
-- **Status:** ⏳ 5 versions missing: `2.4.20`, `2.4.22`, `2.4.23`, `2.4.25`, `2.4.26`
-- **Action:** For 2.4.26 — next release tag will create it. For historical gaps, copy nearest available version.
+- **Status:** ✅ Fixed — backfilled 2.4.22, 2.4.23 (from 2.4.21), 2.4.25, 2.4.26 (from main). 2.4.20 skipped (no release tag exists). 17 versions total.
+- **Action:** Copied from nearest available version or fetched from main branch
 - **Risk:** Desktop app users on missing versions get incompatible fallback snapshots
 
 ### P2.3: Clean up old Windows binary names on production server
 - **Area:** Server / Desktop distribution
-- **Status:** ⏳ Prod `dist/` has `Rich Statistics_2.4.1_x64-setup.exe` (old naming) alongside `rich-statistics-windows.exe` (new naming)
-- **Action:** Remove old-named files, ensure `update.json` points only to standardized name
+- **Status:** ✅ Fixed — removed 5 old `Rich Statistics_*.exe` files from prod `dist/`
+- **Action:** Removed old-named files; `update.json` already points to standardized `rich-statistics-windows.exe`
 - **Risk:** Updater confusion, disk clutter
 
 ### P2.4: Add post-deploy smoke tests to CI
 - **Area:** CI/CD / Observability
-- **Status:** ⏳ Not implemented
-- **Action:** After webhook ping, poll server's `/info` endpoint or check `.deployed-version` file
+- **Status:** ✅ Fixed — smoke test added to all 3 environment workflows
+- **Action:** After webhook ping, verify server responds with HTTP 200
 - **Risk:** Webhook handler failure goes unnoticed until user reports stale PWA
 
 ### P2.5: Fix `build-release.yml` tag/main divergence
 - **Area:** CI/CD / Release integrity
-- **Status:** ⏳ `release` job commits snapshots to `main`; `build-desktop` runs on tag ref (never contains those snapshots)
-- **Action:** Have `build-desktop` checkout `main` branch after release job commits, or push snapshots back to tag
+- **Status:** ✅ Fixed — `job-build-desktop.yml` accepts `checkout-ref` input; `build-release.yml` passes `main` so desktop build uses exact snapshots committed by release job
+- **Action:** `checkout-ref: main` in `build-release.yml:237`
 - **Risk:** Desktop bundle and web-served PWA could differ for same version
 
 ---
 
-## Phase 3: Medium Priority
+## Phase 3: Medium Priority — Pre-commercial polish
 
-(no remaining items — P4.2 assets ready)
+### P3.1: Add server health check jobs to CI
+- **Area:** CI/CD / Observability
+- **Status:** ⏳ Not implemented
+- **Action:** Add a scheduled or on-demand workflow that polls all 3 environments' `/info` endpoints, `/dist/update.json`, and `/apt/` paths
+- **Benefit:** Early warning if any environment goes offline or serves stale content
+- **Frequency:** Weekly scheduled run or post-build optional job
+
+### P3.2: Document disaster recovery procedure for failed releases
+- **Area:** Operations / Documentation
+- **Status:** ⏳ Not implemented
+- **Action:** Add section to ROADMAP.md §8.3 or create `RUNBOOK.md` covering:
+  - Partial release recovery (GitHub Release exists but binaries missing)
+  - Failed Freemius upload retry procedure
+  - PWA snapshot rollback steps
+  - Desktop binary rollback via APT or direct .deb install
+- **Benefit:** Reduces mean-time-to-recovery during incidents
 
 ---
 
