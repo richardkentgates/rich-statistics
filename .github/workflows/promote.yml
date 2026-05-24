@@ -56,15 +56,47 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PR_URL=$(gh pr create \
-            --base main \
-            --head test \
-            --title "chore: promote v${{ steps.version.outputs.version }} to production" \
-            --body "Automated promote workflow." \
-            --label automate)
-          echo "Created PR: $PR_URL"
-          # Use --merge (not --squash) so history stays connected
+          set -euo pipefail
+
+          # Check if a PR already exists; reuse it if so.
+          EXISTING_PR=$(gh pr list --base main --head test --json url --jq '.[0].url' 2>/dev/null || true)
+          if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
+            echo "Reusing existing PR: $EXISTING_PR"
+            PR_URL="$EXISTING_PR"
+          else
+            PR_URL=$(gh pr create \
+              --base main \
+              --head test \
+              --title "chore: promote v${{ steps.version.outputs.version }} to production" \
+              --body "Automated promote workflow." \
+              --label automate)
+            echo "Created PR: $PR_URL"
+          fi
+
+          # Wait up to 5 minutes for the PR to become mergeable.
+          # This handles the case where test was behind main and needs an update first.
+          for _ in $(seq 1 30); do
+            MERGE_STATE=$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus' 2>/dev/null || echo "UNKNOWN")
+            echo "PR merge state: $MERGE_STATE"
+            if [ "$MERGE_STATE" = "CLEAN" ] || [ "$MERGE_STATE" = "UNSTABLE" ]; then
+              break
+            fi
+            if [ "$MERGE_STATE" = "BLOCKED" ] || [ "$MERGE_STATE" = "BEHIND" ]; then
+              echo "PR not mergeable yet ($MERGE_STATE). Retrying in 10s..."
+              sleep 10
+              continue
+            fi
+            if [ "$MERGE_STATE" = "DIRTY" ] || [ "$MERGE_STATE" = "CONFLICTING" ]; then
+              echo "ERROR: PR has merge conflicts. Resolve manually."
+              exit 1
+            fi
+            sleep 10
+          done
+
+          # Use --merge (not --squash) so history stays connected.
+          # If merge fails, fail fast so the tag is not created on an unmerged commit.
           gh pr merge "$PR_URL" --merge
+
           git fetch origin main
           # Force update the tag — if it already existed from a previous release
           # at the same version, the merge commit replaces it.
