@@ -10,6 +10,10 @@ on:
         description: 'Version to build (e.g. 2.2.8) — leave blank to use tag'
         required: false
 
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   guard:
     name: Require tag or version input
@@ -206,6 +210,7 @@ jobs:
 
       - name: Commit and push PWA snapshots to main
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/app/v/ docs/app/versions.json docs/app/versions-beta.json docs/app/sw.js
@@ -227,6 +232,10 @@ jobs:
       update-json-script: rsa-gen-update-json
       artifact-prefix: rich-statistics
       stamp-version: true
+      # The release job commits PWA snapshots to main. Use main so the
+      # desktop build bundles the exact snapshots that were just committed,
+      # rather than recreating them from the tag ref (which lacks the commit).
+      checkout-ref: main
     secrets: inherit
 
   ping-deploy:
@@ -237,6 +246,34 @@ jobs:
     steps:
       - name: Sync docs/app/ via deploy webhook
         run: |
-          curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
-            https://app.richstatistics.com/_deploy/
+          set -euo pipefail
+          max_retries=3
+          retry=0
+          while [ $retry -lt $max_retries ]; do
+            echo "Webhook attempt $((retry + 1))/$max_retries..."
+            if curl -fsS -X POST \
+              -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}" \
+              https://app.richstatistics.com/_deploy/; then
+              echo "Webhook succeeded."
+              break
+            fi
+            retry=$((retry + 1))
+            if [ $retry -lt $max_retries ]; then
+              echo "Webhook failed, retrying in 10s..."
+              sleep 10
+            else
+              echo "ERROR: Webhook failed after $max_retries attempts."
+              exit 1
+            fi
+          done
+
+      - name: Smoke test — verify production server is serving PWA
+        run: |
+          echo "Waiting 5s for deploy to settle..."
+          sleep 5
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" https://app.richstatistics.com/ || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "Smoke test passed — production server responding with HTTP 200."
+          else
+            echo "WARNING: Production server returned HTTP ${STATUS} — deploy may be incomplete."
+          fi

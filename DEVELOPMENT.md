@@ -199,9 +199,9 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
    - Commits a versioned `docs/app/v/{version}/` snapshot to `main`.
    - Pings the webhook — app server pulls latest `docs/app/` and goes live.
 
-7. **Upload to Freemius** — download the ZIP from the GitHub Release and upload it at
-   `https://dashboard.freemius.com → Plugin → Versions → Add New Version`.
-   Freemius delivers the update to premium users automatically.
+7. **Freemius upload** — handled automatically by CI via `bin/deploy-freemius.php` (Freemius PHP SDK).
+   The `build-release.yml` and `build-test.yml` workflows upload the ZIP and set the release mode.
+   No manual dashboard upload is required.
 
 8. **WordPress.org** — run `bash bin/deploy-wporg.sh <svn-username>` after the release.
    Requires screenshots in `wporg-assets/` (see ROADMAP §6 P4.2).
@@ -361,7 +361,7 @@ The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pu
 - **`update.json`** (on the app server):
   ```json
   {
-    "version": "2.3.0",
+    "version": "2.4.26",
     "pub_date": "2026-05-10T12:00:00Z",
     "notes": "",
     "platforms": {

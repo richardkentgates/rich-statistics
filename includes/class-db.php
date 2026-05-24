@@ -3,7 +3,9 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Database schema, activation, migration, and uninstall.
- * {@internal ...}
+ *
+ * Schema is applied via dbDelta() on activation. Additive changes are safe;
+ * full migration history is planned for v2.5.0.
  *
  * @package RichStatistics
  *

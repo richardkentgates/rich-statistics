@@ -653,14 +653,23 @@ class RSA_Admin {
 	/** Render the user flow view. */
 	public static function page_user_flow(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'user-flow' ); }
 	/** Render the click map view. */
 	public static function page_click_map(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'click-map' ); }
 	/** Render the heatmap view. */
 	public static function page_heatmap(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'heatmap' ); }
 	/** Render the preferences page. */
 	public static function page_preferences(): void {
@@ -677,10 +686,16 @@ class RSA_Admin {
 	/** Render the export page. */
 	public static function page_export(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'export' ); }
 	/** Render the WooCommerce page. */
 	public static function page_woocommerce(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'woocommerce' ); }
 	/** Render the network dashboard page. */
 	public static function page_network_dashboard(): void {
@@ -1259,16 +1274,16 @@ class RSA_Admin {
 				'title'   => __( 'Getting Started', 'rich-statistics' ),
 				'content' =>
 					'<h2>' . esc_html__( 'Getting Started with Rich Statistics', 'rich-statistics' ) . '</h2>' .
-					'<p>' . esc_html__( 'Once activated, navigate to Analytics in the admin sidebar to view your data. The dashboard starts collecting pageviews immediately — no configuration required.', 'rich-statistics' ) . '</p>' .
+					'<p>' . esc_html__( 'Once activated, navigate to Rich Statistics in the admin sidebar to view your data. The dashboard starts collecting pageviews immediately — no configuration required.', 'rich-statistics' ) . '</p>' .
 					'<p><strong>' . esc_html__( 'Key Settings:', 'rich-statistics' ) . '</strong></p>' .
 					'<ul>' .
-					'<li>' . esc_html__( 'Data retention: Analytics → Preferences → Data Retention', 'rich-statistics' ) . '</li>' .
-					'<li>' . esc_html__( 'Bot filtering sensitivity: Analytics → Preferences → Tracking', 'rich-statistics' ) . '</li>' .
-					'<li>' . esc_html__( 'Email digests: Analytics → Preferences → Email Reports', 'rich-statistics' ) . '</li>' .
-					'<li>' . esc_html__( 'App access: Analytics → Preferences → App Access', 'rich-statistics' ) . '</li>' .
-					'<li>' . esc_html__( 'Multisite: Network Admin → Rich Statistics for cross-site overview and AI', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'Data retention: Rich Statistics → Preferences → Data Retention', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'Bot filtering sensitivity: Rich Statistics → Preferences → Tracking', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'Email digests: Rich Statistics → Preferences → Email Reports', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'App access: Rich Statistics → Preferences → App Access', 'rich-statistics' ) . '</li>' .
+					'<li>' . esc_html__( 'Multisite: Network Admin → Rich Statistics for cross-site overview', 'rich-statistics' ) . '</li>' .
 					'</ul>' .
-					'<p>' . esc_html__( 'Premium features (click tracking, heatmaps, WooCommerce, REST API) are available via the Upgrade link in the admin sidebar.', 'rich-statistics' ) . '</p>',
+					'<p>' . esc_html__( 'Premium features (click tracking, heatmaps, WooCommerce, REST API) show an upgrade prompt on their respective pages.', 'rich-statistics' ) . '</p>',
 			]
 		);
 

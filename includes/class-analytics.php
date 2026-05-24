@@ -550,6 +550,37 @@ class RSA_Analytics {
 	}
 
 	// ----------------------------------------------------------------
+	// MySQL version guard for window functions
+	// ----------------------------------------------------------------
+
+	/**
+	 * Check if the database server supports window functions.
+	 *
+	 * MySQL 8.0+ and MariaDB 10.2+ support LEAD() OVER and ROW_NUMBER() OVER.
+	 *
+	 * @return bool
+	 */
+	private static function mysql_supports_window_functions(): bool {
+		global $wpdb;
+		$version = $wpdb->get_var( 'SELECT VERSION()' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time capability check
+		if ( ! $version ) {
+			return false;
+		}
+		// MariaDB: window functions available from 10.2.
+		if ( false !== stripos( $version, 'MariaDB' ) ) {
+			if ( preg_match( '/^(\d+)\.(\d+)/', $version, $m ) ) {
+				return ( (int) $m[1] > 10 ) || ( 10 === (int) $m[1] && (int) $m[2] >= 2 );
+			}
+			return false;
+		}
+		// MySQL: window functions available from 8.0.
+		if ( preg_match( '/^(\d+)\.(\d+)/', $version, $m ) ) {
+			return (int) $m[1] >= 8;
+		}
+		return false;
+	}
+
+	// ----------------------------------------------------------------
 	// User flow: page-to-page transition pairs (requires MySQL 8.0+)
 	// ----------------------------------------------------------------
 
@@ -561,6 +592,9 @@ class RSA_Analytics {
 	 * @return array  Array of transitions with from_page, to_page, count.
 	 */
 	public static function get_user_flow( string $period = '30d', array $filters = array() ): array {
+		if ( ! self::mysql_supports_window_functions() ) {
+			return array( 'error' => __( 'User Flow requires MySQL 8.0+ or MariaDB 10.2+.', 'rich-statistics' ) );
+		}
 		global $wpdb;
 		$range     = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
 		$bt        = self::bot_threshold();
@@ -653,6 +687,14 @@ class RSA_Analytics {
 	 * @return array  Steps, links, and total_sessions.
 	 */
 	public static function get_path_flow( string $period = '30d', array $filters = array() ): array {
+		if ( ! self::mysql_supports_window_functions() ) {
+			return array(
+				'steps'          => array(),
+				'links'          => array(),
+				'total_sessions' => 0,
+				'error'          => __( 'User Flow requires MySQL 8.0+ or MariaDB 10.2+.', 'rich-statistics' ),
+			);
+		}
 		global $wpdb;
 		$range     = self::period_range( $period, $filters['date_from'] ?? '', $filters['date_to'] ?? '' );
 		$bt        = self::bot_threshold();
