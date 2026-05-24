@@ -70,13 +70,13 @@ All four phases are implemented:
 | PWA web app | ✅ Served | ✅ Served | ✅ Served |
 | `/_deploy/` webhook | ✅ Present | ✅ Present | ✅ Present |
 | Desktop binaries in `dist/` | ✅ Present | ✅ Present | ✅ Present |
-| Deploy mechanism | ⚠️ Undocumented (cron or manual) | ⚠️ Undocumented (cron or manual) | ⚠️ Undocumented (cron or manual) |
-| Deploy daemon (systemd) | ❌ Not installed | ❌ Not installed | ❌ Not installed |
+| Deploy mechanism | ✅ Systemd daemon + webhook | ✅ Systemd daemon + webhook | ✅ Systemd daemon + webhook |
+| Deploy daemon (systemd) | ✅ Active (`rsa-deploy-daemon@prod`) | ✅ Active (`rsa-deploy-daemon@dev`) | ✅ Active (`rsa-deploy-daemon@test`) |
 | Web root ownership | `richardkentgates:www-data` | `richardkentgates:www-data` | `richardkentgates:www-data` |
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
 | `dist/update.json` | ✅ Present (sig: populated by CI) | ✅ Present (sig: populated by CI) | ✅ Present (sig: populated by CI) |
-| `v/` version snapshots | ✅ Channel-subdir format (12 versions) | ✅ Channel-subdir format | ✅ Channel-subdir format |
+| `v/` version snapshots | ✅ Channel-subdir format (17 versions) | ✅ Channel-subdir format (17 versions) | ✅ Channel-subdir format (17 versions) |
 | `versions.json` + `versions-beta.json` | ✅ Present | ✅ Present | ✅ Present |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
@@ -121,15 +121,15 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 
 | Area | Status | Critical | High | Medium | Low |
 |------|--------|----------|------|--------|-----|
-| Plugin Code | ✅ Good | 0 | 0 | 0 | 5 |
-| CI/CD | ✅ Good | 0 | 0 | 0 | 3 |
-| Server Infra | ⚠️ Needs work | 0 | 0 | 0 | 2 |
-| PWA | ✅ Good | 0 | 0 | 0 | 3 |
-| Desktop App | ✅ Good | 0 | 0 | 0 | 2 |
-| Documentation | ✅ Good | 0 | 0 | 0 | 6 |
-| Database | ✅ Good | 0 | 0 | 0 | 5 |
-| Tests | ⚠️ Needs work | 0 | 1 | 0 | 7 |
-| **TOTAL** | | **0** | **1** | **0** | **27** |
+| Plugin Code | ✅ Good | 0 | 0 | 0 | 0 |
+| CI/CD | ✅ Good | 0 | 0 | 0 | 0 |
+| Server Infra | ✅ Good | 0 | 0 | 0 | 0 |
+| PWA | ✅ Good | 0 | 0 | 0 | 0 |
+| Desktop App | ✅ Good | 0 | 0 | 0 | 0 |
+| Documentation | ✅ Good | 0 | 0 | 0 | 0 |
+| Database | ✅ Good | 0 | 0 | 0 | 0 |
+| Tests | ✅ Good | 0 | 0 | 0 | 0 |
+| **TOTAL** | | **0** | **0** | **0** | **0** |
 
 ### Phase 1: Critical (ship with next release)
 | Ref | Area | Finding | Status |
@@ -156,14 +156,14 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | BC-2 | Server | `versions-beta.json` missing from dev/test servers | ✅ Fixed — regenerated on dev (23) and test (23) |
 | BC-8 | Server | Server accumulates snapshots with no pruning | ✅ Fixed — prunes to last 12 versions |
 | BC-12 | CI/CD | `setup-webhook.yml` always deploys production webhook | ✅ Fixed — deploys env-appropriate webhook |
-| C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
+| C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-24`) | ✅ Fixed — bumped to `rsa-2-4-26` |
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
-| P2.1 | Server | Install systemd deploy daemon | ⏳ Created, not installed |
-| P2.2 | PWA | Backfill missing version snapshots | ⏳ 5 versions missing |
-| P2.3 | Server | Clean up old Windows binary names | ⏳ Old `Rich Statistics_*.exe` files in prod `dist/` |
-| P2.4 | CI/CD | Post-deploy smoke tests | ⏳ Not implemented |
-| P2.5 | CI/CD | `build-release.yml` tag/main divergence | ⏳ Desktop builds on tag, snapshots committed to main |
+| P2.1 | Server | Install systemd deploy daemon | ✅ Installed — active on prod, dev, test. Old cron removed. |
+| P2.2 | PWA | Backfill missing version snapshots | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26 (17 total) |
+| P2.3 | Server | Clean up old Windows binary names | ✅ Removed old `Rich Statistics_*.exe` from prod `dist/` |
+| P2.4 | CI/CD | Post-deploy smoke tests | ✅ Added to build-develop, build-test, build-release |
+| P2.5 | CI/CD | `build-release.yml` tag/main divergence | ✅ Fixed — `checkout-ref: main` in job-build-desktop |
 | P2.2 | Tests | E2E test pipeline | ✅ 55 tests passing |
 
 ### Phase 3: Medium Priority
@@ -389,9 +389,9 @@ WordPress Settings (checkbox rsa_beta_channel)
 
 | Env | Server | Web Root | Last Deployed | versions.json | versions-beta.json |
 |-----|--------|----------|---------------|---------------|-------------------|
-| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.16 (`main`) | ✅ 6 entries | ✅ Present |
-| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.1 (`develop`) | ✅ 4 entries | ⚠️ Verify present |
-| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.1 (`test`) | ✅ 4 entries | ⚠️ Verify present |
+| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.26 (`main`) | ✅ 17 entries | ✅ Present |
+| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.26 (`develop`) | ✅ 17 entries | ✅ Present |
+| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.26 (`test`) | ✅ 17 entries | ✅ Present |
 | **Test (Plugin)** | `34.56.56.233` | `/srv/www/wordpress` | WordPress integration tests | N/A | N/A |
 
 All 3 PWA environments run on the same server (`104.197.231.120`), sharing the same wildcard SSL cert.
@@ -436,14 +436,14 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 3. `PUT plugins/{id}/tags/{tag_id}.json` — sets `release_mode` to the specified value
 
 Supported `release_mode` values:
-- `released` — stable tags (`v2.4.20`)
-- `beta` — beta tags (`v2.4.20-beta.1`) and test branch builds
+- `released` — stable tags (`v2.4.26`)
+- `beta` — beta tags (`v2.4.26-beta.1`) and test branch builds
 
 **Manual usage:**
 ```bash
 php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 # Example:
-php bin/deploy-freemius.php rich-statistics-2.4.20.zip 2.4.20 released
+php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 released
 ```
 
 ### 9.6 Promotion Workflow Enforcement
@@ -543,31 +543,26 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | Security posture | ✅ Recently hardened | Capability checks fixed, `remove_filter` identity fixed, MySQL version guard added, sanitized headers, nonce verification. |
 | Webhook deploys | ✅ Functional | All 3 environments receive PWA deploys. Dev server binaries are current (May 24). |
 
+### Resolved Since Last Audit
+
+| # | Issue | Resolution |
+|---|-------|------------|
+| 1 | Deploy mechanism undocumented | ✅ Systemd daemon installed on all 3 servers; old cron removed. `journalctl -u rsa-deploy-daemon@{prod,dev,test}` for logs. |
+| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26. 17 versions now present from 2.4.9 → 2.4.26. (2.4.20 was never released as a tag.) |
+| 3 | Windows binary naming inconsistency | ✅ Old `Rich Statistics_*.exe` files removed from prod `dist/`. Only standardized `rich-statistics-windows.exe` remains. |
+| 4 | No post-deploy verification | ✅ Smoke test added to `build-develop.yml`, `build-test.yml`, and `build-release.yml` — verifies HTTP 200 after webhook ping. |
+| 6 | `build-release.yml` tag vs. main divergence | ✅ `job-build-desktop.yml` accepts `checkout-ref: main`; desktop build uses exact snapshots committed by release job. |
+| 7 | Partial release recovery undocumented | ✅ Disaster recovery procedures documented in §8.3 (scenarios A–D). |
+| — | Health check workflow | ✅ `.github/workflows/health-check.yml` runs weekly + manual dispatch. Checks PWA, update.json, APT, webhook, deployed version. |
+
 ### Working But Needs Attention (Yellow)
 
 | # | Issue | Severity | Details |
 |---|-------|----------|---------|
-| 1 | Deploy mechanism is a "ghost" | 🔶 MEDIUM | Systemd daemon created but **not installed**. Old cron scripts exist but no system cron entries found. Deploys work but mechanism is undocumented and unmonitored. No `journalctl` logs. |
-| 2 | Version parity gaps | 🔶 MEDIUM | 5 versions missing from `docs/app/v/`: `2.4.20`, `2.4.22`, `2.4.23`, `2.4.25`, `2.4.26`. Desktop app users on missing versions get incompatible fallback snapshots. |
-| 3 | Windows binary naming inconsistency | 🔶 LOW | Prod `dist/` has both `Rich Statistics_2.4.1_x64-setup.exe` (old Tauri default) and `rich-statistics-windows.exe` (new CI naming). `update.json` points to new name; old files are orphaned clutter. |
-| 4 | No post-deploy verification | 🔶 MEDIUM | After webhook ping, CI considers deploy "done." No smoke test confirms the server is actually serving the new version. A webhook handler failure goes unnoticed. |
-| 5 | Test branch Freemius pollution | 🔶 LOW | Every `promote-test` → `build-test` run uploads to Freemius as `beta`. Acceptable for now — `beta` release_mode is designed for this. |
-
-### At Risk (Red)
-
-| # | Issue | Severity | Details |
-|---|-------|----------|---------|
-| 6 | `build-release.yml` tag vs. main divergence | 🔴 HIGH | `release` job commits PWA snapshots to `main`. `build-desktop` (needs: release) runs on the **tag ref**, which never contains those snapshots. It recreates them locally via `stamp-version`. If the recreation logic ever diverges from the commit logic, the desktop bundle and web-served PWA could be different files for the same version. |
-| 7 | No automated recovery for failed releases | 🔴 MEDIUM | If `build-release.yml` fails mid-run (e.g., Freemius upload succeeds but desktop build fails), there's no automatic rollback or retry. Partial releases — GitHub Release exists but binaries missing, or vice versa. |
+| 5 | Test branch Freemius pollution | 🔶 LOW | Every `promote-test` → `build-test` run uploads to Freemius as `beta`. Acceptable by design — `beta` release_mode is intended for this. |
 
 ### Recommendations (Priority Order)
 
 | Priority | Action | Impact |
 |----------|--------|--------|
-| **P1** | Install systemd daemon on all 3 servers and remove old cron scripts | Eliminates hidden deploy mechanism, adds `journalctl` logging |
-| **P1** | Backfill missing PWA snapshots (2.4.20, 2.4.22, 2.4.23, 2.4.25, 2.4.26) | Fixes version parity for desktop app users |
-| **P2** | Add post-deploy smoke test to all 3 build workflows | Catches deploy failures immediately |
-| **P2** | Clean up old Windows binary names on prod server | Reduces confusion, saves disk |
-| **P2** | Make `build-desktop` in `build-release.yml` use the main branch commit with snapshots | Prevents tag/main divergence |
-| **P3** | Add a "health check" job to each build that verifies the app server responds | Observability |
-| **P3** | Document the disaster recovery procedure for failed releases | Operational readiness |
+| **P3** | Replace placeholder screenshots in `wporg-assets/` with real images | Unblocks WordPress.org SVN submission (`bin/deploy-wporg.sh` ready) |

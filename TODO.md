@@ -126,19 +126,18 @@ All items below confirmed against actual code.
 
 ### P3.1: Add server health check jobs to CI
 - **Area:** CI/CD / Observability
-- **Status:** ⏳ Not implemented
-- **Action:** Add a scheduled or on-demand workflow that polls all 3 environments' `/info` endpoints, `/dist/update.json`, and `/apt/` paths
+- **Status:** ✅ Implemented — `.github/workflows/health-check.yml` runs weekly (Sundays 06:00 UTC) + manual dispatch
+- **Checks:** PWA root HTTP 200, `update.json` accessible, APT repo (200/403), webhook (405/403), deployed version via `.deployed-version`
 - **Benefit:** Early warning if any environment goes offline or serves stale content
-- **Frequency:** Weekly scheduled run or post-build optional job
 
 ### P3.2: Document disaster recovery procedure for failed releases
 - **Area:** Operations / Documentation
-- **Status:** ⏳ Not implemented
-- **Action:** Add section to ROADMAP.md §8.3 or create `RUNBOOK.md` covering:
-  - Partial release recovery (GitHub Release exists but binaries missing)
-  - Failed Freemius upload retry procedure
-  - PWA snapshot rollback steps
-  - Desktop binary rollback via APT or direct .deb install
+- **Status:** ✅ Implemented — documented in ROADMAP.md §8.3 (scenarios A–D)
+- **Coverage:**
+  - Partial release recovery (GitHub Release exists but binaries missing) — Scenario B
+  - Failed Freemius upload retry procedure — Scenario A
+  - PWA snapshot rollback steps — Scenario C
+  - Desktop binary rollback via APT or direct .deb install — Scenario D
 - **Benefit:** Reduces mean-time-to-recovery during incidents
 
 ---

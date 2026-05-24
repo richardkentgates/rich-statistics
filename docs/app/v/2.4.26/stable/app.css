@@ -1579,3 +1579,45 @@ color: var(--rsa-muted);
 	opacity: 0.7;
 }
 #rsa-desktop-update-dismiss:hover { opacity: 1; }
+
+/* =========================================================================
+   AI Chat enhancements
+   ========================================================================= */
+.rsa-ai-chip {
+	padding: 5px 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 16px;
+	background: #fff;
+	cursor: pointer;
+	font-size: 12px;
+	color: #4a5568;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+.rsa-ai-chip:hover {
+	background: #f1f5f9;
+	border-color: #cbd5e1;
+	color: #1e293b;
+}
+.rsa-ai-chip:active {
+	transform: scale(0.97);
+}
+
+@keyframes rsaPulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+#rsa-ai-messages::-webkit-scrollbar {
+	width: 6px;
+}
+#rsa-ai-messages::-webkit-scrollbar-track {
+	background: transparent;
+}
+#rsa-ai-messages::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 3px;
+}
+#rsa-ai-messages::-webkit-scrollbar-thumb:hover {
+	background: #94a3b8;
+}

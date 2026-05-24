@@ -1016,6 +1016,7 @@
 				woocommerce : 'WooCommerce',
 				install     : 'Install',
 				'ai-settings': 'AI Settings',
+			'ai-chat'    : 'AI Assistant',
 			};
 			document.getElementById( 'rsa-view-title' ).textContent = titles[ view ] || view;
 
@@ -1131,16 +1132,31 @@
 			if ( e.target.id === 'rsa-ai-provider' ) {
 				applyProviderPreset( e.target.value );
 			}
+			if ( e.target.id === 'rsa-ai-model' ) {
+				var customRow = document.getElementById( 'rsa-ai-model-custom-row' );
+				if ( customRow ) {
+					customRow.style.display = e.target.value === '__custom__' ? '' : 'none';
+				}
+			}
 		} );
 		document.addEventListener( 'click', function ( e ) {
 			if ( e.target.id === 'rsa-ai-tauri-detect' ) {
 				onTauriDetect();
 				return;
 			}
+			if ( e.target.id === 'rsa-ai-refresh-models' ) {
+				onRefreshModels();
+				return;
+			}
 			if ( e.target.id === 'rsa-ai-save' ) {
 				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
 				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
-				var model    = document.getElementById( 'rsa-ai-model' ).value.trim();
+				var modelSelect = document.getElementById( 'rsa-ai-model' );
+				var model = modelSelect ? modelSelect.value.trim() : '';
+				if ( model === '__custom__' ) {
+					var customInput = document.getElementById( 'rsa-ai-model-custom' );
+					model = customInput ? customInput.value.trim() : '';
+				}
 				if ( ! endpoint || ! model ) return;
 				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
 				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
@@ -1170,7 +1186,11 @@
 				var ep = document.getElementById( 'rsa-ai-endpoint' );
 				if ( ep ) { ep.value = 'https://api.openai.com/v1/chat/completions'; ep.readOnly = true; ep.style.background = '#f5f5f5'; }
 				var mod = document.getElementById( 'rsa-ai-model' );
-				if ( mod ) mod.value = '';
+				if ( mod ) { mod.innerHTML = '<option value="">Select a model…</option><option value="__custom__">Custom model…</option>'; mod.value = ''; }
+				var customRow = document.getElementById( 'rsa-ai-model-custom-row' );
+				if ( customRow ) customRow.style.display = 'none';
+				var customInput = document.getElementById( 'rsa-ai-model-custom' );
+				if ( customInput ) customInput.value = '';
 				var keyF = document.getElementById( 'rsa-ai-key' );
 				if ( keyF ) keyF.value = '';
 				var keyRow = document.getElementById( 'rsa-ai-key-row' );
@@ -1306,6 +1326,56 @@
 	// -----------------------------------------------------------------------
 	// AI Chat
 	// -----------------------------------------------------------------------
+
+	function getChatHistoryKey() {
+		return 'rsa_chat_' + ( state.siteUrl || 'global' ).replace( /[^a-z0-9]/gi, '_' );
+	}
+
+	function loadChatHistory() {
+		try {
+			var raw = localStorage.getItem( getChatHistoryKey() );
+			return raw ? JSON.parse( raw ) : [];
+		} catch ( _ ) { return []; }
+	}
+
+	function saveChatHistory( history ) {
+		try {
+			localStorage.setItem( getChatHistoryKey(), JSON.stringify( history.slice( -100 ) ) );
+		} catch ( _ ) {}
+	}
+
+	function clearChatHistory() {
+		localStorage.removeItem( getChatHistoryKey() );
+	}
+
+	function parseAiMarkdown( text ) {
+		var html = esc( text );
+		// Bold
+		html = html.replace( /\*\*(.+?)\*\*/g, '<strong>$1</strong>' );
+		// Italic
+		html = html.replace( /\*(.+?)\*/g, '<em>$1</em>' );
+		// Inline code
+		html = html.replace( /`([^`]+)`/g, '<code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;font-size:12px;font-family:monospace;">$1</code>' );
+		// Code blocks (but NOT ```chart blocks - those are handled separately)
+		html = html.replace( /```(?!chart\n)([\s\S]*?)```/g, function ( _, inner ) {
+			return '<pre style="background:#f8f9fa;padding:10px;border-radius:6px;overflow-x:auto;font-size:12px;font-family:monospace;border:1px solid #e9ecef;margin:8px 0;"><code>' + inner.replace( /</g, '&lt;' ) + '</code></pre>';
+		} );
+		// Unordered lists
+		html = html.replace( /^([ \t]*)[-*+] (.+)$/gm, function ( _, indent, item ) {
+			var pad = indent.length * 12;
+			return '<li style="margin-left:' + pad + 'px;">' + item + '</li>';
+		} );
+		html = html.replace( /(<li[^>]*>.*<\/li>\n?)+/g, '<ul style="margin:6px 0;padding-left:18px;list-style:disc;">$&</ul>' );
+		// Numbered lists
+		html = html.replace( /^([ \t]*)\d+\. (.+)$/gm, function ( _, indent, item ) {
+			var pad = indent.length * 12;
+			return '<li style="margin-left:' + pad + 'px;">' + item + '</li>';
+		} );
+		// Line breaks
+		html = html.replace( /\n/g, '<br>' );
+		return html;
+	}
+
 	function renderAiChat( container ) {
 		setLoading( false );
 		var siteUrl = state.siteUrl;
@@ -1316,37 +1386,131 @@
 		var ap = state.aiProvider || {};
 		var supportsSpeech = typeof SpeechRecognition !== 'undefined' || typeof webkitSpeechRecognition !== 'undefined';
 		var supportsTTS    = typeof speechSynthesis !== 'undefined';
+		var modelLabel = ap.model || 'No model selected';
 
 		container.innerHTML =
-			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
-				'<h2 style="margin-top:0;">AI Analytics Assistant</h2>' +
-				( hasAiProvider ? '' : '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:12px;margin-bottom:16px;font-size:13px;color:#6d4c00;">' +
-					'Set up your AI provider in <strong>AI Settings</strong> for conversational answers. ' +
-					'For now, the assistant shows pre-built insights from your data.</div>' ) +
-				'<div id="rsa-ai-insights" style="margin-bottom:16px;"></div>' +
+			'<div style="max-width:900px;margin:0 auto;padding:0 16px;height:calc(100vh - 140px);display:flex;flex-direction:column;">' +
+
+				// Header
+				'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0;">' +
+					'<div>' +
+						'<h2 style="margin:0;font-size:18px;">AI Analytics Assistant</h2>' +
+						( hasAiProvider
+							? '<span style="font-size:12px;color:#888;">Model: ' + esc( modelLabel ) + '</span>'
+							: '<span style="font-size:12px;color:#c0392b;">No AI provider configured</span>' ) +
+					'</div>' +
+					'<div style="display:flex;gap:6px;">' +
+						'<button id="rsa-ai-clear-chat" class="rsa-btn rsa-btn-ghost" style="padding:6px 12px;font-size:12px;" title="Clear conversation">Clear</button>' +
+						( hasAiProvider ? '<a href="#" data-view="ai-settings" class="rsa-btn rsa-btn-ghost" style="padding:6px 12px;font-size:12px;text-decoration:none;">Settings</a>' : '' ) +
+					'</div>' +
+				'</div>' +
+
+				// Setup banner
+				( ! hasAiProvider
+					? '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:#6d4c00;flex-shrink:0;">' +
+						'<strong>AI provider not configured.</strong> Go to <a href="#" data-view="ai-settings" style="color:#6d4c00;text-decoration:underline;">AI Settings</a> ' +
+						'to connect OpenAI, Ollama, or another LLM for conversational analytics.</div>'
+					: '' ) +
+
+				// Insights panel (collapsible)
+				'<div id="rsa-ai-insights-wrap" style="margin-bottom:12px;flex-shrink:0;">' +
+					'<button id="rsa-ai-toggle-insights" style="background:none;border:none;padding:0;font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:6px;">' +
+						'<span id="rsa-ai-insights-chevron">▼</span> Data Snapshot' +
+					'</button>' +
+					'<div id="rsa-ai-insights" style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:12px 16px;font-size:13px;">' +
+						'<span style="color:#888;">Loading snapshot…</span>' +
+					'</div>' +
+				'</div>' +
+
+				// Quick actions
 				( hasAiProvider
-					? '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:450px;">' +
-						'<div style="padding:8px 12px;border-bottom:1px solid #e0e0e0;background:#f8f9fa;display:flex;gap:12px;align-items:center;font-size:12px;color:#888;">' +
-							( ap.voiceOutput && supportsTTS
-								? '<button id="rsa-ai-stop-speech" style="padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;" hidden>Stop Speaking</button>'
-								: '' ) +
-							'<span id="rsa-ai-voice-status" style="flex:1;font-style:italic;"></span>' +
-						'</div>' +
-						'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:16px;background:#fafafa;"></div>' +
-						'<div style="padding:12px;border-top:1px solid #e0e0e0;display:flex;gap:6px;align-items:center;">' +
-							( ap.voiceInput && supportsSpeech
-								? '<button id="rsa-ai-mic" style="padding:8px 12px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;line-height:1;" title="Speak your question">🎤</button>'
-								: '' ) +
-							'<input type="text" id="rsa-ai-input" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="Ask about your analytics..." autocomplete="off">' +
-							'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Send</button>' +
-						'</div>' +
+					? '<div id="rsa-ai-quick-actions" style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;">' +
+						'<span style="font-size:12px;color:#888;align-self:center;margin-right:4px;">Ask:</span>' +
+						'<button class="rsa-ai-chip" data-q="What is my traffic overview?">Traffic overview</button>' +
+						'<button class="rsa-ai-chip" data-q="Show me my top pages">Top pages</button>' +
+						'<button class="rsa-ai-chip" data-q="What browsers do my visitors use?">Browsers</button>' +
+						'<button class="rsa-ai-chip" data-q="Where is my traffic coming from?">Referrers</button>' +
+						'<button class="rsa-ai-chip" data-q="Show me a chart of daily pageviews">Pageviews chart</button>' +
+						'<button class="rsa-ai-chip" data-q="What is my bounce rate trend?">Bounce rate</button>' +
 					'</div>'
 					: '' ) +
+
+				// Messages area
+				'<div id="rsa-ai-messages" style="flex:1;overflow-y:auto;padding:12px;background:#fff;border:1px solid #e9ecef;border-radius:8px;margin-bottom:12px;min-height:200px;">' +
+					( ! hasAiProvider ? '<div style="text-align:center;padding:40px 20px;color:#888;font-size:14px;">Configure an AI provider to start chatting with your data.</div>' : '' ) +
+				'</div>' +
+
+				// Typing indicator
+				'<div id="rsa-ai-typing" style="display:none;flex-shrink:0;margin-bottom:8px;font-size:13px;color:#888;padding-left:4px;">' +
+					'<span style="display:inline-flex;gap:3px;align-items:center;">' +
+						'<span style="width:6px;height:6px;background:#bbb;border-radius:50%;animation:rsaPulse 1s infinite;"></span>' +
+						'<span style="width:6px;height:6px;background:#bbb;border-radius:50%;animation:rsaPulse 1s infinite 0.2s;"></span>' +
+						'<span style="width:6px;height:6px;background:#bbb;border-radius:50%;animation:rsaPulse 1s infinite 0.4s;"></span>' +
+					'</span> Thinking…' +
+				'</div>' +
+
+				// Input area
+				'<div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:8px;">' +
+					( ap.voiceInput && supportsSpeech
+						? '<button id="rsa-ai-mic" style="padding:10px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:18px;line-height:1;transition:all 0.2s;flex-shrink:0;" title="Speak your question">🎤</button>'
+						: '' ) +
+					'<div style="flex:1;position:relative;">' +
+						'<textarea id="rsa-ai-input" rows="1" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none;overflow:hidden;box-sizing:border-box;min-height:40px;max-height:120px;" placeholder="' + ( hasAiProvider ? 'Ask about your analytics…' : 'Configure AI Settings first…' ) + '" ' + ( ! hasAiProvider ? 'disabled' : '' ) + '></textarea>' +
+					'</div>' +
+					'<button id="rsa-ai-send" style="padding:10px 20px;background:#2e6f8e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;transition:opacity 0.2s;" ' + ( ! hasAiProvider ? 'disabled' : '' ) + '>Send</button>' +
+				'</div>' +
+
+				// Voice status bar
+				'<div style="display:flex;gap:12px;align-items:center;font-size:12px;color:#888;flex-shrink:0;padding-bottom:4px;min-height:20px;">' +
+					( ap.voiceOutput && supportsTTS
+						? '<button id="rsa-ai-stop-speech" class="rsa-btn rsa-btn-ghost" style="padding:4px 10px;font-size:11px;" hidden>🔊 Stop</button>'
+						: '' ) +
+					'<span id="rsa-ai-voice-status" style="flex:1;font-style:italic;"></span>' +
+					'<span id="rsa-ai-msg-count" style="font-size:11px;color:#bbb;"></span>' +
+				'</div>' +
 			'</div>';
 
-		// Fetch tools and build insights
-		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
+		var messagesDiv = document.getElementById( 'rsa-ai-messages' );
+		var input = document.getElementById( 'rsa-ai-input' );
+		var sendBtn = document.getElementById( 'rsa-ai-send' );
+		var micBtn  = document.getElementById( 'rsa-ai-mic' );
+		var stopBtn = document.getElementById( 'rsa-ai-stop-speech' );
+		var voiceStatus = document.getElementById( 'rsa-ai-voice-status' );
+		var typingDiv = document.getElementById( 'rsa-ai-typing' );
+		var msgCountSpan = document.getElementById( 'rsa-ai-msg-count' );
+		var insightsDiv = document.getElementById( 'rsa-ai-insights' );
+		var insightsWrap = document.getElementById( 'rsa-ai-insights-wrap' );
+		var insightsToggle = document.getElementById( 'rsa-ai-toggle-insights' );
+		var insightsChevron = document.getElementById( 'rsa-ai-insights-chevron' );
 
+		// --- Chat history ---
+		var chatHistory = loadChatHistory();
+		if ( chatHistory.length && messagesDiv ) {
+			chatHistory.forEach( function ( h ) {
+				addAiMessage( h.role, h.text, true );
+			} );
+		} else if ( hasAiProvider && messagesDiv ) {
+			addAiMessage( 'ai', 'Hello! I can analyze your Rich Statistics data. Ask me anything — or pick a quick question above.' );
+		}
+
+		function updateMsgCount() {
+			if ( msgCountSpan ) {
+				msgCountSpan.textContent = chatHistory.length + ' message' + ( chatHistory.length !== 1 ? 's' : '' );
+			}
+		}
+		updateMsgCount();
+
+		// --- Insights toggle ---
+		if ( insightsToggle && insightsDiv ) {
+			insightsToggle.addEventListener( 'click', function () {
+				var hidden = insightsDiv.style.display === 'none';
+				insightsDiv.style.display = hidden ? '' : 'none';
+				if ( insightsChevron ) insightsChevron.textContent = hidden ? '▼' : '▶';
+			} );
+		}
+
+		// --- Fetch insights ---
+		var tools = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
 		Promise.all( tools.map( function ( tool ) {
 			return fetch( siteUrl + '/wp-json/rsa/v1/ai/tool', {
 				method: 'POST',
@@ -1354,7 +1518,6 @@
 				body: JSON.stringify( { tool: tool, params: { period: state.period, limit: 5 } } )
 			} ).then( function ( r ) { return r.json(); } );
 		} ) ).then( function ( results ) {
-			var insightsDiv = document.getElementById( 'rsa-ai-insights' );
 			if ( ! insightsDiv ) return;
 			var items = [];
 			results.forEach( function ( res ) {
@@ -1362,48 +1525,73 @@
 				var data = res.data;
 				if ( data.tool === 'overview' && data.data ) {
 					var o = data.data;
-			if ( o.pageviews > 0 ) items.push( fmt( o.pageviews ) + ' page views this period.' );
-				if ( o.sessions > 0 ) items.push( fmt( o.sessions ) + ' sessions, ' + o.bounce_rate + '% bounce rate.' );
+					if ( o.pageviews > 0 ) items.push( '<strong>' + fmt( o.pageviews ) + '</strong> pageviews' );
+					if ( o.sessions > 0 ) items.push( '<strong>' + fmt( o.sessions ) + '</strong> sessions, ' + o.bounce_rate + '% bounce' );
 				}
 				if ( data.tool === 'pages' && data.data && data.data.length ) {
 					var top = data.data[0];
-					items.push( 'Top page: <strong>' + esc( top.page ) + '</strong> (' + fmt( top.views ) + ' views).' );
+					items.push( 'Top page: <strong>' + esc( top.page ) + '</strong> (' + fmt( top.views ) + ')' );
 				}
 				if ( data.tool === 'referrers' && data.data && data.data.length ) {
-					items.push( 'Top referrer: <strong>' + esc( data.data[0].domain ) + '</strong>.' );
+					items.push( 'Top referrer: <strong>' + esc( data.data[0].domain ) + '</strong>' );
 				}
 				if ( data.tool === 'audience' && data.data ) {
 					var a = data.data;
 					if ( a.browser_labels && a.browser_labels.length ) {
-						items.push( 'Most used browser: <strong>' + esc( a.browser_labels[0].label ) + '</strong> (' + fmt( a.browser_labels[0].count ) + ').' );
+						items.push( 'Top browser: <strong>' + esc( a.browser_labels[0].label ) + '</strong> (' + fmt( a.browser_labels[0].count ) + ')' );
 					}
 				}
 				if ( data.tool === 'campaigns' && data.data && data.data.length ) {
-					items.push( 'Top campaign: <strong>' + esc( data.data[0].campaign || data.data[0].source ) + '</strong> (' + fmt( data.data[0].sessions ) + ' sessions).' );
+					items.push( 'Top campaign: <strong>' + esc( data.data[0].campaign || data.data[0].source ) + '</strong> (' + fmt( data.data[0].sessions ) + ')' );
 				}
 			} );
 			if ( items.length ) {
-				insightsDiv.innerHTML =
-					'<div style="background:#f0f7f4;border:1px solid #c8e6d9;border-radius:6px;padding:12px 16px;">' +
-					'<strong style="font-size:13px;">Key insights from your data:</strong>' +
-					'<ul style="margin:8px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.7;">' +
-					items.map( function ( i ) { return '<li>' + i + '</li>'; } ).join( '' ) +
-					'</ul></div>';
+				insightsDiv.innerHTML = items.map( function ( i ) {
+					return '<span style="display:inline-block;background:#fff;padding:4px 10px;border-radius:4px;border:1px solid #e9ecef;margin:3px;font-size:12px;">' + i + '</span>';
+				} ).join( '' );
+			} else {
+				insightsDiv.innerHTML = '<span style="color:#bbb;font-size:12px;">No data for this period.</span>';
 			}
-		} ).catch( function () {} );
+		} ).catch( function () {
+			if ( insightsDiv ) insightsDiv.innerHTML = '<span style="color:#bbb;font-size:12px;">Could not load snapshot.</span>';
+		} );
 
-		if ( ! hasAiProvider ) return;
+		if ( ! hasAiProvider || ! input || ! sendBtn ) return;
 
-		addAiMessage( 'ai', 'Hello! Ask me anything about your analytics data.' );
+		// --- Textarea auto-resize ---
+		function autoResize() {
+			input.style.height = 'auto';
+			input.style.height = Math.min( input.scrollHeight, 120 ) + 'px';
+		}
+		input.addEventListener( 'input', autoResize );
 
-		var input = document.getElementById( 'rsa-ai-input' );
-		var sendBtn = document.getElementById( 'rsa-ai-send' );
-		var micBtn  = document.getElementById( 'rsa-ai-mic' );
-		var stopBtn = document.getElementById( 'rsa-ai-stop-speech' );
-		var voiceStatus = document.getElementById( 'rsa-ai-voice-status' );
-		if ( ! input || ! sendBtn ) return;
+		// --- Quick action chips ---
+		var chipContainer = document.getElementById( 'rsa-ai-quick-actions' );
+		if ( chipContainer ) {
+			chipContainer.addEventListener( 'click', function ( e ) {
+				var chip = e.target.closest( '.rsa-ai-chip' );
+				if ( chip ) {
+					input.value = chip.getAttribute( 'data-q' );
+					autoResize();
+					doSend();
+				}
+			} );
+		}
 
-		// --- Voice input (SpeechRecognition) ---
+		// --- Clear chat ---
+		var clearBtn = document.getElementById( 'rsa-ai-clear-chat' );
+		if ( clearBtn ) {
+			clearBtn.addEventListener( 'click', function () {
+				if ( ! confirm( 'Clear this conversation?' ) ) return;
+				clearChatHistory();
+				chatHistory = [];
+				if ( messagesDiv ) messagesDiv.innerHTML = '';
+				addAiMessage( 'ai', 'Conversation cleared. How can I help?' );
+				updateMsgCount();
+			} );
+		}
+
+		// --- Voice input ---
 		var recognition = null;
 		var isListening = false;
 
@@ -1411,7 +1599,7 @@
 			if ( isListening ) return;
 			var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 			if ( ! SR ) {
-				if ( voiceStatus ) voiceStatus.textContent = 'Voice input not supported in this browser.';
+				if ( voiceStatus ) voiceStatus.textContent = 'Voice input not supported.';
 				return;
 			}
 			recognition = new SR();
@@ -1425,28 +1613,45 @@
 					transcript += e.results[i][0].transcript;
 					if ( e.results[i].isFinal ) {
 						input.value = transcript;
+						input.style.color = '';
+						autoResize();
 						doSend();
 					} else {
 						input.value = transcript;
 						input.style.color = '#888';
+						autoResize();
 					}
 				}
 			};
 			recognition.onend = function () {
 				isListening = false;
 				input.style.color = '';
-				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+				if ( micBtn ) {
+					micBtn.style.borderColor = '#ddd';
+					micBtn.style.background = '#fff';
+					micBtn.textContent = '🎤';
+				}
+				input.placeholder = 'Ask about your analytics…';
 			};
 			recognition.onerror = function ( e ) {
 				isListening = false;
 				input.style.color = '';
-				if ( micBtn ) micBtn.style.borderColor = '#ccc';
+				if ( micBtn ) {
+					micBtn.style.borderColor = '#ddd';
+					micBtn.style.background = '#fff';
+					micBtn.textContent = '🎤';
+				}
 				if ( voiceStatus ) voiceStatus.textContent = 'Mic error: ' + e.error;
 			};
 
 			isListening = true;
-			if ( micBtn ) micBtn.style.borderColor = '#e74c3c';
-			input.placeholder = 'Listening...';
+			if ( micBtn ) {
+				micBtn.style.borderColor = '#e74c3c';
+				micBtn.style.background = '#fdecea';
+				micBtn.textContent = '⏹';
+			}
+			input.placeholder = 'Listening… speak now';
+			if ( voiceStatus ) voiceStatus.textContent = 'Listening…';
 			recognition.start();
 		}
 
@@ -1455,23 +1660,27 @@
 				if ( isListening ) {
 					if ( recognition ) { recognition.stop(); isListening = false; }
 					input.style.color = '';
-					micBtn.style.borderColor = '#ccc';
-					input.placeholder = 'Ask about your analytics...';
+					micBtn.style.borderColor = '#ddd';
+					micBtn.style.background = '#fff';
+					micBtn.textContent = '🎤';
+					input.placeholder = 'Ask about your analytics…';
+					if ( voiceStatus ) voiceStatus.textContent = '';
 				} else {
 					startListening();
 				}
 			} );
 		}
 
-		// --- Voice output (speechSynthesis) ---
+		// --- Voice output ---
 		function speakText( text ) {
 			if ( ! ap.voiceOutput || ! supportsTTS ) return;
 			window.speechSynthesis.cancel();
-			var utterance = new SpeechSynthesisUtterance( text.replace( /<[^>]+>/g, '' ) );
+			var clean = text.replace( /<[^>]+>/g, ' ' ).replace( /\s+/g, ' ' ).trim();
+			var utterance = new SpeechSynthesisUtterance( clean );
 			utterance.lang = ap.voiceLang || 'en-US';
 			utterance.rate  = ap.voiceSpeed || 1.0;
 			if ( stopBtn ) stopBtn.hidden = false;
-			if ( voiceStatus ) voiceStatus.textContent = 'Speaking...';
+			if ( voiceStatus ) voiceStatus.textContent = 'Speaking…';
 			utterance.onend = function () {
 				if ( stopBtn ) stopBtn.hidden = true;
 				if ( voiceStatus ) voiceStatus.textContent = '';
@@ -1491,6 +1700,15 @@
 			} );
 		}
 
+		// --- Typing indicator ---
+		function showTyping() {
+			if ( typingDiv ) typingDiv.style.display = 'block';
+			if ( messagesDiv ) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+		}
+		function hideTyping() {
+			if ( typingDiv ) typingDiv.style.display = 'none';
+		}
+
 		// --- Send message ---
 		var _speakNext = false;
 
@@ -1499,10 +1717,15 @@
 			if ( ! msg ) return;
 			var wasVoice = input.style.color === 'rgb(136, 136, 136)';
 			input.style.color = '';
-			addAiMessage( 'user', msg );
 			input.value = '';
+			input.style.height = 'auto';
+			addAiMessage( 'user', msg );
+			chatHistory.push( { role: 'user', text: msg } );
+			saveChatHistory( chatHistory );
+			updateMsgCount();
 			sendBtn.disabled = true;
-			sendBtn.textContent = '...';
+			sendBtn.style.opacity = '0.6';
+			showTyping();
 			_speakNext = ap.autoSpeak && ! wasVoice;
 
 			var toolsToFetch = [ 'overview', 'pages', 'audience', 'referrers', 'behavior' ];
@@ -1521,16 +1744,20 @@
 					}
 				} );
 
-				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based on the provided aggregate data only. Never invent numbers. Be concise.' +
-					' When the data would benefit from visualization, include a JSON chart block like:\n```chart\n{"type":"bar","labels":["A","B"],"datasets":[{"label":"Views","data":[10,20]}]}\n```\n' +
-					'Supported types: bar, line, doughnut. Always include labels and datasets array.';
+				var systemPrompt = 'You are a privacy-first analytics assistant. Answer based ONLY on the provided data. Never invent numbers. Be concise but helpful.\n\n' +
+					'When a chart would help, output a JSON chart block EXACTLY like this (no extra text inside the block):\n' +
+					'```chart\n{"type":"bar","labels":["A","B"],"datasets":[{"label":"Views","data":[10,20]}]}\n```\n' +
+					'Types: bar, line, doughnut. Always include labels and datasets array.\n\n' +
+					'Format your response using markdown: **bold**, *italic*, `code`, and lists.\n\n' +
+					'If asked for a specific chart (e.g. "pageviews chart"), generate the chart from the data and include it.';
+
 				var body = {
 					model: ap.model || 'gpt-4o-mini',
 					messages: [
 						{ role: 'system', content: systemPrompt + '\n\nData:\n' + JSON.stringify( contextData, null, 2 ) },
 						{ role: 'user', content: msg }
 					],
-					max_tokens: 500
+					max_tokens: 800
 				};
 				var llmHeaders = { 'Content-Type': 'application/json' };
 				if ( ap.apiKey ) {
@@ -1543,100 +1770,179 @@
 				} );
 			} ).then( function ( r ) { return r.json(); } )
 			.then( function ( llmData ) {
+				hideTyping();
 				sendBtn.disabled = false;
-				sendBtn.textContent = 'Send';
+				sendBtn.style.opacity = '1';
 				var answer = ( llmData.choices && llmData.choices[0] && llmData.choices[0].message && llmData.choices[0].message.content )
 					|| ( llmData.error && llmData.error.message )
 					|| 'Unable to generate a response. Check your AI provider settings.';
 				addAiMessage( 'ai', answer );
+				chatHistory.push( { role: 'ai', text: answer } );
+				saveChatHistory( chatHistory );
+				updateMsgCount();
 				if ( _speakNext ) speakText( answer );
 			} )
 			.catch( function () {
+				hideTyping();
 				sendBtn.disabled = false;
-				sendBtn.textContent = 'Send';
-				addAiMessage( 'ai', 'Connection error. Check your AI provider endpoint.' );
+				sendBtn.style.opacity = '1';
+				var errText = 'Connection error. Check your AI provider endpoint and network.';
+				addAiMessage( 'ai', errText );
+				chatHistory.push( { role: 'ai', text: errText } );
+				saveChatHistory( chatHistory );
+				updateMsgCount();
 			} );
 		}
 
 		sendBtn.addEventListener( 'click', doSend );
 		input.addEventListener( 'keydown', function ( e ) {
-			if ( e.key === 'Enter' ) { e.preventDefault(); doSend(); }
+			if ( e.key === 'Enter' && ! e.shiftKey ) {
+				e.preventDefault();
+				doSend();
+			}
 		} );
 
-		setTimeout( function () { input.focus(); }, 200 );
+		setTimeout( function () { if ( input ) input.focus(); }, 200 );
 	}
 
-	function addAiMessage( who, text ) {
+	function addAiMessage( who, text, isHistory ) {
 		var div = document.getElementById( 'rsa-ai-messages' );
 		if ( ! div ) return;
-		var msg = document.createElement( 'div' );
-		msg.style.cssText = 'margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.5;' +
-			( who === 'user'
-				? 'background:#e3f2fd;margin-left:20%;border:1px solid #90caf9;'
-				: 'background:#fff;margin-right:20%;border:1px solid #e0e0e0;box-shadow:0 1px 2px rgba(0,0,0,0.05);' );
 
-		var chartMatch = text.match( /```chart\n([\s\S]*?)\n```/ );
-		var displayText = chartMatch ? text.replace( /```chart\n[\s\S]*?\n```/, '' ).trim() : text;
+		var wrapper = document.createElement( 'div' );
+		wrapper.style.cssText = 'margin-bottom:14px;display:flex;gap:10px;' + ( who === 'user' ? 'flex-direction:row-reverse;' : '' );
+
+		// Avatar
+		var avatar = document.createElement( 'div' );
+		avatar.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px;' +
+			( who === 'user' ? 'background:#2e6f8e;color:#fff;' : 'background:#e9ecef;color:#555;' );
+		avatar.textContent = who === 'user' ? 'You' : '🤖';
+		wrapper.appendChild( avatar );
+
+		// Message bubble
+		var bubble = document.createElement( 'div' );
+		bubble.style.cssText = 'max-width:75%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;' +
+			( who === 'user'
+				? 'background:#e3f2fd;border:1px solid #bbdefb;color:#1a5276;'
+				: 'background:#fff;border:1px solid #e9ecef;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.04);' );
+
+		// Parse markdown
+		var chartRegex = /```chart\n([\s\S]*?)\n```/g;
+		var charts = [];
+		var chartMatch;
+		while ( ( chartMatch = chartRegex.exec( text ) ) !== null ) {
+			charts.push( chartMatch[1] );
+		}
+		var displayText = text.replace( /```chart\n[\s\S]*?\n```/g, '' ).trim();
 
 		var contentDiv = document.createElement( 'div' );
-		contentDiv.innerHTML = esc( displayText ).replace( /\n/g, '<br>' );
-		msg.appendChild( contentDiv );
+		contentDiv.innerHTML = parseAiMarkdown( displayText );
+		bubble.appendChild( contentDiv );
 
-		if ( chartMatch ) {
-			try {
-				var chartData = JSON.parse( chartMatch[1] );
-				var canvasId = 'c-ai-' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 6 );
-				var chartWrap = document.createElement( 'div' );
-				chartWrap.style.cssText = 'margin-top:10px;height:220px;';
-				var canvas = document.createElement( 'canvas' );
-				canvas.id = canvasId;
-				chartWrap.appendChild( canvas );
-				msg.appendChild( chartWrap );
+		// Render charts
+		if ( charts.length ) {
+			charts.forEach( function ( chartJson, idx ) {
+				try {
+					var chartData = JSON.parse( chartJson );
+					var canvasId = 'c-ai-' + Date.now() + '-' + idx + '-' + Math.random().toString( 36 ).slice( 2, 6 );
+					var chartWrap = document.createElement( 'div' );
+					chartWrap.style.cssText = 'margin-top:10px;height:200px;background:#fafafa;border-radius:6px;padding:8px;border:1px solid #f0f0f0;';
+					var canvas = document.createElement( 'canvas' );
+					canvas.id = canvasId;
+					chartWrap.appendChild( canvas );
+					bubble.appendChild( chartWrap );
 
-				setTimeout( function () {
-					var el = document.getElementById( canvasId );
-					if ( ! el ) return;
-					var cfg = {
-						type: chartData.type === 'line' ? 'line' : chartData.type === 'doughnut' ? 'doughnut' : 'bar',
-						data: {
-							labels: chartData.labels || [],
-							datasets: ( chartData.datasets || [] ).map( function ( ds, i ) {
-								var color = PALETTE[ i % PALETTE.length ];
-								var dsCfg = {
-									label: ds.label || '',
-									data: ds.data || [],
-									backgroundColor: chartData.type === 'line' ? color + '33' : color + 'cc',
-									borderColor: color,
-									borderWidth: 1,
-								};
-								if ( chartData.type === 'line' ) {
-									dsCfg.fill = true;
-									dsCfg.tension = 0.3;
-									dsCfg.pointRadius = 2;
-								}
-								return dsCfg;
-							} ),
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: { display: chartData.type === 'doughnut' ? { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } : { display: ( chartData.datasets || [] ).length > 1 } },
-								tooltip: { mode: 'index', intersect: false },
+					setTimeout( function () {
+						var el = document.getElementById( canvasId );
+						if ( ! el || typeof Chart === 'undefined' ) return;
+						var type = chartData.type === 'line' ? 'line' : chartData.type === 'doughnut' ? 'doughnut' : 'bar';
+						var cfg = {
+							type: type,
+							data: {
+								labels: chartData.labels || [],
+								datasets: ( chartData.datasets || [] ).map( function ( ds, i ) {
+									var color = PALETTE[ i % PALETTE.length ];
+									var dsCfg = {
+										label: ds.label || '',
+										data: ds.data || [],
+										backgroundColor: type === 'line' ? color + '33' : color + 'cc',
+										borderColor: color,
+										borderWidth: 1,
+									};
+									if ( type === 'line' ) {
+										dsCfg.fill = true;
+										dsCfg.tension = 0.3;
+										dsCfg.pointRadius = 3;
+										dsCfg.pointBackgroundColor = color;
+									}
+									return dsCfg;
+								} ),
 							},
-							scales: chartData.type === 'doughnut' ? {} : {
-								y: { beginAtZero: true, ticks: { precision: 0 } },
-								x: chartData.type === 'bar' ? { ticks: { font: { size: 11 } } } : {},
+							options: {
+								responsive: true,
+								maintainAspectRatio: false,
+								plugins: {
+									legend: {
+										display: type === 'doughnut' || ( chartData.datasets || [] ).length > 1,
+										position: 'bottom',
+										labels: { boxWidth: 10, font: { size: 11 }, padding: 10 }
+									},
+									tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0,0,0,0.8)', padding: 8, titleFont: { size: 12 }, bodyFont: { size: 11 } },
+								},
+								scales: type === 'doughnut' ? {} : {
+									y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+									x: { ticks: { font: { size: 11 }, maxRotation: 45 }, grid: { display: false } },
+								},
+								animation: { duration: 600 },
 							},
-						},
-					};
-					state.charts[ canvasId ] = new Chart( el, cfg );
-				}, 50 );
-			} catch ( _ ) {}
+						};
+						if ( state.charts[ canvasId ] ) {
+							state.charts[ canvasId ].destroy();
+						}
+						state.charts[ canvasId ] = new Chart( el, cfg );
+					}, 50 );
+				} catch ( _ ) {}
+			} );
 		}
 
-		div.appendChild( msg );
-		div.scrollTop = div.scrollHeight;
+		// Action buttons for AI messages
+		if ( who === 'ai' && ! isHistory ) {
+			var actionsDiv = document.createElement( 'div' );
+			actionsDiv.style.cssText = 'margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;';
+
+			var copyBtn = document.createElement( 'button' );
+			copyBtn.textContent = 'Copy';
+			copyBtn.style.cssText = 'padding:3px 10px;border:1px solid #e9ecef;border-radius:4px;background:#fff;cursor:pointer;font-size:11px;color:#666;';
+			copyBtn.addEventListener( 'click', function () {
+				var plain = text.replace( /```chart\n[\s\S]*?\n```/g, '[Chart]' ).trim();
+				navigator.clipboard.writeText( plain ).then( function () {
+					copyBtn.textContent = 'Copied!';
+					setTimeout( function () { copyBtn.textContent = 'Copy'; }, 1500 );
+				} );
+			} );
+			actionsDiv.appendChild( copyBtn );
+
+			var speakBtn = document.createElement( 'button' );
+			speakBtn.textContent = '🔊 Read';
+			speakBtn.style.cssText = 'padding:3px 10px;border:1px solid #e9ecef;border-radius:4px;background:#fff;cursor:pointer;font-size:11px;color:#666;';
+			speakBtn.addEventListener( 'click', function () {
+				var plain = text.replace( /```chart\n[\s\S]*?\n```/g, 'Chart shown.' ).trim();
+				var event = new CustomEvent( 'rsa-speak-text', { detail: { text: plain } } );
+				document.dispatchEvent( event );
+			} );
+			actionsDiv.appendChild( speakBtn );
+
+			bubble.appendChild( actionsDiv );
+		}
+
+		wrapper.appendChild( bubble );
+		div.appendChild( wrapper );
+
+		// Auto-scroll only if near bottom
+		var isNearBottom = div.scrollHeight - div.scrollTop - div.clientHeight < 100;
+		if ( isNearBottom || ! isHistory ) {
+			div.scrollTop = div.scrollHeight;
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -2926,6 +3232,135 @@
 		}
 	};
 
+	/** Fallback model lists when discovery fails. */
+	var fallbackModels = {
+		openai:   ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+		ollama:   ['llama3.2', 'llama3.1', 'llama3', 'mistral', 'qwen2.5'],
+		lmstudio: [],
+		llamacpp: [],
+		custom:   []
+	};
+
+	/** Derive a /models or /api/tags URL from the chat-completions endpoint. */
+	function getModelsUrl( endpoint ) {
+		if ( ! endpoint ) return '';
+		// Ollama native API
+		if ( endpoint.indexOf( ':11434' ) !== -1 ) {
+			try {
+				var url = new URL( endpoint );
+				return url.protocol + '//' + url.host + '/api/tags';
+			} catch ( _ ) {}
+		}
+		// OpenAI-compatible /v1/models
+		try {
+			var url = new URL( endpoint );
+			var path = url.pathname;
+			if ( path.indexOf( '/chat/completions' ) !== -1 ) {
+				url.pathname = path.replace( '/chat/completions', '/models' );
+			} else if ( path.indexOf( '/completions' ) !== -1 ) {
+				url.pathname = path.replace( '/completions', '/models' );
+			} else {
+				url.pathname = '/v1/models';
+			}
+			return url.toString();
+		} catch ( _ ) {
+			return '';
+		}
+	}
+
+	/** Query the endpoint for available models. */
+	function fetchAvailableModels( endpoint, providerKey, apiKey ) {
+		if ( providerKey === 'ollama' && isTauri() && window.__TAURI__ ) {
+			return tauriDetectLocal( endpoint ).catch( function () { return []; } );
+		}
+		var url = getModelsUrl( endpoint );
+		if ( ! url ) return Promise.resolve( [] );
+
+		var headers = {};
+		if ( apiKey ) headers['Authorization'] = 'Bearer ' + apiKey;
+
+		return fetch( url, { method: 'GET', headers: headers } )
+			.then( function ( res ) {
+				if ( ! res.ok ) throw new Error( 'HTTP ' + res.status );
+				return res.json();
+			} )
+			.then( function ( data ) {
+				var models = [];
+				if ( Array.isArray( data.models ) ) {
+					models = data.models.map( function ( m ) { return m.name || m.model || ''; } );
+				} else if ( Array.isArray( data.data ) ) {
+					models = data.data.map( function ( m ) { return m.id || ''; } );
+				}
+				return models.filter( function ( m ) { return m; } );
+			} )
+			.catch( function () { return []; } );
+	}
+
+	/** Populate the model <select> with fetched options. */
+	function populateModelSelect( models, currentModel, providerKey ) {
+		var select = document.getElementById( 'rsa-ai-model' );
+		var customRow = document.getElementById( 'rsa-ai-model-custom-row' );
+		if ( ! select ) return;
+
+		var opts = [];
+		var seen = {};
+
+		function addOpt( value, label, selected ) {
+			if ( seen[ value ] ) return;
+			seen[ value ] = true;
+			opts.push( '<option value="' + esc( value ) + '"' + ( selected ? ' selected' : '' ) + '>' + esc( label ) + '</option>' );
+		}
+
+		if ( currentModel && currentModel !== '__custom__' ) {
+			addOpt( currentModel, currentModel + ' (current)', true );
+		}
+
+		models.forEach( function ( m ) { addOpt( m, m, false ); } );
+
+		var fallbacks = fallbackModels[ providerKey ] || [];
+		fallbacks.forEach( function ( m ) { addOpt( m, m, false ); } );
+
+		addOpt( '__custom__', 'Custom model…', false );
+
+		select.innerHTML = opts.join( '' );
+
+		if ( customRow ) {
+			customRow.style.display = select.value === '__custom__' ? '' : 'none';
+		}
+	}
+
+	/** Refresh button handler. */
+	function onRefreshModels() {
+		var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
+		var providerKey = document.getElementById( 'rsa-ai-provider' ).value;
+		var apiKey = document.getElementById( 'rsa-ai-key' ).value.trim();
+		var select = document.getElementById( 'rsa-ai-model' );
+		var status = document.getElementById( 'rsa-ai-model-status' );
+		var currentModel = select ? select.value : '';
+		if ( currentModel === '__custom__' ) {
+			var customInput = document.getElementById( 'rsa-ai-model-custom' );
+			currentModel = customInput ? customInput.value.trim() : '';
+		}
+
+		if ( status ) {
+			status.textContent = 'Fetching models…';
+			status.style.color = '#888';
+		}
+
+		fetchAvailableModels( endpoint, providerKey, apiKey ).then( function ( models ) {
+			populateModelSelect( models, currentModel, providerKey );
+			if ( status ) {
+				if ( models.length ) {
+					status.textContent = models.length + ' model' + ( models.length > 1 ? 's' : '' ) + ' found';
+					status.style.color = '#065f46';
+				} else {
+					status.textContent = 'No models discovered. Using defaults.';
+					status.style.color = '#888';
+				}
+			}
+		} );
+	}
+
 	/** Tauri: auto-find and start local provider, return models list. */
 	function tauriDetectLocal( endpoint ) {
 		if ( ! isTauri() || ! window.__TAURI__ ) return Promise.reject();
@@ -2944,7 +3379,6 @@
 	function applyProviderPreset( providerKey ) {
 		var preset = providerPresets[ providerKey ] || providerPresets.custom;
 		var epField = document.getElementById( 'rsa-ai-endpoint' );
-		var modelField = document.getElementById( 'rsa-ai-model' );
 		var keyRow = document.getElementById( 'rsa-ai-key-row' );
 		var keyField = document.getElementById( 'rsa-ai-key' );
 		var tauriRow = document.getElementById( 'rsa-ai-tauri-row' );
@@ -2955,9 +3389,6 @@
 			epField.readOnly = providerKey !== 'custom';
 			epField.style.background = providerKey === 'custom' ? '#fff' : '#f5f5f5';
 		}
-		if ( modelField && preset.defaultModel ) {
-			modelField.placeholder = 'e.g. ' + preset.defaultModel;
-		}
 		if ( keyRow ) keyRow.style.display = preset.needsKey ? '' : 'none';
 		if ( keyField && ! preset.needsKey ) keyField.value = '';
 
@@ -2967,6 +3398,18 @@
 			if ( tauriStatus ) tauriStatus.textContent = '';
 		} else if ( tauriRow ) {
 			tauriRow.style.display = 'none';
+		}
+
+		// Populate model dropdown for presets with known endpoints
+		if ( providerKey !== 'custom' ) {
+			setTimeout( function () { onRefreshModels(); }, 0 );
+		} else {
+			var select = document.getElementById( 'rsa-ai-model' );
+			if ( select ) {
+				select.innerHTML = '<option value="">Select a model…</option><option value="__custom__">Custom model…</option>';
+			}
+			var customRow = document.getElementById( 'rsa-ai-model-custom-row' );
+			if ( customRow ) customRow.style.display = 'none';
 		}
 	}
 
@@ -2983,8 +3426,8 @@
 			if ( models && models.length ) {
 				status.textContent = 'Found ' + models.length + ' model' + ( models.length > 1 ? 's' : '' ) + ': ' + models.join( ', ' );
 				status.style.color = '#065f46';
-				var modelField = document.getElementById( 'rsa-ai-model' );
-				if ( modelField && ! modelField.value ) modelField.value = models[0];
+				var currentModel = document.getElementById( 'rsa-ai-model' ).value || '';
+				populateModelSelect( models, currentModel, 'ollama' );
 			} else {
 				status.innerHTML = 'Ollama is running but no models found. <a href="#" id="rsa-ai-pull-link">Pull a model</a>';
 				status.style.color = '#991b1b';
@@ -3015,7 +3458,7 @@
 		container.innerHTML =
 			'<div style="max-width:800px;margin:0 auto;padding:0 16px;">' +
 			'<h2 style="font-size:20px;margin-bottom:8px;">AI Assistant Provider</h2>' +
-			'<p style="color:#888;font-size:13px;margin-bottom:24px;">Configure which LLM the AI assistant uses. Pick a provider, then type the model name.</p>' +
+			'<p style="color:#888;font-size:13px;margin-bottom:24px;">Configure which LLM the AI assistant uses. Pick a provider, then choose a model from the dropdown (or enter a custom name).</p>' +
 
 			'<div class="rsa-card" style="margin-bottom:16px;">' +
 				'<div class="rsa-card-header"><strong>Provider</strong></div>' +
@@ -3054,12 +3497,23 @@
 							' placeholder="sk-...">' +
 					'</div>' +
 
-					// Model (always a text input)
+					// Model (dropdown with refresh)
 					'<div class="rsa-form-row">' +
 						'<label class="rsa-filter-label" for="rsa-ai-model">Model</label>' +
-						'<input type="text" id="rsa-ai-model" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
-							' value="' + esc( currentModel ) + '"' +
-							' placeholder="' + ( providerPresets[ inferredProvider ].defaultModel || 'gpt-4o-mini' ) + '">' +
+						'<div style="display:flex;gap:8px;align-items:center;">' +
+							'<select id="rsa-ai-model" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;">' +
+								'<option value="">Select a model…</option>' +
+								( currentModel ? '<option value="' + esc( currentModel ) + '" selected>' + esc( currentModel ) + '</option>' : '' ) +
+								'<option value="__custom__">Custom model…</option>' +
+							'</select>' +
+							'<button type="button" id="rsa-ai-refresh-models" class="rsa-btn rsa-btn-ghost" style="padding:6px 12px;font-size:12px;white-space:nowrap;">↻ Refresh</button>' +
+						'</div>' +
+						'<span id="rsa-ai-model-status" style="font-size:12px;color:#888;margin-top:4px;display:block;"></span>' +
+					'</div>' +
+					'<div class="rsa-form-row" id="rsa-ai-model-custom-row" style="display:none;">' +
+						'<label class="rsa-filter-label" for="rsa-ai-model-custom">Custom Model Name</label>' +
+						'<input type="text" id="rsa-ai-model-custom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;"' +
+							' placeholder="e.g. ' + esc( providerPresets[ inferredProvider ].defaultModel || 'gpt-4o-mini' ) + '">' +
 					'</div>' +
 
 					// Tauri-specific: local detection (hidden in browser)
@@ -3120,6 +3574,11 @@
 			'</div>';
 
 		setLoading( false );
+
+		// Auto-populate model list for known providers
+		if ( inferredProvider !== 'custom' ) {
+			setTimeout( function () { onRefreshModels(); }, 0 );
+		}
 	}
 
 
