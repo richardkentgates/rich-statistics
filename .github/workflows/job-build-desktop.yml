@@ -181,6 +181,7 @@ jobs:
           rm -f /tmp/ssh-host-keys
 
       - name: Deploy server scripts
+        if: matrix.platform == 'linux-amd64'
         shell: bash
         run: |
           SSH="ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15"

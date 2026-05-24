@@ -1,9 +1,11 @@
 name: Build Test
 
 on:
-  push:
-    branches: [ test ]
   workflow_dispatch:
+
+concurrency:
+  group: build-test-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-zip:
@@ -20,54 +22,26 @@ jobs:
     steps:
       - name: Sync docs/app/ via deploy webhook
         run: |
-          curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_TEST }}" \
-            https://test.richstatistics.com/_deploy/
-
-  upload-freemius:
-    name: Upload to Freemius (Beta)
-    runs-on: ubuntu-latest
-    needs: build-zip
-
-    steps:
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          extensions: curl, json, mbstring
-
-      - name: Checkout (for SDK + deploy script)
-        uses: actions/checkout@v4
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=$(grep "define( 'RSA_VERSION'" rich-statistics.php | sed "s/.*'\([0-9.]*\)'.*/\1/")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Download ZIP artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: rich-statistics-test-test.${{ github.run_number }}
-          path: build
-
-      - name: Copy ZIP to workspace root
-        run: |
-          cp "build/rich-statistics-test.${{ github.run_number }}.zip" \
-             "rich-statistics-${{ steps.version.outputs.version }}.zip"
-
-      - name: Deploy to Freemius via SDK
-        env:
-          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
-          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
-          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
-          PLUGIN_SLUG: rich-statistics
-          PLUGIN_ID: 25954
-        run: |
-          php bin/deploy-freemius.php \
-            "rich-statistics-${{ steps.version.outputs.version }}.zip" \
-            "${{ steps.version.outputs.version }}" \
-            "beta"
+          set -euo pipefail
+          max_retries=3
+          retry=0
+          while [ $retry -lt $max_retries ]; do
+            echo "Webhook attempt $((retry + 1))/$max_retries..."
+            if curl -fsS -X POST \
+              -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_TEST }}" \
+              https://test.richstatistics.com/_deploy/; then
+              echo "Webhook succeeded."
+              break
+            fi
+            retry=$((retry + 1))
+            if [ $retry -lt $max_retries ]; then
+              echo "Webhook failed, retrying in 10s..."
+              sleep 10
+            else
+              echo "ERROR: Webhook failed after $max_retries attempts."
+              exit 1
+            fi
+          done
 
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml
