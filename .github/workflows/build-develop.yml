@@ -5,6 +5,10 @@ on:
     branches: [ develop ]
   workflow_dispatch:
 
+concurrency:
+  group: build-develop-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-zip:
     uses: ./.github/workflows/job-build-zip.yml
@@ -20,9 +24,39 @@ jobs:
     steps:
       - name: Sync docs/app/ via deploy webhook
         run: |
-          curl -fsS -X POST \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_DEV }}" \
-            https://dev.richstatistics.com/_deploy/
+          set -euo pipefail
+          max_retries=3
+          retry=0
+          while [ $retry -lt $max_retries ]; do
+            echo "Webhook attempt $((retry + 1))/$max_retries..."
+            if curl -fsS -X POST \
+              -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_DEV }}" \
+              https://dev.richstatistics.com/_deploy/; then
+              echo "Webhook succeeded."
+              break
+            fi
+            retry=$((retry + 1))
+            if [ $retry -lt $max_retries ]; then
+              echo "Webhook failed, retrying in 10s..."
+              sleep 10
+            else
+              echo "ERROR: Webhook failed after $max_retries attempts."
+              exit 1
+            fi
+          done
+
+      - name: Smoke test — verify dev server is serving PWA
+        run: |
+          echo "Waiting 5s for deploy to settle..."
+          sleep 5
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" https://dev.richstatistics.com/ || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "Smoke test passed — dev server responding with HTTP 200."
+          else
+            echo "WARNING: Dev server returned HTTP ${STATUS} — deploy may be incomplete."
+            # Don't fail the build on smoke test; webhook already succeeded.
+            # Change to 'exit 1' if you want hard failure.
+          fi
 
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml

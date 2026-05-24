@@ -1,0 +1,23 @@
+[Unit]
+Description=Rich Statistics PWA Deploy Daemon (%i)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/rsa-deploy-daemon %i
+Restart=always
+RestartSec=5
+User=root
+Group=www-data
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rsa-deploy-daemon-%i
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/rs-app /var/www/rs-app-dev /var/www/rs-app-test /tmp
+
+[Install]
+WantedBy=multi-user.target

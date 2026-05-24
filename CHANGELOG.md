@@ -8,15 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- AI Analytics Assistant UI overhaul: model dropdown with endpoint discovery (Ollama, OpenAI, LM Studio, llama.cpp), persistent chat history, quick-action chips, markdown rendering, per-message copy/read-aloud buttons
+- Voice input/output integration in AI chat: microphone speech-to-text, auto-resizing textarea, text-to-speech with stop control
+- Chart generation in AI chat via Chart.js: bar, line, and doughnut charts rendered from LLM-generated JSON blocks
+- Health check workflow (`.github/workflows/health-check.yml`): weekly verification of all 3 environments (PWA, update.json, APT, webhook, deployed version)
+- Disaster recovery procedures documented in ROADMAP.md §8.3 (scenarios A–D: partial releases, failed uploads, rollback steps)
 - `wp-coding-standards/wpcs` added as dev dependency
 - Versioned PWA snapshot `config.js` now includes `env` auto-detection
-- `readme.txt` changelog updated with all 2.x releases
+- `readme.txt` changelog backfilled with entries for 2.4.2 → 2.4.26
 - `tests/bootstrap.php` now uses `test.richstatistics.com` for `RSA_APP_URL` in test environment
 - Unit test bootstrap now defines `RSA_APP_ENV`, `RSA_APP_VERSION`, `RSA_MIN_APP_VERSION`
 - Ops documentation: rollback procedure, backup strategy, monitoring plan (ROADMAP §8)
 - GitHub Wiki synced: Release Tracks, Installation, Code-Map pages updated
 - WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
 - `wporg-assets/` directory scaffolded for screenshots and banners
+
+### Changed
+- WordPress admin help tabs: "Analytics" menu references updated to "Rich Statistics"; premium upgrade prompt wording clarified
+- `includes/class-db.php` file docblock: replaced `{@internal ...}` placeholder with actual internal documentation
+- `DEVELOPMENT.md`: removed manual Freemius upload instruction (now handled by CI via `bin/deploy-freemius.php`)
+- `AGENTS.md`, `docs/CI-CD-COMPLETE.md`, `docs/README-DOCS.md`, `docs/WORKFLOW.md`: version examples updated from 2.4.20 to 2.4.26
+- `ROADMAP.md`, `TODO.md`: audit status counts updated to reflect completed work
 
 ### Removed
 - AI chat interface from network-dashboard.php (multisite) — AI lives in PWA/desktop app only

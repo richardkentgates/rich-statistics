@@ -95,8 +95,8 @@ The deploy script at `bin/deploy-freemius.php` handles all Freemius uploads via 
 3. `PUT plugins/{id}/tags/{tag_id}.json` — sets `release_mode` to the specified value
 
 Supported `release_mode` values:
-- `released` — stable tags (`v2.4.20`)
-- `beta` — beta tags (`v2.4.20-beta.1`) and test branch builds
+- `released` — stable tags (`v2.4.26`)
+- `beta` — beta tags (`v2.4.26-beta.1`) and test branch builds
 
 The SDK files under `bin/freemius-php-api/freemius/` are excluded from PHPCS (`phpcs.xml.dist`).
 
@@ -104,7 +104,7 @@ The SDK files under `bin/freemius-php-api/freemius/` are excluded from PHPCS (`p
 ```bash
 php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 # Example:
-php bin/deploy-freemius.php rich-statistics-2.4.20.zip 2.4.20 released
+php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 released
 ```
 
 ### Release Flow (correct order)

@@ -1,0 +1,74 @@
+name: Health Check
+
+on:
+  schedule:
+    # Run every Sunday at 06:00 UTC
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+
+jobs:
+  check-environments:
+    name: Check ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: production
+            host: app.richstatistics.com
+            token_secret: DEPLOY_WEBHOOK_TOKEN
+          - env: dev
+            host: dev.richstatistics.com
+            token_secret: DEPLOY_WEBHOOK_TOKEN_DEV
+          - env: test
+            host: test.richstatistics.com
+            token_secret: DEPLOY_WEBHOOK_TOKEN_TEST
+
+    steps:
+      - name: Check PWA root
+        run: |
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}/" || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ ${{ matrix.env }} PWA root: HTTP 200"
+          else
+            echo "❌ ${{ matrix.env }} PWA root: HTTP ${STATUS}"
+            exit 1
+          fi
+
+      - name: Check update.json
+        run: |
+          if curl -fsS "https://${{ matrix.host }}/dist/update.json" > /dev/null; then
+            echo "✅ ${{ matrix.env }} update.json: accessible"
+          else
+            echo "❌ ${{ matrix.env }} update.json: not accessible"
+            exit 1
+          fi
+
+      - name: Check APT repo
+        run: |
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}/apt/" || true)
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
+            echo "✅ ${{ matrix.env }} APT repo: HTTP ${STATUS}"
+          else
+            echo "❌ ${{ matrix.env }} APT repo: HTTP ${STATUS}"
+            exit 1
+          fi
+
+      - name: Check webhook endpoint
+        run: |
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}/_deploy/" || true)
+          if [ "$STATUS" = "405" ] || [ "$STATUS" = "403" ]; then
+            echo "✅ ${{ matrix.env }} webhook: HTTP ${STATUS} (handler present)"
+          else
+            echo "❌ ${{ matrix.env }} webhook: HTTP ${STATUS}"
+            exit 1
+          fi
+
+      - name: Check deployed version
+        run: |
+          VERSION_FILE=$(curl -fsS "https://${{ matrix.host }}/.deployed-version" 2>/dev/null || true)
+          if [ -n "$VERSION_FILE" ]; then
+            echo "✅ ${{ matrix.env }} deployed version: ${VERSION_FILE}"
+          else
+            echo "⚠️  ${{ matrix.env }} deployed version: file not found (may be first deploy)"
+          fi

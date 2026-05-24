@@ -74,6 +74,8 @@ jobs:
 
       - name: Beta release — tag test branch
         if: ${{ inputs.channel == 'beta' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           # Check for existing beta tags to increment the suffix

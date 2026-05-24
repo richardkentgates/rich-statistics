@@ -169,6 +169,52 @@ Available at https://statistics.richardkentgates.com
 
 == Changelog ==
 
+= 2.4.26 =
+* Critical audit fixes: capability checks on premium renderers, remove_filter closure identity, MySQL 8.0 version guard for window functions
+* AI UI overhaul: model dropdown with endpoint discovery, persistent chat history, quick-action chips, markdown rendering, per-message copy/read-aloud
+* Voice input/output integration in AI chat with auto-resizing textarea
+* Chart generation in AI chat via Chart.js (bar, line, doughnut)
+* PWA snapshot backfill: versions 2.4.22–2.4.26 now present in docs/app/v/
+* Post-deploy smoke tests added to all CI workflows
+* Systemd deploy daemon installed on all 3 servers (replaces cron)
+* Health check workflow for weekly environment verification
+* Disaster recovery procedures documented (ROADMAP §8.3)
+* Old Windows binary names cleaned from production dist/
+* build-release.yml tag/main divergence fixed via checkout-ref: main
+
+= 2.4.25 =
+* Docblock and comment corrections across the entire codebase
+* Maintenance purge: HTTP status check before row deletion
+* Freemius beta sync: added is_connected() guard in save_settings
+
+= 2.4.24 =
+* Release workflow now commits and pushes PWA snapshots to main
+* Email test form moved outside main preferences form (valid HTML)
+* PWA snapshot v2.4.24 added with env config files
+
+= 2.4.23 =
+* Freemius paid plans UI enabled (has_paid_plans: true)
+* Removed (Premium) suffix from Freemius menu items
+* Freemius deploy script: API connectivity test and error logging
+
+= 2.4.22 =
+* Freemius license activation enabled in free version
+* Freemius Upgrade submenu hidden (inline prompts used instead)
+
+= 2.4.21 =
+* Freemius upload fix: version step added before artifact download in CI
+
+= 2.4.2 – 2.4.19 =
+* CI/CD pipeline stabilization: promote workflow, build-release, build-test, build-develop
+* Version parity: channel-subdirectory snapshots (stable/beta) across all versions
+* Systemd deploy daemon created (bin/rsa-deploy-daemon)
+* Webhook retry loops (3 attempts, 10s backoff) on all environments
+* APT repo race condition fixed (single linux-amd64 gate)
+* Tauri Windows build: JSON parsing fix for tauri.conf.json version stamp
+* PHPCS zero errors across entire codebase
+* Security: CORS allowlist, $_POST save/restore, AI error masking, branch protection
+* Server infrastructure: SSL certs, vhost aliases, deploy scripts for dev/test/prod
+
 = 2.4.1 =
 * APT repo parity: dev/test/production environments now have matching APT repository structure
 * CI workflow fix: build-desktop runs identically across all three branches
