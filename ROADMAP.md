@@ -284,6 +284,52 @@ git tag v<previous-release> <previous-hash>
 git push origin --tags --force
 ```
 
+#### Failed / Partial Release Recovery
+
+A release can fail partway through, leaving some artifacts published and others missing. Common scenarios and recovery steps:
+
+**Scenario A: GitHub Release created, but Freemius upload failed**
+1. The ZIP artifact is still available in the GitHub Release assets
+2. Download it manually and run the Freemius deploy script:
+   ```bash
+   php bin/deploy-freemius.php rich-statistics-<version>.zip <version> released
+   ```
+3. Verify on the Freemius dashboard that the version appears
+
+**Scenario B: Freemius upload succeeded, but desktop build failed**
+1. The release is functionally complete for web users
+2. Desktop users continue to receive the previous version via `update.json`
+3. Re-dispatch the Build Release workflow with the same tag:
+   ```bash
+   gh workflow run "Build Release" --ref "v<version>"
+   ```
+   The `resolve-version` job will find the version already exists on Freemius and skip re-upload, proceeding directly to desktop build and PWA deploy.
+
+**Scenario C: PWA snapshots committed to main, but prod deploy webhook failed**
+1. The snapshots are in `main` but not on the production server
+2. Manually trigger the deploy webhook:
+   ```bash
+   curl -X POST -H "X-Deploy-Token: $(cat /etc/rsa-webhook-token)" \
+     https://app.richstatistics.com/_deploy/
+   ```
+3. Verify with the smoke test:
+   ```bash
+   curl -fsS -o /dev/null -w "%{http_code}" https://app.richstatistics.com/
+   ```
+
+**Scenario D: Desktop binaries pushed, but APT repo update failed**
+1. Binaries exist on the server in `dist/`
+2. Manually update the APT repo from any Linux build:
+   ```bash
+   ssh app-server "sudo /usr/local/bin/rsa-apt-repo-update amd64 <version>"
+   ```
+3. Verify: `apt update && apt show rich-statistics`
+
+**Prevention:**
+- All failure scenarios are mitigated by the retry loops (3 attempts, 10s backoff) added to webhook curls, SCP uploads, and APT/repo updates
+- `build-release.yml` has `concurrency` control to prevent overlapping release jobs
+- The `set -euo pipefail` flag ensures shell steps fail fast rather than silently continuing
+
 ### 8.4 Database Backup Strategy
 
 #### Current State
