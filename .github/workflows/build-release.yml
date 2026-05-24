@@ -262,3 +262,14 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Smoke test — verify production server is serving PWA
+        run: |
+          echo "Waiting 5s for deploy to settle..."
+          sleep 5
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" https://app.richstatistics.com/ || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "Smoke test passed — production server responding with HTTP 200."
+          else
+            echo "WARNING: Production server returned HTTP ${STATUS} — deploy may be incomplete."
+          fi

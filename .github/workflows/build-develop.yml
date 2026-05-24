@@ -45,6 +45,19 @@ jobs:
             fi
           done
 
+      - name: Smoke test — verify dev server is serving PWA
+        run: |
+          echo "Waiting 5s for deploy to settle..."
+          sleep 5
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" https://dev.richstatistics.com/ || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "Smoke test passed — dev server responding with HTTP 200."
+          else
+            echo "WARNING: Dev server returned HTTP ${STATUS} — deploy may be incomplete."
+            # Don't fail the build on smoke test; webhook already succeeded.
+            # Change to 'exit 1' if you want hard failure.
+          fi
+
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml
     needs: build-zip
