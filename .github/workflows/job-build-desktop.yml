@@ -137,6 +137,7 @@ jobs:
 
       - name: Generate Tauri override config
         id: tauri-config
+        shell: bash
         run: |
           python3 -c "import json; print(json.dumps({'productName':'Rich Statistics'+'${{ inputs.product-suffix }}','identifier':'com.richardkentgates.rich-statistics'+'${{ inputs.product-suffix }}','plugins':{'updater':{'endpoints':['${{ inputs.updater-url }}']}}}))" > "${RUNNER_TEMP}/tauri-config.json"
           echo "config=$(cat "${RUNNER_TEMP}/tauri-config.json")" >> "$GITHUB_OUTPUT"
