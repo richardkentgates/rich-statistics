@@ -33,6 +33,10 @@ on:
         required: false
         type: string
         default: ''
+      checkout-ref:
+        required: false
+        type: string
+        default: ''
       server-ip:
         required: false
         type: string
@@ -68,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.checkout-ref }}
 
       - name: Stamp version and create PWA snapshot (release only)
         if: ${{ inputs.stamp-version }}

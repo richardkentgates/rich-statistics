@@ -232,6 +232,10 @@ jobs:
       update-json-script: rsa-gen-update-json
       artifact-prefix: rich-statistics
       stamp-version: true
+      # The release job commits PWA snapshots to main. Use main so the
+      # desktop build bundles the exact snapshots that were just committed,
+      # rather than recreating them from the tag ref (which lacks the commit).
+      checkout-ref: main
     secrets: inherit
 
   ping-deploy:
