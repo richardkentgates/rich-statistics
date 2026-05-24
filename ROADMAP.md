@@ -70,6 +70,8 @@ All four phases are implemented:
 | PWA web app | ✅ Served | ✅ Served | ✅ Served |
 | `/_deploy/` webhook | ✅ Present | ✅ Present | ✅ Present |
 | Desktop binaries in `dist/` | ✅ Present | ✅ Present | ✅ Present |
+| Deploy mechanism | ⚠️ Undocumented (cron or manual) | ⚠️ Undocumented (cron or manual) | ⚠️ Undocumented (cron or manual) |
+| Deploy daemon (systemd) | ❌ Not installed | ❌ Not installed | ❌ Not installed |
 | Web root ownership | `richardkentgates:www-data` | `richardkentgates:www-data` | `richardkentgates:www-data` |
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
@@ -121,7 +123,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 |------|--------|----------|------|--------|-----|
 | Plugin Code | ✅ Good | 0 | 0 | 0 | 5 |
 | CI/CD | ✅ Good | 0 | 0 | 0 | 3 |
-| Server Infra | ✅ Good | 0 | 0 | 0 | 2 |
+| Server Infra | ⚠️ Needs work | 0 | 0 | 0 | 2 |
 | PWA | ✅ Good | 0 | 0 | 0 | 3 |
 | Desktop App | ✅ Good | 0 | 0 | 0 | 2 |
 | Documentation | ✅ Good | 0 | 0 | 0 | 6 |
@@ -134,14 +136,20 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 |-----|------|---------|--------|
 | BC-3 | CI/CD | Beta tag hardcoded to `.beta.1` — no increment | ✅ Fixed — auto-increments `.beta.N` |
 | BC-4 | PWA | Fallback URL hardcoded to `/stable/` for beta users | ✅ Verified correct — stable fallback is intentional |
-| C1 | PWA | `sw-init.js` missing from versioned snapshots | ✅ Fixed — added to build.sh and CI |
-| H3 | CI/CD | `ssh-keyscan` without fingerprint verification | ✅ Fixed — verifies against `EXPECTED_HOST_FINGERPRINT` |
-| H6 | CI/CD | `workflow_dispatch` on release without tag creates orphan artifacts | ✅ Fixed — requires tag or version input |
-| H7-H9 | Plugin | `RSA_APP_VERSION` (2.4.1) ≠ `RSA_VERSION` (2.4.20) | ✅ Fixed — bumped to 2.4.20 |
-| H26 | Server | `setup-app-server.sh` prints secrets to stdout | ✅ Fixed — removed stdout echo, added delete instructions |
-| H28 | Tests | `tests/bootstrap.php` has stale `RSA_VERSION = '2.4.1'` | ✅ Fixed — bumped to 2.4.20 |
+| C1 | CI/CD | `promote.yml` beta step missing `GH_TOKEN` | ✅ Fixed — env var added |
+| C2 | Plugin | Premium renderers missing capability check | ✅ Fixed — all 5 methods now gated |
+| H1 | Plugin | `remove_filter` closure identity bug | ✅ Fixed — stored closure reference |
+| H2 | Plugin | MySQL 8.0 window functions fatal on 5.7 | ✅ Fixed — version guard added |
+| H3 | CI/CD | `build-release.yml` snapshot push no `set -e` | ✅ Fixed — `set -euo pipefail` added |
+| H4 | CI/CD | `build-release.yml` lacks concurrency | ✅ Fixed — group per ref |
+| H5 | CI/CD | Webhook curls no retry | ✅ Fixed — 3-attempt loop on all envs |
+| H6 | CI/CD | APT repo update race | ✅ Fixed — gated to linux-amd64 only |
+| H7 | CI/CD | `product-suffix` JSON escaping | ✅ Fixed — Python `json.dumps()` |
+| H8 | CI/CD | `build-test.yml` duplicate builds on promote | ✅ Fixed — `workflow_dispatch` only |
+| H10 | PWA | Missing `sw-init.js` in old snapshots | ✅ Fixed — backfilled v2.4.9–v2.4.19 |
+| H12 | Server | Cron-based deploy mechanism | ✅ Daemon created — install pending |
 
-### Phase 2: High Priority
+### Phase 2: High Priority (pre-commercial)
 | Ref | Area | Finding | Status |
 |-----|------|---------|--------|
 | BC-1 | Server | Snapshot format mismatch on production server (flat → channel subdirs) | ✅ Fixed — all 42 prod + 23 dev + 23 test versions migrated |
@@ -151,6 +159,11 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | C7 | PWA | Root `sw.js` cache name stale (`rsa-2-4-19`) | ✅ Fixed — bumped to `rsa-2-4-20` |
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
+| P2.1 | Server | Install systemd deploy daemon | ⏳ Created, not installed |
+| P2.2 | PWA | Backfill missing version snapshots | ⏳ 5 versions missing |
+| P2.3 | Server | Clean up old Windows binary names | ⏳ Old `Rich Statistics_*.exe` files in prod `dist/` |
+| P2.4 | CI/CD | Post-deploy smoke tests | ⏳ Not implemented |
+| P2.5 | CI/CD | `build-release.yml` tag/main divergence | ⏳ Desktop builds on tag, snapshots committed to main |
 | P2.2 | Tests | E2E test pipeline | ✅ 55 tests passing |
 
 ### Phase 3: Medium Priority
@@ -463,3 +476,52 @@ Current `update.json` has signatures populated by CI pipeline.
 - `gen-update-json.py` matches `.sig` files to their binaries correctly
 - Platform key mapping fixed: `"linux-arm64": "linux-aarch64"`
 - `pub_date` now uses dynamic timestamp: `datetime.now(timezone.utc).strftime(...)`
+
+---
+
+## 10. Big-Picture Pipeline Assessment (May 2026)
+
+### Overall Grade: B+
+Production-ready with manageable technical debt. The pipeline works end-to-end and produces all required artifacts. Remaining gaps are in observability, server mechanism transparency, and version parity completeness.
+
+### What's Solid (Green)
+
+| Area | Status | Details |
+|------|--------|---------|
+| Branch flow | ✅ Strong | `develop → test → main` enforced via promote workflows. No direct commits to protected branches. |
+| CI reliability | ✅ Good | Concurrency controls, retry loops, `set -euo pipefail`, reusable sub-workflows. YAML syntax validated. |
+| Test coverage | ✅ Good | Unit (74 tests), integration (PHP 8.1–8.4 × WP latest/6.4), E2E (55 Playwright tests) all run on develop. |
+| Code quality gates | ✅ Good | PHPCS in `job-build-zip`, PHP syntax check, Chart.js SRI hash verification. |
+| Freemius integration | ✅ Working | SDK-based upload in `build-test.yml` (beta) and `build-release.yml` (stable). Version deduplication handled. |
+| Desktop distribution | ✅ Working | Linux amd64/arm64 `.deb` + Windows `.exe` on all 3 servers. APT repo + `update.json` for auto-updates. |
+| Security posture | ✅ Recently hardened | Capability checks fixed, `remove_filter` identity fixed, MySQL version guard added, sanitized headers, nonce verification. |
+| Webhook deploys | ✅ Functional | All 3 environments receive PWA deploys. Dev server binaries are current (May 24). |
+
+### Working But Needs Attention (Yellow)
+
+| # | Issue | Severity | Details |
+|---|-------|----------|---------|
+| 1 | Deploy mechanism is a "ghost" | 🔶 MEDIUM | Systemd daemon created but **not installed**. Old cron scripts exist but no system cron entries found. Deploys work but mechanism is undocumented and unmonitored. No `journalctl` logs. |
+| 2 | Version parity gaps | 🔶 MEDIUM | 5 versions missing from `docs/app/v/`: `2.4.20`, `2.4.22`, `2.4.23`, `2.4.25`, `2.4.26`. Desktop app users on missing versions get incompatible fallback snapshots. |
+| 3 | Windows binary naming inconsistency | 🔶 LOW | Prod `dist/` has both `Rich Statistics_2.4.1_x64-setup.exe` (old Tauri default) and `rich-statistics-windows.exe` (new CI naming). `update.json` points to new name; old files are orphaned clutter. |
+| 4 | No post-deploy verification | 🔶 MEDIUM | After webhook ping, CI considers deploy "done." No smoke test confirms the server is actually serving the new version. A webhook handler failure goes unnoticed. |
+| 5 | Test branch Freemius pollution | 🔶 LOW | Every `promote-test` → `build-test` run uploads to Freemius as `beta`. Acceptable for now — `beta` release_mode is designed for this. |
+
+### At Risk (Red)
+
+| # | Issue | Severity | Details |
+|---|-------|----------|---------|
+| 6 | `build-release.yml` tag vs. main divergence | 🔴 HIGH | `release` job commits PWA snapshots to `main`. `build-desktop` (needs: release) runs on the **tag ref**, which never contains those snapshots. It recreates them locally via `stamp-version`. If the recreation logic ever diverges from the commit logic, the desktop bundle and web-served PWA could be different files for the same version. |
+| 7 | No automated recovery for failed releases | 🔴 MEDIUM | If `build-release.yml` fails mid-run (e.g., Freemius upload succeeds but desktop build fails), there's no automatic rollback or retry. Partial releases — GitHub Release exists but binaries missing, or vice versa. |
+
+### Recommendations (Priority Order)
+
+| Priority | Action | Impact |
+|----------|--------|--------|
+| **P1** | Install systemd daemon on all 3 servers and remove old cron scripts | Eliminates hidden deploy mechanism, adds `journalctl` logging |
+| **P1** | Backfill missing PWA snapshots (2.4.20, 2.4.22, 2.4.23, 2.4.25, 2.4.26) | Fixes version parity for desktop app users |
+| **P2** | Add post-deploy smoke test to all 3 build workflows | Catches deploy failures immediately |
+| **P2** | Clean up old Windows binary names on prod server | Reduces confusion, saves disk |
+| **P2** | Make `build-desktop` in `build-release.yml` use the main branch commit with snapshots | Prevents tag/main divergence |
+| **P3** | Add a "health check" job to each build that verifies the app server responds | Observability |
+| **P3** | Document the disaster recovery procedure for failed releases | Operational readiness |

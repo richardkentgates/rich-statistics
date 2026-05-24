@@ -13,6 +13,113 @@ All items below confirmed against actual code.
 - **Files:** `tests/e2e/tests/pwa-shell.spec.js`, `tests/e2e/tests/pwa-add-site.spec.js`, `tests/e2e/tests/pwa-navigation.spec.js`, `tests/e2e/tests/pwa-views.spec.js`
 - **CI:** `.github/workflows/e2e-tests.yml`
 
+### C1: `promote.yml` beta step missing `GH_TOKEN`
+- **Area:** CI/CD
+- **Status:** ✅ Fixed — `GH_TOKEN: ${{ github.token }}` added to beta step
+- **File:** `.github/workflows/promote.yml:77-78`
+- **Risk:** Beta promotion would fail authentication silently
+
+### C2: Premium renderer methods missing capability check
+- **Area:** Plugin / Security
+- **Status:** ✅ Fixed — `page_user_flow`, `page_click_map`, `page_heatmap`, `page_export`, `page_woocommerce` now check `current_user_can('rsa_manage_statistics')` before rendering
+- **File:** `includes/class-admin.php:654-684`
+- **Risk:** Premium pages accessible without `rsa_manage_statistics` capability
+
+### H1: `remove_filter` closure identity bug in `post_track()`
+- **Area:** Plugin / REST API
+- **Status:** ✅ Fixed — wrapper closure stored in `$die_wrapper` variable so `remove_filter` removes the same instance
+- **File:** `includes/class-rest-api.php:1139-1185`
+- **Risk:** `wp_die_ajax_handler` filter never removed, memory leak and side effects on subsequent REST calls
+
+### H2: MySQL 8.0+ window functions fatal on older servers
+- **Area:** Plugin / Database
+- **Status:** ✅ Fixed — added `mysql_supports_window_functions()` version guard; `get_user_flow()` and `get_path_flow()` return graceful error on MySQL < 8.0 / MariaDB < 10.2
+- **File:** `includes/class-analytics.php:556-627`
+- **Risk:** Fatal error on MySQL 5.7 hosting (common on shared hosts)
+
+### H3: `build-release.yml` snapshot push lacks `set -euo pipefail`
+- **Area:** CI/CD
+- **Status:** ✅ Fixed — added `set -euo pipefail` to commit-and-push step
+- **File:** `.github/workflows/build-release.yml:212`
+- **Risk:** Silent failure on `git push` or `git rebase` errors
+
+### H4: `build-release.yml` lacks concurrency control
+- **Area:** CI/CD
+- **Status:** ✅ Fixed — added `concurrency` group per ref with `cancel-in-progress: false`
+- **File:** `.github/workflows/build-release.yml:13-15`
+- **Risk:** Overlapping release jobs could race on PWA snapshot commits or Freemius uploads
+
+### H5: Webhook curls have no retry logic
+- **Area:** CI/CD / Reliability
+- **Status:** ✅ Fixed — 3-attempt retry loop with 10s backoff added to all 3 environment webhooks
+- **Files:** `.github/workflows/build-develop.yml:24`, `.github/workflows/build-test.yml:24`, `.github/workflows/build-release.yml:243-264`
+- **Risk:** Transient 502/503 causes entire build to fail
+
+### H6: APT repo update race condition
+- **Area:** CI/CD / Desktop
+- **Status:** ✅ Fixed — gated APT update to `linux-amd64` matrix job only
+- **File:** `.github/workflows/job-build-desktop.yml:304`
+- **Risk:** Both Linux jobs (amd64 + arm64) could simultaneously update APT repo metadata, corrupting the package index
+
+### H7: `product-suffix` JSON escaping in Tauri config
+- **Area:** CI/CD / Desktop
+- **Status:** ✅ Fixed — replaced inline JSON string with Python `json.dumps()` call
+- **File:** `.github/workflows/job-build-desktop.yml:135`
+- **Risk:** Spaces in `(Dev)` / `(Test)` suffixes broke TAURI_CONFIG JSON parsing
+
+### H8: `build-test.yml` triggers duplicate builds on promote
+- **Area:** CI/CD / Branch policy
+- **Status:** ✅ Fixed — removed `push` trigger from `build-test.yml`; now `workflow_dispatch` only
+- **File:** `.github/workflows/build-test.yml:4-5`
+- **Risk:** `promote-test.yml` dispatches `build-test.yml` AND the merge push triggers it again — double builds
+
+### H10: Missing `sw-init.js` in old PWA snapshots
+- **Area:** PWA / Version parity
+- **Status:** ✅ Fixed — backfilled `sw-init.js` into v2.4.9–v2.4.19 (stable + beta)
+- **Files:** `docs/app/v/{2.4.9..2.4.19}/{stable,beta}/sw-init.js` (22 files)
+- **Risk:** Offline support broken for desktop app users on plugin v2.4.9–v2.4.19
+
+### H12: Systemd deploy daemon created (not yet installed)
+- **Area:** Server / Deploy mechanism
+- **Status:** ✅ Created — `bin/rsa-deploy-daemon` and `bin/rsa-deploy-daemon@.service`
+- **Next step:** Install on all 3 servers, remove old cron scripts
+- **Benefit:** Instant deploy reaction, `journalctl` logging, no 60s polling latency
+
+---
+
+## Phase 2: High Priority — Pre-commercial
+
+### P2.1: Install systemd deploy daemon on all 3 servers
+- **Area:** Server / Operations
+- **Status:** ⏳ Ready to install
+- **Files:** `bin/rsa-deploy-daemon`, `bin/rsa-deploy-daemon@.service`
+- **Action:** `systemctl enable --now rsa-deploy-daemon@{prod,dev,test}`
+- **Risk:** Current deploy mechanism is undocumented and unmonitored
+
+### P2.2: Backfill missing PWA version snapshots
+- **Area:** PWA / Version parity
+- **Status:** ⏳ 5 versions missing: `2.4.20`, `2.4.22`, `2.4.23`, `2.4.25`, `2.4.26`
+- **Action:** For 2.4.26 — next release tag will create it. For historical gaps, copy nearest available version.
+- **Risk:** Desktop app users on missing versions get incompatible fallback snapshots
+
+### P2.3: Clean up old Windows binary names on production server
+- **Area:** Server / Desktop distribution
+- **Status:** ⏳ Prod `dist/` has `Rich Statistics_2.4.1_x64-setup.exe` (old naming) alongside `rich-statistics-windows.exe` (new naming)
+- **Action:** Remove old-named files, ensure `update.json` points only to standardized name
+- **Risk:** Updater confusion, disk clutter
+
+### P2.4: Add post-deploy smoke tests to CI
+- **Area:** CI/CD / Observability
+- **Status:** ⏳ Not implemented
+- **Action:** After webhook ping, poll server's `/info` endpoint or check `.deployed-version` file
+- **Risk:** Webhook handler failure goes unnoticed until user reports stale PWA
+
+### P2.5: Fix `build-release.yml` tag/main divergence
+- **Area:** CI/CD / Release integrity
+- **Status:** ⏳ `release` job commits snapshots to `main`; `build-desktop` runs on tag ref (never contains those snapshots)
+- **Action:** Have `build-desktop` checkout `main` branch after release job commits, or push snapshots back to tag
+- **Risk:** Desktop bundle and web-served PWA could differ for same version
+
 ---
 
 ## Phase 3: Medium Priority
