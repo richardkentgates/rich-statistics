@@ -653,14 +653,23 @@ class RSA_Admin {
 	/** Render the user flow view. */
 	public static function page_user_flow(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'user-flow' ); }
 	/** Render the click map view. */
 	public static function page_click_map(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'click-map' ); }
 	/** Render the heatmap view. */
 	public static function page_heatmap(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'heatmap' ); }
 	/** Render the preferences page. */
 	public static function page_preferences(): void {
@@ -677,10 +686,16 @@ class RSA_Admin {
 	/** Render the export page. */
 	public static function page_export(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'export' ); }
 	/** Render the WooCommerce page. */
 	public static function page_woocommerce(): void {
 		self::require_premium_or_exit();
+		if ( ! current_user_can( 'rsa_manage_statistics' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'rich-statistics' ), '', [ 'response' => 403 ] );
+		}
 		self::render( 'woocommerce' ); }
 	/** Render the network dashboard page. */
 	public static function page_network_dashboard(): void {

@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# rsa-deploy-daemon — systemd service for Rich Statistics PWA deployment
+# Watches a trigger file via inotify and runs the deploy script immediately.
+#
+# Usage: /usr/local/bin/rsa-deploy-daemon <env>
+#   env = prod | dev | test
+#
+# Install:
+#   sudo cp rsa-deploy-daemon /usr/local/bin/
+#   sudo chmod +x /usr/local/bin/rsa-deploy-daemon
+#   sudo cp rsa-deploy-daemon@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rsa-deploy-daemon@prod
+#   sudo systemctl enable --now rsa-deploy-daemon@dev
+#   sudo systemctl enable --now rsa-deploy-daemon@test
+
+set -euo pipefail
+
+ENV="${1:-prod}"
+
+case "$ENV" in
+  prod)
+    DEPLOY_DIR="/var/www/rs-app"
+    UPDATE_SCRIPT="/usr/local/bin/rsa-app-update"
+    ;;
+  dev)
+    DEPLOY_DIR="/var/www/rs-app-dev"
+    UPDATE_SCRIPT="/usr/local/bin/rsa-app-update-dev"
+    ;;
+  test)
+    DEPLOY_DIR="/var/www/rs-app-test"
+    UPDATE_SCRIPT="/usr/local/bin/rsa-app-update-test"
+    ;;
+  *)
+    echo "Unknown environment: $ENV (expected: prod, dev, or test)" >&2
+    exit 1
+    ;;
+esac
+
+TRIGGER="${DEPLOY_DIR}/.deploy-trigger"
+LOG_TAG="rsa-deploy-daemon-${ENV}"
+
+log() {
+  echo "$(date -u +%FT%TZ)  $*"
+  logger -t "${LOG_TAG}" "$*" || true
+}
+
+# Ensure trigger directory exists so inotifywait can watch it
+mkdir -p "${DEPLOY_DIR}"
+
+log "Starting daemon for environment: ${ENV}"
+log "Watching: ${TRIGGER}"
+
+# Clean up any stale trigger on startup
+if [ -f "${TRIGGER}" ]; then
+  log "Removing stale trigger file on startup"
+  rm -f "${TRIGGER}"
+fi
+
+# Main loop: wait for trigger, deploy, repeat
+while true; do
+  # inotifywait exits when the file is created, moved into place, or written to
+  if command -v inotifywait >/dev/null 2>&1; then
+    inotifywait -qq -e create,close_write,moved_to "${DEPLOY_DIR}" --include '^\.deploy-trigger$' 2>/dev/null || true
+  else
+    # Fallback: 2-second polling loop if inotifywait is unavailable
+    while [ ! -f "${TRIGGER}" ]; do
+      sleep 2
+    done
+  fi
+
+  if [ ! -f "${TRIGGER}" ]; then
+    continue
+  fi
+
+  # Atomically grab and remove the trigger
+  TRIGGER_TMP="$(mktemp /tmp/rsa-trigger-XXXXXX)"
+  if mv "${TRIGGER}" "${TRIGGER_TMP}" 2>/dev/null; then
+    log "Trigger received — running update for ${ENV}…"
+    if "${UPDATE_SCRIPT}" 2>&1 | while read -r line; do log "$line"; done; then
+      log "Deploy succeeded for ${ENV}."
+    else
+      log "Deploy FAILED for ${ENV}. See logs above."
+    fi
+    rm -f "${TRIGGER_TMP}"
+  else
+    # Another daemon instance or race condition grabbed it first
+    sleep 1
+  fi
+done

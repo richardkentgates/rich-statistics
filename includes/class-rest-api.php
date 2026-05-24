@@ -1140,12 +1140,10 @@ class RSA_Rest_API {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is internal, not rendered.
 			throw new Exception( (string) $message );
 		};
-		add_filter(
-			'wp_die_ajax_handler',
-			function () use ( $die_handler ) {
-				return $die_handler;
-			}
-		);
+		$die_wrapper = function () use ( $die_handler ) {
+			return $die_handler;
+		};
+		add_filter( 'wp_die_ajax_handler', $die_wrapper );
 		add_filter( 'wp_doing_ajax', '__return_true' );
 
 		try {
@@ -1177,12 +1175,7 @@ class RSA_Rest_API {
 			$_POST                     = $saved_post;
 			$_SERVER['REQUEST_METHOD'] = $saved_method;
 			remove_filter( 'wp_doing_ajax', '__return_true' );
-			remove_filter(
-				'wp_die_ajax_handler',
-				function () use ( $die_handler ) {
-					return $die_handler;
-				}
-			);
+			remove_filter( 'wp_die_ajax_handler', $die_wrapper );
 		}
 	}
 

@@ -129,6 +129,21 @@ jobs:
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@^2
 
+      - name: Generate Tauri override config
+        id: tauri-config
+        run: |
+          python3 -c "
+import json
+import sys
+cfg = {
+    'productName': 'Rich Statistics' + '''${{ inputs.product-suffix }}''',
+    'identifier': 'com.richardkentgates.rich-statistics' + '''${{ inputs.product-suffix }}''',
+    'plugins': {'updater': {'endpoints': ['${{ inputs.updater-url }}']}}
+}
+print(json.dumps(cfg))
+          " > /tmp/tauri-config.json
+          echo "config=$(cat /tmp/tauri-config.json)" >> "$GITHUB_OUTPUT"
+
       - name: Build
         run: tauri build
         working-directory: src-tauri
@@ -136,7 +151,7 @@ jobs:
           CI: true
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-          TAURI_CONFIG: '{"productName":"Rich Statistics${{ inputs.product-suffix }}","identifier":"com.richardkentgates.rich-statistics${{ inputs.product-suffix }}","plugins":{"updater":{"endpoints":["${{ inputs.updater-url }}"]}}}'
+          TAURI_CONFIG: ${{ steps.tauri-config.outputs.config }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -286,8 +301,10 @@ jobs:
             fi
           fi
 
-      - name: Update APT repository (Linux only)
-        if: matrix.platform != 'windows'
+      - name: Update APT repository (Linux amd64 only)
+        # Only update the APT repo once from the amd64 job to avoid race
+        # conditions when both Linux builds finish around the same time.
+        if: matrix.platform == 'linux-amd64'
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
