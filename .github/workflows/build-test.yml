@@ -43,6 +43,51 @@ jobs:
             fi
           done
 
+  upload-freemius:
+    name: Upload to Freemius (Beta)
+    runs-on: ubuntu-latest
+    needs: build-zip
+
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, json, mbstring
+
+      - name: Checkout (for SDK + deploy script)
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep "define( 'RSA_VERSION'" rich-statistics.php | sed "s/.*'\([0-9.]*\)'.*/\1/")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rich-statistics-test-test.${{ github.run_number }}
+          path: build
+
+      - name: Copy ZIP to workspace root
+        run: |
+          cp "build/rich-statistics-test.${{ github.run_number }}.zip" \
+             "rich-statistics-${{ steps.version.outputs.version }}.zip"
+
+      - name: Deploy to Freemius via SDK
+        env:
+          DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
+          PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
+          SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+          PLUGIN_SLUG: rich-statistics
+          PLUGIN_ID: 25954
+        run: |
+          php bin/deploy-freemius.php \
+            "rich-statistics-${{ steps.version.outputs.version }}.zip" \
+            "${{ steps.version.outputs.version }}" \
+            "beta"
+
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml
     needs: build-zip
