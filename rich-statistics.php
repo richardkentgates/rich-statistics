@@ -133,6 +133,7 @@ $rsa_classes = array(
 	'RSA_Admin',
 	'RSA_Email',
 	'RSA_Privacy_Disclosure',
+	'RSA_Consent_Banner',
 );
 
 foreach ( $rsa_classes as $class ) {
@@ -211,6 +212,7 @@ function rsa_init() {
 
 	// Boot core
 	RSA_Tracker::init();
+	RSA_Consent_Banner::init();
 	RSA_Admin::init();
 	RSA_Email::init();
 

@@ -788,6 +788,9 @@ class RSA_Admin {
 			'rsa_email_digest_use_roles'   => 'absint',
 			'rsa_woocommerce_enabled'      => 'absint',
 			'rsa_beta_channel'             => 'absint',
+			'rsa_consent_banner'           => 'absint',
+			'rsa_consent_auto'             => 'absint',
+			'rsa_consent_styles'           => 'sanitize_text_field',
 		];
 
 		foreach ( $fields as $key => $sanitizer ) {

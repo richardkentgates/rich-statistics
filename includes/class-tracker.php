@@ -62,10 +62,12 @@ class RSA_Tracker {
 			'rsa-tracker',
 			'RSA',
 			[
-				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'rsa_track' ),
-				'protocols' => $protocols,
-				'premium'   => $premium_config,
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'nonce'          => wp_create_nonce( 'rsa_track' ),
+				'protocols'      => $protocols,
+				'premium'        => $premium_config,
+				'consentBanner'  => (int) get_option( 'rsa_consent_banner', 0 ),
+				'consentAuto'    => (int) get_option( 'rsa_consent_auto', 0 ),
 			]
 		);
 
