@@ -932,7 +932,7 @@ Also add these keys to `RSA_Admin::save_settings()` `$fields` array with `absint
 | `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add consent options to `drop_site_tables()` uninstall cleanup list. |
 | `includes/class-admin.php` | Add `rsa_consent_banner` and `rsa_consent_auto` to `save_settings()` `$fields` array with `absint` sanitizer. Hook `RSA_Consent_Banner::init()`. |
 | `includes/class-tracker.php` | Add `consentBanner` and `consentAuto` to `wp_localize_script` data (`window.RSA`). |
-| `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending beacons. Per-category gate: drop beacon if visitor hasn't consented to that category. |
+| `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending. Per-category gate applies to both `sendBeacon` and jQuery sync AJAX fallback paths. If `localStorage` is blocked, fall back to `sessionStorage` (session-only consent) then in-memory state (page-load-only consent). |
 | `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, style controls. |
 | `includes/class-privacy-disclosure.php` | Update legal claims based on consent mode. |
 | `uninstall.php` | No changes needed — `RSA_DB::maybe_remove_data()` handles option cleanup via `drop_site_tables()`. |
@@ -961,6 +961,21 @@ On each beacon, tracker.js checks localStorage categories
   ├── Click → check clicks
   └── Commerce → check commerce
 ```
+
+### 12.6.1 localStorage Blocked Fallback
+
+If `localStorage` is unavailable (private browsing, corporate policy, browser extension):
+- Fall back to `sessionStorage` → consent persists for the tab session only, lost on close
+- If `sessionStorage` is also blocked, use in-memory state → consent lasts for the page load only, resets on navigation
+- The banner still renders and functions normally in all cases — only persistence scope changes
+
+### 12.6.2 Tracker Send Path
+
+`tracker.js` sends data via two paths (existing code):
+1. `navigator.sendBeacon()` — preferred, fire-and-forget
+2. jQuery `$.ajax({ async: false })` — sync fallback when sendBeacon is unavailable
+
+**Both paths must apply the same consent gating.** The consent check happens before the send decision, so both paths are blocked equally when a category is declined.
 
 ### 12.7 What Must Be Preserved
 
@@ -1009,6 +1024,8 @@ On each beacon, tracker.js checks localStorage categories
 | Collapse button | Clicking collapse repositions banner out of the way; page content underneath is clickable |
 | Return button | Clicking return brings banner back to original position |
 | Collapse state persists | On next page load, collapsed state is remembered via localStorage |
+| localStorage blocked | With localStorage blocked, consent falls back to sessionStorage; choices persist for tab session only |
+| AJAX fallback | jQuery sync AJAX path applies same consent gating as sendBeacon path |
 | DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
 | Privacy disclosure | Shortcode reflects actual consent mode |
 | Settings save | New options save correctly via `save_settings()` with proper sanitization |

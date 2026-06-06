@@ -434,7 +434,7 @@ Also add to `RSA_Admin::save_settings()` `$fields` array with `absint` sanitizer
 | `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add consent options to `drop_site_tables()` uninstall list. |
 | `includes/class-admin.php` | Add `rsa_consent_banner` and `rsa_consent_auto` to `save_settings()` `$fields` array with `absint` sanitizer. Hook `RSA_Consent_Banner::init()`. |
 | `includes/class-tracker.php` | Add `consentBanner` and `consentAuto` to `wp_localize_script` data. |
-| `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending beacons. Per-category gate. |
+| `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending. Per-category gate applies to both `sendBeacon` and jQuery sync AJAX fallback paths. If `localStorage` is blocked, fall back to `sessionStorage` (session-only consent) then in-memory state (page-load-only consent). |
 | `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, style controls. |
 | `includes/class-privacy-disclosure.php` | Update legal claims based on consent mode. |
 | `languages/rich-statistics.pot` | Regenerate. |
@@ -459,7 +459,7 @@ Also add to `RSA_Admin::save_settings()` `$fields` array with `absint` sanitizer
 7. `includes/class-privacy-disclosure.php` — Update legal claims
 
 **Phase B — Frontend (tracker.js)**
-8. `assets/js/tracker.js` — Consent check + per-category gating
+8. `assets/js/tracker.js` — Consent check + per-category gating. Applies to both `sendBeacon` and jQuery sync AJAX fallback. If `localStorage` blocked, fall back to `sessionStorage` then in-memory state.
 
 **Phase C — Housekeeping**
 9. `languages/rich-statistics.pot` — Regenerate
@@ -490,3 +490,5 @@ Also add to `RSA_Admin::save_settings()` `$fields` array with `absint` sanitizer
 | Privacy disclosure | Shortcode reflects actual consent mode |
 | Settings save | New options save correctly via `save_settings()` with proper sanitization |
 | Uninstall cleanup | Consent options are deleted when plugin is uninstalled |
+| localStorage blocked | With localStorage blocked, consent falls back to sessionStorage; choices persist for tab session only |
+| AJAX fallback | jQuery sync AJAX path applies same consent gating as sendBeacon path |
