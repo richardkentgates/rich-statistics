@@ -379,7 +379,7 @@ Per-metric categories (all default ON):
 
 Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
 
-Banner UX: Minimal text, small footprint. A button collapses the banner out of the way (repositions off-screen so it doesn't block page content). A button returns it to its original location.
+Banner UX: Minimal text, small footprint. A button collapses the banner out of the way (repositions off-screen so it doesn't block page content). A button returns it to its original location. Collapse/return state persists across page loads.
 
 ### Settings Storage (new `wp_options` keys)
 
@@ -469,7 +469,7 @@ Banner UX: Minimal text, small footprint. A button collapses the banner out of t
 | `banner` (no auto) | Banner shown, no tracking until visitor chooses |
 | `banner-auto` | Banner shown, tracking immediate, visitor can customize |
 | Category gating | Reject "Clicks" → click beacons dropped; accept "Analytics" → pageviews send |
-| Banner persistence | Banner always renders on every page load when Show Banner is checked, regardless of prior visitor choices |
+| Banner persistence | Banner renders when Show Banner is checked. Collapse/return state persists across page loads via localStorage. |
 | Premium gating | Click/Commerce categories show "Premium" badge without license |
 | DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
 | Privacy disclosure | Shortcode reflects actual consent mode |

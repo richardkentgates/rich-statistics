@@ -893,7 +893,7 @@ Add an optional visitor consent banner to the Rich Statistics plugin that allows
 
 Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provide a dedicated opacity slider. At render time, it combines with the shadow color into a proper CSS `rgba()` value.
 
-**Banner UX**: Minimal text, small footprint. A button collapses the banner out of the way (physically repositioning it off-screen so it doesn't block page content). A button returns it to its original location.
+**Banner UX**: Minimal text, small footprint. A button collapses the banner out of the way (physically repositioning it off-screen so it doesn't block page content). A button returns it to its original location. Collapse/return state persists across page loads.
 
 **Consent flow**:
 
@@ -911,7 +911,7 @@ tracker.js checks window.RSA.consentMode
               "Reject All" → localStorage.rsa_consent = { analytics:false, ... }
               "Customize" → per-category toggles (all ON by default)
                     "Save" → localStorage.rsa_consent = { analytics:true, clicks:false, ... }
-        └── Banner appears again on next page load regardless of prior choice
+        └── Collapse/return state persists across page loads
 ```
 
 ### 12.3 Settings Storage
@@ -1020,7 +1020,7 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 | Banner without auto-consent | With `rsa_consent_mode=banner`, banner always renders, tracker sends nothing until visitor accepts |
 | Banner with auto-consent | With `rsa_consent_mode=banner-auto`, banner always renders, tracker sends all data immediately, visitor can toggle categories |
 | Category gating | After visitor rejects "Clicks", tracker drops click beacons; "Analytics" accepted → pageviews send normally |
-| Banner persistence | Banner always renders on every page load when Show Banner is on, regardless of prior visitor choices |
+| Banner persistence | Banner renders when Show Banner is on. Collapse/return state persists across page loads via localStorage. |
 | Premium gating | Click Tracking and Commerce categories show "Premium" badge when Freemius license is inactive |
 | DNT/GPC override | `navigator.doNotTrack=1` or `navigator.globalPrivacyControl=true` still exits tracker before any consent logic |
 | Privacy disclosure | `[rich_statistics_privacy_disclosure]` shortcode reflects actual consent mode |
