@@ -346,3 +346,133 @@ Remove the WordPress-plugin-embedded PWA serving mechanism and all dead code it 
 ### Risk
 
 Low. In-plugin PWA serving is standalone with no cross-dependencies. No DB migrations needed. Stale rewrite rules flushed via `uninstall.php`.
+
+---
+
+## Phase 6: Consent Banner Feature (Planning — not yet implemented)
+
+### Task
+
+Add an optional visitor consent banner that allows site owners to comply with privacy regulations by giving visitors control over which tracking categories are active.
+
+### Design
+
+Two independent toggles that map to one stored mode:
+
+| Show Banner | Auto-Consent | Stored `rsa_consent_mode` | Behavior |
+|-------------|-------------|---------------------------|----------|
+| No | No | `off` | Track everything, no banner, no localStorage (current default) |
+| No | Yes | `auto-consent` | Track everything, localStorage receipt on first interaction, no banner |
+| Yes | No | `banner` | Show banner, track nothing until visitor chooses |
+| Yes | Yes | `banner-auto` | Show banner, track immediately, visitor can customize/reject |
+
+**All metrics default ON.** The "Customize" panel lets visitors turn categories OFF, not on.
+
+Per-metric categories (all default ON):
+
+| Category | Controls | Tables | Free/Premium |
+|-----------|---------|--------|-------------|
+| Analytics | Pageviews, sessions, viewport, time on page | `rsa_events`, `rsa_sessions` | Free |
+| Campaigns | UTM tracking (source, medium, campaign) | UTM fields in `rsa_events` | Free |
+| Click Tracking | Element clicks, viewport coordinates, heatmap | `rsa_clicks`, `rsa_heatmap` | Premium |
+| Commerce | WooCommerce purchase events, product views | `rsa_wc_events` | Premium |
+
+Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
+
+Consent versioning: `rsa_consent_version` option incremented on settings change. Old `localStorage` entries with mismatched versions are invalidated, banner reappears.
+
+### Settings Storage (new `wp_options` keys)
+
+| Option key | Type | Default |
+|-----------|------|---------|
+| `rsa_consent_mode` | string | `'off'` |
+| `rsa_consent_banner_text` | string | Default consent message |
+| `rsa_consent_accept_label` | string | `'Accept All'` |
+| `rsa_consent_reject_label` | string | `'Reject All'` |
+| `rsa_consent_customize_label` | string | `'Customize'` |
+| `rsa_consent_categories` | array | All four categories ON |
+| `rsa_consent_styles` | JSON | Style config object (see above) |
+| `rsa_consent_version` | int | `1` |
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `includes/class-consent-banner.php` | PHP class: render banner HTML, inject CSS custom properties from styles, expose consent config via `wp_localize_script`. Exit early if mode is `off`. |
+| `assets/css/consent-banner.css` | Base banner layout styles (position: fixed, z-index, responsive, animations). Colors/shadows use CSS custom properties set server-side. |
+| `assets/js/admin-consent-preview.js` | Admin live preview — reads style inputs and renders a mini banner preview in real time. |
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add uninstall cleanup. |
+| `includes/class-admin.php` | Handle new options in `save_settings()`. Hook `RSA_Consent_Banner::init()`. |
+| `includes/class-tracker.php` | Add `consentMode`, `consentCategories`, `consentVersion` to `wp_localize_script` data. |
+| `assets/js/tracker.js` | Check `window.RSA.consentMode` + `localStorage.rsa_consent` before sending beacons. Per-category gate. Listen for `rsaConsentChange` event. |
+| `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, banner text, button labels, per-metric toggles (all default ON), style controls with live preview. |
+| `includes/class-rest-api.php` | Add `GET/POST /rsa/v1/consent-settings` endpoints behind `check_basic_auth`. |
+| `includes/class-privacy-disclosure.php` | Update legal claims to reflect actual consent mode (banner → explicit consent, auto-consent → implied consent, off → remove "consent not required" claim). |
+| `uninstall.php` | Clean up `rsa_consent_*` options. |
+| `languages/rich-statistics.pot` | Regenerate. |
+| `CHANGELOG.md` | Document. |
+| `docs/app/app.js` | Add consent settings panel calling REST endpoints. |
+| `docs/app/v/2.4.26/{stable,beta}/app.js` | Copy updated app.js. |
+
+### What Must Be Preserved
+
+- Default behavior (`rsa_consent_mode=off`): track everything, no banner, no localStorage
+- DNT/GPC check in `tracker.js` — exits before consent logic
+- Existing `window.RSA` config structure — consent keys are additive
+- Premium gating: Click Tracking and Commerce show "Premium" badge in banner when license inactive
+- All existing REST endpoints — consent endpoints are net-new
+
+### Implementation Order
+
+**Phase A — Backend (PHP)**
+1. `includes/class-db.php` — Add `rsa_consent_*` defaults to `seed_defaults()`
+2. `includes/class-consent-banner.php` — New class
+3. `includes/class-admin.php` — Save handler + hook
+4. `templates/admin/preferences.php` — Consent Banner section
+5. `assets/css/consent-banner.css` — Base styles
+6. `assets/js/admin-consent-preview.js` — Admin live preview
+7. `includes/class-tracker.php` — Consent config in `wp_localize_script`
+8. `includes/class-rest-api.php` — Consent settings endpoints
+9. `includes/class-privacy-disclosure.php` — Update legal claims
+10. `uninstall.php` — Cleanup
+
+**Phase B — Frontend (tracker.js)**
+11. `assets/js/tracker.js` — Consent check + per-category gating
+
+**Phase C — PWA/App**
+12. `docs/app/app.js` — Consent settings panel
+
+**Phase D — Housekeeping**
+13. `languages/rich-statistics.pot` — Regenerate
+14. `CHANGELOG.md` — Document
+15. Copy `app.js` to `docs/app/v/2.4.26/{stable,beta}/`
+16. `composer phpcs` + `composer test`
+
+### Risk Assessment
+
+- **Low risk for existing installations.** Default `rsa_consent_mode=off` means no change until site owner opts in.
+- **No database migration.** All settings are `wp_options` with defaults seeded on update.
+- **No schema changes.** Consent enforced client-side before beacons sent.
+- **Backwards-compatible.** If `window.RSA.consentMode` is undefined (old cached tracker), tracking proceeds as before.
+- **Privacy disclosure** must be updated to reflect the consent mode in use.
+
+### Test Plan
+
+| Test | Verify |
+|------|--------|
+| Default (`off`) | No banner, all tracking, no localStorage |
+| `auto-consent` | No banner, all tracking, localStorage receipt on interaction |
+| `banner` (no auto) | Banner shown, no tracking until visitor chooses |
+| `banner-auto` | Banner shown, tracking immediate, visitor can customize |
+| Category gating | Reject "Clicks" → click beacons dropped; accept "Analytics" → pageviews send |
+| Versioning | Admin changes settings → version bump → old localStorage invalidated → banner reappears |
+| Premium gating | Click/Commerce categories show "Premium" badge without license |
+| DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
+| Privacy disclosure | Shortcode reflects actual consent mode |
+| REST API | GET/POST consent-settings require `rsa_manage_statistics` |
+| PWA settings | Reads/writes consent config via REST API |
