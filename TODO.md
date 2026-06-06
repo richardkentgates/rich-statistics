@@ -379,7 +379,7 @@ Per-metric categories (all default ON):
 
 Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
 
-Consent versioning: `rsa_consent_version` option incremented on settings change. Old `localStorage` entries with mismatched versions are invalidated, banner reappears.
+Consent persistence: Visitor choices stored in `localStorage.rsa_consent`. Banner shows or hides based solely on the Show Banner checkbox in Preferences. Once a visitor chooses (accept/reject/customize), the banner stays dismissed. No versioning or forced re-display.
 
 ### Settings Storage (new `wp_options` keys)
 
@@ -392,7 +392,6 @@ Consent versioning: `rsa_consent_version` option incremented on settings change.
 | `rsa_consent_customize_label` | string | `'Customize'` |
 | `rsa_consent_categories` | array | All four categories ON |
 | `rsa_consent_styles` | JSON | Style config object (see above) |
-| `rsa_consent_version` | int | `1` |
 
 ### Files to Create
 
@@ -470,7 +469,7 @@ Consent versioning: `rsa_consent_version` option incremented on settings change.
 | `banner` (no auto) | Banner shown, no tracking until visitor chooses |
 | `banner-auto` | Banner shown, tracking immediate, visitor can customize |
 | Category gating | Reject "Clicks" → click beacons dropped; accept "Analytics" → pageviews send |
-| Versioning | Admin changes settings → version bump → old localStorage invalidated → banner reappears |
+| Versioning | ❌ No versioning mechanism — visitor consent persists in localStorage, banner controlled solely by Show Banner checkbox |
 | Premium gating | Click/Commerce categories show "Premium" badge without license |
 | DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
 | Privacy disclosure | Shortcode reflects actual consent mode |

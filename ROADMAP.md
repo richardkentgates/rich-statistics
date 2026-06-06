@@ -893,7 +893,7 @@ Add an optional visitor consent banner to the Rich Statistics plugin that allows
 
 Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provide a dedicated opacity slider. At render time, it combines with the shadow color into a proper CSS `rgba()` value.
 
-**Consent versioning**: When the site owner changes consent settings, a consent version key is bumped. Old `localStorage` entries with mismatched versions are invalidated, causing the banner to reappear for returning visitors.
+**Consent persistence**: Visitor choices are stored in `localStorage.rsa_consent`. The banner shows or hides based solely on the Show Banner checkbox in Preferences. If a visitor has already made a choice (accept/reject/customize), the banner stays dismissed. No versioning or forced re-display mechanism.
 
 **Consent flow**:
 
@@ -925,14 +925,13 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 
 | Option key | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `rsa_consent_mode` | string | `'off'` | One of: `off`, `auto-consent`, `banner` |
+| `rsa_consent_mode` | string | `'off'` | One of: `off`, `auto-consent`, `banner`, `banner-auto` |
 | `rsa_consent_banner_text` | string | (default message) | Banner body text |
 | `rsa_consent_accept_label` | string | `'Accept All'` | Accept button label |
 | `rsa_consent_reject_label` | string | `'Reject All'` | Reject button label |
 | `rsa_consent_customize_label` | string | `'Customize'` | Customize button label |
 | `rsa_consent_categories` | array | `['analytics'=>true, 'campaigns'=>true, 'clicks'=>true, 'commerce'=>true]` | Default state of per-metric toggles shown to visitors |
 | `rsa_consent_styles` | JSON object | (see 12.2 above) | Banner styling configuration |
-| `rsa_consent_version` | int | `1` | Incremented when settings change, invalidating old localStorage consent |
 
 **Mode mapping** — the admin UI presents two checkboxes (Show Banner, Auto-Consent) that map to one stored value:
 
@@ -1026,7 +1025,7 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 | Banner without auto-consent | With `rsa_consent_mode=banner`, banner renders, tracker sends nothing until visitor chooses |
 | Banner with auto-consent | With `rsa_consent_mode=banner-auto`, banner renders, tracker sends all data immediately, visitor can customize/reject |
 | Category gating | After rejecting "Clicks" category, tracker drops click beacons; after accepting "Analytics", pageview beacons send normally |
-| Consent versioning | After admin changes settings (bumping version), returning visitor's old localStorage consent is invalidated, banner reappears |
+| Returning visitor | Visitor who already chose (accept/reject/customize) sees no banner on subsequent visits — choice persists in localStorage |
 | Premium gating | Click Tracking and Commerce categories show "Premium" badge when Freemius license is inactive |
 | DNT/GPC override | `navigator.doNotTrack=1` or `navigator.globalPrivacyControl=true` still exits tracker before any consent logic |
 | Privacy disclosure | `[rich_statistics_privacy_disclosure]` shortcode reflects actual consent mode |
