@@ -893,7 +893,7 @@ Add an optional visitor consent banner to the Rich Statistics plugin that allows
 
 Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provide a dedicated opacity slider. At render time, it combines with the shadow color into a proper CSS `rgba()` value.
 
-**Banner UX**: Minimal text, small footprint. A button moves the banner out of the way (repositions it). A button moves it back into place.
+**Banner UX**: Minimal text, small footprint. A button collapses the banner out of the way (physically repositioning it off-screen so it doesn't block page content). A button returns it to its original location.
 
 **Consent flow**:
 

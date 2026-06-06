@@ -379,7 +379,7 @@ Per-metric categories (all default ON):
 
 Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
 
-Banner UX: Minimal text, small footprint. A button moves the banner out of the way, a button moves it back into place.
+Banner UX: Minimal text, small footprint. A button collapses the banner out of the way (repositions off-screen so it doesn't block page content). A button returns it to its original location.
 
 ### Settings Storage (new `wp_options` keys)
 
