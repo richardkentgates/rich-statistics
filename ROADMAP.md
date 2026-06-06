@@ -893,7 +893,7 @@ Add an optional visitor consent banner to the Rich Statistics plugin that allows
 
 Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provide a dedicated opacity slider. At render time, it combines with the shadow color into a proper CSS `rgba()` value.
 
-**Consent persistence**: Visitor choices are stored in `localStorage.rsa_consent`. The banner shows or hides based solely on the Show Banner checkbox in Preferences. If a visitor has already made a choice (accept/reject/customize), the banner stays dismissed. No versioning or forced re-display mechanism.
+**Consent persistence**: The banner always renders on every page load when Show Banner is checked. It is never dismissed or hidden by visitor action. Visitor category choices (which metrics to allow) are stored in `localStorage.rsa_consent` but the banner itself always appears.
 
 **Consent flow**:
 
@@ -901,22 +901,17 @@ Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provid
 Visitor loads page
   ↓
 tracker.js checks window.RSA.consentMode
-  ├── undefined/off → track everything, no banner, no localStorage (current default)
+├── undefined/off → track everything, no banner (current default)
   ├── "auto-consent" (banner hidden) → track everything, on first interaction
-  │     write localStorage.rsa_consent = { mode:"auto", analytics:true, ...  ts:... }
-  └── "banner" (always shown when Show Banner is on)
-        ├── Auto-Consent On  → track immediately, visitor can customize/reject
-        └── Auto-Consent Off → track nothing until visitor chooses
-              ├── "Accept All" → localStorage.rsa_consent = { analytics:true, ...  ts:... }
-              ├── "Reject All" → localStorage.rsa_consent = { analytics:false, ...  }
-              └── "Customize" → per-category toggles (all ON by default)
-                    └── "Save" → localStorage.rsa_consent = { analytics:true, clicks:false, ...  }
-  ↓
-On each beacon, tracker.js checks localStorage.rsa_consent categories before sending
-  ├── Pageview data → check analytics category
-  ├── UTM params → check campaigns category
-  ├── Click event → check clicks category
-  └── WooCommerce event → check commerce category
+  │     write localStorage.rsa_consent = { mode:"auto", analytics:true, ..., ts:... }
+  └── "banner" or "banner-auto" (banner ALWAYS shown on every page load)
+        ├── Auto-Consent On  → track immediately, visitor can toggle categories
+        └── Auto-Consent Off → track nothing until visitor accepts
+              "Accept All" → localStorage.rsa_consent = { analytics:true, ... }
+              "Reject All" → localStorage.rsa_consent = { analytics:false, ... }
+              "Customize" → per-category toggles (all ON by default)
+                    "Save" → localStorage.rsa_consent = { analytics:true, clicks:false, ... }
+        └── Banner appears again on next page load regardless of prior choice
 ```
 
 ### 12.3 Settings Storage
@@ -1022,10 +1017,10 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 |------|---------------|
 | Default behavior | With `rsa_consent_mode=off`, no banner renders, tracker sends all data, no localStorage |
 | Auto-consent (no banner) | With `rsa_consent_mode=auto-consent`, no banner renders, tracker sends all data, `localStorage.rsa_consent` written on first interaction |
-| Banner without auto-consent | With `rsa_consent_mode=banner`, banner renders, tracker sends nothing until visitor chooses |
-| Banner with auto-consent | With `rsa_consent_mode=banner-auto`, banner renders, tracker sends all data immediately, visitor can customize/reject |
-| Category gating | After rejecting "Clicks" category, tracker drops click beacons; after accepting "Analytics", pageview beacons send normally |
-| Returning visitor | Visitor who already chose (accept/reject/customize) sees no banner on subsequent visits — choice persists in localStorage |
+| Banner without auto-consent | With `rsa_consent_mode=banner`, banner always renders, tracker sends nothing until visitor accepts |
+| Banner with auto-consent | With `rsa_consent_mode=banner-auto`, banner always renders, tracker sends all data immediately, visitor can toggle categories |
+| Category gating | After visitor rejects "Clicks", tracker drops click beacons; "Analytics" accepted → pageviews send normally |
+| Banner persistence | Banner always renders on every page load when Show Banner is on, regardless of prior visitor choices |
 | Premium gating | Click Tracking and Commerce categories show "Premium" badge when Freemius license is inactive |
 | DNT/GPC override | `navigator.doNotTrack=1` or `navigator.globalPrivacyControl=true` still exits tracker before any consent logic |
 | Privacy disclosure | `[rich_statistics_privacy_disclosure]` shortcode reflects actual consent mode |

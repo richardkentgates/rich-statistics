@@ -379,7 +379,7 @@ Per-metric categories (all default ON):
 
 Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
 
-Consent persistence: Visitor choices stored in `localStorage.rsa_consent`. Banner shows or hides based solely on the Show Banner checkbox in Preferences. Once a visitor chooses (accept/reject/customize), the banner stays dismissed. No versioning or forced re-display.
+Consent persistence: LocalStorage stores visitor category choices. The banner itself always renders on every page load when Show Banner is checked — it is never dismissed or hidden by visitor action.
 
 ### Settings Storage (new `wp_options` keys)
 
@@ -469,7 +469,7 @@ Consent persistence: Visitor choices stored in `localStorage.rsa_consent`. Banne
 | `banner` (no auto) | Banner shown, no tracking until visitor chooses |
 | `banner-auto` | Banner shown, tracking immediate, visitor can customize |
 | Category gating | Reject "Clicks" → click beacons dropped; accept "Analytics" → pageviews send |
-| Versioning | ❌ No versioning mechanism — visitor consent persists in localStorage, banner controlled solely by Show Banner checkbox |
+| Banner persistence | Banner always renders on every page load when Show Banner is checked, regardless of prior visitor choices |
 | Premium gating | Click/Commerce categories show "Premium" badge without license |
 | DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
 | Privacy disclosure | Shortcode reflects actual consent mode |
