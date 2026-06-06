@@ -407,7 +407,7 @@ Banner UX: Minimal text, small footprint. A button collapses the banner out of t
 |------|--------|
 | `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add uninstall cleanup. |
 | `includes/class-admin.php` | Handle new options in `save_settings()`. Hook `RSA_Consent_Banner::init()`. |
-| `includes/class-tracker.php` | Add `consentMode`, `consentCategories`, `consentVersion` to `wp_localize_script` data. |
+| `includes/class-tracker.php` | Add `consentMode`, `consentCategories` to `wp_localize_script` data. |
 | `assets/js/tracker.js` | Check `window.RSA.consentMode` + `localStorage.rsa_consent` before sending beacons. Per-category gate. Listen for `rsaConsentChange` event. |
 | `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, banner text, button labels, per-metric toggles (all default ON), style controls with live preview. |
 | `includes/class-rest-api.php` | Add `GET/POST /rsa/v1/consent-settings` endpoints behind `check_basic_auth`. |

@@ -951,7 +951,7 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 |------|--------|
 | `includes/class-db.php` | Add `seed_defaults()` entries for all `rsa_consent_*` options. Add `uninstall` cleanup for consent options. |
 | `includes/class-admin.php` | Handle new options in `save_settings()`. Hook `RSA_Consent_Banner::init()` in plugin init. |
-| `includes/class-tracker.php` | Add `consentMode`, `consentCategories`, and `consentVersion` to the `wp_localize_script` data object (`window.RSA`). |
+| `includes/class-tracker.php` | Add `consentMode`, `consentCategories` to the `wp_localize_script` data object (`window.RSA`). |
 | `assets/js/tracker.js` | Check `window.RSA.consentMode` and `localStorage.rsa_consent` before sending beacons. Per-category gate: drop beacon if visitor hasn't consented to that category. Listen for `rsaConsentChange` custom event to re-evaluate after visitor choice. |
 | `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, banner text textarea, button label inputs, per-metric category toggles (all default ON), and full style controls with live preview. |
 | `includes/class-rest-api.php` | Add `GET /rsa/v1/consent-settings` and `POST /rsa/v1/consent-settings` endpoints behind `check_basic_auth` for PWA/app settings management. |
