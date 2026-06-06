@@ -893,7 +893,7 @@ Add an optional visitor consent banner to the Rich Statistics plugin that allows
 
 Alpha channel is stored separately (as `shadowAlpha`) so the admin UI can provide a dedicated opacity slider. At render time, it combines with the shadow color into a proper CSS `rgba()` value.
 
-**Consent persistence**: The banner always renders on every page load when Show Banner is checked. It is never dismissed or hidden by visitor action. Visitor category choices (which metrics to allow) are stored in `localStorage.rsa_consent` but the banner itself always appears.
+**Banner UX**: Minimal text, small footprint. A button moves the banner out of the way (repositions it). A button moves it back into place.
 
 **Consent flow**:
 

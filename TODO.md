@@ -379,7 +379,7 @@ Per-metric categories (all default ON):
 
 Banner styling (fully customizable): `borderRadius`, `fontColor`, `backgroundColor`, `borderColor`, `borderWidth`, `shadowX`, `shadowY`, `shadowBlur`, `shadowSpread`, `shadowAlpha`. Alpha stored separately for dedicated opacity slider; combined into `rgba()` at render time.
 
-Consent persistence: LocalStorage stores visitor category choices. The banner itself always renders on every page load when Show Banner is checked — it is never dismissed or hidden by visitor action.
+Banner UX: Minimal text, small footprint. A button moves the banner out of the way, a button moves it back into place.
 
 ### Settings Storage (new `wp_options` keys)
 
