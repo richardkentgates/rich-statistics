@@ -49,14 +49,7 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 		loadStoredSites();
 
-		// Load premium status from RSA_CONFIG (injected by WordPress)
-		if ( window.RSA_CONFIG ) {
-			state.isPremium  = window.RSA_CONFIG.isPremium  || false;
-			state.upgradeUrl = window.RSA_CONFIG.upgradeUrl || '';
-		}
-
-		var nonceAuth = !! ( window.RSA_CONFIG && window.RSA_CONFIG.nonce && state.siteUrl );
-		if ( ( state.siteUrl && state.credentials ) || nonceAuth ) {
+		if ( state.siteUrl && state.credentials ) {
 			renderSiteSwitcher();
 			showApp();
 			if ( ! state.isPremium ) {
@@ -118,33 +111,6 @@
 		}
 		state.dateFrom = localStorage.getItem( 'rsa_date_from' ) || '';
 		state.dateTo   = localStorage.getItem( 'rsa_date_to'   ) || '';
-
-		// When the app is served from a WP site (/rs-app/), config.js sets
-		// autoSiteUrl and serve_app() injects a nonce.  Auto-register the
-		// current site with empty credentials — nonce authentication is used
-		// instead of Application Passwords for same-origin calls.
-		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
-		var autoNonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
-		if ( autoUrl && autoNonce ) {
-			var normalised = autoUrl.replace( /\/$/, '' );
-			var match = state.sites.find( function ( s ) {
-				return s.siteUrl.replace( /\/$/, '' ) === normalised;
-			} );
-			if ( ! match ) {
-				var autoSite = {
-					id         : uid(),
-					label      : ( window.RSA_CONFIG.autoLabel ) || hostname( autoUrl ),
-					siteUrl    : normalised,
-					appUrl     : window.RSA_CONFIG.appUrl || '',
-					credentials: '',
-				};
-				state.sites.unshift( autoSite );
-				localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
-				match = autoSite;
-			}
-			state.activeId = match.id;
-			localStorage.setItem( 'rsa_active', match.id );
-		}
 
 		syncActiveState();
 	}
@@ -359,17 +325,11 @@
 
 	/**
 	 * Return the correct auth headers for a given absolute URL.
-	 * Same-origin auto-site uses the injected WP REST nonce (cookie auth +
-	 * nonce).
-	 * Other sites use Application Password Basic auth.
+	 * Application Password Basic auth is used for all requests.
 	 */
 	function getAuthHeaders( url ) {
-		var nonce   = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
-		var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
 		var headers = { 'Accept': 'application/json' };
-		if ( nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
-			headers['X-WP-Nonce'] = nonce;
-		} else if ( state.credentials ) {
+		if ( state.credentials ) {
 			headers['Authorization'] = 'Basic ' + state.credentials;
 		}
 		return headers;
@@ -399,25 +359,6 @@
 			headers: getAuthHeaders( url ),
 		} ).then( function ( res ) {
 			if ( res.status === 401 || res.status === 403 ) {
-				// If using nonce auth and we get a 403, the nonce may have expired.
-				// Fetch a fresh nonce from WP and retry once.
-				var nonce = window.RSA_CONFIG && window.RSA_CONFIG.nonce;
-				var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
-				if ( res.status === 403 && nonce && autoUrl && url.toLowerCase().startsWith( autoUrl.toLowerCase() ) ) {
-					return fetch( autoUrl + '/wp-json/', { headers: { 'Accept': 'application/json' } } )
-						.then( function ( r ) { return r.ok ? r.json() : null; } )
-						.then( function ( json ) {
-							if ( json && json.nonce ) {
-								window.RSA_CONFIG.nonce = json.nonce;
-							}
-							return fetch( url, { method: 'GET', headers: getAuthHeaders( url ) } );
-						} )
-						.then( function ( r2 ) {
-							if ( r2.status === 401 || r2.status === 403 ) throw new Error( 'auth' );
-							if ( ! r2.ok ) throw new Error( 'HTTP ' + r2.status );
-							return r2.json();
-						} );
-				}
 				throw new Error( 'auth' );
 			}
 			if ( ! res.ok ) {
@@ -786,15 +727,6 @@
 		if ( otpErr    ) { otpErr.textContent = ''; }
 		if ( addErr    ) { addErr.textContent = ''; }
 		if ( verifyBtn ) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify Code'; }
-
-		// When served from a WP site, pre-fill the URL so the user doesn't have
-		// to type it in.  No fallback: if autoSiteUrl is not set, leave blank.
-		if ( ! prefill ) {
-			var autoUrl = window.RSA_CONFIG && window.RSA_CONFIG.autoSiteUrl;
-			if ( autoUrl && urlField ) {
-				urlField.value = autoUrl;
-			}
-		}
 
 		state._otpVerified = null;
 
@@ -3707,7 +3639,7 @@
 		setLoading( false );
 		if ( err.message === 'auth' ) {
 			// Show the login screen so the user can re-authenticate, but keep
-			// saved sites intact — a stale nonce or transient 401 must not
+			// saved sites intact — a transient 401 must not
 			// permanently destroy the stored site list.
 			showLogin();
 			return;

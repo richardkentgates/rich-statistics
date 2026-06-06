@@ -566,3 +566,274 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | Priority | Action | Impact |
 |----------|--------|--------|
 | **P3** | Replace placeholder screenshots in `wporg-assets/` with real images | Unblocks WordPress.org SVN submission (`bin/deploy-wporg.sh` ready) |
+
+---
+
+## 11. Remove In-Plugin PWA Serving (Planned Task)
+
+> **Status:** Plan corrected — corrections applied 2026-06-06. Awaiting user approval before implementation.
+> **Last updated:** 2026-06-06
+
+### 11.1 Goal
+
+Remove the WordPress-plugin-embedded PWA serving mechanism (`/rs-app/` rewrite + file serving) while preserving the external app server (`app.richstatistics.com`), the Tauri desktop app, and all WordPress admin dashboard interfaces.
+
+### 11.2 Corrected Architecture Understanding
+
+The plugin currently has **two entirely separate mechanisms** that happen to read from the same source directory (`docs/app/`):
+
+**Mechanism A — In-Plugin PWA (TO BE REMOVED):**
+- `includes/class-admin.php` registers an Apache rewrite rule `rs-app/?$` and a query var `rsa_app`
+- On activation it flushes rewrite rules
+- When `?rsa_app=1` is set, `serve_app()` reads `docs/app/index.html` from disk and serves it as a standalone page inside the WordPress site
+- `serve_manifest()` serves `docs/app/manifest.json`
+- This is what makes `https://yoursite.com/rs-app/` load the PWA from within the plugin
+
+**Mechanism B — External App Server (PRESERVED):**
+- The external server (`app.richstatistics.com`, `dev.`, `test.`) runs `bin/server-update-webapp.sh`
+- That script does a `git sparse-checkout` of `docs/app/` directly from the **GitHub repository** (not from any WordPress site)
+- The files are served at the external subdomain
+- CI workflows (`build-release.yml`, `build-develop.yml`, `build-test.yml`) trigger this via webhook
+
+**Mechanism C — Desktop App Bundling (PRESERVED):**
+- `src-tauri/tauri.conf.json` has `frontendDist` pointing to `../docs/app`
+- Tauri bundles those files into the `.deb`/`.exe` at CI build time
+- The desktop app never reads PWA files from a WordPress site
+
+`docs/app/` must remain in the repository because it is the **single source of truth** for Mechanism B and Mechanism C. Only Mechanism A is being removed.
+
+### 11.3 What Must Be Removed
+
+**PHP (WordPress plugin):**
+
+| File | Method / Code | Reason |
+|------|---------------|--------|
+| `includes/class-admin.php` | `register_app_rewrite()` | Registers `rs-app/?$` rewrite rule + `rsa_app` query var |
+| `includes/class-admin.php` | `serve_app()` | Serves `docs/app/index.html` when `?rsa_app=1` |
+| `includes/class-admin.php` | `serve_manifest()` | Serves `docs/app/manifest.json` |
+| `includes/class-admin.php` | `add_app_query_var()` | Adds `rsa_app`/`rsa_manifest` query vars |
+| `includes/class-admin.php` | Init hooks for rewrite/serving (lines 47-51) | Registers above handlers on `init`, `query_vars`, `template_redirect` |
+| `includes/class-pwa-download.php` | `handle_download()` + `stream_zip()` + AJAX hook | ZIP download for manual PWA hosting; obsolete |
+| `includes/class-pwa-download.php` | Docblock references to ZIP download | References to `rsa_download_pwa` and generic ZIP |
+| `rich-statistics.php` | Activation hook anonymous function (lines 172-178) | Calls `register_app_rewrite()` + `flush_rewrite_rules()` — entire hook removed |
+| `uninstall.php` | Missing rewrite flush (add `flush_rewrite_rules()`) | Stale `rs-app` rules persist in `wp_options` without explicit flush |
+
+> `RSA_Pwa_Download` is **NOT** removed. The OTP site-pairing handler (`handle_generate_otp`) is still required. Only the ZIP download method and its AJAX hook are removed.
+
+**JavaScript (PWA — authoritative copies only, not versioned snapshots):**
+
+| File | Dead code | Reason |
+|------|-----------|--------|
+| `docs/app/config.js` | `/wp-content/` autoSiteUrl detection block (lines 17-23) | Only triggered when PWA was served in-plugin; never fires on external server |
+| `docs/app/config.js` | Comment about "served from within the plugin directory" (lines 3-7) | In-plugin context no longer exists |
+| `docs/app/app.js` | Auto-registration block (lines 122-147) | `autoSiteUrl + autoNonce` were only set by `serve_app()`; dead code |
+| `docs/app/app.js` | `nonceAuth` variable and its use in init conditional (line 58) | `nonce` was only set by `serve_app()`; dead code |
+| `docs/app/app.js` | `RSA_CONFIG.isPremium` + `RSA_CONFIG.upgradeUrl` loading (lines 53-56) | Only set by `serve_app()` injection; dead code |
+| `docs/app/app.js` | `getAuthHeaders()` nonce branch (lines 367-371) | `nonce + autoUrl` never set; always falls through to Basic auth |
+| `docs/app/app.js` | 403 nonce-retry path (lines 402-419) | `nonce + autoUrl` never set; dead code |
+| `docs/app/app.js` | Add-site prefill from `autoSiteUrl` (lines 790-797) | `autoSiteUrl` never set; dead code |
+| `docs/app/app.js` | Comment referencing `/rs-app/` and `serve_app()` (lines 122-125) | In-plugin context no longer exists |
+| `docs/app/v/2.4.26/stable/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.26/beta/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.26/stable/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.26/stable/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.26/stable/config-test.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.26/beta/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.26/beta/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.26/beta/config-test.js` | Same `/wp-content/` detection block | Must match |
+
+**Versioned snapshots `docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`:** Do NOT modify. These correspond to already-released plugin versions and are historical artifacts.
+
+**Documentation and metadata:**
+
+| File | What to update |
+|------|---------------|
+| `ARCHITECTURE.md` | Update `class-pwa-download.php` description — remove "Serves PWA ZIP download" |
+| `.github/copilot-instructions.md` | Update `class-pwa-download.php` description |
+| `includes/class-pwa-download.php` | Update file-level docblock — remove ZIP download references |
+| `languages/rich-statistics.pot` | Regenerate after all PHP changes |
+
+### 11.4 What Must Be Preserved
+
+| Component | Why |
+|-----------|-----|
+| `docs/app/` directory | Source for external app server deploy AND desktop app bundling |
+| All CI workflows (`build-*.yml`) | Already deploy to external servers correctly; no changes needed |
+| `bin/server-update-webapp.sh` | External server deploy script; untouched |
+| `bin/server-webhook.php` | Webhook handler for CI; untouched |
+| All 17 admin templates (`templates/admin/*.php`) | Native WordPress dashboard; completely separate from PWA |
+| REST API (`rsa/v1`) | Used by external PWA/desktop app |
+| OTP pairing / App Code flow | Used to connect external app to WordPress via REST API |
+| Desktop app download instructions (`templates/admin/install.php`) | Links to external URLs |
+| Tauri desktop app (`src-tauri/`) | Bundles `docs/app/` from repo at build time |
+
+### 11.5 Step-by-Step Implementation Plan
+
+**Phase A — PHP (WordPress plugin)**
+
+1. **Edit `includes/class-admin.php`**
+   - Remove `register_app_rewrite()` entirely
+   - Remove `serve_app()` entirely
+   - Remove `serve_manifest()` entirely
+   - Remove `add_app_query_var()` entirely
+   - Remove the `add_action( 'init', ... )`, `add_filter( 'query_vars', ... )`, and `add_action( 'template_redirect', ... )` hooks for PWA serving (lines 47-51)
+
+2. **Edit `includes/class-pwa-download.php`**
+   - Remove `handle_download()` method
+   - Remove `stream_zip()` method
+   - Remove `add_action( 'wp_ajax_rsa_download_pwa', ... )` from `init()`
+   - Update file-level docblock — remove ZIP download references (lines 4-8, 25)
+   - **Do NOT remove `handle_generate_otp()`, `generate_otp()`, or `wp_ajax_rsa_generate_otp`** — OTP site-pairing is preserved
+   - **Do NOT delete the class file**
+
+3. **Edit `rich-statistics.php`**
+   - Remove the activation hook anonymous function (lines 172-178) that calls `RSA_Admin::register_app_rewrite()` and `flush_rewrite_rules()`
+   - **Do NOT remove** `RSA_Pwa_Download::init()` (line 246) — OTP handler is still needed
+
+4. **Edit `uninstall.php`**
+   - Add `flush_rewrite_rules()` call to remove stale `rs-app` rewrite rules from `wp_options`
+
+5. **Delete `tests/unit/PwaDownloadTest.php`**
+   - Tests `handle_download`, `stream_zip`, and class init — 3 of 10 tests reference removed methods; the file name is a misnomer after ZIP download removal. Delete entirely.
+
+6. **Update `includes/class-pwa-download.php` docblock**
+   - Remove references to `rsa_download_pwa` and "generic app ZIP" from file header
+
+7. **Update documentation files**
+   - `ARCHITECTURE.md` — Update `class-pwa-download.php` description
+   - `.github/copilot-instructions.md` — Update `class-pwa-download.php` description
+
+8. **Regenerate `languages/rich-statistics.pot`**
+   - Run `composer make-pot` or equivalent after all PHP changes
+
+9. **Run full test suite**
+   - `composer test` (unit + integration)
+   - `composer phpcs`
+   - Verify zero failures
+
+**Phase B — JavaScript (PWA — authoritative copies only)**
+
+10. **Edit `docs/app/config.js`**
+    - Remove the `/wp-content/` detection block (lines 17-23) — `autoSiteUrl` is never set when served externally
+    - Update file comment (lines 3-7) — remove "When served from within the plugin directory" language
+
+11. **Edit `docs/app/app.js`**
+    - Remove `nonceAuth` variable and its use in the init conditional (line 58) — nonce is never set from external
+    - Remove `RSA_CONFIG.isPremium` and `RSA_CONFIG.upgradeUrl` loading (lines 53-56) — only set by `serve_app()`
+    - Remove the entire auto-registration block (lines 122-147) — `autoSiteUrl + autoNonce` never set externally
+    - Simplify `getAuthHeaders()` (lines 366-376) — remove the nonce branch; always use Application Password Basic auth
+    - Remove the 403 nonce-retry path in `apiGet()` (lines 402-419) — nonce refresh is never triggered
+    - Remove `autoSiteUrl` prefill in `showAddSiteOverlay()` (lines 790-797) — `autoSiteUrl` never set
+    - Update all comments referencing `/rs-app/`, `serve_app()`, or in-plugin context
+
+12. **Copy to versioned snapshots** (latest version only)
+    - `docs/app/v/2.4.26/stable/app.js` and `beta/app.js` — same changes as step 11
+    - `docs/app/v/2.4.26/stable/config.js`, `config-dev.js`, `config-test.js` and `beta/` equivalents — same changes as step 10
+
+**Phase C — Housekeeping**
+
+13. **Update `CHANGELOG.md`**
+    - Add entry under `[Unreleased]` noting the removal of in-plugin PWA serving and all dead code paths
+
+14. **Commit and push to `develop`**
+    - Follow branch structure: feature branch → develop → test → main
+
+### 11.6 Test Impact
+
+| Test file | Expected change |
+|-----------|-----------------|
+| `tests/unit/PwaDownloadTest.php` | **Delete entirely.** Tests `handle_download`, `stream_zip`, and class intspect — file name is a misnomer after ZIP download removal |
+| `tests/integration/AdminTest.php` | No changes needed — verified to contain no assertions on rewrite rules or `serve_app` |
+| `tests/integration/RestApiExtraTest.php` | No changes needed — uses `rs-app` only as a string value in test data |
+| E2E tests (`tests/e2e/`) | No changes needed — E2E tests run against the external PWA server, not in-plugin serving |
+| All other tests | No impact |
+
+### 11.7 Risk Assessment
+
+- **Low risk.** The in-plugin PWA serving is a standalone feature with no dependencies from other plugin components. Removing it does not affect tracking, analytics, REST API, admin dashboard, external app server, or desktop app.
+- **No database migration needed.** No schema changes.
+- **No user-facing admin pages affected.** Only the `/rs-app/` frontend URL disappears.
+- **Plugin ZIP size benefit.** `docs/app/` was already excluded from the ZIP by `.distignore`, so ZIP size is unchanged. However, a small reduction from removing `handle_download()` and `stream_zip()`.
+
+### 11.8 Server & GitHub Infrastructure Audit (2026-06-06)
+
+Verified by inspecting the live server (`104.197.231.120`), GitHub repo (`richardkentgates/rich-statistics`), and all CI workflows.
+
+#### App Server (all 3 environments)
+
+| Environment | DocumentRoot | Deploy branch | SSL cert | Status |
+|-------------|-------------|---------------|----------|--------|
+| Production | `/var/www/rs-app/public_html/` | `main` | Let's Encrypt (SAN: `app.richstatistics.com`) | Live, serving PWA |
+| Dev | `/var/www/rs-app-dev/` | `develop` | Shared cert | Live, serving PWA |
+| Test | `/var/www/rs-app-test/` | `test` | Shared cert | Live, serving PWA |
+
+**Key findings:**
+
+- **No `/rs-app/` rewrite rules on the app server.** The Apache vhosts serve static files only — no PHP, no WordPress, no rewrite rules. The `rs-app` RewriteEngine rules in `setup-app-server.sh` are for HTTP→HTTPS redirect only. Confirmed: app server infrastructure is completely independent of the WordPress `/rs-app/` route.
+- **Deploy mechanism verified:** `rsa-deploy-daemon@prod|dev|test` systemd services monitor `.deploy-trigger` files. When CI pings `/_deploy/`, the webhook writes the trigger, the daemon runs `rsa-app-update` which does `git sparse-checkout set docs/app` from the correct branch. No changes needed.
+- **All 3 health check PWA root checks pass.** Webhook endpoint checks fail (pre-existing, unrelated to this change).
+- **Stale flat-format snapshots** (`2.0.x` through `2.2.7`) still exist on the production server disk. These predate the channel-subdirectory format and are not managed by the CI prune. Separate cleanup task (not part of this removal).
+- **Desktop builds served from `/dist/`**: `rich-statistics-linux-amd64.deb`, `linux-arm64.deb`, `windows.exe`, and `update.json` all present on production server.
+
+#### GitHub Infrastructure
+
+- **30 tags** (v2.2.7 through v2.4.26), **12 PWA version directories** on GitHub (`docs/app/v/2.4.14/` through `v/2.4.26/`).
+- **4 branches:** `main`, `develop`, `test`, `fix/merge-main-into-test`.
+- **11 CI workflows** (build-develop, build-test, build-release, job-build-zip, job-build-desktop, promote, promote-test, tests, e2e-tests, health-check, setup-webhook). All verified to NOT reference in-plugin PWA serving.
+- **`job-build-zip.yml`** excludes `*/docs/*` from the plugin ZIP (line 84). This means `docs/app/` is NOT included in the distributed ZIP. The `serve_app()` method reads from `RSA_DIR . 'docs/app/index.html'` which only works in the dev repo — feature was already broken for distributed plugins.
+- **`build-release.yml`** creates PWA snapshots from `docs/app/`, commits them to `main`, and triggers deploy webhook. All external-server flow. No changes needed.
+- **`job-build-desktop.yml`** copies `docs/app/` into Tauri build. No changes needed.
+- **`health-check.yml`** checks PWA root, update.json, APT repo, webhook, and deployed version on all 3 environments. No changes needed.
+
+#### PWA `config.js` — `autoSiteUrl` Detection
+
+The `autoSiteUrl` detection in `config.js` (lines 17-23) checks for `/wp-content/` in the script's `src` attribute:
+
+```js
+var idx = s.src.indexOf( '/wp-content/' );
+if ( idx !== -1 ) {
+    window.RSA_CONFIG.autoSiteUrl = s.src.substring( 0, idx );
+}
+```
+
+**This code path becomes dead code** when in-plugin serving is removed — the PWA is only served from `app.richstatistics.com` where there is no `/wp-content/` in paths. It is harmless (evaluates to `-1` and skips), but the comment references "served from within the plugin directory" which should be updated.
+
+**Affected files (authoritative copies only — `docs/app/` and `docs/app/v/2.4.26/`):**
+- `docs/app/config.js` — Update comment about in-plugin context
+- `docs/app/v/2.4.26/stable/config.js` — Same update
+- `docs/app/v/2.4.26/beta/config.js` — Same update
+- `docs/app/v/2.4.26/stable/config-dev.js` — Same update
+- `docs/app/v/2.4.26/beta/config-dev.js` — Same update
+- `docs/app/v/2.4.26/stable/config-test.js` — Same update
+- `docs/app/v/2.4.26/beta/config-test.js` — Same update
+
+**All older versioned snapshots (`docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`):** Do NOT modify. They correspond to already-released plugin versions and are historical.
+
+#### PWA `app.js` — `autoSiteUrl` + Nonce Auth Paths
+
+Three code paths in `app.js` use `autoSiteUrl` and `nonce`, both of which were set by `serve_app()`:
+
+1. **Auto-registration block (lines 122-147)** — When `autoSiteUrl + autoNonce` are both set, auto-registers the current WordPress site with empty credentials (nonce-based auth). After removal, both will always be empty/undefined, so this block is skipped entirely. **No behavioral change** — the `if ( autoUrl && autoNonce )` guard makes it a no-op.
+
+2. **`getAuthHeaders()` function (lines 366-376)** — Uses `nonce + autoUrl` for same-origin auth. After removal, this always falls through to Application Password Basic auth. **This is the correct behavior** for the external app.
+
+3. **403 retry with nonce refresh (lines 401-419)** — On 403, fetches fresh nonce from `autoUrl + '/wp-json/'`. After removal, this path is never reached (no `autoUrl` set). **Harmless no-op.**
+
+4. **Add-site URL prefill (lines 790-797)** — Uses `autoSiteUrl` to prefill the site URL input. After removal, this won't prefill. **No code change needed** — `RSA_CONFIG.autoSiteUrl` is already guarded by `if ( autoUrl && urlField )`.
+
+**Affected files (authoritative copies only):**
+- `docs/app/app.js` — Update comment at lines 122-125
+- `docs/app/v/2.4.26/stable/app.js` — Same update
+- `docs/app/v/2.4.26/beta/app.js` — Same update
+
+#### Stale Rewrite Rules — Upgrade Path Concern
+
+After removing `register_app_rewrite()`, existing WordPress installations will still have the `rs-app` rewrite rules persisted in their `wp_options` table. These stale rules are harmless (they'll 404 since `serve_app()` is removed) but should be flushed.
+
+**Solution:** Add `flush_rewrite_rules()` to the `RSA_DB::activate()` method or add a one-time upgrade hook. Since the plugin already has `register_activation_hook()` for `RSA_DB::activate()`, we can add the flush there. However, upgrading via plugin update does NOT trigger activation hooks.
+
+The most reliable approach: add a version-based one-time flush in `rsa_init()` using a stored option. Or simpler — since stale rewrite rules cause no errors (just 404s), they'll be cleaned up naturally when any other plugin or WordPress action flushes rewrite rules. **Document this as a known minor issue and address it in a follow-up if needed.**
+
+#### `uninstall.php` — Missing Rewrite Flush
+
+`uninstall.php` does not call `flush_rewrite_rules()`. When the plugin is uninstalled, the `rs-app` rewrite rules will remain in the database. **Add `flush_rewrite_rules()` to `uninstall.php`** to ensure clean removal.

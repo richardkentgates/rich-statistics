@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- In-plugin PWA serving: removed `/rs-app/` rewrite rules, `serve_app()`, `serve_manifest()`, and `add_app_query_var()` from `class-admin.php`
+- Removed PWA ZIP download handler (`handle_download()`, `stream_zip()`) from `class-pwa-download.php` — OTP pairing is preserved
+- Removed activation hook that registered and flushed `/rs-app/` rewrite rules from `rich-statistics.php`
+- Removed dead code from PWA `app.js`: nonce-based auth, auto-registration, 403 nonce-retry, and `autoSiteUrl` prefill (all were only active when served in-plugin via `serve_app()`)
+- Removed dead code from PWA `config.js`: `/wp-content/` autoSiteUrl detection block (only triggered by in-plugin serving)
+- Removed `test/unit/PwaDownloadTest.php` (tested removed ZIP download functionality)
+- Added `flush_rewrite_rules()` to `uninstall.php` to clean up stale `/rs-app/` rewrite rules on uninstall
+
 ### Added
 - AI Analytics Assistant UI overhaul: model dropdown with endpoint discovery (Ollama, OpenAI, LM Studio, llama.cpp), persistent chat history, quick-action chips, markdown rendering, per-message copy/read-aloud buttons
 - Voice input/output integration in AI chat: microphone speech-to-text, auto-resizing textarea, text-to-speech with stop control
