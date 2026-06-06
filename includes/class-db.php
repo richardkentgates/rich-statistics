@@ -224,6 +224,9 @@ class RSA_DB {
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
 
 			'rsa_woocommerce_enabled'      => 1,
+			'rsa_consent_banner'           => 0,
+			'rsa_consent_auto'             => 0,
+			'rsa_consent_styles'           => '{}',
 		];
 
 		foreach ( $defaults as $key => $value ) {
@@ -323,6 +326,9 @@ class RSA_DB {
 			'rsa_email_digest_frequency',
 			'rsa_email_digest_recipients',
 			'rsa_woocommerce_enabled',
+			'rsa_consent_banner',
+			'rsa_consent_auto',
+			'rsa_consent_styles',
 			'rsa_db_version',
 		);
 		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );
