@@ -344,6 +344,13 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 					</label>
 				</td>
 			</tr>
+			<tr>
+				<th><label for="rsa_consent_banner_text"><?php esc_html_e( 'Banner text', 'rich-statistics' ); ?></label></th>
+				<td>
+					<textarea id="rsa_consent_banner_text" name="rsa_consent_banner_text" rows="3" class="large-text"><?php echo esc_textarea( get_option( 'rsa_consent_banner_text', '' ) ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'Custom message shown in the consent banner. Leave empty for the default text.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
 		</table>
 	</div>
 

@@ -418,6 +418,46 @@ class RSA_Rest_API {
 				'args'                => $read_args,
 			]
 		);
+		register_rest_route(
+			self::NS,
+			'/wc-event',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ __CLASS__, 'post_wc_event' ],
+				'permission_callback' => '__return_true',
+				'args'                => [
+					'event_type'   => [
+						'type'              => 'string',
+						'required'          => true,
+						'enum'              => [ 'wc_product_view', 'wc_add_to_cart', 'wc_order_complete' ],
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'session_id'   => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'nonce'        => [
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'product_id'   => [
+						'type'    => 'integer',
+						'default' => 0,
+					],
+					'product_name' => [
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					],
+					'quantity'     => [
+						'type'    => 'integer',
+						'default' => 1,
+					],
+				],
+			]
+		);
 		$flow_args = array_merge(
 			$read_args,
 			[
@@ -676,7 +716,7 @@ class RSA_Rest_API {
 	 * @param WP_REST_Request $r Request object.
 	 * @return WP_REST_Response
 	 */
-	public static function ai_tool( WP_REST_Request $r ): WP_REST_Response {
+	public static function ai_tool( WP_REST_Request $r ): WP_REST_Response|WP_Error {
 		$tool   = $r->get_param( 'tool' );
 		$params = $r->get_param( 'params' );
 		$period = isset( $params['period'] ) && in_array( $params['period'], [ '7d', '30d', '90d', 'thismonth', 'lastmonth' ], true )
@@ -1005,6 +1045,68 @@ class RSA_Rest_API {
 		}
 		$data = RSA_Analytics::get_woocommerce( $r['period'] );
 		return self::ok( array_merge( [ 'woocommerce_active' => true ], $data ) );
+	}
+
+	/**
+	 * Ingest a WooCommerce event from the frontend tracker.
+	 *
+	 * @param WP_REST_Request $r Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function post_wc_event( WP_REST_Request $r ): WP_REST_Response {
+		$nonce = sanitize_text_field( wp_unslash( $r['nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, 'rsa_track' ) ) {
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'invalid_nonce',
+				],
+				403
+			);
+		}
+
+		$session_id = sanitize_text_field( wp_unslash( $r['session_id'] ) );
+		if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $session_id ) ) {
+			return new WP_REST_Response(
+				[
+					'ok'    => false,
+					'error' => 'invalid_session',
+				],
+				400
+			);
+		}
+
+		if ( RSA_Bot_Detection::is_bot( RSA_Bot_Detection::score( 0, sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ) ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- UA header used for bot detection only
+			return self::ok( [ 'recorded' => false, 'reason' => 'bot_detected' ] );
+		}
+
+		// Reuse tracker rate-limiting (60 req/min per session).
+		$rl_key   = 'rsa_rl_' . substr( md5( $session_id ), 0, 16 );
+		$rl_count = (int) get_transient( $rl_key );
+		if ( $rl_count >= 60 ) {
+			return self::ok( [ 'recorded' => false, 'reason' => 'rate_limited' ] );
+		}
+		set_transient( $rl_key, $rl_count + 1, 60 );
+
+		// Only ingest when WooCommerce is active.
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return self::ok( [ 'recorded' => false, 'reason' => 'woocommerce_inactive' ] );
+		}
+
+		$meta = [
+			'product_id'   => (int) $r['product_id'],
+			'product_name' => sanitize_text_field( wp_unslash( $r['product_name'] ) ),
+			'product_sku'  => sanitize_text_field( wp_unslash( $r['product_sku'] ) ),
+			'quantity'     => (int) $r['quantity'],
+		];
+
+		RSA_Woocommerce::insert_event(
+			sanitize_text_field( wp_unslash( $r['event_type'] ) ),
+			$meta,
+			$session_id
+		);
+
+		return self::ok( [ 'recorded' => true ] );
 	}
 
 	/**

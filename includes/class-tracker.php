@@ -53,6 +53,7 @@ class RSA_Tracker {
 		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 			$premium_config = [
 				'clickEnabled' => true,
+				'wcEnabled'    => (bool) get_option( 'rsa_woocommerce_enabled', 1 ),
 				'trackIds'     => array_filter( array_map( 'trim', explode( ',', get_option( 'rsa_click_track_ids', '' ) ) ) ),
 				'trackClasses' => array_filter( array_map( 'trim', explode( ',', get_option( 'rsa_click_track_classes', '' ) ) ) ),
 			];
@@ -62,12 +63,13 @@ class RSA_Tracker {
 			'rsa-tracker',
 			'RSA',
 			[
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'rsa_track' ),
-				'protocols'      => $protocols,
-				'premium'        => $premium_config,
-				'consentBanner'  => (int) get_option( 'rsa_consent_banner', 0 ),
-				'consentAuto'    => (int) get_option( 'rsa_consent_auto', 0 ),
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'restUrl'       => rest_url( 'rsa/v1/' ),
+				'nonce'         => wp_create_nonce( 'rsa_track' ),
+				'protocols'     => $protocols,
+				'premium'       => $premium_config,
+				'consentBanner' => (int) get_option( 'rsa_consent_banner', 0 ),
+				'consentAuto'   => (int) get_option( 'rsa_consent_auto', 0 ),
 			]
 		);
 
@@ -176,7 +178,7 @@ class RSA_Tracker {
 					 VALUES (%s, 1, %s, %d, %s, %s, %s, %s, %s)
 					 ON DUPLICATE KEY UPDATE
 					   pages_viewed = pages_viewed + 1,
-					   exit_page    = VALUES(exit_page),
+					   exit_page    = %s,
 					   total_time   = COALESCE(total_time, 0) + VALUES(total_time)",
 					$payload['session_id'],
 					$page,
@@ -185,7 +187,8 @@ class RSA_Tracker {
 					$ua_data['browser'],
 					$payload['language'],
 					$payload['timezone'],
-					$now
+					$now,
+					$page
 				)
 			);
 		} else {
@@ -195,14 +198,15 @@ class RSA_Tracker {
 					 VALUES (%s, 1, %s, %s, %s, %s, %s, %s)
 					 ON DUPLICATE KEY UPDATE
 					   pages_viewed = pages_viewed + 1,
-					   exit_page    = VALUES(exit_page)",
+					   exit_page    = %s",
 					$payload['session_id'],
 					$page,
 					$ua_data['os'],
 					$ua_data['browser'],
 					$payload['language'],
 					$payload['timezone'],
-					$now
+					$now,
+					$page
 				)
 			);
 		}

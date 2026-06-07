@@ -791,6 +791,7 @@ class RSA_Admin {
 			'rsa_consent_banner'           => 'absint',
 			'rsa_consent_auto'             => 'absint',
 			'rsa_consent_styles'           => 'sanitize_text_field',
+			'rsa_consent_banner_text'      => 'sanitize_textarea_field',
 		];
 
 		foreach ( $fields as $key => $sanitizer ) {

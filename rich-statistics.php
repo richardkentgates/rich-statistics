@@ -191,7 +191,8 @@ function rs_fs_uninstall_cleanup() {
 			RSA_DB::maybe_remove_data();
 			restore_current_blog();
 		}
-		delete_site_option( 'rsa_network_settings' );
+		delete_site_option( 'rsa_default_retention_days' );
+		delete_site_option( 'rsa_network_disable_tracker' );
 	} else {
 		RSA_DB::maybe_remove_data();
 	}
@@ -216,15 +217,8 @@ function rsa_init() {
 	RSA_Admin::init();
 	RSA_Email::init();
 
-	// WooCommerce integration (premium feature — gated via Freemius)
-	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
-		if ( class_exists( 'WooCommerce' ) ) {
-			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
-				require_once RSA_DIR . 'includes/class-woocommerce.php';
-			}
-			RSA_Woocommerce::init();
-		}
-	}
+	// WooCommerce analytics requires the WooCommerce plugin to be active.
+	// Event ingestion happens via the REST API; no hooks are registered here.
 
 	// Boot premium
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {

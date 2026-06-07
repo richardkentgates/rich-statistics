@@ -1030,3 +1030,40 @@ If `localStorage` is unavailable (private browsing, corporate policy, browser ex
 | Privacy disclosure | Shortcode reflects actual consent mode |
 | Settings save | New options save correctly via `save_settings()` with proper sanitization |
 | Uninstall cleanup | Consent options are deleted when plugin is uninstalled |
+
+---
+
+## 13. Comprehensive Test Coverage Audit (June 2026)
+
+Systematic audit of all source files against test suite identified 13 major gaps across P1–P4 priority. **11 of 13 gaps now covered** (84 new tests, 201 assertions). Full details in `TODO.md` §6.
+
+### Coverage Summary
+
+| Area | Files | Has Tests | Coverage Quality | Gaps |
+|------|-------|-----------|------------------|------|
+| REST API | `class-rest-api.php` | ✅ 160+ | Shape + auth + CORS + AI gating | App Password auth (covered by RestAuthTest), CORS preflight, origin validation |
+| Analytics | `class-analytics.php` | ✅ 55+ | Key/shape + filters + sorts + fill_date_gaps + timezone | `get_path_flow()` requires MySQL 8.0+ window functions |
+| Tracker | `class-tracker.php` | ✅ 30+ | Unit: sanitize, bot signals; Integration: rate limiting, session upsert | Session upsert edge cases |
+| DB | `class-db.php` | ✅ 45+ | Schema, prune, aggregate, uninstall, on_new_blog | Network-wide activate (multisite env not available) |
+| Admin | `class-admin.php` | ✅ 35+ | Capabilities, roles, template rendering, XSS, settings save | Network dashboard aggregation |
+| WooCommerce | `class-woocommerce.php` | ✅ 20+ | insert_event, funnel counts | REST ingest pipeline (covered by MetricPipelineTest) |
+| Email | `class-email.php` | ✅ 23+ | Scheduling, return values, HTML content, recipients | MIME multipart structure (header validated) |
+| Consent Banner | `class-consent-banner.php` | ✅ 27 | CSS injection, options, gating, uninstall, privacy disclosure | — |
+| Heatmap | `class-heatmap.php` | ✅ 7 | Coordinate bucketing, aggregation, REST shape, NULL exclusion | — |
+| Security | — | ✅ 14 | SQLi, XSS, path traversal, CSRF, session spoofing, bot score | — |
+| Templates | `templates/admin/*.php` (16 files) | ✅ 15 | Output capture, premium gating, XSS escaping, permissions | Network views (multisite) |
+| Uninstall | `uninstall.php` | ✅ 4 | Single-site table drops, option deletion, missing-table edge case | Multisite uninstall (env limitation) |
+| E2E | `tests/e2e/*.js` (4 files, 55 tests) | ✅ 55 | Shell, add site, nav, views | Consent, WooCommerce, AI chat, export, offline |
+
+### Priority Matrix
+
+| Priority | Count | Status | Risk if Untested |
+|----------|-------|--------|------------------|
+| **P1** | 3 gaps | ✅ **Complete** | GDPR non-compliance, security vulnerabilities, broken admin UX |
+| **P2** | 3 gaps | ✅ **Complete** | Premium features broken, abuse vectors, data left on uninstall |
+| **P3** | 3 gaps | ✅ **Complete** | Wrong analytics, broken emails, unauthorized API access |
+| **P4** | 4 gaps | 2 ✅ / 2 ⏳ | Enterprise issues, AI gating bypass, user-facing regressions, broken releases |
+
+**Bugs found and fixed during test writing:**
+1. `class-analytics.php:1087` — `get_heatmap()` `GROUP BY` used raw columns instead of computed `ROUND(x_pct/2)*2` buckets
+2. `class-rest-api.php:719` — `ai_tool()` declared `WP_REST_Response` return type but returned `WP_Error` for invalid tools

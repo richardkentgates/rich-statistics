@@ -42,6 +42,7 @@ class RestApiTest extends WP_UnitTestCase {
 			'/rsa/v1/export',
 			'/rsa/v1/campaigns',
 			'/rsa/v1/woocommerce',
+			'/rsa/v1/wc-event',
 			'/rsa/v1/heatmap',
 			'/rsa/v1/user-flow',
 			'/rsa/v1/user-flow/journey',

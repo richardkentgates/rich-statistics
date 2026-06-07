@@ -1204,9 +1204,10 @@
 			case 'heatmap'    : renderHeatmap( container );     break;
 			case 'export'     : renderExport( container );      break;
 			case 'woocommerce': renderWoocommerce( container ); break;
-			case 'install'    : renderInstall( container );      break;
-			case 'ai-settings': renderAiSettings( container );   break;
-			default: setLoading( false );
+		case 'install'    : renderInstall( container );      break;
+		case 'ai-settings': renderAiSettings( container );   break;
+		case 'ai-chat'    : renderAiChat( container );       break;
+		default: setLoading( false );
 		}
 
 		startAutoRefresh();
@@ -3038,10 +3039,8 @@
 			}
 
 			var funnel       = data.funnel              || { views: 0, cart: 0, orders: 0 };
-			var revenueByDay = data.revenue_by_day      || [];
 			var topViewed    = data.top_products_viewed || [];
 			var topCart      = data.top_products_cart   || [];
-			var revenue      = typeof data.revenue_total === 'number' ? data.revenue_total : 0;
 
 			var viewedRows = topViewed.map( function ( p, i ) {
 				return '<tr><td>' + ( i + 1 ) + '</td><td>' + esc( truncate( p.product_name, 40 ) ) + '</td><td>' + fmt( p.views ) + '</td></tr>';
@@ -3064,23 +3063,14 @@
 
 			container.innerHTML =
 				tmplKpiGrid( [
-					{ label: 'Product Views', value: fmt( funnel.views )           },
-					{ label: 'Add to Cart',   value: fmt( funnel.cart )            },
-					{ label: 'Orders',        value: fmt( funnel.orders )          },
-					{ label: 'Revenue',       value: '$' + revenue.toFixed( 2 )   },
+					{ label: 'Product Views', value: fmt( funnel.views ) },
+					{ label: 'Add to Cart',   value: fmt( funnel.cart )  },
+					{ label: 'Orders',        value: fmt( funnel.orders ) },
 				] ) +
-				'<div class="rsa-grid-2" style="margin-top:20px">' +
-					'<div class="rsa-table-card"><h3>Conversion Funnel</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
-						'<thead><tr><th>Stage</th><th>Count</th><th>Conversion</th></tr></thead>' +
-						'<tbody>' + funnelRows.join( '' ) + '</tbody>' +
-					'</table></div></div>' +
-					'<div class="rsa-table-card"><h3>Revenue Over Time</h3>' +
-						( revenueByDay.length
-							? '<div class="rsa-chart-wrap"><canvas id="c-wc-revenue"></canvas></div>'
-							: '<p class="rsa-field-hint">No order data in the selected period.</p>'
-						) +
-					'</div>' +
-				'</div>' +
+				'<div class="rsa-table-card" style="margin-top:20px"><h3>Conversion Funnel</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
+					'<thead><tr><th>Stage</th><th>Count</th><th>Conversion</th></tr></thead>' +
+					'<tbody>' + funnelRows.join( '' ) + '</tbody>' +
+				'</table></div></div>' +
 				'<div class="rsa-grid-2" style="margin-top:20px">' +
 					'<div class="rsa-table-card"><h3>Top Products &mdash; Views</h3><div class="rsa-table-wrap"><table class="rsa-table">' +
 						'<thead><tr><th>#</th><th>Product</th><th>Views</th></tr></thead>' +
@@ -3093,14 +3083,6 @@
 				'</div>';
 
 			setLoading( false );
-
-			if ( revenueByDay.length ) {
-				drawBar( 'c-wc-revenue',
-					revenueByDay.map( function ( d ) { return d.day; } ),
-					revenueByDay.map( function ( d ) { return parseFloat( d.revenue ); } ),
-					'Revenue ($)'
-				);
-			}
 		} ).catch( function ( err ) { handleApiError( err, container ); } );
 	}
 

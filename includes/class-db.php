@@ -179,8 +179,6 @@ class RSA_DB {
 			product_name    VARCHAR(255)        DEFAULT NULL,
 			product_sku     VARCHAR(100)        DEFAULT NULL,
 			quantity        SMALLINT UNSIGNED   DEFAULT NULL,
-			order_total     DECIMAL(12,2)       DEFAULT NULL,
-			order_currency  VARCHAR(8)          DEFAULT NULL,
 			created_at      DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY session_id  (session_id),
@@ -222,11 +220,13 @@ class RSA_DB {
 			'rsa_email_digest_enabled'     => 0,
 			'rsa_email_digest_frequency'   => 'weekly',
 			'rsa_email_digest_recipients'  => get_option( 'admin_email' ),
-
+			'rsa_email_digest_use_roles'   => 0,
 			'rsa_woocommerce_enabled'      => 1,
+			'rsa_beta_channel'             => 0,
 			'rsa_consent_banner'           => 0,
 			'rsa_consent_auto'             => 0,
 			'rsa_consent_styles'           => '{}',
+			'rsa_consent_banner_text'      => '',
 		];
 
 		foreach ( $defaults as $key => $value ) {
@@ -292,7 +292,7 @@ class RSA_DB {
 				restore_current_blog();
 			}
 			// Clean network-level options from sitemeta.
-			delete_site_option( 'rsa_network_settings' );
+			delete_site_option( 'rsa_default_retention_days' );
 			delete_site_option( 'rsa_network_disable_tracker' );
 		} else {
 			self::drop_site_tables();
@@ -325,10 +325,15 @@ class RSA_DB {
 			'rsa_email_digest_enabled',
 			'rsa_email_digest_frequency',
 			'rsa_email_digest_recipients',
+			'rsa_email_digest_use_roles',
 			'rsa_woocommerce_enabled',
+			'rsa_beta_channel',
 			'rsa_consent_banner',
 			'rsa_consent_auto',
 			'rsa_consent_styles',
+			'rsa_consent_banner_text',
+			'rsa_enabled_post_types',
+			'rsa_allowed_roles',
 			'rsa_db_version',
 		);
 		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );

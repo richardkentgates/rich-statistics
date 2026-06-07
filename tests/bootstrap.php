@@ -34,7 +34,8 @@ if ( ! function_exists( 'rs_fs' ) ) {
 		if ( $stub === null ) {
 			$stub = new class() {
 				public function can_use_premium_code__premium_only(): bool {
-					return false; }
+					return defined( 'RSA_PREMIUM_TEST' ) && RSA_PREMIUM_TEST;
+				}
 				public function is_premium(): bool {
 					return false; }
 				public function is_paying(): bool {
@@ -47,6 +48,17 @@ if ( ! function_exists( 'rs_fs' ) ) {
 					return true; }
 				public function get_upgrade_url(): string {
 					return '#'; }
+				public function is_connected(): bool {
+					return false; }
+				public function get_api_site_scope(): object {
+					return new class() {
+						public function call( string $path, string $method, array $params = [] ): object {
+							return new class() {
+								public bool $success = true;
+							};
+						}
+					};
+				}
 			};
 		}
 		return $stub;
@@ -92,6 +104,7 @@ if ( is_dir( $wp_tests_dir ) ) {
 				'class-heatmap',
 				'class-rest-api',
 				'class-privacy-disclosure',
+				'class-consent-banner',
 			);
 			foreach ( $includes as $cls ) {
 				$f = RSA_DIR . 'includes/' . $cls . '.php';

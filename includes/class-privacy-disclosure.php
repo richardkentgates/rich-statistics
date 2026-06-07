@@ -153,7 +153,8 @@ class RSA_Privacy_Disclosure {
 		<tbody>
 			<tr>
 				<td><?php esc_html_e( 'GDPR (EU)', 'rich-statistics' ); ?></td>
-				<td><?php
+				<td>
+				<?php
 				if ( get_option( 'rsa_consent_banner' ) ) {
 					esc_html_e( 'This site asks for your consent before collecting analytics data. You can control which categories of data are collected via the consent banner.', 'rich-statistics' );
 				} elseif ( get_option( 'rsa_consent_auto' ) ) {
@@ -161,7 +162,8 @@ class RSA_Privacy_Disclosure {
 				} else {
 					esc_html_e( 'This site processes data under legitimate interest (Art. 6(1)(f)). No personal identifiers are stored, so this analytics does not require your consent under the ePrivacy Directive.', 'rich-statistics' );
 				}
-				?></td>
+				?>
+				</td>
 			</tr>
 			<tr>
 				<td><?php esc_html_e( 'CCPA / CPRA (California)', 'rich-statistics' ); ?></td>

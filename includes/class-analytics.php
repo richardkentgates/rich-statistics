@@ -29,7 +29,7 @@ class RSA_Analytics {
 	 * @return array  Associative array with 'start' and 'end' keys.
 	 */
 	public static function period_range( string $period, string $date_from = '', string $date_to = '' ): array {
-		// Use WordPress local time so date bucketing matches the site's configured timezone.
+		// Use UTC so period boundaries align with database created_at (UTC).
 		$now = current_time( 'timestamp' );
 		if ( 'custom' === $period && $date_from && $date_to ) {
 			$start = strtotime( $date_from . ' 00:00:00' );
@@ -37,8 +37,8 @@ class RSA_Analytics {
 			if ( $start > $end ) {
 				[ $start, $end ] = array( $end, $start ); }
 			return array(
-				'start' => date( 'Y-m-d H:i:s', $start ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-				'end'   => date( 'Y-m-d H:i:s', $end ),   // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				'start' => gmdate( 'Y-m-d H:i:s', $start ),
+				'end'   => gmdate( 'Y-m-d H:i:s', $end ),
 			);
 		}
 		switch ( $period ) {
@@ -52,18 +52,18 @@ class RSA_Analytics {
 				$start = strtotime( '-90 days', $now );
 				break;
 			case 'thismonth':
-				$start = strtotime( date( 'Y-m-01', $now ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$start = strtotime( gmdate( 'Y-m-01', $now ) );
 				break;
 			case 'lastmonth':
-				$start = strtotime( date( 'Y-m-01', strtotime( '-1 month', $now ) ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-				$now   = strtotime( date( 'Y-m-t', strtotime( '-1 month', $now ) ) . ' 23:59:59' ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$start = strtotime( gmdate( 'Y-m-01', strtotime( '-1 month', $now ) ) );
+				$now   = strtotime( gmdate( 'Y-m-t', strtotime( '-1 month', $now ) ) . ' 23:59:59' );
 				break;
 			default: // Default 30d.
 				$start = strtotime( '-30 days', $now );
 		}
 		return array(
-			'start' => date( 'Y-m-d H:i:s', $start ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-			'end'   => date( 'Y-m-d H:i:s', $now ),   // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+			'start' => gmdate( 'Y-m-d H:i:s', $start ),
+			'end'   => gmdate( 'Y-m-d H:i:s', $now ),
 		);
 	}
 
@@ -1084,7 +1084,7 @@ class RSA_Analytics {
 		// Query raw clicks directly so data is always current (no nightly aggregation lag).
 		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT ROUND(x_pct / 2) * 2 AS x_pct, ROUND(y_pct / 2) * 2 AS y_pct, COUNT(*) AS weight FROM `{$wpdb->prefix}rsa_clicks` WHERE page = %s AND created_at BETWEEN %s AND %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL GROUP BY x_pct, y_pct ORDER BY weight DESC",
+				"SELECT ROUND(x_pct / 2) * 2 AS x_pct, ROUND(y_pct / 2) * 2 AS y_pct, COUNT(*) AS weight FROM `{$wpdb->prefix}rsa_clicks` WHERE page = %s AND created_at BETWEEN %s AND %s AND x_pct IS NOT NULL AND y_pct IS NOT NULL GROUP BY ROUND(x_pct / 2) * 2, ROUND(y_pct / 2) * 2 ORDER BY weight DESC",
 				$page,
 				$range['start'],
 				$range['end']
@@ -1391,11 +1391,11 @@ class RSA_Analytics {
 	// ----------------------------------------------------------------
 
 	/**
-	 * WooCommerce: product views, add-to-cart events, orders, revenue.
+	 * WooCommerce: product views, add-to-cart events, and order completions.
 	 *
 	 * @param string $period  Period key.
 	 * @param array  $filters Optional filters (date_from, date_to).
-	 * @return array  Top products, orders, revenue, funnel data.
+	 * @return array  Top products and funnel data.
 	 */
 	public static function get_woocommerce( string $period = '30d', array $filters = array() ): array {
 		global $wpdb;
@@ -1404,8 +1404,6 @@ class RSA_Analytics {
 			'top_products_viewed' => array(),
 			'top_products_cart'   => array(),
 			'orders_count'        => 0,
-			'revenue_total'       => 0.0,
-			'revenue_by_day'      => array(),
 			'funnel'              => array(
 				'views'  => 0,
 				'cart'   => 0,
@@ -1466,23 +1464,11 @@ class RSA_Analytics {
 			ARRAY_A
 		);
 
-		// Order count and total revenue.
+		// Order count.
 		$orders_row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
 			$wpdb->prepare(
-				"SELECT COUNT(*) AS cnt, SUM(order_total) AS revenue
+				"SELECT COUNT(*) AS cnt
 				 FROM `{$wpdb->prefix}rsa_wc_events` WHERE event_type = 'wc_order_complete' AND created_at BETWEEN %s AND %s",
-				$range['start'],
-				$range['end']
-			),
-			ARRAY_A
-		);
-
-		// Revenue by day for chart.
-		$revenue_days = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- real-time analytics
-			$wpdb->prepare(
-				"SELECT DATE(created_at) AS day, SUM(order_total) AS revenue
-				 FROM `{$wpdb->prefix}rsa_wc_events` WHERE event_type = 'wc_order_complete' AND created_at BETWEEN %s AND %s
-				 GROUP BY day ORDER BY day ASC",
 				$range['start'],
 				$range['end']
 			),
@@ -1493,8 +1479,6 @@ class RSA_Analytics {
 			'top_products_viewed' => (array) $top_viewed,
 			'top_products_cart'   => (array) $top_cart,
 			'orders_count'        => (int) ( $orders_row['cnt'] ?? 0 ),
-			'revenue_total'       => round( (float) ( $orders_row['revenue'] ?? 0 ), 2 ),
-			'revenue_by_day'      => (array) $revenue_days,
 			'funnel'              => $funnel,
 		);
 	}

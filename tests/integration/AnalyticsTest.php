@@ -174,8 +174,6 @@ class AnalyticsTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'top_products_viewed', $result );
 		$this->assertArrayHasKey( 'top_products_cart', $result );
 		$this->assertArrayHasKey( 'orders_count', $result );
-		$this->assertArrayHasKey( 'revenue_total', $result );
-		$this->assertArrayHasKey( 'revenue_by_day', $result );
 		$this->assertArrayHasKey( 'funnel', $result );
 	}
 	public function test_get_woocommerce_funnel_has_expected_keys(): void {
