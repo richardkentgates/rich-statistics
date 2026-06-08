@@ -723,7 +723,8 @@
 					localStorage.setItem( versionKey, info.version );
 					if ( 'caches' in window ) {
 						caches.keys().then( function ( keys ) {
-							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
+							var toDelete = keys.filter( function ( k ) { return k.indexOf( 'rsa-' ) === 0; } );
+							return Promise.all( toDelete.map( function ( k ) { return caches.delete( k ); } ) );
 						} ).then( function () { window.location.reload( true ); } );
 					} else {
 						window.location.reload( true );
