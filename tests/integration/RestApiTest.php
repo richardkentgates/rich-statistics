@@ -16,6 +16,10 @@ class RestApiTest extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 		self::$admin = self::factory()->user->create_and_get( array( 'role' => 'administrator' ) );
+		$admin_role = get_role( 'administrator' );
+		if ( $admin_role ) {
+			$admin_role->add_cap( 'rsa_manage_statistics' );
+		}
 	}
 	public function setUp(): void {
 		parent::setUp();

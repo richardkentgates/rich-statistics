@@ -93,6 +93,8 @@ jobs:
               mkdir -p "$APP_VERSIONED"
               for f in index.html app.js app.css config.js sw.js manifest.json chart.min.js; do
                 [ -f "docs/app/${f}" ] && cp "docs/app/${f}" "$APP_VERSIONED/${f}"
+              done
+            fi
           done
 
   finalize:
@@ -166,17 +168,17 @@ jobs:
         shell: bash
         run: |
           python3 -c "
-import json, re
-suffix = '${{ inputs.product-suffix }}'
-# Sanitize suffix for reverse-DNS identifier: '(Dev)' -> '.dev', '(Test)' -> '.test'
-id_suffix = re.sub(r'[^a-zA-Z0-9]', '', suffix).lower()
-id_suffix = '.' + id_suffix if id_suffix else ''
-print(json.dumps({
-  'productName': 'Rich Statistics' + suffix,
-  'identifier': 'com.richardkentgates.rich-statistics' + id_suffix,
-  'plugins': {'updater': {'endpoints': ['${{ inputs.updater-url }}']}}
-}))
-" > "${RUNNER_TEMP}/tauri-config.json"
+          import json, re
+          suffix = '${{ inputs.product-suffix }}'
+          # Sanitize suffix for reverse-DNS identifier: '(Dev)' -> '.dev', '(Test)' -> '.test'
+          id_suffix = re.sub(r'[^a-zA-Z0-9]', '', suffix).lower()
+          id_suffix = '.' + id_suffix if id_suffix else ''
+          print(json.dumps({
+            'productName': 'Rich Statistics' + suffix,
+            'identifier': 'com.richardkentgates.rich-statistics' + id_suffix,
+            'plugins': {'updater': {'endpoints': ['${{ inputs.updater-url }}']}}
+          }))
+          " > "${RUNNER_TEMP}/tauri-config.json"
           echo "config=$(cat "${RUNNER_TEMP}/tauri-config.json")" >> "$GITHUB_OUTPUT"
 
       - name: Build

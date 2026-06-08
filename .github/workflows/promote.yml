@@ -64,13 +64,26 @@ jobs:
             echo "Reusing existing PR: $EXISTING_PR"
             PR_URL="$EXISTING_PR"
           else
-            PR_URL=$(gh pr create \
+            # Create PR; if one already exists (race), extract its URL from the error.
+            PR_OUTPUT=$(gh pr create \
               --base main \
               --head test \
               --title "chore: promote v${{ steps.version.outputs.version }} to production" \
               --body "Automated promote workflow." \
-              --label automate)
-            echo "Created PR: $PR_URL"
+              --label automate 2>&1) || {
+              EXISTING_URL=$(echo "$PR_OUTPUT" | grep -oP 'https://github.com/[^/]+/[^/]+/pull/\d+')
+              if [ -n "$EXISTING_URL" ]; then
+                echo "PR already exists: $EXISTING_URL"
+                PR_URL="$EXISTING_URL"
+              else
+                echo "$PR_OUTPUT"
+                exit 1
+              fi
+            }
+            if [ -z "${PR_URL:-}" ]; then
+              PR_URL="$PR_OUTPUT"
+              echo "Created PR: $PR_URL"
+            fi
           fi
 
           # Wait up to 5 minutes for the PR to become mergeable.

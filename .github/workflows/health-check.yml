@@ -56,11 +56,12 @@ jobs:
 
       - name: Check webhook endpoint
         run: |
-          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}/_deploy/" || true)
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}/_deploy/" 2>/dev/null || true)
+          STATUS=$(echo "$STATUS" | tr -d '[:space:]')
           if [ "$STATUS" = "405" ] || [ "$STATUS" = "403" ] || [ "$STATUS" = "401" ]; then
             echo "✅ ${{ matrix.env }} webhook: HTTP ${STATUS} (handler present)"
           else
-            echo "❌ ${{ matrix.env }} webhook: HTTP ${STATUS}"
+            echo "❌ ${{ matrix.env }} webhook: HTTP ${STATUS:-(empty)}"
             exit 1
           fi
 

@@ -1648,6 +1648,7 @@
 				if ( ! confirm( 'Clear this conversation?' ) ) return;
 				clearChatHistory();
 				chatHistory = [];
+				destroyCharts();
 				if ( messagesDiv ) messagesDiv.innerHTML = '';
 				addAiMessage( 'ai', 'Conversation cleared. How can I help?' );
 				updateMsgCount();

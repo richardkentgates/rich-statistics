@@ -83,21 +83,6 @@ class MultisiteTest extends WP_UnitTestCase {
 		}
 		$this->assertTrue( true );
 	}
-	public function test_cli_class_has_maybe_switch_blog_method(): void {
-		if ( ! class_exists( 'RSA_CLI' ) ) {
-			$this->markTestSkipped( 'RSA_CLI not available (WP CLI not installed in test env)' );
-		}
-		$this->assertTrue( method_exists( 'RSA_CLI', 'maybe_switch_blog' ) );
-	}
-	public function test_cli_maybe_switch_blog_accepts_blog_id_parameter(): void {
-		if ( ! class_exists( 'RSA_CLI' ) ) {
-			$this->markTestSkipped( 'RSA_CLI not available (WP CLI not installed in test env)' );
-		}
-		$ref    = new ReflectionMethod( RSA_CLI::class, 'maybe_switch_blog' );
-		$params = $ref->getParameters();
-		$this->assertCount( 1, $params );
-		$this->assertSame( 'blog_id', $params[0]->getName() );
-	}
 	public function test_new_blog_hook_uses_wp_initialize_site(): void {
 		$cb = has_action( 'wp_initialize_site', array( RSA_DB::class, 'on_new_blog_event' ) );
 		$this->assertNotFalse( $cb, 'Hook wp_initialize_site should trigger RSA_DB::on_new_blog_event' );

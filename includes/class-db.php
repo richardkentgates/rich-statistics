@@ -94,7 +94,17 @@ class RSA_DB {
 
 		$stored_version = get_option( self::OPTION_KEY, 0 );
 		if ( $stored_version >= self::SCHEMA_VERSION ) {
-			return;
+			// Guard against test environments where tables may have been
+			// dropped while the option persisted (e.g. WordPress test
+			// framework teardown). If the events table is missing,
+			// re-run dbDelta so all tables are recreated.
+			$table_exists = $wpdb->get_var( $wpdb->prepare(
+				"SHOW TABLES LIKE %s",
+				self::events_table()
+			) );
+			if ( $table_exists ) {
+				return;
+			}
 		}
 
 		$charset = $wpdb->get_charset_collate();
