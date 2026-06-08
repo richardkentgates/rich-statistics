@@ -66,6 +66,17 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$response = static::$server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
 	}
+	public function test_rest_api_class_loaded_in_free_mode(): void {
+		// Freemius stub returns false for can_use_premium_code__premium_only()
+		// in tests. The REST API class must still be available (CR-1 fix).
+		$this->assertTrue( class_exists( 'RSA_Rest_API' ) );
+		$this->assertTrue( method_exists( 'RSA_Rest_API', 'register_routes' ) );
+	}
+	public function test_pwa_download_class_loaded_in_free_mode(): void {
+		// OTP site-pairing must work in free mode (CR-1 fix).
+		$this->assertTrue( class_exists( 'RSA_Pwa_Download' ) );
+		$this->assertTrue( method_exists( 'RSA_Pwa_Download', 'init' ) );
+	}
 	/**
 	 * ----------------------------------------------------------------
 	 * /user-settings — GET (auth required)

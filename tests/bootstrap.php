@@ -102,9 +102,10 @@ if ( is_dir( $wp_tests_dir ) ) {
 				'class-woocommerce',
 				'class-click-tracking',
 				'class-heatmap',
-				'class-rest-api',
-				'class-privacy-disclosure',
-				'class-consent-banner',
+			'class-rest-api',
+			'class-pwa-download',
+			'class-privacy-disclosure',
+			'class-consent-banner',
 			);
 			foreach ( $includes as $cls ) {
 				$f = RSA_DIR . 'includes/' . $cls . '.php';
