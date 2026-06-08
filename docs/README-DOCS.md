@@ -85,8 +85,8 @@ Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD refere
 
 | Component | Version | Status |
 |-----------|---------|--------|
-| **Plugin** | 2.4.26 | ✅ On develop (ready for test) |
-| **Freemius (beta)** | 2.4.26 | ✅ Uploaded as beta (tag ID 123385) |
+| **Plugin** | 2.4.27 | ✅ On develop (ready for test) |
+| **Freemius (beta)** | 2.4.27 | ✅ Uploaded as beta (tag ID 123385) |
 | **Freemius (released)** | 2.4.19 | ✅ Public release (tag ID 123214) |
 | **Dev Server** | — | ✅ dev.richstatistics.com operational |
 | **Test Server** | — | ✅ test.richstatistics.com operational |

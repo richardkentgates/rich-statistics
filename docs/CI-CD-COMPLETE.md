@@ -145,13 +145,13 @@ docs/app/v/
 │   │   └── icons/
 │   └── beta/     ← Beta PWA files (identical structure)
 │       └── ...
-├── 2.4.26/
+├── 2.4.27/
 │   └── ...
 └── versions.json  ← Auto-generated list of versions
 ```
 
 **Key Features:**
-- Version from git tag (e.g., `v2.4.26`)
+- Version from git tag (e.g., `v2.4.27`)
 - Artifact retention: 30 days
 - GitHub Release with checksums
 - Versioned PWA snapshots for desktop app compatibility
@@ -320,8 +320,8 @@ Steps:
 php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 
 # Example:
-php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 released
-php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 beta
+php bin/deploy-freemius.php rich-statistics-2.4.27.zip 2.4.27 released
+php bin/deploy-freemius.php rich-statistics-2.4.27.zip 2.4.27 beta
 ```
 
 **Environment Variables:**
@@ -500,12 +500,12 @@ dist/
 **Update Manifest (update.json):**
 ```json
 {
-  "version": "2.4.26",
+  "version": "2.4.27",
   "notes": "See CHANGELOG.md",
   "pubDate": "2026-05-18T11:00:00Z",
   "platforms": {
     "linux-amd64": {
-      "url": "https://app.richstatistics.com/dist/rich-statistics_2.4.26_amd64.deb",
+      "url": "https://app.richstatistics.com/dist/rich-statistics_2.4.27_amd64.deb",
       "signature": "sha256:abc123..."
     },
     "linux-arm64": { ... },
@@ -535,15 +535,15 @@ rsa-apt-repo-update-{env}
 **File: `rich-statistics.php`**
 ```php
 // Line 6 (plugin header)
- * Version:           2.4.26
+ * Version:           2.4.27
 
 // Line 62 (constant)
-define( 'RSA_VERSION', '2.4.26' );
+define( 'RSA_VERSION', '2.4.27' );
 ```
 
 **File: `readme.txt`**
 ```
-Line 7: Stable tag: 2.4.26
+Line 7: Stable tag: 2.4.27
 ```
 
 **Auto-Detection:**
@@ -568,13 +568,13 @@ Before promoting to production:
 **Format:** `MAJOR.MINOR.PATCH`
 
 **Examples:**
-- `2.4.25` → `2.4.26` (patch: bug fixes, minor improvements)
+- `2.4.25` → `2.4.27` (patch: bug fixes, minor improvements)
 - `2.4.x` → `2.5.0` (minor: new features, backwards compatible)
 - `2.x.x` → `3.0.0` (major: breaking changes)
 
 **Beta Tags:**
 - Format: `v{version}-beta.{n}`
-- Example: `v2.4.26-beta.1`
+- Example: `v2.4.27-beta.1`
 - Used for: Pre-release testing on test branch
 
 ---
@@ -838,7 +838,7 @@ cat phpcs.xml.dist | grep exclude-pattern
 **Build Release:**
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `version` | No | (from tag) | Version string (e.g., `2.4.26`) |
+| `version` | No | (from tag) | Version string (e.g., `2.4.27`) |
 
 ---
 
@@ -927,7 +927,7 @@ docs/
   run: |
     php bin/deploy-freemius.php \
       "plugin.zip" \
-      "2.4.26" \
+      "2.4.27" \
       "released"
   env:
     DEV_ID: ${{ secrets.FREEMIUS_DEV_ID }}
@@ -977,7 +977,7 @@ gh workflow run "Promote to Production" --ref test \
   -f channel=stable
 
 # Build Release (manual)
-gh workflow run "Build Release" --ref "v2.4.26"
+gh workflow run "Build Release" --ref "v2.4.27"
 ```
 
 ### Check Deploy Status

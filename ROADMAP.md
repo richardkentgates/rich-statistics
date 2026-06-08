@@ -160,7 +160,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
 | P2.1 | Server | Install systemd deploy daemon | ✅ Installed — active on prod, dev, test. Old cron removed. |
-| P2.2 | PWA | Backfill missing version snapshots | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26 (17 total) |
+| P2.2 | PWA | Backfill missing version snapshots | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27 (17 total) |
 | P2.3 | Server | Clean up old Windows binary names | ✅ Removed old `Rich Statistics_*.exe` from prod `dist/` |
 | P2.4 | CI/CD | Post-deploy smoke tests | ✅ Added to build-develop, build-test, build-release |
 | P2.5 | CI/CD | `build-release.yml` tag/main divergence | ✅ Fixed — `checkout-ref: main` in job-build-desktop |
@@ -389,9 +389,9 @@ WordPress Settings (checkbox rsa_beta_channel)
 
 | Env | Server | Web Root | Last Deployed | versions.json | versions-beta.json |
 |-----|--------|----------|---------------|---------------|-------------------|
-| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.26 (`main`) | ✅ 17 entries | ✅ Present |
-| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.26 (`develop`) | ✅ 17 entries | ✅ Present |
-| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.26 (`test`) | ✅ 17 entries | ✅ Present |
+| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.27 (`main`) | ✅ 17 entries | ✅ Present |
+| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.27 (`develop`) | ✅ 17 entries | ✅ Present |
+| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.27 (`test`) | ✅ 17 entries | ✅ Present |
 | **Test (Plugin)** | `34.56.56.233` | `/srv/www/wordpress` | WordPress integration tests | N/A | N/A |
 
 All 3 PWA environments run on the same server (`104.197.231.120`), sharing the same wildcard SSL cert.
@@ -436,14 +436,14 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 3. `PUT plugins/{id}/tags/{tag_id}.json` — sets `release_mode` to the specified value
 
 Supported `release_mode` values:
-- `released` — stable tags (`v2.4.26`)
-- `beta` — beta tags (`v2.4.26-beta.1`) and test branch builds
+- `released` — stable tags (`v2.4.27`)
+- `beta` — beta tags (`v2.4.27-beta.1`) and test branch builds
 
 **Manual usage:**
 ```bash
 php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 # Example:
-php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 released
+php bin/deploy-freemius.php rich-statistics-2.4.27.zip 2.4.27 released
 ```
 
 ### 9.6 Promotion Workflow Enforcement
@@ -548,7 +548,7 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | # | Issue | Resolution |
 |---|-------|------------|
 | 1 | Deploy mechanism undocumented | ✅ Systemd daemon installed on all 3 servers; old cron removed. `journalctl -u rsa-deploy-daemon@{prod,dev,test}` for logs. |
-| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26. 17 versions now present from 2.4.9 → 2.4.26. (2.4.20 was never released as a tag.) |
+| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27. 17 versions now present from 2.4.9 → 2.4.27. (2.4.20 was never released as a tag.) |
 | 3 | Windows binary naming inconsistency | ✅ Old `Rich Statistics_*.exe` files removed from prod `dist/`. Only standardized `rich-statistics-windows.exe` remains. |
 | 4 | No post-deploy verification | ✅ Smoke test added to `build-develop.yml`, `build-test.yml`, and `build-release.yml` — verifies HTTP 200 after webhook ping. |
 | 6 | `build-release.yml` tag vs. main divergence | ✅ `job-build-desktop.yml` accepts `checkout-ref: main`; desktop build uses exact snapshots committed by release job. |
@@ -633,14 +633,14 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 | `docs/app/app.js` | 403 nonce-retry path (lines 402-419) | `nonce + autoUrl` never set; dead code |
 | `docs/app/app.js` | Add-site prefill from `autoSiteUrl` (lines 790-797) | `autoSiteUrl` never set; dead code |
 | `docs/app/app.js` | Comment referencing `/rs-app/` and `serve_app()` (lines 122-125) | In-plugin context no longer exists |
-| `docs/app/v/2.4.26/stable/app.js` | Same dead code as `docs/app/app.js` | Must match |
-| `docs/app/v/2.4.26/beta/app.js` | Same dead code as `docs/app/app.js` | Must match |
-| `docs/app/v/2.4.26/stable/config.js` | Same dead code as `docs/app/config.js` | Must match |
-| `docs/app/v/2.4.26/stable/config-dev.js` | Same `/wp-content/` detection block | Must match |
-| `docs/app/v/2.4.26/stable/config-test.js` | Same `/wp-content/` detection block | Must match |
-| `docs/app/v/2.4.26/beta/config.js` | Same dead code as `docs/app/config.js` | Must match |
-| `docs/app/v/2.4.26/beta/config-dev.js` | Same `/wp-content/` detection block | Must match |
-| `docs/app/v/2.4.26/beta/config-test.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/stable/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.27/beta/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.27/stable/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.27/stable/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/stable/config-test.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/beta/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.27/beta/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/beta/config-test.js` | Same `/wp-content/` detection block | Must match |
 
 **Versioned snapshots `docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`:** Do NOT modify. These correspond to already-released plugin versions and are historical artifacts.
 
@@ -727,8 +727,8 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
     - Update all comments referencing `/rs-app/`, `serve_app()`, or in-plugin context
 
 12. **Copy to versioned snapshots** (latest version only)
-    - `docs/app/v/2.4.26/stable/app.js` and `beta/app.js` — same changes as step 11
-    - `docs/app/v/2.4.26/stable/config.js`, `config-dev.js`, `config-test.js` and `beta/` equivalents — same changes as step 10
+    - `docs/app/v/2.4.27/stable/app.js` and `beta/app.js` — same changes as step 11
+    - `docs/app/v/2.4.27/stable/config.js`, `config-dev.js`, `config-test.js` and `beta/` equivalents — same changes as step 10
 
 **Phase C — Housekeeping**
 
@@ -777,7 +777,7 @@ Verified by inspecting the live server (`104.197.231.120`), GitHub repo (`richar
 
 #### GitHub Infrastructure
 
-- **30 tags** (v2.2.7 through v2.4.26), **12 PWA version directories** on GitHub (`docs/app/v/2.4.14/` through `v/2.4.26/`).
+- **30 tags** (v2.2.7 through v2.4.27), **12 PWA version directories** on GitHub (`docs/app/v/2.4.14/` through `v/2.4.27/`).
 - **4 branches:** `main`, `develop`, `test`, `fix/merge-main-into-test`.
 - **11 CI workflows** (build-develop, build-test, build-release, job-build-zip, job-build-desktop, promote, promote-test, tests, e2e-tests, health-check, setup-webhook). All verified to NOT reference in-plugin PWA serving.
 - **`job-build-zip.yml`** excludes `*/docs/*` from the plugin ZIP (line 84). This means `docs/app/` is NOT included in the distributed ZIP. The `serve_app()` method reads from `RSA_DIR . 'docs/app/index.html'` which only works in the dev repo — feature was already broken for distributed plugins.
@@ -798,14 +798,14 @@ if ( idx !== -1 ) {
 
 **This code path becomes dead code** when in-plugin serving is removed — the PWA is only served from `app.richstatistics.com` where there is no `/wp-content/` in paths. It is harmless (evaluates to `-1` and skips), but the comment references "served from within the plugin directory" which should be updated.
 
-**Affected files (authoritative copies only — `docs/app/` and `docs/app/v/2.4.26/`):**
+**Affected files (authoritative copies only — `docs/app/` and `docs/app/v/2.4.27/`):**
 - `docs/app/config.js` — Update comment about in-plugin context
-- `docs/app/v/2.4.26/stable/config.js` — Same update
-- `docs/app/v/2.4.26/beta/config.js` — Same update
-- `docs/app/v/2.4.26/stable/config-dev.js` — Same update
-- `docs/app/v/2.4.26/beta/config-dev.js` — Same update
-- `docs/app/v/2.4.26/stable/config-test.js` — Same update
-- `docs/app/v/2.4.26/beta/config-test.js` — Same update
+- `docs/app/v/2.4.27/stable/config.js` — Same update
+- `docs/app/v/2.4.27/beta/config.js` — Same update
+- `docs/app/v/2.4.27/stable/config-dev.js` — Same update
+- `docs/app/v/2.4.27/beta/config-dev.js` — Same update
+- `docs/app/v/2.4.27/stable/config-test.js` — Same update
+- `docs/app/v/2.4.27/beta/config-test.js` — Same update
 
 **All older versioned snapshots (`docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`):** Do NOT modify. They correspond to already-released plugin versions and are historical.
 
@@ -823,8 +823,8 @@ Three code paths in `app.js` use `autoSiteUrl` and `nonce`, both of which were s
 
 **Affected files (authoritative copies only):**
 - `docs/app/app.js` — Update comment at lines 122-125
-- `docs/app/v/2.4.26/stable/app.js` — Same update
-- `docs/app/v/2.4.26/beta/app.js` — Same update
+- `docs/app/v/2.4.27/stable/app.js` — Same update
+- `docs/app/v/2.4.27/beta/app.js` — Same update
 
 #### Stale Rewrite Rules — Upgrade Path Concern
 

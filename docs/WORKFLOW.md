@@ -204,9 +204,9 @@ APT repo updated via `rsa-apt-repo-update-{env}` script.
 
 ### Where Version Is Defined
 
-1. `rich-statistics.php` line 6: `* Version:           2.4.26`
-2. `rich-statistics.php` line 62: `define( 'RSA_VERSION', '2.4.26' );`
-3. `readme.txt` line 7: `Stable tag: 2.4.26`
+1. `rich-statistics.php` line 6: `* Version:           2.4.27`
+2. `rich-statistics.php` line 62: `define( 'RSA_VERSION', '2.4.27' );`
+3. `readme.txt` line 7: `Stable tag: 2.4.27`
 
 **All three must match.** The promote workflow auto-detects from line 62.
 

@@ -4,7 +4,7 @@ Tags: analytics, privacy, statistics, heatmap, click-tracking
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.4.26
+Stable tag: 2.4.27
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -168,6 +168,15 @@ Available at https://statistics.richardkentgates.com
 5. PWA Web App (Premium) — mobile analytics dashboard
 
 == Changelog ==
+
+= 2.4.27 =
+* Full PHPUnit integration suite passing: 424 tests, 867 assertions, 0 failures
+* 15 new integration test files added covering Security, Templates, Heatmap, Rate Limiting, Uninstall, Analytics Edge Cases, Email Content, REST Auth, AI Premium Gating, Build Validation, Multisite Deep tests
+* 6 new PWA E2E Playwright tests for premium views: offline banner, AI chat, WooCommerce, Export, Heatmap, User Flow (61 E2E tests total, all passing)
+* Fixed ConsentBannerTest suite hang caused by save_settings() exit interception
+* Fixed UninstallTest DDL teardown to bypass WP test framework temporary-table filters
+* Fixed CoverageGapTest assertions for user-flow journey and export endpoints
+* Fixed production PWA bug: missing 'ai-chat' case in renderView() caused empty AI Chat view
 
 = 2.4.26 =
 * Critical audit fixes: capability checks on premium renderers, remove_filter closure identity, MySQL 8.0 version guard for window functions

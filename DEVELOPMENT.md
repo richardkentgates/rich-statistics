@@ -361,7 +361,7 @@ The CI builds `.deb` files (amd64 + arm64) and `.exe` installer (Windows) and pu
 - **`update.json`** (on the app server):
   ```json
   {
-    "version": "2.4.26",
+    "version": "2.4.27",
     "pub_date": "2026-05-10T12:00:00Z",
     "notes": "",
     "platforms": {

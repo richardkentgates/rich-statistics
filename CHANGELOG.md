@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.27] - 2026-06-06
+
+### Added
+- 15 new integration test files (92 tests, 209 assertions) covering Security, Template Rendering, Heatmap, Rate Limiting, Uninstall, Analytics Edge Cases, Email Content, REST Auth, AI Premium Gating, Build Validation, and Multisite Deep tests
+- 6 new PWA E2E Playwright tests for premium views: offline banner, AI chat, WooCommerce, Export, Heatmap, User Flow (61 E2E tests total, all passing)
+- Full PHPUnit integration suite now passes cleanly (424 tests, 867 assertions); isolated DDL tests via `@group ddl`
+
+### Fixed
+- Fixed ConsentBannerTest suite hang: `RSA_Admin::save_settings()` reached `exit;` when `save_settings()` was called directly in tests; now intercepts `wp_redirect` to throw `WPDieException`
+- Fixed `DbTest::setUp()` forcing slow `dbDelta()` on every test; reduced test runtime from ~50s to normal
+- Fixed `UninstallTest` DDL teardown: now bypasses WP test framework temporary-table filters so `RSA_DB::install()` creates permanent tables for subsequent tests
+- Fixed `CoverageGapTest` assertions for `/user-flow/journey` (key is `rows`, not `journey`) and `/export` (tests JSON format correctly)
+- Fixed production PWA bug: `renderView()` was missing `case 'ai-chat': renderAiChat(container); break;`, causing empty AI Chat view in v2.4.26 snapshots
+
+### Changed
+- `phpunit.xml.dist`: excludes `@group ddl` tests by default; run separately with `--group ddl`
+- `docs/app/versions.json` and `versions-beta.json`: auto-generated list now includes 2.4.27
+
+## [2.4.26] - 2026-05-24
+
 ### Removed
 - In-plugin PWA serving: removed `/rs-app/` rewrite rules, `serve_app()`, `serve_manifest()`, and `add_app_query_var()` from `class-admin.php`
 - Removed PWA ZIP download handler (`handle_download()`, `stream_zip()`) from `class-pwa-download.php` — OTP pairing is preserved
