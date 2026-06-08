@@ -28,6 +28,11 @@ define( 'RSA_DIR', dirname( __DIR__ ) . '/' );
  * Stub rs_fs() — neither mode needs the real Freemius SDK.
  * -----------------------------------------------------------------------
  */
+// Honor RSA_PREMIUM_TEST from environment (CI premium test jobs).
+if ( ! defined( 'RSA_PREMIUM_TEST' ) && getenv( 'RSA_PREMIUM_TEST' ) ) {
+	define( 'RSA_PREMIUM_TEST', true );
+}
+
 if ( ! function_exists( 'rs_fs' ) ) {
 	function rs_fs(): object {
 		static $stub = null;
