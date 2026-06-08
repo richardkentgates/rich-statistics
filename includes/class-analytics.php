@@ -30,7 +30,7 @@ class RSA_Analytics {
 	 */
 	public static function period_range( string $period, string $date_from = '', string $date_to = '' ): array {
 		// Use UTC so period boundaries align with database created_at (UTC).
-		$now = current_time( 'timestamp' );
+		$now = time();
 		if ( 'custom' === $period && $date_from && $date_to ) {
 			$start = strtotime( $date_from . ' 00:00:00' );
 			$end   = strtotime( $date_to . ' 23:59:59' );

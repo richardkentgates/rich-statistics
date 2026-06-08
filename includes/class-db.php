@@ -56,9 +56,12 @@ class RSA_DB {
 					]
 				);
 				foreach ( $sites as $blog_id ) {
-					switch_to_blog( $blog_id );
-					self::install();
-					restore_current_blog();
+					try {
+						switch_to_blog( $blog_id );
+						self::install();
+					} finally {
+						restore_current_blog();
+					}
 				}
 				$offset    += $batch_size;
 				$site_count = count( $sites );
@@ -75,9 +78,12 @@ class RSA_DB {
 	 * @param int $blog_id The blog ID.
 	 */
 	public static function on_new_blog( int $blog_id ): void {
-		switch_to_blog( $blog_id );
-		self::install();
-		restore_current_blog();
+		try {
+			switch_to_blog( $blog_id );
+			self::install();
+		} finally {
+			restore_current_blog();
+		}
 	}
 
 	/**
@@ -287,9 +293,12 @@ class RSA_DB {
 				]
 			);
 			foreach ( $sites as $blog_id ) {
-				switch_to_blog( $blog_id );
-				self::drop_site_tables();
-				restore_current_blog();
+				try {
+					switch_to_blog( $blog_id );
+					self::drop_site_tables();
+				} finally {
+					restore_current_blog();
+				}
 			}
 			// Clean network-level options from sitemeta.
 			delete_site_option( 'rsa_default_retention_days' );
@@ -351,7 +360,7 @@ class RSA_DB {
 		global $wpdb;
 
 		$days    = $days ?? (int) get_option( 'rsa_retention_days', 90 );
-		$cutoff  = wp_date( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+		$cutoff  = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 		$deleted = 0;
 		$start   = microtime( true );
 
@@ -381,7 +390,7 @@ class RSA_DB {
 			} while ( $result > 0 );
 		}
 
-		$cutoff_date = wp_date( 'Y-m-d', strtotime( "-{$days} days" ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
 		do {
 			$result   = $wpdb->query(
 				$wpdb->prepare(
@@ -406,8 +415,8 @@ class RSA_DB {
 	public static function aggregate_heatmap(): void {
 		global $wpdb;
 
-		$yesterday = wp_date( 'Y-m-d', strtotime( '-1 day' ) );
-		$today     = wp_date( 'Y-m-d', strtotime( '0 day' ) );
+		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+		$today     = gmdate( 'Y-m-d', strtotime( '0 day' ) );
 
 		$wpdb->query(
 			$wpdb->prepare(
@@ -465,10 +474,13 @@ class RSA_DB {
 					]
 				);
 				foreach ( $sites as $blog_id ) {
-					switch_to_blog( $blog_id );
-					self::prune_old_data();
-					self::aggregate_heatmap();
-					restore_current_blog();
+					try {
+						switch_to_blog( $blog_id );
+						self::prune_old_data();
+						self::aggregate_heatmap();
+					} finally {
+						restore_current_blog();
+					}
 				}
 				$offset    += $batch_size;
 				$site_count = count( $sites );
@@ -490,10 +502,16 @@ class RSA_DB {
 	}
 
 	public static function on_new_blog_event( $new_site ): void {
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
 		if ( is_plugin_active_for_network( plugin_basename( RSA_FILE ) ) ) {
-			switch_to_blog( $new_site->blog_id );
-			self::install();
-			restore_current_blog();
+			try {
+				switch_to_blog( $new_site->blog_id );
+				self::install();
+			} finally {
+				restore_current_blog();
+			}
 		}
 	}
 }

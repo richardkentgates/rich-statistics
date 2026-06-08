@@ -1094,6 +1094,11 @@ class RSA_Rest_API {
 			return self::ok( [ 'recorded' => false, 'reason' => 'woocommerce_inactive' ] );
 		}
 
+		// Premium feature — class only loaded when premium is active.
+		if ( ! class_exists( 'RSA_Woocommerce' ) ) {
+			return self::ok( [ 'recorded' => false, 'reason' => 'premium_required' ] );
+		}
+
 		$meta = [
 			'product_id'   => (int) $r['product_id'],
 			'product_name' => sanitize_text_field( wp_unslash( $r['product_name'] ) ),

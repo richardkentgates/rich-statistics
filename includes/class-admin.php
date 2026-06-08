@@ -320,9 +320,9 @@ class RSA_Admin {
 			$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
 			$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
-				$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
-				$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$date_to = gmdate( 'Y-m-d' ); }
 		}
 
 		$page_filters = [
@@ -745,7 +745,7 @@ class RSA_Admin {
 				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
 		}
 
-		$filename = 'rich-statistics-' . $data_type . '-' . date( 'Y-m-d', current_time( 'timestamp' ) ) . '.csv'; // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+		$filename = 'rich-statistics-' . $data_type . '-' . gmdate( 'Y-m-d' ) . '.csv';
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		header( 'Pragma: no-cache' );

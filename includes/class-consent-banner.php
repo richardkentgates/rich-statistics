@@ -34,7 +34,9 @@ class RSA_Consent_Banner {
 		}
 
 		$css = self::build_css( $styles );
-		wp_add_inline_style( 'rsa-tracker', $css );
+		wp_register_style( 'rsa-consent-banner', false );
+		wp_add_inline_style( 'rsa-consent-banner', $css );
+		wp_enqueue_style( 'rsa-consent-banner' );
 	}
 
 	/**
