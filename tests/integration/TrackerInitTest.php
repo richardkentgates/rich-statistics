@@ -29,8 +29,10 @@ class TrackerInitTest extends WP_UnitTestCase {
 		}
 		update_site_option( 'rsa_network_disable_tracker', 1 );
 
-		$should_enqueue = RSA_Tracker::should_enqueue();
-		$this->assertFalse( $should_enqueue );
+		RSA_Tracker::enqueue();
+
+		global $wp_scripts;
+		$this->assertFalse( wp_script_is( 'rsa-tracker', 'enqueued' ) );
 
 		delete_site_option( 'rsa_network_disable_tracker' );
 	}

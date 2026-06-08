@@ -99,7 +99,7 @@ class RSA_DB {
 			// framework teardown). If the events table is missing,
 			// re-run dbDelta so all tables are recreated.
 			$table_exists = $wpdb->get_var( $wpdb->prepare(
-				"SHOW TABLES LIKE %s",
+				'SHOW TABLES LIKE %s',
 				self::events_table()
 			) );
 			if ( $table_exists ) {
