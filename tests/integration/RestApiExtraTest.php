@@ -52,6 +52,14 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'site_name', $data['data'] );
 		$this->assertNotEmpty( $data['data']['site_name'] );
 	}
+	public function test_info_returns_max_app_version(): void {
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'max_app_version', $data['data'] );
+		$this->assertSame( RSA_APP_VERSION, $data['data']['max_app_version'] );
+	}
 	public function test_info_no_auth_required(): void {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );

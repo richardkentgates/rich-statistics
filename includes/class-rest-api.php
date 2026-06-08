@@ -771,6 +771,7 @@ class RSA_Rest_API {
 				'app_version'     => RSA_APP_VERSION,
 				'min_app_version' => RSA_MIN_APP_VERSION,
 				'app_url'         => RSA_APP_URL,
+				'max_app_version' => RSA_APP_VERSION,
 				'env'             => RSA_APP_ENV,
 				'site_name'       => get_bloginfo( 'name' ),
 				'site_url'        => get_site_url(),

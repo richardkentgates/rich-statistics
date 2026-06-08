@@ -470,9 +470,26 @@
 	}
 
 	/**
+	 * Semver comparison: negative if a < b, 0 if equal, positive if a > b.
+	 */
+	function semverCompare( a, b ) {
+		var pa = a.split( '.' ).map( Number );
+		var pb = b.split( '.' ).map( Number );
+		for ( var i = 0; i < 3; i++ ) {
+			if ( pa[ i ] !== pb[ i ] ) return pa[ i ] - pb[ i ];
+		}
+		return 0;
+	}
+
+	/**
+	 * Sort comparator for descending semver order.
+	 */
+	function semverDesc( a, b ) { return semverCompare( b, a ); }
+
+	/**
 	 * Navigate to a bundled versioned folder in the Tauri local server.
-	 * Falls back to the latest bundled version if the requested one isn't found,
-	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 * Falls back to the newest bundled version that is <= pluginVersion,
+	 * and shows an update prompt only when the plugin is newer than all bundles.
 	 *
 	 * @param {string} pluginVersion - Semver version string.
 	 * @param {string} [channel] - Release channel ('stable' or 'beta'). Default 'stable'.
@@ -513,38 +530,50 @@
 						.catch( function () {} );
 					return;
 				}
-				// Plugin not in bundled versions — check if a desktop update exists.
-				// Only show the banner if an actual newer desktop build is available.
-				var latest = bundled.slice().sort( function ( a, b ) {
-					var pa = a.split( '.' ).map( Number );
-					var pb = b.split( '.' ).map( Number );
-					for ( var i = 0; i < 3; i++ ) {
-						if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
-					}
-					return 0;
-				} )[ 0 ];
-				fetch( '/dist/update.json' )
-					.then( function ( r ) { return r.ok ? r.json() : null; } )
-					.then( function ( upd ) {
-						if ( upd && upd.version ) {
-							var uv = upd.version.split( '.' ).map( Number );
-							var bv = latest.split( '.' ).map( Number );
-							var newer = false;
-							for ( var i = 0; i < 3; i++ ) {
-								if ( uv[ i ] > bv[ i ] ) { newer = true; break; }
-								if ( uv[ i ] < bv[ i ] ) break;
-							}
-							if ( newer ) {
+				// Plugin not in bundled versions — find the newest compatible bundle.
+				var compatible = bundled
+					.filter( function ( v ) { return semverCompare( v, pluginVersion ) <= 0; } )
+					.sort( semverDesc );
+				var fallback = compatible[ 0 ];
+
+				// If every bundle is newer than the plugin, fall back to the oldest
+				// bundle (closest to the plugin version).
+				var allNewer = bundled.every( function ( v ) { return semverCompare( v, pluginVersion ) > 0; } );
+				if ( allNewer ) {
+					fallback = bundled.slice().sort( function ( a, b ) { return semverCompare( a, b ); } )[ 0 ];
+				}
+
+				// Show update banner only when the plugin is strictly newer than
+				// every bundled version (desktop app truly needs an update).
+				var allOlder = bundled.every( function ( v ) { return semverCompare( v, pluginVersion ) < 0; } );
+				if ( allOlder ) {
+					fetch( '/dist/update.json' )
+						.then( function ( r ) { return r.ok ? r.json() : null; } )
+						.then( function ( upd ) {
+							if ( upd && upd.version && semverCompare( upd.version, pluginVersion ) >= 0 ) {
 								showDesktopUpdateBanner( pluginVersion, bundled );
 							}
-						}
-					} )
-					.catch( function () {} );
-				if ( latest && current !== latest ) {
-					window.location.href = '/v/' + latest + '/' + channel + '/';
+						} )
+						.catch( function () {} );
+				}
+
+				if ( fallback && current !== fallback ) {
+					window.location.href = '/v/' + fallback + '/' + channel + '/';
 				}
 			} )
 			.catch( function () {} );
+	}
+
+	/**
+	 * Detect the app version from the current URL, or null if unknown.
+	 * Browser PWA: extracts from versioned path (e.g. /v/2.4.27/).
+	 * Desktop: uses getTauriCurrentVersion().
+	 */
+	function getAppVersion() {
+		var v = getTauriCurrentVersion();
+		if ( v ) return v;
+		var base = getVersionedAppBase();
+		return base ? base.current : null;
 	}
 
 	/**
@@ -553,12 +582,7 @@
 	 */
 	function showDesktopUpdateBanner( pluginVersion, bundled ) {
 		if ( document.getElementById( 'rsa-desktop-update-banner' ) ) return;
-		var latest  = bundled.slice().sort( function ( a, b ) {
-			var pa = a.split( '.' ).map( Number );
-			var pb = b.split( '.' ).map( Number );
-			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
-			return 0;
-		} )[ 0 ] || '?';
+		var latest  = bundled.slice().sort( semverDesc )[ 0 ] || '?';
 		var banner = document.createElement( 'div' );
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =
@@ -570,6 +594,66 @@
 		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
 			banner.remove();
 		} );
+	}
+
+	/**
+	 * Show a compatibility warning banner. Dismisses any existing one first.
+	 *
+	 * @param {string} status - 'ok' | 'appTooNew' | 'pluginTooNew' | 'envMismatch'
+	 * @param {object} info - The /info response data.
+	 */
+	function showCompatBanner( status, info ) {
+		var existing = document.getElementById( 'rsa-compat-banner' );
+		if ( existing ) existing.remove();
+		if ( status === 'ok' ) return;
+
+		var msg = '';
+		var appV = getAppVersion() || 'this';
+		if ( status === 'appTooNew' ) {
+			msg = 'Your app (v' + esc( appV ) + ') is newer than this site\'s plugin (v' + esc( info.version ) +
+			      '). Some features may not work. Use the app matching the plugin version for best compatibility.';
+		} else if ( status === 'pluginTooNew' ) {
+			msg = 'This site\'s plugin (v' + esc( info.version ) + ') is newer than your app (v' + esc( appV ) +
+			      '). Update your app for full compatibility.';
+		} else if ( status === 'envMismatch' ) {
+			msg = 'This is a ' + esc( info.env ) + ' site. For best compatibility, use the matching ' +
+			      esc( info.env ) + ' app at ' + esc( info.app_url ) + '.';
+		}
+		if ( ! msg ) return;
+
+		var banner = document.createElement( 'div' );
+		banner.id = 'rsa-compat-banner';
+		banner.innerHTML =
+			'<span class="rsa-compat-icon">&#9888;</span>' +
+			'<span>' + msg + '</span>' +
+			'<button id="rsa-compat-dismiss" aria-label="Dismiss">&times;</button>';
+		document.body.insertBefore( banner, document.body.firstChild );
+		document.getElementById( 'rsa-compat-dismiss' ).addEventListener( 'click', function () {
+			banner.remove();
+		} );
+	}
+
+	/**
+	 * Get per-site compatibility state from localStorage.
+	 */
+	function getCompatState( siteId ) {
+		try {
+			var raw = localStorage.getItem( 'rsa_compat_' + siteId );
+			return raw ? JSON.parse( raw ) : null;
+		} catch ( e ) { return null; }
+	}
+
+	/**
+	 * Set per-site compatibility state in localStorage.
+	 */
+	function setCompatState( siteId, status, info ) {
+		var stateObj = {
+			status        : status,
+			pluginVersion : info.version,
+			appVersion    : getAppVersion() || null,
+			timestamp     : Date.now()
+		};
+		localStorage.setItem( 'rsa_compat_' + siteId, JSON.stringify( stateObj ) );
 	}
 
 	function checkPluginVersion() {
@@ -592,6 +676,35 @@
 
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
+
+				// ----------------------------------------------------------------
+				// Compatibility check
+				// ----------------------------------------------------------------
+				var appV = getAppVersion();
+				var compatStatus = 'ok';
+
+				if ( appV ) {
+					if ( info.max_app_version && semverCompare( appV, info.max_app_version ) > 0 ) {
+						compatStatus = 'appTooNew';
+					} else if ( info.min_app_version && semverCompare( appV, info.min_app_version ) < 0 ) {
+						compatStatus = 'pluginTooNew';
+					}
+				}
+
+				// Cross-environment mismatch (browser PWA only).
+				if ( ! isTauri() && info.app_url ) {
+					try {
+						var pluginHost = new URL( info.app_url ).hostname;
+						var appHost = window.location.hostname;
+						if ( pluginHost !== appHost ) {
+							compatStatus = 'envMismatch';
+						}
+					} catch ( _ ) {}
+				}
+
+				setCompatState( state.activeId, compatStatus, info );
+				showCompatBanner( compatStatus, info );
+				renderSiteSwitcher(); // Refresh warning indicators
 
 				// In Tauri: route to the matching bundled version folder (local, no external URLs).
 				if ( isTauri() ) {
@@ -631,8 +744,11 @@
 
 		var items = state.sites.map( function ( s ) {
 			var cls = 'rsa-site-menu-item' + ( s.id === state.activeId ? ' rsa-active' : '' );
+			var cst = getCompatState( s.id );
+			var warn = cst && cst.status !== 'ok' ? '<span class="rsa-site-compat-warn" title="Compatibility warning">&#9888;</span>' : '';
 			return '<div class="' + cls + '" data-id="' + esc( s.id ) + '">' +
 				'<span class="rsa-site-menu-label">' + esc( s.label ) + '</span>' +
+				warn +
 				'<button class="rsa-site-menu-remove" data-remove-id="' + esc( s.id ) + '" ' +
 				        'title="Remove site" aria-label="Remove ' + esc( s.label ) + '">&times;</button>' +
 				'</div>';
