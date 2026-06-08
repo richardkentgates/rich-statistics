@@ -516,6 +516,10 @@
 				return bundled;
 			} )
 			.then( function ( bundled ) {
+				if ( ! Array.isArray( bundled ) ) {
+					showCompatBanner( 'pluginTooNew', { version: pluginVersion } );
+					return;
+				}
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
 					// Verify the versioned folder is actually present before navigating.
 					fetch( indexUrl, { method: 'HEAD' } )
