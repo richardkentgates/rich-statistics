@@ -180,18 +180,16 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
 3. **Update CHANGELOG.md** — move the `[Unreleased]` block to a dated `[x.y.z] — YYYY-MM-DD`
    entry.
 
-4. **Merge to test for QA**
-   ```bash
-   git checkout test && git merge --no-ff develop && git push origin test
-   ```
-   CI auto-deploys to `test.richstatistics.com`.
+4. **Promote to Test** (GitHub Actions)
+   - Go to GitHub → Actions → **Promote to Test** → Run on `develop`.
+   - This creates a PR `develop → test`, merges it, and dispatches `build-test.yml`.
+   - Do NOT push directly to `test` — branch protection enforces PR workflow.
+   - CI auto-deploys to `test.richstatistics.com`.
 
-5. **After QA passes, merge to main and tag**
-   ```bash
-   git checkout main && git merge --no-ff test
-   git tag -a v2.x.x -m "Release v2.x.x"
-   git push origin main --tags
-   ```
+5. **After QA passes, Promote to Production** (GitHub Actions)
+   - Go to GitHub → Actions → **Promote to Production** → Run on `test` → channel `stable`.
+   - This creates a PR `test → main`, merges it, creates/updates tag `vX.Y.Z`, and dispatches `build-release.yml`.
+   - Do NOT push directly to `main` — branch protection enforces PR workflow.
 
 6. **CI takes over** (`build-release.yml`):
    - Builds and uploads the plugin ZIP as a GitHub Release artifact.
@@ -219,24 +217,23 @@ All three build workflows share reusable sub-workflows for common tasks.
 | `job-build-zip.yml` | PHP syntax check, composer install, PHPCS, create plugin ZIP, upload artifact |
 | `job-build-desktop.yml` | Tauri build for Linux amd64 + arm64 + Windows, push binaries to server, update APT repo + update.json |
 
-### `tests.yml` — runs on every push/PR to `main`, `develop`, or `test`
+### `tests.yml` — runs on push/PR to `develop`
 
 | Job | Matrix | What it does |
 |---|---|---|
-| `unit` | PHP 8.1, 8.2, 8.3 | Unit tests (BrainMonkey, no WP install) |
-| `integration` | PHP 8.1/8.2 × WP latest/6.4 | Full integration test suite with MySQL |
-| `lint` | PHP 8.2 | PHP syntax check (`php -l` on all files) |
-| `phpcs` | PHP 8.2 | WordPress Coding Standards check |
+| `unit` | PHP 8.1, 8.2, 8.3, 8.4 | Unit tests (BrainMonkey, no WP install) |
+| `integration` | PHP 8.1–8.4 × WP latest/6.4 | Full integration test suite with MySQL |
 
 ### `build-develop.yml` — push to `develop`
 
 Calls `job-build-zip` (version: `dev.<#run>`) and `job-build-desktop` (pushes to `rs-dev`).
 
-### `build-test.yml` — push to `test`
+### `build-test.yml` — `workflow_dispatch` only
 
 Calls `job-build-zip` (version: `test.<#run>`) and `job-build-desktop` (pushes to `rs-test`).
+Dispatched automatically by `promote-test.yml`.
 
-### `build-release.yml` — tag `v*.*.*` on `main`
+### `build-release.yml` — `workflow_dispatch` on tag ref
 
 | Job | What it does |
 |---|---|
