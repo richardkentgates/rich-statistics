@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile
 /**
  * PHPUnit bootstrap — Rich Statistics test suite.
  *
