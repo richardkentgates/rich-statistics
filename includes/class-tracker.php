@@ -59,6 +59,7 @@ class RSA_Tracker {
 			];
 		}
 
+		$sid = self::get_or_create_session_id();
 		wp_localize_script(
 			'rsa-tracker',
 			'RSA',
@@ -70,11 +71,9 @@ class RSA_Tracker {
 				'premium'       => $premium_config,
 				'consentBanner' => (int) get_option( 'rsa_consent_banner', 0 ),
 				'consentAuto'   => (int) get_option( 'rsa_consent_auto', 0 ),
+				'sessionId'     => $sid,
 			]
 		);
-
-		$sid = self::get_or_create_session_id();
-		echo '<script>window.rsaSessionId="' . esc_js( $sid ) . '";try{sessionStorage.setItem("rsa_sid","' . esc_js( $sid ) . '")}catch(e){}</script>';
 
 		if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
 			$hm_file    = RSA_DIR . 'assets/js/heatmap-overlay.js';

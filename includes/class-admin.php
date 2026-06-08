@@ -790,7 +790,7 @@ class RSA_Admin {
 			'rsa_beta_channel'             => 'absint',
 			'rsa_consent_banner'           => 'absint',
 			'rsa_consent_auto'             => 'absint',
-			'rsa_consent_styles'           => 'sanitize_text_field',
+			'rsa_consent_styles'           => [ __CLASS__, 'sanitize_json_field' ],
 			'rsa_consent_banner_text'      => 'sanitize_textarea_field',
 		];
 
@@ -1288,5 +1288,20 @@ class RSA_Admin {
 		if ( isset( $page_help[ $screen->id ] ) ) {
 			$screen->add_help_tab( $page_help[ $screen->id ] );
 		}
+	}
+
+	/**
+	 * Sanitize a JSON string by parsing and re-encoding it.
+	 * Returns '{}' if the input is invalid JSON.
+	 *
+	 * @param string $json Raw JSON string.
+	 * @return string Sanitized JSON string.
+	 */
+	public static function sanitize_json_field( string $json ): string {
+		$decoded = json_decode( $json, true );
+		if ( ! is_array( $decoded ) ) {
+			return '{}';
+		}
+		return wp_json_encode( $decoded );
 	}
 }

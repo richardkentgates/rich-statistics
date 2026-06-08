@@ -140,9 +140,7 @@ $rsa_classes = array(
 
 foreach ( $rsa_classes as $class ) {
 	$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
-	if ( file_exists( $file ) ) {
-		require_once $file;
-	}
+	require_once $file;
 }
 
 // WP-CLI

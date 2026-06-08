@@ -97,11 +97,15 @@
 	// -----------------------------------------------------------------------
 
 	function loadStoredSites() {
-		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
+		try {
+			state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
+		} catch ( e ) { state.sites = []; }
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
 		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
-		state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+		try {
+			state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+		} catch ( e ) { state.aiProvider = null; }
 		if ( state.aiProvider ) {
 			state.aiProvider.voiceInput  = state.aiProvider.voiceInput  !== undefined ? state.aiProvider.voiceInput  : false;
 			state.aiProvider.voiceOutput = state.aiProvider.voiceOutput !== undefined ? state.aiProvider.voiceOutput : false;

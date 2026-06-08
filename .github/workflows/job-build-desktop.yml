@@ -165,7 +165,18 @@ jobs:
         id: tauri-config
         shell: bash
         run: |
-          python3 -c "import json; print(json.dumps({'productName':'Rich Statistics'+'${{ inputs.product-suffix }}','identifier':'com.richardkentgates.rich-statistics'+'${{ inputs.product-suffix }}','plugins':{'updater':{'endpoints':['${{ inputs.updater-url }}']}}}))" > "${RUNNER_TEMP}/tauri-config.json"
+          python3 -c "
+import json, re
+suffix = '${{ inputs.product-suffix }}'
+# Sanitize suffix for reverse-DNS identifier: '(Dev)' -> '.dev', '(Test)' -> '.test'
+id_suffix = re.sub(r'[^a-zA-Z0-9]', '', suffix).lower()
+id_suffix = '.' + id_suffix if id_suffix else ''
+print(json.dumps({
+  'productName': 'Rich Statistics' + suffix,
+  'identifier': 'com.richardkentgates.rich-statistics' + id_suffix,
+  'plugins': {'updater': {'endpoints': ['${{ inputs.updater-url }}']}}
+}))
+" > "${RUNNER_TEMP}/tauri-config.json"
           echo "config=$(cat "${RUNNER_TEMP}/tauri-config.json")" >> "$GITHUB_OUTPUT"
 
       - name: Build
