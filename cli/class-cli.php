@@ -394,7 +394,7 @@ class RSA_CLI extends WP_CLI_Command {
 
 				/* translators: 1: period, 2: format */
 				WP_CLI::line( sprintf( __( 'Exporting (%1$s, %2$s)…', 'rich-statistics' ), $period, $format ) );
-				$data = RSA_Analytics::export_events( $period, $format );
+				$data = RSA_Analytics::export_data( 'pageviews', $period, $format );
 
 				if ( ! empty( $assoc['output'] ) ) {
 					$output  = $assoc['output'];

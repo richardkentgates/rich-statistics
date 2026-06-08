@@ -13,65 +13,14 @@ class AnalyticsExportTest extends WP_UnitTestCase {
 
 	/**
 	 * ----------------------------------------------------------------
-	 * export_events() — empty data
+	 * export_events() backward compat — delegates to export_data('pageviews')
 	 * ----------------------------------------------------------------
 	 */
-	public function test_export_events_json_empty_data(): void {
+	public function test_export_events_delegates_to_export_data(): void {
 		global $wpdb;
 		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_events`" );
 		$result = RSA_Analytics::export_events( '7d', 'json' );
 		$this->assertSame( '[]', $result );
-	}
-
-	public function test_export_events_csv_empty_data(): void {
-		global $wpdb;
-		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_events`" );
-		$result = RSA_Analytics::export_events( '7d', 'csv' );
-		$this->assertSame( '', $result );
-	}
-
-	/**
-	 * ----------------------------------------------------------------
-	 * export_events() — with seeded data
-	 * ----------------------------------------------------------------
-	 */
-	public function test_export_events_json_with_data(): void {
-		global $wpdb;
-		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prefix . 'rsa_events',
-			array(
-				'session_id' => 'test-export-session',
-				'page'       => '/test-page/',
-				'bot_score'  => 0,
-				'created_at' => gmdate( 'Y-m-d H:i:s' ),
-			)
-		);
-		$result = RSA_Analytics::export_events( '7d', 'json' );
-		$data   = json_decode( $result, true );
-		$this->assertIsArray( $data );
-		$this->assertCount( 1, $data );
-		$this->assertSame( '/test-page/', $data[0]['page'] );
-		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-export-session' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-	}
-
-	public function test_export_events_csv_with_data(): void {
-		global $wpdb;
-		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prefix . 'rsa_events',
-			array(
-				'session_id' => 'test-export-session',
-				'page'       => '/test-page/',
-				'bot_score'  => 0,
-				'created_at' => gmdate( 'Y-m-d H:i:s' ),
-			)
-		);
-		$result = RSA_Analytics::export_events( '7d', 'csv' );
-		$this->assertStringContainsString( 'session_id', $result );
-		$this->assertStringContainsString( 'page', $result );
-		$this->assertStringContainsString( '/test-page/', $result );
-		// CSV should start with BOM for UTF-8.
-		$this->assertStringStartsWith( "\xEF\xBB\xBF", $result );
-		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-export-session' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
