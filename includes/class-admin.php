@@ -613,9 +613,11 @@ class RSA_Admin {
 	/**
 	 * Get all trackable pages (public post types, all non-trash statuses).
 	 *
+	 * @param int $limit  Maximum posts to return. -1 for unlimited (default).
+	 * @param int $offset Number of posts to skip (default 0).
 	 * @return array Associative array of path => title.
 	 */
-	public static function get_trackable_pages(): array {
+	public static function get_trackable_pages( int $limit = -1, int $offset = 0 ): array {
 		// All public post types, all non-trash statuses — same source used
 		// for purge eligibility checks so the two stay in sync automatically.
 		$post_types = array_diff(
@@ -623,11 +625,15 @@ class RSA_Admin {
 			[ 'attachment' ]
 		);
 
+		// WordPress get_posts ignores offset when numberposts is -1.
+		$effective_offset = ( $limit > 0 ) ? $offset : 0;
+
 		$posts = get_posts(
 			[
 				'post_type'     => $post_types,
 				'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
-				'numberposts'   => -1,
+				'numberposts'   => $limit,
+				'offset'        => $effective_offset,
 				'no_found_rows' => true,
 				'orderby'       => 'post_title',
 				'order'         => 'ASC',
@@ -839,17 +845,24 @@ class RSA_Admin {
 		update_option( 'rsa_allowed_roles', $safe_roles );
 
 		// Sync beta channel preference with Freemius.
+		// Errors are suppressed so a slow / unavailable Freemius API never
+		// white-screens the settings save page.
 		if ( function_exists( 'rs_fs' ) && rs_fs()->is_connected() ) {
-			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
-			// Call the same Freemius API endpoint that the AJAX handler uses.
-			rs_fs()->get_api_site_scope()->call(
-				'/plugin-tags/beta-mode.json',
-				'put',
-				[
-					'is_beta' => $is_beta,
-					'fields'  => 'is_beta',
-				]
-			);
+			try {
+				$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
+				// Call the same Freemius API endpoint that the AJAX handler uses.
+				rs_fs()->get_api_site_scope()->call(
+					'/plugin-tags/beta-mode.json',
+					'put',
+					[
+						'is_beta' => $is_beta,
+						'fields'  => 'is_beta',
+					]
+				);
+			} catch ( \Exception $e ) {
+				// Freemius API failure must not block settings save.
+				unset( $e );
+			}
 		}
 
 		wp_safe_redirect(

@@ -107,6 +107,39 @@ class AdminTest extends WP_UnitTestCase {
 		$this->assertSame( '/', $keys[0] );
 	}
 
+	public function test_get_trackable_pages_pagination(): void {
+		global $wp_rewrite;
+		update_option( 'permalink_structure', '/%postname%/' );
+		$wp_rewrite->init();
+		$wp_rewrite->flush_rules( true );
+
+		// Create two published posts with slugs.
+		self::factory()->post->create( [ 'post_title' => 'Alpha Page', 'post_name' => 'alpha-page', 'post_status' => 'publish' ] );
+		self::factory()->post->create( [ 'post_title' => 'Beta Page', 'post_name' => 'beta-page', 'post_status' => 'publish' ] );
+
+		// Default limit=-1 returns everything (including home).
+		$all       = RSA_Admin::get_trackable_pages();
+		$all_count = count( $all );
+
+		// Limit=1 restricts WordPress posts to 1; home is always prepended.
+		$limited       = RSA_Admin::get_trackable_pages( 1 );
+		$limited_count = count( $limited );
+
+		// Offset with positive limit skips posts correctly.
+		$offset0 = RSA_Admin::get_trackable_pages( 1, 0 );
+		$offset1 = RSA_Admin::get_trackable_pages( 1, 1 );
+
+		$this->assertGreaterThanOrEqual( 3, $all_count );
+		$this->assertLessThan( $all_count, $limited_count );
+		$this->assertGreaterThan( 0, $limited_count );
+		$this->assertArrayHasKey( '/', $limited );
+
+		// Offset should change which post is returned (home is always prepended).
+		$this->assertNotSame( array_values( $offset0 ), array_values( $offset1 ) );
+		$this->assertArrayHasKey( '/', $offset0 );
+		$this->assertArrayHasKey( '/', $offset1 );
+	}
+
 	/**
 	 * ----------------------------------------------------------------
 	 * role setup — rsa_analyst role

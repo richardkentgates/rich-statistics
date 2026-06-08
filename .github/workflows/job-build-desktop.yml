@@ -40,11 +40,11 @@ on:
       server-ip:
         required: false
         type: string
-        default: '104.197.231.120'
+        default: ${{ vars.SERVER_IP || '104.197.231.120' }}
       server-user:
         required: false
         type: string
-        default: 'richardkentgates'
+        default: ${{ vars.SERVER_USER || 'richardkentgates' }}
 
     secrets:
       APP_SERVER_SSH_KEY:
