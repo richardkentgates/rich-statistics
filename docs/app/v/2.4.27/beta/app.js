@@ -44,11 +44,138 @@
 	};
 
 	// -----------------------------------------------------------------------
+	// Encryption helpers (Web Crypto API)
+	// -----------------------------------------------------------------------
+	var _cryptoKey = null; // memory-only passphrase container
+
+	function _abToB64( buffer ) {
+		var bytes = new Uint8Array( buffer );
+		var binary = '';
+		for ( var i = 0; i < bytes.byteLength; i++ ) {
+			binary += String.fromCharCode( bytes[i] );
+		}
+		return btoa( binary );
+	}
+
+	function _b64ToAb( base64 ) {
+		var binary = atob( base64 );
+		var bytes = new Uint8Array( binary.length );
+		for ( var i = 0; i < binary.length; i++ ) {
+			bytes[i] = binary.charCodeAt( i );
+		}
+		return bytes;
+	}
+
+	async function _deriveKey( passphrase, salt ) {
+		var enc = new TextEncoder();
+		var keyMaterial = await crypto.subtle.importKey(
+			'raw',
+			enc.encode( passphrase ),
+			{ name: 'PBKDF2' },
+			false,
+			[ 'deriveKey' ]
+		);
+		return crypto.subtle.deriveKey(
+			{ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+			keyMaterial,
+			{ name: 'AES-GCM', length: 256 },
+			false,
+			[ 'encrypt', 'decrypt' ]
+		);
+	}
+
+	async function _encryptString( plaintext, passphrase ) {
+		var enc = new TextEncoder();
+		var salt = crypto.getRandomValues( new Uint8Array( 16 ) );
+		var iv   = crypto.getRandomValues( new Uint8Array( 12 ) );
+		var key  = await _deriveKey( passphrase, salt );
+		var ciphertext = await crypto.subtle.encrypt(
+			{ name: 'AES-GCM', iv: iv },
+			key,
+			enc.encode( plaintext )
+		);
+		var combined = new Uint8Array( salt.length + iv.length + ciphertext.byteLength );
+		combined.set( salt, 0 );
+		combined.set( iv, salt.length );
+		combined.set( new Uint8Array( ciphertext ), salt.length + iv.length );
+		return _abToB64( combined );
+	}
+
+	async function _decryptString( encryptedBase64, passphrase ) {
+		var combined = _b64ToAb( encryptedBase64 );
+		var salt = combined.slice( 0, 16 );
+		var iv   = combined.slice( 16, 28 );
+		var ciphertext = combined.slice( 28 );
+		var key = await _deriveKey( passphrase, salt );
+		var decrypted = await crypto.subtle.decrypt(
+			{ name: 'AES-GCM', iv: iv },
+			key,
+			ciphertext
+		);
+		return new TextDecoder().decode( decrypted );
+	}
+
+	function _isEncrypted( data ) {
+		if ( ! data || typeof data !== 'string' ) return false;
+		var first = data.trim()[0];
+		return first !== '[' && first !== '{';
+	}
+
+	async function _saveSites() {
+		var json = JSON.stringify( state.sites );
+		if ( _cryptoKey && _cryptoKey.passphrase ) {
+			json = await _encryptString( json, _cryptoKey.passphrase );
+		}
+		localStorage.setItem( 'rsa_sites', json );
+	}
+
+	async function _saveAiProvider() {
+		if ( ! state.aiProvider ) {
+			localStorage.removeItem( 'rsa_ai_provider' );
+			return;
+		}
+		var json = JSON.stringify( state.aiProvider );
+		if ( _cryptoKey && _cryptoKey.passphrase ) {
+			json = await _encryptString( json, _cryptoKey.passphrase );
+		}
+		localStorage.setItem( 'rsa_ai_provider', json );
+	}
+
+	// -----------------------------------------------------------------------
 	// Init
 	// -----------------------------------------------------------------------
 	document.addEventListener( 'DOMContentLoaded', function () {
-		loadStoredSites();
+		initFlow();
+	} );
 
+	async function initFlow() {
+		var cryptoAvailable = typeof crypto !== 'undefined' && crypto.subtle;
+		var hasSites = localStorage.getItem( 'rsa_sites' );
+		var hasAi  = localStorage.getItem( 'rsa_ai_provider' );
+
+		if ( ! cryptoAvailable ) {
+			loadStoredSites();
+			continueInit();
+			return;
+		}
+
+		if ( ! hasSites && ! hasAi ) {
+			loadStoredSites();
+			continueInit();
+			return;
+		}
+
+		var sitesEncrypted = hasSites && _isEncrypted( hasSites );
+		var aiEncrypted    = hasAi  && _isEncrypted( hasAi );
+
+		if ( sitesEncrypted || aiEncrypted ) {
+			showUnlockOverlay();
+		} else {
+			showSetPassphraseOverlay();
+		}
+	}
+
+	function continueInit() {
 		if ( state.siteUrl && state.credentials ) {
 			renderSiteSwitcher();
 			showApp();
@@ -74,6 +201,8 @@
 		bindAddSite();
 		bindInstallPrompt();
 		bindAiSettings();
+		bindUnlock();
+		bindSetPassphrase();
 
 		// Connection banners
 		if ( navigator.onLine === false ) {
@@ -90,21 +219,32 @@
 				renderView( state.view );
 			}
 		} );
-	} );
+	}
 
 	// -----------------------------------------------------------------------
 	// Multi-site storage
 	// -----------------------------------------------------------------------
 
 	function loadStoredSites() {
+		var rawSites = localStorage.getItem( 'rsa_sites' );
 		try {
-			state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
+			if ( rawSites && ! _isEncrypted( rawSites ) ) {
+				state.sites = JSON.parse( rawSites );
+			} else if ( ! rawSites ) {
+				state.sites = [];
+			}
+			// If encrypted, state.sites is already set by unlock handler.
 		} catch ( e ) { state.sites = []; }
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
 		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
 		try {
-			state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+			if ( storedAi && ! _isEncrypted( storedAi ) ) {
+				state.aiProvider = JSON.parse( storedAi );
+			} else if ( ! storedAi ) {
+				state.aiProvider = null;
+			}
+			// If encrypted, state.aiProvider is already set by unlock handler.
 		} catch ( e ) { state.aiProvider = null; }
 		if ( state.aiProvider ) {
 			state.aiProvider.voiceInput  = state.aiProvider.voiceInput  !== undefined ? state.aiProvider.voiceInput  : false;
@@ -176,7 +316,7 @@
 	}
 
 	/** Save a new site after a successful connection test.  Returns the site object. */
-	function persistSite( siteUrl, username, appPassword, label ) {
+	async function persistSite( siteUrl, username, appPassword, label ) {
 		siteUrl = siteUrl.replace( /\/$/, '' );
 		var site = {
 			id          : uid(),
@@ -185,7 +325,7 @@
 			credentials : btoa( username + ':' + appPassword ),
 		};
 		state.sites.push( site );
-		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		await _saveSites();
 		state.activeId = site.id;
 		localStorage.setItem( 'rsa_active', site.id );
 		syncActiveState();
@@ -193,9 +333,9 @@
 		return site;
 	}
 
-	function removeSite( id ) {
+	async function removeSite( id ) {
 		state.sites = state.sites.filter( function ( s ) { return s.id !== id; } );
-		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		await _saveSites();
 		if ( state.activeId === id ) {
 			state.activeId = state.sites.length ? state.sites[0].id : '';
 			localStorage.setItem( 'rsa_active', state.activeId );
@@ -263,7 +403,7 @@
 
 		fetch( url, { headers: headers } )
 		.then( function ( r ) { return r.ok ? r.json() : null; } )
-		.then( function ( json ) {
+		.then( async function ( json ) {
 			if ( ! json || ! json.data ) return;
 			var remoteSites = json.data.sites || [];
 
@@ -293,7 +433,7 @@
 							credentials: '',
 						} );
 					} );
-					localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					await _saveSites();
 					renderSiteSwitcher();
 				} else if ( confirm( 'Remove these sites from your account sync?' ) ) {
 					// User declined to add them — remove from remote by pushing current local list
@@ -309,7 +449,9 @@
 					// User chose not to sync — offer to remove from local
 					var removeNames = toSync.filter( function ( s ) { return s.id !== state.activeId; } );
 					if ( removeNames.length && confirm( 'Remove them from this device instead?' ) ) {
-						removeNames.forEach( function ( s ) { removeSite( s.id ); } );
+						for ( var i = 0; i < removeNames.length; i++ ) {
+							await removeSite( removeNames[i].id );
+						}
 						renderSiteSwitcher();
 					}
 				}
@@ -424,6 +566,147 @@
 		sel.value = state.period;
 
 		checkPluginVersion();
+	}
+
+	// -----------------------------------------------------------------------
+	// Unlock / Set Passphrase overlays
+	// -----------------------------------------------------------------------
+
+	function showUnlockOverlay() {
+		document.getElementById( 'rsa-unlock' ).hidden = false;
+		document.getElementById( 'rsa-login' ).hidden  = true;
+		document.getElementById( 'rsa-app' ).hidden     = true;
+		document.getElementById( 'rsa-add-site' ).hidden = true;
+		var passField = document.getElementById( 'rsa-unlock-pass' );
+		if ( passField ) passField.focus();
+	}
+
+	function hideUnlockOverlay() {
+		document.getElementById( 'rsa-unlock' ).hidden = true;
+	}
+
+	function showSetPassphraseOverlay() {
+		document.getElementById( 'rsa-set-pass' ).hidden = false;
+		document.getElementById( 'rsa-login' ).hidden    = true;
+		document.getElementById( 'rsa-app' ).hidden       = true;
+		document.getElementById( 'rsa-add-site' ).hidden = true;
+	}
+
+	function hideSetPassphraseOverlay() {
+		document.getElementById( 'rsa-set-pass' ).hidden = true;
+	}
+
+	function bindUnlock() {
+		var unlockBtn = document.getElementById( 'rsa-unlock-btn' );
+		var clearBtn  = document.getElementById( 'rsa-unlock-clear-btn' );
+		var passField = document.getElementById( 'rsa-unlock-pass' );
+		var errorDiv  = document.getElementById( 'rsa-unlock-error' );
+
+		if ( unlockBtn ) {
+			unlockBtn.addEventListener( 'click', async function () {
+				var passphrase = ( passField && passField.value ) || '';
+				if ( ! passphrase ) {
+					if ( errorDiv ) errorDiv.textContent = 'Please enter your passphrase.';
+					return;
+				}
+				try {
+					var hasSites = localStorage.getItem( 'rsa_sites' );
+					var hasAi    = localStorage.getItem( 'rsa_ai_provider' );
+
+					if ( hasSites && _isEncrypted( hasSites ) ) {
+						var decrypted = await _decryptString( hasSites, passphrase );
+						state.sites = JSON.parse( decrypted );
+					}
+					if ( hasAi && _isEncrypted( hasAi ) ) {
+						var decryptedAi = await _decryptString( hasAi, passphrase );
+						state.aiProvider = JSON.parse( decryptedAi );
+					}
+
+					_cryptoKey = { passphrase: passphrase };
+					hideUnlockOverlay();
+					syncActiveState();
+					continueInit();
+				} catch ( e ) {
+					if ( errorDiv ) errorDiv.textContent = 'Incorrect passphrase. Please try again.';
+				}
+			} );
+		}
+
+		if ( clearBtn ) {
+			clearBtn.addEventListener( 'click', function () {
+				if ( confirm( 'This will remove all your connected sites and settings. Continue?' ) ) {
+					localStorage.removeItem( 'rsa_sites' );
+					localStorage.removeItem( 'rsa_ai_provider' );
+					localStorage.removeItem( 'rsa_active' );
+					state.sites    = [];
+					state.activeId = '';
+					hideUnlockOverlay();
+					loadStoredSites();
+					continueInit();
+				}
+			} );
+		}
+	}
+
+	function bindSetPassphrase() {
+		var setBtn  = document.getElementById( 'rsa-set-pass-btn' );
+		var skipBtn = document.getElementById( 'rsa-set-pass-skip-btn' );
+		var pass1   = document.getElementById( 'rsa-set-pass-1' );
+		var pass2   = document.getElementById( 'rsa-set-pass-2' );
+		var errorDiv = document.getElementById( 'rsa-set-pass-error' );
+
+		if ( setBtn ) {
+			setBtn.addEventListener( 'click', async function () {
+				var p1 = ( pass1 && pass1.value ) || '';
+				var p2 = ( pass2 && pass2.value ) || '';
+
+				if ( ! p1 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Please enter a passphrase.';
+					return;
+				}
+				if ( p1 !== p2 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Passphrases do not match.';
+					return;
+				}
+				if ( p1.length < 6 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Passphrase must be at least 6 characters.';
+					return;
+				}
+
+				try {
+					var hasSites = localStorage.getItem( 'rsa_sites' );
+					var hasAi    = localStorage.getItem( 'rsa_ai_provider' );
+
+					if ( hasSites && ! _isEncrypted( hasSites ) ) {
+						var encrypted = await _encryptString( hasSites, p1 );
+						localStorage.setItem( 'rsa_sites', encrypted );
+						state.sites = JSON.parse( hasSites );
+					}
+					if ( hasAi && ! _isEncrypted( hasAi ) ) {
+						var encryptedAi = await _encryptString( hasAi, p1 );
+						localStorage.setItem( 'rsa_ai_provider', encryptedAi );
+						state.aiProvider = JSON.parse( hasAi );
+					}
+
+					_cryptoKey = { passphrase: p1 };
+					hideSetPassphraseOverlay();
+					syncActiveState();
+					continueInit();
+				} catch ( e ) {
+					if ( errorDiv ) errorDiv.textContent = 'Encryption failed. Please try again.';
+				}
+			} );
+		}
+
+		if ( skipBtn ) {
+			skipBtn.addEventListener( 'click', function () {
+				if ( confirm( 'Without encryption, your credentials are stored as plain text. Continue?' ) ) {
+					hideSetPassphraseOverlay();
+					loadStoredSites();
+					continueInit();
+				}
+			} );
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -779,12 +1062,12 @@
 		} );
 
 		menu.querySelectorAll( '.rsa-site-menu-remove' ).forEach( function ( btn ) {
-			btn.addEventListener( 'click', function ( e ) {
+			btn.addEventListener( 'click', async function ( e ) {
 				e.stopPropagation();
 				var id       = this.dataset.removeId;
 				var wasActive = ( id === state.activeId );
 				if ( ! confirm( 'Remove this site from the app?' ) ) return;
-				removeSite( id );
+				await removeSite( id );
 				renderSiteSwitcher();
 				if ( wasActive ) {
 					destroyCharts();
@@ -985,8 +1268,8 @@
 			state.credentials = btoa( username + ':' + appPass );
 			state.cache       = {};
 
-			apiGet( 'overview', { period: '7d' } ).then( function () {
-				persistSite( siteUrl, username, appPass, label );
+			apiGet( 'overview', { period: '7d' } ).then( async function () {
+				await persistSite( siteUrl, username, appPass, label );
 				state._otpVerified = null;
 				renderSiteSwitcher();
 				hideAddSiteOverlay();
@@ -1196,45 +1479,48 @@
 				}
 			}
 		} );
-		document.addEventListener( 'click', function ( e ) {
-			if ( e.target.id === 'rsa-ai-tauri-detect' ) {
-				onTauriDetect();
-				return;
-			}
-			if ( e.target.id === 'rsa-ai-refresh-models' ) {
-				onRefreshModels();
-				return;
-			}
-			if ( e.target.id === 'rsa-ai-save' ) {
-				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
-				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
-				var modelSelect = document.getElementById( 'rsa-ai-model' );
-				var model = modelSelect ? modelSelect.value.trim() : '';
-				if ( model === '__custom__' ) {
-					var customInput = document.getElementById( 'rsa-ai-model-custom' );
-					model = customInput ? customInput.value.trim() : '';
+			document.addEventListener( 'click', function ( e ) {
+				if ( e.target.id === 'rsa-ai-tauri-detect' ) {
+					onTauriDetect();
+					return;
 				}
-				if ( ! endpoint || ! model ) return;
-				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
-				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
-				var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
-				var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
-				var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
-				state.aiProvider = {
-					endpoint: endpoint,
-					apiKey: apiKey || '',
-					model: model,
-					voiceInput: voiceInput,
-					voiceOutput: voiceOutput,
-					voiceLang: voiceLang,
-					voiceSpeed: voiceSpeed,
-					autoSpeak: autoSpeak,
-				};
-				localStorage.setItem( 'rsa_ai_provider', JSON.stringify( state.aiProvider ) );
-				var btn = document.getElementById( 'rsa-ai-save' );
-				btn.textContent = 'Saved!';
-				setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
-			}
+				if ( e.target.id === 'rsa-ai-refresh-models' ) {
+					onRefreshModels();
+					return;
+				}
+				if ( e.target.id === 'rsa-ai-save' ) {
+					( async function () {
+						var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
+						var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
+						var modelSelect = document.getElementById( 'rsa-ai-model' );
+						var model = modelSelect ? modelSelect.value.trim() : '';
+						if ( model === '__custom__' ) {
+							var customInput = document.getElementById( 'rsa-ai-model-custom' );
+							model = customInput ? customInput.value.trim() : '';
+						}
+						if ( ! endpoint || ! model ) return;
+						var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
+						var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
+						var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
+						var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
+						var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
+						state.aiProvider = {
+							endpoint: endpoint,
+							apiKey: apiKey || '',
+							model: model,
+							voiceInput: voiceInput,
+							voiceOutput: voiceOutput,
+							voiceLang: voiceLang,
+							voiceSpeed: voiceSpeed,
+							autoSpeak: autoSpeak,
+						};
+						await _saveAiProvider();
+						var btn = document.getElementById( 'rsa-ai-save' );
+						btn.textContent = 'Saved!';
+						setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
+					}() );
+					return;
+				}
 			if ( e.target.id === 'rsa-ai-clear' ) {
 				state.aiProvider = null;
 				localStorage.removeItem( 'rsa_ai_provider' );
@@ -1648,6 +1934,7 @@
 				if ( ! confirm( 'Clear this conversation?' ) ) return;
 				clearChatHistory();
 				chatHistory = [];
+				destroyCharts();
 				if ( messagesDiv ) messagesDiv.innerHTML = '';
 				addAiMessage( 'ai', 'Conversation cleared. How can I help?' );
 				updateMsgCount();
