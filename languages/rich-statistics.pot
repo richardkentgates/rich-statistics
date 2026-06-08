@@ -2,16 +2,17 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Rich Statistics 2.2.9\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/rich-statistics\n"
+"Project-Id-Version: Rich Statistics 2.4.26\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/Rich Statistics\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-11T17:41:41+00:00\n"
+"POT-Creation-Date: 2026-06-06T19:34:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: rich-statistics\n"
 
 #. Plugin Name of the plugin
 #. Author of the plugin
@@ -20,10 +21,10 @@ msgstr ""
 #: build/stage/rich-statistics/includes/class-admin.php:232
 #: build/stage/rich-statistics/includes/class-admin.php:244
 #: build/stage/rich-statistics/includes/class-admin.php:257
-#: includes/class-admin.php:231
-#: includes/class-admin.php:232
-#: includes/class-admin.php:244
-#: includes/class-admin.php:257
+#: includes/class-admin.php:89
+#: includes/class-admin.php:90
+#: includes/class-admin.php:102
+#: includes/class-admin.php:115
 msgid "Rich Statistics"
 msgstr ""
 
@@ -42,682 +43,1368 @@ msgstr ""
 msgid "https://richardkentgates.com"
 msgstr ""
 
+#: build/stage/rich-statistics/cli/class-cli.php:54
+#: build/stage/rich-statistics/cli/class-cli.php:97
+#: build/stage/rich-statistics/cli/class-cli.php:141
+#: build/stage/rich-statistics/cli/class-cli.php:189
+#: build/stage/rich-statistics/cli/class-cli.php:228
+#: cli/class-cli.php:733
+msgid "You do not have permission to use Rich Statistics commands."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:61
+#: cli/class-cli.php:63
+msgid "Site:"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:62
+#: cli/class-cli.php:64
+msgid "Period:"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:66
+#: cli/class-cli.php:68
+msgid "Metric"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:66
+#: build/stage/rich-statistics/cli/class-cli.php:498
+#: cli/class-cli.php:68
+#: cli/class-cli.php:529
+msgid "Value"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:67
+#: build/stage/rich-statistics/templates/admin/overview.php:43
+#: cli/class-cli.php:69
+#: templates/admin/overview.php:45
+msgid "Page Views"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:68
+#: build/stage/rich-statistics/cli/class-cli.php:237
+#: build/stage/rich-statistics/cli/class-cli.php:244
+#: build/stage/rich-statistics/cli/class-cli.php:251
+#: build/stage/rich-statistics/cli/class-cli.php:293
+#: build/stage/rich-statistics/templates/admin/behavior.php:111
+#: build/stage/rich-statistics/templates/admin/behavior.php:137
+#: build/stage/rich-statistics/templates/admin/campaigns.php:119
+#: build/stage/rich-statistics/templates/admin/export.php:45
+#: build/stage/rich-statistics/templates/admin/overview.php:47
+#: cli/class-cli.php:70
+#: cli/class-cli.php:160
+#: cli/class-cli.php:207
+#: cli/class-cli.php:246
+#: cli/class-cli.php:254
+#: cli/class-cli.php:300
+#: templates/admin/behavior.php:119
+#: templates/admin/behavior.php:145
+#: templates/admin/campaigns.php:121
+#: templates/admin/export.php:47
+#: templates/admin/overview.php:49
+msgid "Sessions"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:69
+#: build/stage/rich-statistics/cli/class-cli.php:110
+#: cli/class-cli.php:71
+#: cli/class-cli.php:116
+msgid "Avg Time"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:70
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:70
+#: build/stage/rich-statistics/templates/admin/overview.php:64
+#: cli/class-cli.php:72
+#: templates/admin/network-dashboard.php:39
+#: templates/admin/overview.php:66
+msgid "Bounce Rate"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:106
+#: cli/class-cli.php:112
+msgid "No page data found."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:110
+#: build/stage/rich-statistics/cli/class-cli.php:251
+#: build/stage/rich-statistics/templates/admin/behavior.php:110
+#: build/stage/rich-statistics/templates/admin/behavior.php:136
+#: build/stage/rich-statistics/templates/admin/overview.php:187
+#: build/stage/rich-statistics/templates/admin/pages.php:146
+#: cli/class-cli.php:116
+#: templates/admin/behavior.php:118
+#: templates/admin/behavior.php:144
+#: templates/admin/overview.php:189
+#: templates/admin/pages.php:154
+msgid "Page"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:110
+#: build/stage/rich-statistics/cli/class-cli.php:635
+#: build/stage/rich-statistics/templates/admin/overview.php:188
+#: build/stage/rich-statistics/templates/admin/pages.php:147
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:137
+#: cli/class-cli.php:116
+#: cli/class-cli.php:655
+#: templates/admin/overview.php:190
+#: templates/admin/pages.php:155
+#: templates/admin/woocommerce.php:141
+msgid "Views"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:149
+#: cli/class-cli.php:154
+msgid "OS"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:150
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:68
+#: build/stage/rich-statistics/templates/admin/audience.php:25
+#: cli/class-cli.php:155
+#: includes/class-privacy-disclosure.php:72
+#: templates/admin/audience.php:33
+msgid "Browser"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:151
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:73
+#: build/stage/rich-statistics/templates/admin/audience.php:39
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:148
+#: cli/class-cli.php:156
+#: includes/class-privacy-disclosure.php:77
+#: templates/admin/audience.php:47
+msgid "Language"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:156
+msgid "(no data)"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:159
+msgid "Label"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:159
+#: build/stage/rich-statistics/cli/class-cli.php:617
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:89
+#: cli/class-cli.php:647
+#: templates/admin/woocommerce.php:93
+msgid "Count"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:198
+#: cli/class-cli.php:203
+msgid "No referrer data found."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:202
+#: build/stage/rich-statistics/templates/admin/overview.php:219
+#: cli/class-cli.php:207
+#: templates/admin/overview.php:221
+msgid "Domain"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:202
+#: build/stage/rich-statistics/templates/admin/overview.php:220
+#: build/stage/rich-statistics/templates/admin/referrers.php:93
+#: templates/admin/overview.php:222
+#: templates/admin/referrers.php:101
+msgid "Visits"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:236
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:88
+#: build/stage/rich-statistics/templates/admin/behavior.php:87
+#: cli/class-cli.php:245
+#: includes/class-privacy-disclosure.php:92
+#: templates/admin/behavior.php:95
+msgid "Time on Page"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:237
+#: cli/class-cli.php:246
+msgid "Range"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:243
+msgid "Session Depth"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:244
+msgid "Depth"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:250
+#: build/stage/rich-statistics/templates/admin/user-flow.php:197
+#: templates/admin/user-flow.php:199
+msgid "Entry Pages"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:280
+msgid "Campaign tracking requires a Rich Statistics Premium licence."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:289
+#: cli/class-cli.php:296
+msgid "No campaign data found for this period."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:293
+#: build/stage/rich-statistics/templates/admin/campaigns.php:116
+#: cli/class-cli.php:300
+#: templates/admin/campaigns.php:118
+msgid "Campaign"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:293
+#: build/stage/rich-statistics/templates/admin/campaigns.php:117
+#: cli/class-cli.php:300
+#: templates/admin/campaigns.php:119
+msgid "Source"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:293
+#: build/stage/rich-statistics/templates/admin/campaigns.php:118
+#: cli/class-cli.php:300
+#: templates/admin/campaigns.php:120
+msgid "Medium"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:293
+#: build/stage/rich-statistics/templates/admin/campaigns.php:120
+#: build/stage/rich-statistics/templates/admin/maintenance.php:67
+#: templates/admin/campaigns.php:122
+#: templates/admin/maintenance.php:69
+msgid "Pageviews"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:325
+msgid "User Flow requires a Rich Statistics Premium licence."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:333
+#: cli/class-cli.php:339
+msgid "No user flow data found for this period."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:337
+#: cli/class-cli.php:343
+msgid "User Flow (page transitions)"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:338
+#: cli/class-cli.php:344
+msgid "From"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:338
+#: cli/class-cli.php:344
+msgid "To"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:338
+#: build/stage/rich-statistics/templates/admin/user-flow.php:238
+#: cli/class-cli.php:344
+#: templates/admin/user-flow.php:240
+msgid "Transitions"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:370
+msgid "Data export requires a Rich Statistics Premium licence."
+msgstr ""
+
+#. translators: 1: period, 2: format
+#: build/stage/rich-statistics/cli/class-cli.php:377
+#: cli/class-cli.php:388
+#, php-format
+msgid "Exporting (%1$s, %2$s)…"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:385
+#: cli/class-cli.php:396
+msgid "Output path must be within the WordPress directory."
+msgstr ""
+
+#. translators: %s: output file path
+#: build/stage/rich-statistics/cli/class-cli.php:389
+#, php-format
+msgid "Written to %s"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:421
+#: cli/class-cli.php:440
+msgid "Dry run — no data will be deleted."
+msgstr ""
+
+#. translators: %d: number of event rows
+#: build/stage/rich-statistics/cli/class-cli.php:428
+#: cli/class-cli.php:447
+#, php-format
+msgid "Would delete approximately %d event rows."
+msgstr ""
+
+#. translators: %d: number of deleted records
+#: build/stage/rich-statistics/cli/class-cli.php:434
+#: cli/class-cli.php:453
+#, php-format
+msgid "Pruned %d records."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:457
+#: cli/class-cli.php:481
+msgid "Invalid email address."
+msgstr ""
+
+#. translators: %s: recipient email
+#: build/stage/rich-statistics/cli/class-cli.php:470
+#: cli/class-cli.php:496
+#, php-format
+msgid "Test digest sent to %s."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:472
+#: cli/class-cli.php:498
+msgid "Failed to send. Check WordPress mail settings."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:491
+#: cli/class-cli.php:522
+msgid "Rich Statistics Status"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:498
+#: cli/class-cli.php:529
+msgid "Setting"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:499
+#: cli/class-cli.php:530
+msgid "Version"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:500
+#: cli/class-cli.php:531
+msgid "Tier"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:500
+#: cli/class-cli.php:531
+msgid "Premium"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:500
+#: cli/class-cli.php:531
+msgid "Free"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:501
+#: build/stage/rich-statistics/templates/admin/network-settings.php:117
+#: cli/class-cli.php:532
+#: templates/admin/network-settings.php:119
+msgid "Retention (days)"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:502
+#: cli/class-cli.php:533
+msgid "Bot threshold"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:503
+#: cli/class-cli.php:534
+msgid "Email digest enabled"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:503
+#: build/stage/rich-statistics/templates/admin/network-settings.php:154
+#: cli/class-cli.php:534
+#: templates/admin/network-settings.php:156
+msgid "Yes"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:503
+#: build/stage/rich-statistics/templates/admin/network-settings.php:155
+#: cli/class-cli.php:534
+#: templates/admin/network-settings.php:157
+msgid "No"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:504
+#: cli/class-cli.php:535
+msgid "Email frequency"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:505
+#: cli/class-cli.php:536
+msgid "Next maintenance"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:505
+#: build/stage/rich-statistics/cli/class-cli.php:506
+#: cli/class-cli.php:536
+#: cli/class-cli.php:537
+msgid "not scheduled"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:506
+#: cli/class-cli.php:537
+msgid "Next digest"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:541
+msgid "Click tracking requires a Rich Statistics Premium licence."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:552
+#: cli/class-cli.php:586
+msgid "No click data found for this period."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:556
+#: cli/class-cli.php:590
+msgid "Protocol"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:556
+#: build/stage/rich-statistics/templates/admin/click-map.php:106
+#: cli/class-cli.php:590
+#: templates/admin/click-map.php:108
+msgid "Destination"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:556
+#: cli/class-cli.php:590
+msgid "Tag"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:556
+#: cli/class-cli.php:590
+msgid "Text"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:556
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:123
+#: build/stage/rich-statistics/templates/admin/click-map.php:108
+#: build/stage/rich-statistics/templates/admin/maintenance.php:68
+#: cli/class-cli.php:590
+#: includes/class-privacy-disclosure.php:127
+#: templates/admin/click-map.php:110
+#: templates/admin/maintenance.php:70
+msgid "Clicks"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:596
+msgid "WooCommerce analytics requires a Rich Statistics Premium licence."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:599
+#: cli/class-cli.php:633
+msgid "WooCommerce is not active on this site."
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:614
+msgid "Funnel"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:617
+msgid "Event"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:618
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:56
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:80
+#: cli/class-cli.php:648
+#: templates/admin/woocommerce.php:60
+#: templates/admin/woocommerce.php:84
+msgid "Product Views"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:619
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:81
+#: cli/class-cli.php:649
+#: templates/admin/woocommerce.php:85
+msgid "Add to Cart"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:620
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:64
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:82
+#: cli/class-cli.php:650
+#: templates/admin/woocommerce.php:68
+#: templates/admin/woocommerce.php:86
+msgid "Orders"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:625
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:68
+#: templates/admin/woocommerce.php:72
+msgid "Revenue"
+msgstr ""
+
+#. translators: %s: Total orders count
+#: build/stage/rich-statistics/cli/class-cli.php:627
+#, php-format
+msgid "Total orders: %s"
+msgstr ""
+
+#. translators: %s: Total revenue amount
+#: build/stage/rich-statistics/cli/class-cli.php:629
+#, php-format
+msgid "Total revenue: $%s"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:634
+msgid "Top Viewed Products"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:635
+#: build/stage/rich-statistics/cli/class-cli.php:646
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:136
+#: build/stage/rich-statistics/templates/admin/woocommerce.php:160
+#: cli/class-cli.php:655
+#: templates/admin/woocommerce.php:140
+#: templates/admin/woocommerce.php:164
+msgid "Product"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:645
+msgid "Top Add-to-Cart"
+msgstr ""
+
+#: build/stage/rich-statistics/cli/class-cli.php:646
+msgid "Events"
+msgstr ""
+
+#. translators: %d: Blog ID
+#: build/stage/rich-statistics/cli/class-cli.php:691
+#: cli/class-cli.php:722
+#, php-format
+msgid "Switched to blog %d."
+msgstr ""
+
+#. translators: %d: Blog ID
+#: build/stage/rich-statistics/cli/class-cli.php:694
+#: cli/class-cli.php:725
+#, php-format
+msgid "Blog %d not found."
+msgstr ""
+
 #: build/stage/rich-statistics/includes/class-admin.php:26
-#: includes/class-admin.php:26
+#: includes/class-admin.php:28
 msgid "Statistics Analyst"
 msgstr ""
 
+#: build/stage/rich-statistics/includes/class-admin.php:158
+msgid "Rich Stats"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:159
+msgid "Privacy-first analytics for your WordPress site."
+msgstr ""
+
 #: build/stage/rich-statistics/includes/class-admin.php:216
-#: build/stage/rich-statistics/includes/class-admin.php:997
-#: includes/class-admin.php:216
-#: includes/class-admin.php:997
+#: build/stage/rich-statistics/includes/class-admin.php:1080
+#: includes/class-admin.php:74
+#: includes/class-admin.php:963
 msgid "Generate App Code"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:217
-#: includes/class-admin.php:217
+#: includes/class-admin.php:75
 msgid "Generating…"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:218
-#: includes/class-admin.php:218
+#: includes/class-admin.php:76
 msgid "New Code"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:219
-#: build/stage/rich-statistics/includes/class-admin.php:1014
-#: includes/class-admin.php:219
-#: includes/class-admin.php:1014
+#: build/stage/rich-statistics/includes/class-admin.php:1097
+#: includes/class-admin.php:77
+#: includes/class-admin.php:980
 msgid "Copy"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:220
-#: includes/class-admin.php:220
+#: includes/class-admin.php:78
 msgid "Copied!"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:221
-#: includes/class-admin.php:221
+#: includes/class-admin.php:79
 msgid "Expired"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:222
-#: includes/class-admin.php:222
+#: includes/class-admin.php:80
 msgid "Could not generate a code. Please try again."
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:256
-#: includes/class-admin.php:256
+#: includes/class-admin.php:114
 msgid "Rich Statistics (Network)"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:275
-#: build/stage/rich-statistics/includes/class-admin.php:276
-#: build/stage/rich-statistics/includes/class-admin.php:1198
+#: build/stage/rich-statistics/includes/class-admin.php:266
+#: build/stage/rich-statistics/includes/class-admin.php:267
+#: includes/class-admin.php:124
+#: includes/class-admin.php:125
+msgid "Network Settings"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:283
+#: build/stage/rich-statistics/includes/class-admin.php:284
+#: build/stage/rich-statistics/includes/class-admin.php:1301
 #: build/stage/rich-statistics/templates/admin/overview.php:37
-#: includes/class-admin.php:275
-#: includes/class-admin.php:276
-#: includes/class-admin.php:1198
-#: templates/admin/overview.php:37
+#: includes/class-admin.php:141
+#: includes/class-admin.php:142
+#: includes/class-admin.php:1167
+#: templates/admin/overview.php:39
 msgid "Overview"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:280
-#: build/stage/rich-statistics/includes/class-admin.php:281
-#: build/stage/rich-statistics/includes/class-admin.php:1207
+#: build/stage/rich-statistics/includes/class-admin.php:288
+#: build/stage/rich-statistics/includes/class-admin.php:289
+#: build/stage/rich-statistics/includes/class-admin.php:1310
 #: build/stage/rich-statistics/templates/admin/pages.php:39
-#: includes/class-admin.php:280
-#: includes/class-admin.php:281
-#: includes/class-admin.php:1207
-#: templates/admin/pages.php:39
+#: includes/class-admin.php:146
+#: includes/class-admin.php:147
+#: includes/class-admin.php:1176
+#: templates/admin/pages.php:47
 msgid "Pages"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:285
-#: build/stage/rich-statistics/includes/class-admin.php:286
-#: build/stage/rich-statistics/includes/class-admin.php:1215
+#: build/stage/rich-statistics/includes/class-admin.php:293
+#: build/stage/rich-statistics/includes/class-admin.php:294
+#: build/stage/rich-statistics/includes/class-admin.php:1318
 #: build/stage/rich-statistics/templates/admin/audience.php:12
-#: includes/class-admin.php:285
-#: includes/class-admin.php:286
-#: includes/class-admin.php:1215
-#: templates/admin/audience.php:12
+#: includes/class-admin.php:151
+#: includes/class-admin.php:152
+#: includes/class-admin.php:1184
+#: templates/admin/audience.php:20
 msgid "Audience"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:290
-#: build/stage/rich-statistics/includes/class-admin.php:291
-#: build/stage/rich-statistics/includes/class-admin.php:1224
+#: build/stage/rich-statistics/includes/class-admin.php:298
+#: build/stage/rich-statistics/includes/class-admin.php:299
+#: build/stage/rich-statistics/includes/class-admin.php:1327
 #: build/stage/rich-statistics/templates/admin/referrers.php:31
-#: includes/class-admin.php:290
-#: includes/class-admin.php:291
-#: includes/class-admin.php:1224
-#: templates/admin/referrers.php:31
+#: includes/class-admin.php:156
+#: includes/class-admin.php:157
+#: includes/class-admin.php:1193
+#: templates/admin/referrers.php:39
 msgid "Referrers"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:295
-#: build/stage/rich-statistics/includes/class-admin.php:296
-#: build/stage/rich-statistics/includes/class-admin.php:1240
+#: build/stage/rich-statistics/includes/class-admin.php:303
+#: build/stage/rich-statistics/includes/class-admin.php:304
+#: build/stage/rich-statistics/includes/class-admin.php:1343
 #: build/stage/rich-statistics/templates/admin/behavior.php:32
-#: includes/class-admin.php:295
-#: includes/class-admin.php:296
-#: includes/class-admin.php:1240
-#: templates/admin/behavior.php:32
+#: includes/class-admin.php:161
+#: includes/class-admin.php:162
+#: includes/class-admin.php:1209
+#: templates/admin/behavior.php:40
 msgid "Behavior"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:301
-#: includes/class-admin.php:301
+#: build/stage/rich-statistics/includes/class-admin.php:309
 msgid "Upgrade"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:308
-#: build/stage/rich-statistics/includes/class-admin.php:309
 #: build/stage/rich-statistics/includes/class-admin.php:316
 #: build/stage/rich-statistics/includes/class-admin.php:317
+#: build/stage/rich-statistics/includes/class-admin.php:324
+#: build/stage/rich-statistics/includes/class-admin.php:325
 #: build/stage/rich-statistics/templates/admin/preferences.php:43
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:12
-#: includes/class-admin.php:308
-#: includes/class-admin.php:309
-#: includes/class-admin.php:316
-#: includes/class-admin.php:317
-#: templates/admin/preferences.php:43
-#: templates/admin/woocommerce.php:12
+#: includes/class-admin.php:172
+#: includes/class-admin.php:173
+#: includes/class-admin.php:180
+#: includes/class-admin.php:181
+#: templates/admin/preferences.php:45
+#: templates/admin/woocommerce.php:16
 msgid "WooCommerce"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:324
-#: build/stage/rich-statistics/includes/class-admin.php:325
-#: build/stage/rich-statistics/includes/class-admin.php:355
-#: build/stage/rich-statistics/includes/class-admin.php:356
-#: build/stage/rich-statistics/includes/class-admin.php:1232
+#: build/stage/rich-statistics/includes/class-admin.php:332
+#: build/stage/rich-statistics/includes/class-admin.php:333
+#: build/stage/rich-statistics/includes/class-admin.php:358
+#: build/stage/rich-statistics/includes/class-admin.php:359
+#: build/stage/rich-statistics/includes/class-admin.php:1335
 #: build/stage/rich-statistics/templates/admin/campaigns.php:14
 #: build/stage/rich-statistics/templates/admin/campaigns.php:55
-#: includes/class-admin.php:324
-#: includes/class-admin.php:325
-#: includes/class-admin.php:355
-#: includes/class-admin.php:356
-#: includes/class-admin.php:1232
-#: templates/admin/campaigns.php:14
-#: templates/admin/campaigns.php:55
+#: includes/class-admin.php:188
+#: includes/class-admin.php:189
+#: includes/class-admin.php:214
+#: includes/class-admin.php:215
+#: includes/class-admin.php:1201
+#: templates/admin/campaigns.php:16
+#: templates/admin/campaigns.php:57
 msgid "Campaigns"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:329
-#: build/stage/rich-statistics/includes/class-admin.php:330
-#: build/stage/rich-statistics/includes/class-admin.php:360
-#: build/stage/rich-statistics/includes/class-admin.php:361
-#: build/stage/rich-statistics/includes/class-admin.php:1248
+#: build/stage/rich-statistics/includes/class-admin.php:337
+#: build/stage/rich-statistics/includes/class-admin.php:338
+#: build/stage/rich-statistics/includes/class-admin.php:363
+#: build/stage/rich-statistics/includes/class-admin.php:364
+#: build/stage/rich-statistics/includes/class-admin.php:1351
 #: build/stage/rich-statistics/templates/admin/user-flow.php:14
 #: build/stage/rich-statistics/templates/admin/user-flow.php:90
-#: includes/class-admin.php:329
-#: includes/class-admin.php:330
-#: includes/class-admin.php:360
-#: includes/class-admin.php:361
-#: includes/class-admin.php:1248
-#: templates/admin/user-flow.php:14
-#: templates/admin/user-flow.php:90
+#: includes/class-admin.php:193
+#: includes/class-admin.php:194
+#: includes/class-admin.php:219
+#: includes/class-admin.php:220
+#: includes/class-admin.php:1217
+#: templates/admin/user-flow.php:16
+#: templates/admin/user-flow.php:92
 msgid "User Flow"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:334
-#: build/stage/rich-statistics/includes/class-admin.php:335
-#: build/stage/rich-statistics/includes/class-admin.php:365
-#: build/stage/rich-statistics/includes/class-admin.php:366
+#: build/stage/rich-statistics/includes/class-admin.php:342
+#: build/stage/rich-statistics/includes/class-admin.php:343
+#: build/stage/rich-statistics/includes/class-admin.php:368
+#: build/stage/rich-statistics/includes/class-admin.php:369
 #: build/stage/rich-statistics/templates/admin/click-map.php:14
-#: build/stage/rich-statistics/templates/admin/click-map.php:54
-#: build/stage/rich-statistics/templates/admin/preferences.php:135
-#: build/stage/rich-statistics/templates/admin/preferences.php:183
-#: includes/class-admin.php:334
-#: includes/class-admin.php:335
-#: includes/class-admin.php:365
-#: includes/class-admin.php:366
-#: templates/admin/click-map.php:14
-#: templates/admin/click-map.php:54
-#: templates/admin/preferences.php:135
-#: templates/admin/preferences.php:183
+#: build/stage/rich-statistics/templates/admin/click-map.php:55
+#: build/stage/rich-statistics/templates/admin/preferences.php:75
+#: build/stage/rich-statistics/templates/admin/preferences.php:123
+#: includes/class-admin.php:198
+#: includes/class-admin.php:199
+#: includes/class-admin.php:224
+#: includes/class-admin.php:225
+#: templates/admin/click-map.php:16
+#: templates/admin/click-map.php:57
+#: templates/admin/preferences.php:77
+#: templates/admin/preferences.php:125
 msgid "Click Tracking"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:339
-#: build/stage/rich-statistics/includes/class-admin.php:340
-#: build/stage/rich-statistics/includes/class-admin.php:370
-#: build/stage/rich-statistics/includes/class-admin.php:371
+#: build/stage/rich-statistics/includes/class-admin.php:347
+#: build/stage/rich-statistics/includes/class-admin.php:348
+#: build/stage/rich-statistics/includes/class-admin.php:373
+#: build/stage/rich-statistics/includes/class-admin.php:374
 #: build/stage/rich-statistics/templates/admin/heatmap.php:15
-#: build/stage/rich-statistics/templates/admin/heatmap.php:55
-#: includes/class-admin.php:339
-#: includes/class-admin.php:340
-#: includes/class-admin.php:370
-#: includes/class-admin.php:371
-#: templates/admin/heatmap.php:15
-#: templates/admin/heatmap.php:55
+#: build/stage/rich-statistics/templates/admin/heatmap.php:56
+#: includes/class-admin.php:203
+#: includes/class-admin.php:204
+#: includes/class-admin.php:229
+#: includes/class-admin.php:230
+#: templates/admin/heatmap.php:17
+#: templates/admin/heatmap.php:58
 msgid "Heatmap"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:344
-#: build/stage/rich-statistics/includes/class-admin.php:345
-#: build/stage/rich-statistics/includes/class-admin.php:375
-#: build/stage/rich-statistics/includes/class-admin.php:376
+#: build/stage/rich-statistics/includes/class-admin.php:352
+#: build/stage/rich-statistics/includes/class-admin.php:353
+#: build/stage/rich-statistics/includes/class-admin.php:378
+#: build/stage/rich-statistics/includes/class-admin.php:379
 #: build/stage/rich-statistics/templates/admin/export.php:14
 #: build/stage/rich-statistics/templates/admin/export.php:30
-#: includes/class-admin.php:344
-#: includes/class-admin.php:345
-#: includes/class-admin.php:375
-#: includes/class-admin.php:376
-#: templates/admin/export.php:14
-#: templates/admin/export.php:30
+#: includes/class-admin.php:208
+#: includes/class-admin.php:209
+#: includes/class-admin.php:234
+#: includes/class-admin.php:235
+#: templates/admin/export.php:16
+#: templates/admin/export.php:32
 msgid "Export"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:349
-#: build/stage/rich-statistics/includes/class-admin.php:350
-#: build/stage/rich-statistics/includes/class-admin.php:380
-#: build/stage/rich-statistics/includes/class-admin.php:381
-#: includes/class-admin.php:349
-#: includes/class-admin.php:350
-#: includes/class-admin.php:380
-#: includes/class-admin.php:381
-msgid "AI Assistant"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:386
-#: build/stage/rich-statistics/includes/class-admin.php:387
-#: build/stage/rich-statistics/includes/class-admin.php:1291
-#: build/stage/rich-statistics/includes/class-admin.php:1293
+#: build/stage/rich-statistics/includes/class-admin.php:384
+#: build/stage/rich-statistics/includes/class-admin.php:385
+#: build/stage/rich-statistics/includes/class-admin.php:1394
+#: build/stage/rich-statistics/includes/class-admin.php:1396
 #: build/stage/rich-statistics/templates/admin/preferences.php:13
-#: includes/class-admin.php:386
-#: includes/class-admin.php:387
-#: includes/class-admin.php:1291
-#: includes/class-admin.php:1293
-#: templates/admin/preferences.php:13
+#: includes/class-admin.php:240
+#: includes/class-admin.php:241
+#: includes/class-admin.php:1260
+#: includes/class-admin.php:1262
+#: templates/admin/preferences.php:15
 msgid "Preferences"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:391
-#: build/stage/rich-statistics/includes/class-admin.php:392
-#: build/stage/rich-statistics/includes/class-admin.php:1301
-#: build/stage/rich-statistics/includes/class-admin.php:1303
+#: build/stage/rich-statistics/includes/class-admin.php:389
+#: build/stage/rich-statistics/includes/class-admin.php:390
+#: build/stage/rich-statistics/includes/class-admin.php:1405
+#: build/stage/rich-statistics/includes/class-admin.php:1407
 #: build/stage/rich-statistics/templates/admin/maintenance.php:34
-#: includes/class-admin.php:391
-#: includes/class-admin.php:392
-#: includes/class-admin.php:1301
-#: includes/class-admin.php:1303
-#: templates/admin/maintenance.php:34
+#: includes/class-admin.php:245
+#: includes/class-admin.php:246
+#: includes/class-admin.php:1271
+#: includes/class-admin.php:1273
+#: templates/admin/maintenance.php:36
 msgid "Maintenance"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:645
-#: build/stage/rich-statistics/includes/class-rest-api.php:633
-#: includes/class-admin.php:645
-#: includes/class-rest-api.php:633
+#: build/stage/rich-statistics/includes/class-admin.php:394
+#: build/stage/rich-statistics/includes/class-admin.php:395
+#: includes/class-admin.php:250
+#: includes/class-admin.php:251
+msgid "Install App"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:619
+#: build/stage/rich-statistics/includes/class-admin.php:625
+#: build/stage/rich-statistics/includes/class-admin.php:631
+#: build/stage/rich-statistics/includes/class-admin.php:637
+#: build/stage/rich-statistics/includes/class-admin.php:644
+#: build/stage/rich-statistics/includes/class-admin.php:650
+#: build/stage/rich-statistics/includes/class-admin.php:668
+#: build/stage/rich-statistics/includes/class-admin.php:674
+#: build/stage/rich-statistics/includes/class-admin.php:688
+#: build/stage/rich-statistics/includes/class-admin.php:694
+#: build/stage/rich-statistics/includes/class-admin.php:704
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:10
+#: build/stage/rich-statistics/templates/admin/network-settings.php:11
+#: includes/class-admin.php:475
+#: includes/class-admin.php:481
+#: includes/class-admin.php:487
+#: includes/class-admin.php:493
+#: includes/class-admin.php:500
+#: includes/class-admin.php:506
+#: includes/class-admin.php:513
+#: includes/class-admin.php:520
+#: includes/class-admin.php:527
+#: includes/class-admin.php:533
+#: includes/class-admin.php:539
+#: includes/class-admin.php:546
+#: includes/class-admin.php:553
+#: includes/class-admin.php:559
+#: includes/class-admin.php:565
+#: includes/class-admin.php:575
+#: templates/admin/network-dashboard.php:12
+#: templates/admin/network-settings.php:13
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:711
+#: build/stage/rich-statistics/includes/class-admin.php:797
+#: build/stage/rich-statistics/includes/class-rest-api.php:642
+#: includes/class-admin.php:582
+#: includes/class-admin.php:668
+#: includes/class-rest-api.php:635
 msgid "This feature requires a premium licence."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:690
-#: includes/class-admin.php:690
+#: build/stage/rich-statistics/includes/class-admin.php:767
+#: includes/class-admin.php:638
 msgid "Home"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:720
-#: build/stage/rich-statistics/includes/class-admin.php:812
-#: includes/class-admin.php:720
-#: includes/class-admin.php:812
+#: build/stage/rich-statistics/includes/class-admin.php:800
+#: build/stage/rich-statistics/includes/class-admin.php:892
+#: includes/class-admin.php:671
+#: includes/class-admin.php:771
 msgid "You do not have permission to do this."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:952
-#: build/stage/rich-statistics/includes/class-admin.php:978
-#: build/stage/rich-statistics/includes/class-admin.php:994
-#: includes/class-admin.php:952
-#: includes/class-admin.php:978
-#: includes/class-admin.php:994
+#: build/stage/rich-statistics/includes/class-admin.php:1035
+#: build/stage/rich-statistics/includes/class-admin.php:1061
+#: build/stage/rich-statistics/includes/class-admin.php:1077
+#: includes/class-admin.php:918
+#: includes/class-admin.php:944
+#: includes/class-admin.php:960
 msgid "Rich Statistics App"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:981
-#: includes/class-admin.php:981
+#: build/stage/rich-statistics/includes/class-admin.php:1064
+#: includes/class-admin.php:947
 msgid "Upgrade to unlock the Stats App"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:983
-#: includes/class-admin.php:983
+#: build/stage/rich-statistics/includes/class-admin.php:1066
+#: includes/class-admin.php:949
 msgid "The Rich Statistics App lets you view your stats from any device as a PWA — no browser required. Available with a premium licence."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1004
-#: includes/class-admin.php:1004
+#: build/stage/rich-statistics/includes/class-admin.php:1087
+#: includes/class-admin.php:970
 msgid "Open App"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1009
-#: includes/class-admin.php:1009
+#: build/stage/rich-statistics/includes/class-admin.php:1092
+#: includes/class-admin.php:975
 msgid "App Code:"
 msgstr ""
 
 #. translators: %s is replaced by the countdown timer element
-#: build/stage/rich-statistics/includes/class-admin.php:1021
-#: includes/class-admin.php:1021
+#: build/stage/rich-statistics/includes/class-admin.php:1104
+#: includes/class-admin.php:987
 #, php-format
 msgid "Expires in %s — enter this code in the app when adding this site."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1029
-#: includes/class-admin.php:1029
+#: build/stage/rich-statistics/includes/class-admin.php:1112
+#: includes/class-admin.php:995
 msgid "Click \"Open App\" to launch the Stats App. On first visit, click \"Generate App Code\", tap \"Add Site\" in the app, enter this site's URL and the code, then create an Application Password in the section below to complete the connection."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1048
+#: build/stage/rich-statistics/includes/class-admin.php:1131
 #: build/stage/rich-statistics/templates/admin/export.php:59
-#: includes/class-admin.php:1048
-#: templates/admin/export.php:59
+#: includes/class-admin.php:1014
+#: templates/admin/export.php:61
 msgid "Last 7 days"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1049
+#: build/stage/rich-statistics/includes/class-admin.php:1132
 #: build/stage/rich-statistics/templates/admin/export.php:60
-#: includes/class-admin.php:1049
-#: templates/admin/export.php:60
+#: includes/class-admin.php:1015
+#: templates/admin/export.php:62
 msgid "Last 30 days"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1050
+#: build/stage/rich-statistics/includes/class-admin.php:1133
 #: build/stage/rich-statistics/templates/admin/export.php:61
-#: includes/class-admin.php:1050
-#: templates/admin/export.php:61
+#: includes/class-admin.php:1016
+#: templates/admin/export.php:63
 msgid "Last 90 days"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1051
+#: build/stage/rich-statistics/includes/class-admin.php:1134
 #: build/stage/rich-statistics/templates/admin/export.php:62
-#: includes/class-admin.php:1051
-#: templates/admin/export.php:62
+#: includes/class-admin.php:1017
+#: templates/admin/export.php:64
 msgid "This month"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1052
+#: build/stage/rich-statistics/includes/class-admin.php:1135
 #: build/stage/rich-statistics/templates/admin/export.php:63
-#: includes/class-admin.php:1052
-#: templates/admin/export.php:63
+#: includes/class-admin.php:1018
+#: templates/admin/export.php:65
 msgid "Last month"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1092
-#: build/stage/rich-statistics/templates/admin/export.php:74
-#: includes/class-admin.php:1092
-#: templates/admin/export.php:76
+#: build/stage/rich-statistics/includes/class-admin.php:1174
+#: includes/class-admin.php:1057
+msgid "From date"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1175
+#: build/stage/rich-statistics/templates/admin/export.php:76
+#: includes/class-admin.php:1058
+#: templates/admin/export.php:78
 msgid "to"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1094
-#: includes/class-admin.php:1094
+#: build/stage/rich-statistics/includes/class-admin.php:1176
+#: includes/class-admin.php:1059
+msgid "To date"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1177
+#: includes/class-admin.php:1060
 msgid "Apply"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1126
-#: includes/class-admin.php:1126
+#: build/stage/rich-statistics/includes/class-admin.php:1209
+#: includes/class-admin.php:1092
 msgid "Unlock Campaigns, User Flow, Click Tracking, Heatmap &amp; Export"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1127
-#: includes/class-admin.php:1127
+#: build/stage/rich-statistics/includes/class-admin.php:1210
+#: includes/class-admin.php:1093
 msgid "See exactly where visitors come from, where they go, what they click, where they drop off, and export your raw data."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1130
-#: includes/class-admin.php:1130
+#: build/stage/rich-statistics/includes/class-admin.php:1213
+#: includes/class-admin.php:1096
 msgid "Upgrade Now"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1172
-#: includes/class-admin.php:1172
+#: build/stage/rich-statistics/includes/class-admin.php:1255
+#: includes/class-admin.php:1121
 msgid "For more information:"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1174
-#: includes/class-admin.php:1174
+#: build/stage/rich-statistics/includes/class-admin.php:1257
+#: includes/class-admin.php:1123
 msgid "Plugin website"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1176
-#: includes/class-admin.php:1176
+#: build/stage/rich-statistics/includes/class-admin.php:1259
+#: includes/class-admin.php:1125
 msgid "Documentation wiki"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1178
-#: includes/class-admin.php:1178
+#: build/stage/rich-statistics/includes/class-admin.php:1261
+#: includes/class-admin.php:1127
 msgid "Report an issue"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1185
-#: includes/class-admin.php:1185
-msgid "Privacy"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1187
-#: includes/class-admin.php:1187
-msgid "Privacy by Design"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1188
-#: includes/class-admin.php:1188
-msgid "Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1189
-#: includes/class-admin.php:1189
-msgid "If a visitor's browser has Do Not Track (DNT) or Global Privacy Control (GPC) enabled, the tracker exits immediately — no session is created and no data is sent."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1190
-#: includes/class-admin.php:1190
-msgid "Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1200
-#: includes/class-admin.php:1200
-msgid "Overview Dashboard"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1201
-#: includes/class-admin.php:1201
-msgid "The overview shows your total pageviews, unique sessions, average time on page, and bounce rate for the selected period. The daily chart lets you spot traffic trends at a glance."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1202
-#: includes/class-admin.php:1202
-msgid "Use the period selector (top right) to switch between Last 7 days, Last 30 days, Last 90 days, This month, and Last month."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1203
-#: includes/class-admin.php:1203
-msgid "Bounce rate"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1203
-#: includes/class-admin.php:1203
-msgid "is calculated as the percentage of sessions that viewed only a single page."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1209
-#: build/stage/rich-statistics/templates/admin/overview.php:83
-#: includes/class-admin.php:1209
-#: templates/admin/overview.php:83
-msgid "Top Pages"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1210
-#: includes/class-admin.php:1210
-msgid "This view ranks every page on your site by the number of pageviews in the selected period. The average time on page is shown for each URL."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1211
-#: includes/class-admin.php:1211
-msgid "Page paths are stored after stripping query parameters that appear to contain personal data (email-shaped values or strings longer than 40 characters)."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1217
-#: includes/class-admin.php:1217
-msgid "Audience Breakdown"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1218
-#: includes/class-admin.php:1218
-msgid "Operating system, browser name, browser version, viewport size, language, and timezone are detected from the browser environment using JavaScript and stored as non-identifying aggregate categories."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1219
-#: includes/class-admin.php:1219
-msgid "Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px)."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1220
-#: includes/class-admin.php:1220
-msgid "Language codes follow the BCP 47 standard as reported by navigator.language (e.g. en-US, fr-FR, de)."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1226
-#: includes/class-admin.php:1226
-msgid "Referrer Tracking"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1227
-#: includes/class-admin.php:1227
-msgid "Only the referring domain is stored — never the full URL. This prevents leaking of personal data that might appear in referrer URLs (e.g. search queries, email campaign tokens)."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1228
-#: includes/class-admin.php:1228
-msgid "Direct traffic, bookmark visits, and traffic from HTTPS sites to your HTTP site appear as \"(direct)\" because browsers do not send a Referer header in these cases."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1234
-#: includes/class-admin.php:1234
-msgid "UTM Campaign Tracking"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1235
-#: includes/class-admin.php:1235
-msgid "Campaigns are tracked automatically when visitors land on your site with UTM parameters in the URL (utm_source, utm_medium, utm_campaign). The values are captured from the landing-page URL and attributed to every pageview in that browser session."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1236
-#: includes/class-admin.php:1236
-msgid "Use the Medium filter to isolate traffic from a specific channel (e.g. email, cpc, social)."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1242
-#: includes/class-admin.php:1242
-msgid "Behavior Analysis"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1243
-#: includes/class-admin.php:1243
-msgid "Time on page is measured using the Visibility API — the timer pauses when the visitor switches tabs and resumes when they return. The value is sent when the page is closed via the Beacon API."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1244
-#: includes/class-admin.php:1244
-msgid "Session depth shows how many pages most visitors view in a single session. Entry pages lists the pages where most sessions start."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1250
-#: includes/class-admin.php:1250
-msgid "User Flow Analysis"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1251
-#: includes/class-admin.php:1251
-msgid "The Path Explorer shows page-to-page navigation in Miller columns. Each column is one step in the journey — click any page to drill forward and see where visitors went next. A drop-off funnel above the columns shows how many sessions reached each step."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1252
-#: includes/class-admin.php:1252
-msgid "Percentages in each column are relative to the selected page in the previous column, so they reflect \"of visitors who reached this page, N% continued to…\". Switch to the Journey Table view to browse every recorded page pair with counts and percentages."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1256
-#: build/stage/rich-statistics/includes/class-admin.php:1258
-#: includes/class-admin.php:1256
-#: includes/class-admin.php:1258
-msgid "Click Tracking (Premium)"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1259
-#: includes/class-admin.php:1259
-msgid "Click tracking captures non-navigational interactions: phone links (tel:), email links (mailto:), map links (geo:), SMS links (sms:), and file downloads. HTTP/HTTPS link navigation is tracked automatically as pageviews. You can add additional element IDs and CSS classes in Preferences."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1260
-#: includes/class-admin.php:1260
-msgid "The Destination column shows the actual value supplied to the protocol handler: the phone number for tel: links, the email address for mailto: links, the coordinates for geo: links, the SMS number for sms: links, and the file path or URL for downloads."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1261
-#: includes/class-admin.php:1261
-msgid "Click tracking uses event delegation — no inline event handlers are added to the page."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1265
-#: build/stage/rich-statistics/includes/class-admin.php:1267
-#: includes/class-admin.php:1265
-#: includes/class-admin.php:1267
-msgid "Heatmap (Premium)"
-msgstr ""
-
 #: build/stage/rich-statistics/includes/class-admin.php:1268
-#: includes/class-admin.php:1268
-msgid "The heatmap displays a dark canvas showing scroll-depth guide lines and click-hotspot dots for any tracked page. Dot colour ranges from cool blue (few clicks) to hot red (many clicks). Hover a dot to see which DOM elements were clicked at that position. Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1269
-#: includes/class-admin.php:1269
-msgid "The side panel lists the top-clicked elements with a click bar chart — useful for identifying links and buttons that get the most engagement."
+#: includes/class-admin.php:1134
+msgid "Getting Started"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1270
-#: includes/class-admin.php:1270
-msgid "Use the Period selector to change the date range. Custom start/end dates are supported. Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient."
+#: includes/class-admin.php:1136
+msgid "Getting Started with Rich Statistics"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1271
+msgid "Once activated, navigate to Analytics in the admin sidebar to view your data. The dashboard starts collecting pageviews immediately — no configuration required."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1272
+#: includes/class-admin.php:1138
+msgid "Key Settings:"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1274
+msgid "Data retention: Analytics → Preferences → Data Retention"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1275
+msgid "Bot filtering sensitivity: Analytics → Preferences → Tracking"
+msgstr ""
+
 #: build/stage/rich-statistics/includes/class-admin.php:1276
-#: includes/class-admin.php:1274
-#: includes/class-admin.php:1276
-msgid "WooCommerce Analytics (Premium)"
+msgid "Email digests: Analytics → Preferences → Email Reports"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1277
-#: includes/class-admin.php:1277
-msgid "Automatically tracks product views, add-to-cart events (standard and AJAX), and order completions. Surfaces a conversion funnel, top products table, and a revenue-over-time chart."
+msgid "App access: Analytics → Preferences → App Access"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1278
-#: includes/class-admin.php:1278
-msgid "No customer data is stored — events are linked to anonymous session IDs only. Order totals are recorded in the store currency but no customer name, address, or email is retained."
+msgid "Multisite: Network Admin → Rich Statistics for cross-site overview and AI"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1279
-#: includes/class-admin.php:1279
-msgid "WooCommerce tracking can be toggled on or off from Rich Statistics → Preferences."
+#: build/stage/rich-statistics/includes/class-admin.php:1280
+msgid "Premium features (click tracking, heatmaps, WooCommerce, REST API) are available via the Upgrade link in the admin sidebar."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1283
-#: includes/class-admin.php:1283
-msgid "Export (Premium)"
+#: build/stage/rich-statistics/includes/class-admin.php:1288
+#: includes/class-admin.php:1154
+msgid "Privacy"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1285
-#: includes/class-admin.php:1285
-msgid "CSV Export (Premium)"
+#: build/stage/rich-statistics/includes/class-admin.php:1290
+#: includes/class-admin.php:1156
+msgid "Privacy by Design"
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1286
-#: includes/class-admin.php:1286
-msgid "Download raw events, sessions, or click data as a CSV file for any date range you choose. Use it with spreadsheet software, R, Python, or any business intelligence tool."
+#: build/stage/rich-statistics/includes/class-admin.php:1291
+#: includes/class-admin.php:1157
+msgid "Rich Statistics does not store personally identifiable information. Sessions are identified by a UUID stored in sessionStorage (not cookies) that is cleared when the browser tab closes. IP addresses are never stored. Referrer URLs are truncated to domain only."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1287
-#: includes/class-admin.php:1287
-msgid "Exports are generated on demand — they are not cached. Large date ranges on high-traffic sites may take a moment to compile."
+#: build/stage/rich-statistics/includes/class-admin.php:1292
+#: includes/class-admin.php:1158
+msgid "If a visitor's browser has Do Not Track (DNT) or Global Privacy Control (GPC) enabled, the tracker exits immediately — no session is created and no data is sent."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1294
-#: build/stage/rich-statistics/templates/admin/preferences.php:29
-#: includes/class-admin.php:1294
-#: templates/admin/preferences.php:29
-msgid "Bot score threshold"
+#: build/stage/rich-statistics/includes/class-admin.php:1293
+#: includes/class-admin.php:1159
+msgid "Because no PII is collected, most sites using Rich Statistics do not require a cookie consent banner for the analytics data collected by this plugin. Always consult a qualified lawyer for advice specific to your situation."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-admin.php:1294
-#: includes/class-admin.php:1294
-msgid "Requests scoring at or above this value are silently discarded as automated traffic. Range: 1–10. Default: 5. Lower values filter more aggressively."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1295
-#: includes/class-admin.php:1295
-msgid "Data retention"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1295
-#: includes/class-admin.php:1295
-msgid "Events older than the retention period are pruned nightly. Range: 1–730 days. Default: 90 days. Disable pruning to keep all data indefinitely."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1296
-#: includes/class-admin.php:1296
-msgid "Email digests"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1296
-#: includes/class-admin.php:1296
-msgid "Configure a periodic summary email (daily, weekly, or monthly). Sent via wp_mail — no third-party email service required. Enter comma-separated addresses for multiple recipients."
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1297
-#: build/stage/rich-statistics/templates/admin/preferences.php:253
-#: includes/class-admin.php:1297
-#: templates/admin/preferences.php:253
-msgid "Remove data on uninstall"
-msgstr ""
-
-#: build/stage/rich-statistics/includes/class-admin.php:1297
-#: includes/class-admin.php:1297
-msgid "When enabled, all plugin data and options are permanently deleted when you remove the plugin. This action cannot be undone."
+#: build/stage/rich-statistics/includes/class-admin.php:1303
+#: includes/class-admin.php:1169
+msgid "Overview Dashboard"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1304
-#: includes/class-admin.php:1304
-msgid "Lists every distinct page path recorded in the database. Live paths correspond to published pages or posts on your site. Unmatched paths belong to deleted pages, renamed URLs, or test paths that are no longer active."
+#: includes/class-admin.php:1170
+msgid "The overview shows your total pageviews, unique sessions, average time on page, and bounce rate for the selected period. The daily chart lets you spot traffic trends at a glance."
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-admin.php:1305
-#: includes/class-admin.php:1305
+#: includes/class-admin.php:1171
+msgid "Use the period selector (top right) to switch between Last 7 days, Last 30 days, Last 90 days, This month, and Last month."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1306
+#: includes/class-admin.php:1172
+msgid "Bounce rate"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1306
+#: includes/class-admin.php:1172
+msgid "is calculated as the percentage of sessions that viewed only a single page."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1312
+#: build/stage/rich-statistics/templates/admin/overview.php:176
+#: includes/class-admin.php:1178
+#: templates/admin/overview.php:178
+msgid "Top Pages"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1313
+#: includes/class-admin.php:1179
+msgid "This view ranks every page on your site by the number of pageviews in the selected period. The average time on page is shown for each URL."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1314
+#: includes/class-admin.php:1180
+msgid "Page paths are stored after stripping query parameters that appear to contain personal data (email-shaped values or strings longer than 40 characters)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1320
+#: includes/class-admin.php:1186
+msgid "Audience Breakdown"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1321
+#: includes/class-admin.php:1187
+msgid "Operating system, browser name, browser version, viewport size, language, and timezone are detected from the browser environment using JavaScript and stored as non-identifying aggregate categories."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1322
+msgid "Viewport buckets: Mobile (≤480px), Tablet (481–1024px), Desktop (>1024px)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1323
+#: includes/class-admin.php:1189
+msgid "Language codes follow the BCP 47 standard as reported by navigator.language (e.g. en-US, fr-FR, de)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1329
+#: includes/class-admin.php:1195
+msgid "Referrer Tracking"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1330
+#: includes/class-admin.php:1196
+msgid "Only the referring domain is stored — never the full URL. This prevents leaking of personal data that might appear in referrer URLs (e.g. search queries, email campaign tokens)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1331
+#: includes/class-admin.php:1197
+msgid "Direct traffic, bookmark visits, and traffic from HTTPS sites to your HTTP site appear as \"(direct)\" because browsers do not send a Referer header in these cases."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1337
+#: includes/class-admin.php:1203
+msgid "UTM Campaign Tracking"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1338
+#: includes/class-admin.php:1204
+msgid "Campaigns are tracked automatically when visitors land on your site with UTM parameters in the URL (utm_source, utm_medium, utm_campaign). The values are captured from the landing-page URL and attributed to every pageview in that browser session."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1339
+#: includes/class-admin.php:1205
+msgid "Use the Medium filter to isolate traffic from a specific channel (e.g. email, cpc, social)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1345
+#: includes/class-admin.php:1211
+msgid "Behavior Analysis"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1346
+#: includes/class-admin.php:1212
+msgid "Time on page is measured using the Visibility API — the timer pauses when the visitor switches tabs and resumes when they return. The value is sent when the page is closed via the Beacon API."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1347
+#: includes/class-admin.php:1213
+msgid "Session depth shows how many pages most visitors view in a single session. Entry pages lists the pages where most sessions start."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1353
+#: includes/class-admin.php:1219
+msgid "User Flow Analysis"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1354
+#: includes/class-admin.php:1220
+msgid "The Path Explorer shows page-to-page navigation in Miller columns. Each column is one step in the journey — click any page to drill forward and see where visitors went next. A drop-off funnel above the columns shows how many sessions reached each step."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1355
+#: includes/class-admin.php:1221
+msgid "Percentages in each column are relative to the selected page in the previous column, so they reflect \"of visitors who reached this page, N% continued to…\". Switch to the Journey Table view to browse every recorded page pair with counts and percentages."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1359
+#: build/stage/rich-statistics/includes/class-admin.php:1361
+#: includes/class-admin.php:1225
+#: includes/class-admin.php:1227
+msgid "Click Tracking (Premium)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1362
+#: includes/class-admin.php:1228
+msgid "Click tracking captures non-navigational interactions: phone links (tel:), email links (mailto:), map links (geo:), SMS links (sms:), and file downloads. HTTP/HTTPS link navigation is tracked automatically as pageviews. You can add additional element IDs and CSS classes in Preferences."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1363
+#: includes/class-admin.php:1229
+msgid "The Destination column shows the actual value supplied to the protocol handler: the phone number for tel: links, the email address for mailto: links, the coordinates for geo: links, the SMS number for sms: links, and the file path or URL for downloads."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1364
+#: includes/class-admin.php:1230
+msgid "Click tracking uses event delegation — no inline event handlers are added to the page."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1368
+#: build/stage/rich-statistics/includes/class-admin.php:1370
+#: includes/class-admin.php:1234
+#: includes/class-admin.php:1236
+msgid "Heatmap (Premium)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1371
+#: includes/class-admin.php:1237
+msgid "The heatmap displays a dark canvas showing scroll-depth guide lines and click-hotspot dots for any tracked page. Dot colour ranges from cool blue (few clicks) to hot red (many clicks). Hover a dot to see which DOM elements were clicked at that position. Coordinates are stored as viewport-relative percentages so the heatmap works at any screen size."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1372
+#: includes/class-admin.php:1238
+msgid "The side panel lists the top-clicked elements with a click bar chart — useful for identifying links and buttons that get the most engagement."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1373
+#: includes/class-admin.php:1239
+msgid "Use the Period selector to change the date range. Custom start/end dates are supported. Raw click coordinates are aggregated into a 2% grid nightly by a background cron task to keep storage efficient."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1377
+#: build/stage/rich-statistics/includes/class-admin.php:1379
+#: includes/class-admin.php:1243
+#: includes/class-admin.php:1245
+msgid "WooCommerce Analytics (Premium)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1380
+#: includes/class-admin.php:1246
+msgid "Automatically tracks product views, add-to-cart events (standard and AJAX), and order completions. Surfaces a conversion funnel, top products table, and a revenue-over-time chart."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1381
+#: includes/class-admin.php:1247
+msgid "No customer data is stored — events are linked to anonymous session IDs only. Order totals are recorded in the store currency but no customer name, address, or email is retained."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1382
+#: includes/class-admin.php:1248
+msgid "WooCommerce tracking can be toggled on or off from Rich Statistics → Preferences."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1386
+#: includes/class-admin.php:1252
+msgid "Export (Premium)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1388
+#: includes/class-admin.php:1254
+msgid "CSV Export (Premium)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1389
+#: includes/class-admin.php:1255
+msgid "Download raw events, sessions, or click data as a CSV file for any date range you choose. Use it with spreadsheet software, R, Python, or any business intelligence tool."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1390
+#: includes/class-admin.php:1256
+msgid "Exports are generated on demand — they are not cached. Large date ranges on high-traffic sites may take a moment to compile."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1397
+#: build/stage/rich-statistics/templates/admin/preferences.php:29
+#: includes/class-admin.php:1263
+#: templates/admin/preferences.php:31
+msgid "Bot score threshold"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1397
+#: includes/class-admin.php:1263
+msgid "Requests scoring at or above this value are silently discarded as automated traffic. Range: 1–10. Default: 5. Lower values filter more aggressively."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1398
+#: includes/class-admin.php:1264
+msgid "Data retention"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1398
+#: includes/class-admin.php:1264
+msgid "Events older than the retention period are pruned nightly. Range: 1–730 days. Default: 90 days. Disable pruning to keep all data indefinitely."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1399
+#: includes/class-admin.php:1265
+msgid "Email digests"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1399
+#: includes/class-admin.php:1265
+msgid "Configure a periodic summary email (daily, weekly, or monthly). Sent via wp_mail — no third-party email service required. Enter comma-separated addresses for multiple recipients."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1400
+#: includes/class-admin.php:1266
+msgid "Insights panel"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1400
+#: includes/class-admin.php:1266
+msgid "The Overview page now includes a free Insights section derived directly from your analytics data. No LLM or API key needed — insight cards are computed server-side from your metrics. For conversational AI, use the Rich Statistics PWA with your own AI provider configured in the app's settings."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1401
+#: build/stage/rich-statistics/templates/admin/preferences.php:193
+#: includes/class-admin.php:1267
+#: templates/admin/preferences.php:195
+msgid "Remove data on uninstall"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1401
+#: includes/class-admin.php:1267
+msgid "When enabled, all plugin data and options are permanently deleted when you remove the plugin. This action cannot be undone."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1408
+#: includes/class-admin.php:1274
+msgid "Lists every distinct page path recorded in the database. Live paths correspond to published pages or posts on your site. Unmatched paths belong to deleted pages, renamed URLs, or test paths that are no longer active."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1409
+#: includes/class-admin.php:1275
 msgid "Use the Purge button to permanently delete all events, click records, and heatmap data for a specific path. This is useful for removing test traffic, redirect chains, or data for pages you have since deleted. Purging cannot be undone."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1413
+#: build/stage/rich-statistics/includes/class-admin.php:1415
+#: includes/class-admin.php:1279
+#: includes/class-admin.php:1281
+msgid "Network Dashboard"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1416
+#: includes/class-admin.php:1282
+msgid "The network dashboard shows analytics KPIs for every sub-site in your WordPress multisite network. The table displays pageviews, sessions, and bounce rate for the last 30 days. Click a site name to open its individual dashboard."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1417
+#: includes/class-admin.php:1283
+msgid "Cross-Site AI Assistant"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1417
+#: includes/class-admin.php:1283
+msgid "Configure your AI provider (endpoint, API key, model) in the settings panel, then ask questions about any site in your network. The AI fetches data from each site's REST API and generates conversational answers. Voice input and output are supported in compatible browsers."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1418
+#: includes/class-admin.php:1284
+msgid "Premium gating"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-admin.php:1418
+#: includes/class-admin.php:1284
+msgid "The dashboard itself is free for all multisite networks. Premium tools (campaigns, user-flow, clicks, heatmap, woocommerce) are gated per-site based on each sub-site's own Freemius licence. The AI tool endpoint handles this automatically."
 msgstr ""
 
 #. translators: %s: site name
 #: build/stage/rich-statistics/includes/class-email.php:115
-#: includes/class-email.php:115
+#: includes/class-email.php:118
 #, php-format
 msgid "[%s] Analytics Digest"
 msgstr ""
@@ -725,1649 +1412,1833 @@ msgstr ""
 #: build/stage/rich-statistics/includes/class-email.php:139
 #: build/stage/rich-statistics/templates/admin/overview.php:12
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:10
-#: includes/class-email.php:139
-#: templates/admin/overview.php:12
-#: templates/admin/woocommerce.php:10
+#: includes/class-email.php:142
+#: templates/admin/overview.php:14
+#: templates/admin/woocommerce.php:14
 msgid "Permission denied."
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-email.php:167
-#: includes/class-email.php:167
+#: includes/class-email.php:170
 msgid "last 7 days"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-email.php:168
-#: includes/class-email.php:168
+#: includes/class-email.php:171
 msgid "last 30 days"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-email.php:169
-#: includes/class-email.php:169
+#: includes/class-email.php:172
 msgid "last 90 days"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-email.php:170
-#: includes/class-email.php:170
+#: includes/class-email.php:173
 msgid "this month"
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-email.php:171
-#: includes/class-email.php:171
+#: includes/class-email.php:174
 msgid "last month"
 msgstr ""
 
+#. translators: %s: Site name
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:27
+#: includes/class-privacy-disclosure.php:31
+#, php-format
+msgid "Analytics Data Collected by %s"
+msgstr ""
+
+#. translators: %s: Plugin version
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:29
+#: includes/class-privacy-disclosure.php:33
+#, php-format
+msgid "This disclosure was generated automatically by Rich Statistics v%s."
+msgstr ""
+
+#. translators: %s: Site name
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:31
+#: includes/class-privacy-disclosure.php:35
+#, php-format
+msgid "For questions about data practices on %s, contact the site administrator."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:35
+#: includes/class-privacy-disclosure.php:39
+msgid "This site uses a self-hosted analytics system to understand how visitors use the site. Below is a complete list of what data is collected when you visit, how it is used, and your rights under applicable privacy laws."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:37
+#: includes/class-privacy-disclosure.php:41
+msgid "What We Collect"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:41
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:116
+#: includes/class-privacy-disclosure.php:45
+#: includes/class-privacy-disclosure.php:120
+msgid "Data"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:42
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:117
+#: includes/class-privacy-disclosure.php:46
+#: includes/class-privacy-disclosure.php:121
+msgid "What It Is"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:43
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:118
+#: includes/class-privacy-disclosure.php:47
+#: includes/class-privacy-disclosure.php:122
+msgid "Why"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:48
+#: includes/class-privacy-disclosure.php:52
+msgid "Session ID"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:49
+#: includes/class-privacy-disclosure.php:53
+msgid "A random identifier stored in your browser's sessionStorage. It is deleted when you close the tab. No cookies are set."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:50
+#: includes/class-privacy-disclosure.php:54
+msgid "To group pageviews into a single visit so we can count sessions and measure time on site."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:53
+#: includes/class-privacy-disclosure.php:57
+msgid "Pages Viewed"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:54
+#: includes/class-privacy-disclosure.php:58
+msgid "The URL path of each page you visit. Email addresses and long query strings are stripped before storage."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:55
+#: includes/class-privacy-disclosure.php:59
+msgid "To see which content is most popular."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:58
+#: includes/class-privacy-disclosure.php:62
+msgid "Referrer Domain"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:59
+#: includes/class-privacy-disclosure.php:63
+msgid "The website you came from (e.g., google.com). Only the domain is stored, not the full URL."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:60
+#: includes/class-privacy-disclosure.php:64
+msgid "To understand how visitors find this site."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:63
+#: build/stage/rich-statistics/templates/admin/audience.php:18
+#: includes/class-privacy-disclosure.php:67
+#: templates/admin/audience.php:26
+msgid "Operating System"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:64
+#: includes/class-privacy-disclosure.php:68
+msgid "Derived from your browser's User-Agent header (e.g., Windows, macOS, Android). The raw User-Agent string is not stored."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:65
+#: includes/class-privacy-disclosure.php:69
+msgid "To ensure the site works on the browsers our visitors use."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:69
+#: includes/class-privacy-disclosure.php:73
+msgid "Name and version derived from your User-Agent header (e.g., Chrome 125)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:70
+#: includes/class-privacy-disclosure.php:74
+msgid "To ensure compatibility and prioritize fixes."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:74
+#: includes/class-privacy-disclosure.php:78
+msgid "Your browser's language preference (e.g., en-US)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:75
+#: includes/class-privacy-disclosure.php:79
+msgid "To understand our audience."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:78
+#: includes/class-privacy-disclosure.php:82
+msgid "Timezone"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:79
+#: includes/class-privacy-disclosure.php:83
+msgid "Your browser's timezone setting (e.g., America/New_York)."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:80
+#: includes/class-privacy-disclosure.php:84
+msgid "To display daily traffic in local time."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:83
+#: includes/class-privacy-disclosure.php:87
+msgid "Viewport Size"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:84
+#: includes/class-privacy-disclosure.php:88
+msgid "Your browser window width and height in pixels."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:85
+#: includes/class-privacy-disclosure.php:89
+msgid "To optimize layout for common screen sizes."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:89
+#: includes/class-privacy-disclosure.php:93
+msgid "How many seconds you spent on each page."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:90
+#: includes/class-privacy-disclosure.php:94
+msgid "To measure engagement."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:93
+#: includes/class-privacy-disclosure.php:97
+msgid "Campaign Parameters"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:94
+#: includes/class-privacy-disclosure.php:98
+msgid "utm_source, utm_medium, and utm_campaign from the URL if present."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:95
+#: includes/class-privacy-disclosure.php:99
+msgid "To measure the effectiveness of marketing campaigns."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:100
+#: includes/class-privacy-disclosure.php:104
+msgid "What We Do Not Collect"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:102
+#: includes/class-privacy-disclosure.php:106
+msgid "No IP address — not even hashed or temporarily stored"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:103
+#: includes/class-privacy-disclosure.php:107
+msgid "No cookies"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:104
+#: includes/class-privacy-disclosure.php:108
+msgid "No name, email, phone number, or address"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:105
+#: includes/class-privacy-disclosure.php:109
+msgid "No tracking across other websites"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:106
+#: includes/class-privacy-disclosure.php:110
+msgid "No data shared with or sold to third parties"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:107
+#: includes/class-privacy-disclosure.php:111
+msgid "No GPS or precise location"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:108
+#: includes/class-privacy-disclosure.php:112
+msgid "No form inputs, audio, video, or biometric data"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:112
+#: includes/class-privacy-disclosure.php:116
+msgid "Additional Interactions (on some pages)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:124
+#: includes/class-privacy-disclosure.php:128
+msgid "When you click a phone link, email link, map link, or download link, the destination is recorded along with where on the screen you clicked."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:125
+#: includes/class-privacy-disclosure.php:129
+msgid "To see which links visitors use most."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:128
+#: includes/class-privacy-disclosure.php:132
+msgid "Mouse Position"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:129
+#: includes/class-privacy-disclosure.php:133
+msgid "Aggregated grid coordinates of where visitors move their mouse or touch the screen. Not tied to any individual."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:130
+#: includes/class-privacy-disclosure.php:134
+msgid "To improve page layout."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:133
+#: includes/class-privacy-disclosure.php:137
+msgid "Purchase Events"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:134
+#: includes/class-privacy-disclosure.php:138
+msgid "If this site has a store, product views, cart additions, and completed orders are recorded. No customer name, email, or shipping address is stored."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:135
+#: includes/class-privacy-disclosure.php:139
+msgid "To understand the checkout funnel."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:141
+#: includes/class-privacy-disclosure.php:145
+msgid "Your Rights"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:145
+#: includes/class-privacy-disclosure.php:149
+msgid "Law"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:146
+#: includes/class-privacy-disclosure.php:150
+msgid "What It Means for You"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:151
+#: includes/class-privacy-disclosure.php:155
+msgid "GDPR (EU)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:152
+#: includes/class-privacy-disclosure.php:163
+msgid "This site processes data under legitimate interest (Art. 6(1)(f)). No personal identifiers are stored, so this analytics does not require your consent under the ePrivacy Directive."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:155
+#: includes/class-privacy-disclosure.php:169
+msgid "CCPA / CPRA (California)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:156
+#: includes/class-privacy-disclosure.php:170
+msgid "The data collected does not meet the definition of \"personal information\" under CCPA because it cannot identify you. No data is sold or shared."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:159
+#: includes/class-privacy-disclosure.php:173
+msgid "VCDPA (Virginia) / CPA (Colorado) / CTDPA (Connecticut) / UCPA (Utah) / TDPSA (Texas)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:160
+#: includes/class-privacy-disclosure.php:174
+msgid "The data collected is pseudonymous and used only for internal analytics. It is exempt from opt-out requirements under these state laws."
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:163
+#: includes/class-privacy-disclosure.php:177
+msgid "COPPA (US)"
+msgstr ""
+
+#: build/stage/rich-statistics/includes/class-privacy-disclosure.php:164
+#: includes/class-privacy-disclosure.php:178
+msgid "No personal information is collected from any visitor, including children."
+msgstr ""
+
 #: build/stage/rich-statistics/includes/class-pwa-download.php:47
-#: build/stage/rich-statistics/includes/class-pwa-download.php:101
-#: includes/class-pwa-download.php:47
-#: includes/class-pwa-download.php:101
+#: includes/class-pwa-download.php:44
 msgid "You do not have permission."
 msgstr ""
 
 #: build/stage/rich-statistics/includes/class-pwa-download.php:90
-#: includes/class-pwa-download.php:90
 msgid "You do not have permission to download the Rich Statistics Web App."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-pwa-download.php:166
-#: includes/class-pwa-download.php:166
+#: build/stage/rich-statistics/includes/class-pwa-download.php:101
 msgid "The ZipArchive PHP extension is required to generate the download. Please ask your host to enable it."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-pwa-download.php:174
-#: includes/class-pwa-download.php:174
+#: build/stage/rich-statistics/includes/class-pwa-download.php:109
 msgid "Could not create the download package. Please try again."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-rest-api.php:608
-#: build/stage/rich-statistics/includes/class-rest-api.php:615
-#: build/stage/rich-statistics/includes/class-rest-api.php:640
-#: build/stage/rich-statistics/includes/class-rest-api.php:647
-#: includes/class-rest-api.php:608
-#: includes/class-rest-api.php:615
-#: includes/class-rest-api.php:640
-#: includes/class-rest-api.php:647
+#: build/stage/rich-statistics/includes/class-rest-api.php:617
+#: build/stage/rich-statistics/includes/class-rest-api.php:624
+#: build/stage/rich-statistics/includes/class-rest-api.php:649
+#: build/stage/rich-statistics/includes/class-rest-api.php:656
+#: includes/class-rest-api.php:610
+#: includes/class-rest-api.php:617
+#: includes/class-rest-api.php:642
+#: includes/class-rest-api.php:649
 msgid "You do not have permission to access Rich Statistics data."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-rest-api.php:703
-#: includes/class-rest-api.php:703
+#: build/stage/rich-statistics/includes/class-rest-api.php:771
+#: includes/class-rest-api.php:769
 msgid "sites must be an array."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-rest-api.php:1018
-#: includes/class-rest-api.php:1018
+#: build/stage/rich-statistics/includes/class-rest-api.php:1086
+#: includes/class-rest-api.php:1084
 msgid "Invalid code format. Please enter the 6-digit code from your profile page."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-rest-api.php:1029
-#: includes/class-rest-api.php:1029
+#: build/stage/rich-statistics/includes/class-rest-api.php:1097
+#: includes/class-rest-api.php:1095
 msgid "Too many incorrect attempts. Please wait a few minutes before trying again."
 msgstr ""
 
-#: build/stage/rich-statistics/includes/class-rest-api.php:1039
-#: includes/class-rest-api.php:1039
+#: build/stage/rich-statistics/includes/class-rest-api.php:1107
+#: includes/class-rest-api.php:1105
 msgid "Invalid or expired code."
 msgstr ""
 
 #. translators: 1: minimum WP version, 2: minimum PHP version
-#: build/stage/rich-statistics/rich-statistics.php:256
-#: rich-statistics.php:256
+#: build/stage/rich-statistics/rich-statistics.php:258
+#: rich-statistics.php:250
 #, php-format
 msgid "Rich Statistics requires WordPress %1$s and PHP %2$s or higher."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:13
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:27
-#: templates/admin/ai-chat.php:13
-#: templates/admin/ai-chat.php:27
-#: templates/admin/ai-chat.php:42
-msgid "AI Analytics Assistant"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:31
-#: templates/admin/ai-chat.php:31
-msgid "AI is not configured. Please go to Preferences → AI Integration to set up your provider."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:33
-#: templates/admin/ai-chat.php:33
-msgid "Configure AI"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:74
-#: templates/admin/ai-chat.php:75
-msgid "The AI assistant analyzes your analytics data and provides conversational insights."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:75
-#: templates/admin/ai-chat.php:76
-msgid "Privacy-first:"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:76
-#: templates/admin/ai-chat.php:77
-msgid "Only aggregate data is shared. No personal info leaves your site."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:77
-#: templates/admin/ai-chat.php:78
-msgid "Provider:"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:86
-#: templates/admin/ai-chat.php:87
-msgid "Be specific with time periods"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:87
-#: templates/admin/ai-chat.php:88
-msgid "Ask about pages, visitors, campaigns"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:88
-#: templates/admin/ai-chat.php:89
-msgid "Request summaries or comparisons"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/ai-chat.php:90
-#: templates/admin/ai-chat.php:91
-msgid "Using local LLM (Ollama) — no data leaves server"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/audience.php:18
-#: templates/admin/audience.php:18
-msgid "Operating System"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/audience.php:25
-#: cli/class-cli.php:140
-#: templates/admin/audience.php:25
-msgid "Browser"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/audience.php:32
-#: templates/admin/audience.php:32
+#: templates/admin/audience.php:40
 msgid "Viewport / Device Size"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/audience.php:39
-#: cli/class-cli.php:141
-#: templates/admin/audience.php:39
-msgid "Language"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/audience.php:46
-#: templates/admin/audience.php:46
+#: templates/admin/audience.php:54
 msgid "Timezone Distribution"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:48
+#: build/stage/rich-statistics/templates/admin/behavior.php:47
 #: build/stage/rich-statistics/templates/admin/pages.php:92
-#: templates/admin/behavior.php:49
-#: templates/admin/pages.php:94
+#: templates/admin/behavior.php:55
+#: templates/admin/pages.php:100
+msgid "Filter by browser"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/behavior.php:49
+#: build/stage/rich-statistics/templates/admin/pages.php:94
+#: templates/admin/behavior.php:57
+#: templates/admin/pages.php:102
 msgid "All Browsers"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/behavior.php:57
-#: build/stage/rich-statistics/templates/admin/pages.php:101
-#: templates/admin/behavior.php:59
-#: templates/admin/pages.php:104
+#: build/stage/rich-statistics/templates/admin/pages.php:102
+#: templates/admin/behavior.php:65
+#: templates/admin/pages.php:110
+msgid "Filter by operating system"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/behavior.php:59
+#: build/stage/rich-statistics/templates/admin/pages.php:104
+#: templates/admin/behavior.php:67
+#: templates/admin/pages.php:112
 msgid "All OS"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:64
-#: build/stage/rich-statistics/templates/admin/campaigns.php:78
-#: build/stage/rich-statistics/templates/admin/click-map.php:75
-#: build/stage/rich-statistics/templates/admin/pages.php:108
-#: build/stage/rich-statistics/templates/admin/referrers.php:54
-#: build/stage/rich-statistics/templates/admin/user-flow.php:151
-#: templates/admin/behavior.php:66
-#: templates/admin/campaigns.php:79
-#: templates/admin/click-map.php:76
-#: templates/admin/pages.php:111
-#: templates/admin/referrers.php:55
-#: templates/admin/user-flow.php:153
+#: build/stage/rich-statistics/templates/admin/behavior.php:66
+#: build/stage/rich-statistics/templates/admin/campaigns.php:79
+#: build/stage/rich-statistics/templates/admin/click-map.php:77
+#: build/stage/rich-statistics/templates/admin/pages.php:111
+#: build/stage/rich-statistics/templates/admin/referrers.php:55
+#: build/stage/rich-statistics/templates/admin/user-flow.php:153
+#: templates/admin/behavior.php:74
+#: templates/admin/campaigns.php:81
+#: templates/admin/click-map.php:79
+#: templates/admin/pages.php:119
+#: templates/admin/referrers.php:63
+#: templates/admin/user-flow.php:155
 msgid "Filter"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:78
-#: build/stage/rich-statistics/templates/admin/campaigns.php:92
-#: build/stage/rich-statistics/templates/admin/click-map.php:89
-#: build/stage/rich-statistics/templates/admin/pages.php:122
-#: build/stage/rich-statistics/templates/admin/referrers.php:68
-#: build/stage/rich-statistics/templates/admin/user-flow.php:166
-#: templates/admin/behavior.php:80
-#: templates/admin/campaigns.php:93
-#: templates/admin/click-map.php:90
-#: templates/admin/pages.php:125
-#: templates/admin/referrers.php:69
-#: templates/admin/user-flow.php:168
+#: build/stage/rich-statistics/templates/admin/behavior.php:80
+#: build/stage/rich-statistics/templates/admin/campaigns.php:93
+#: build/stage/rich-statistics/templates/admin/click-map.php:91
+#: build/stage/rich-statistics/templates/admin/pages.php:125
+#: build/stage/rich-statistics/templates/admin/referrers.php:69
+#: build/stage/rich-statistics/templates/admin/user-flow.php:168
+#: templates/admin/behavior.php:88
+#: templates/admin/campaigns.php:95
+#: templates/admin/click-map.php:93
+#: templates/admin/pages.php:133
+#: templates/admin/referrers.php:77
+#: templates/admin/user-flow.php:170
 msgid "Clear"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:85
-#: templates/admin/behavior.php:87
-msgid "Time on Page"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/behavior.php:91
-#: templates/admin/behavior.php:93
+#: build/stage/rich-statistics/templates/admin/behavior.php:93
+#: templates/admin/behavior.php:101
 msgid "Session Depth (Pages Viewed)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:102
-#: templates/admin/behavior.php:104
+#: build/stage/rich-statistics/templates/admin/behavior.php:104
+#: templates/admin/behavior.php:112
 msgid "Top Entry Pages"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:108
-#: build/stage/rich-statistics/templates/admin/behavior.php:134
-#: build/stage/rich-statistics/templates/admin/overview.php:94
-#: build/stage/rich-statistics/templates/admin/pages.php:143
-#: cli/class-cli.php:103
-#: templates/admin/behavior.php:110
-#: templates/admin/behavior.php:136
-#: templates/admin/overview.php:94
-#: templates/admin/pages.php:146
-msgid "Page"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/behavior.php:109
-#: build/stage/rich-statistics/templates/admin/behavior.php:135
-#: build/stage/rich-statistics/templates/admin/campaigns.php:118
-#: build/stage/rich-statistics/templates/admin/export.php:45
-#: build/stage/rich-statistics/templates/admin/overview.php:47
-#: cli/class-cli.php:64
-#: templates/admin/behavior.php:111
-#: templates/admin/behavior.php:137
-#: templates/admin/campaigns.php:119
-#: templates/admin/export.php:45
-#: templates/admin/overview.php:47
-msgid "Sessions"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/behavior.php:123
-#: build/stage/rich-statistics/templates/admin/behavior.php:149
-#: build/stage/rich-statistics/templates/admin/overview.php:108
-#: templates/admin/behavior.php:125
-#: templates/admin/behavior.php:151
-#: templates/admin/overview.php:108
+#: build/stage/rich-statistics/templates/admin/behavior.php:125
+#: build/stage/rich-statistics/templates/admin/behavior.php:151
+#: build/stage/rich-statistics/templates/admin/overview.php:201
+#: templates/admin/behavior.php:133
+#: templates/admin/behavior.php:159
+#: templates/admin/overview.php:203
 msgid "No data yet."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/behavior.php:128
-#: templates/admin/behavior.php:130
+#: build/stage/rich-statistics/templates/admin/behavior.php:130
+#: templates/admin/behavior.php:138
 msgid "Top Exit Pages"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/campaigns.php:17
-#: templates/admin/campaigns.php:17
+#: templates/admin/campaigns.php:19
 msgid "Campaigns is a Premium Feature"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/campaigns.php:18
-#: templates/admin/campaigns.php:18
+#: templates/admin/campaigns.php:20
 msgid "Track UTM campaigns, sources, and mediums to measure the impact of every marketing channel."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/campaigns.php:21
-#: templates/admin/campaigns.php:21
+#: templates/admin/campaigns.php:23
 msgid "Upgrade to Unlock Campaigns"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/campaigns.php:71
+#: build/stage/rich-statistics/templates/admin/campaigns.php:70
 #: templates/admin/campaigns.php:72
+msgid "Filter by UTM medium"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/campaigns.php:72
+#: templates/admin/campaigns.php:74
 msgid "All mediums"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/campaigns.php:115
-#: templates/admin/campaigns.php:116
-msgid "Campaign"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/campaigns.php:116
-#: templates/admin/campaigns.php:117
-msgid "Source"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/campaigns.php:117
-#: templates/admin/campaigns.php:118
-msgid "Medium"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/campaigns.php:119
-#: build/stage/rich-statistics/templates/admin/maintenance.php:67
-#: templates/admin/campaigns.php:120
-#: templates/admin/maintenance.php:67
-msgid "Pageviews"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/campaigns.php:120
-#: build/stage/rich-statistics/templates/admin/referrers.php:93
-#: templates/admin/campaigns.php:121
-#: templates/admin/referrers.php:94
+#: build/stage/rich-statistics/templates/admin/campaigns.php:121
+#: build/stage/rich-statistics/templates/admin/referrers.php:94
+#: templates/admin/campaigns.php:123
+#: templates/admin/referrers.php:102
 msgid "Share"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/campaigns.php:146
-#: templates/admin/campaigns.php:147
+#: build/stage/rich-statistics/templates/admin/campaigns.php:147
+#: templates/admin/campaigns.php:149
 msgid "No campaign traffic recorded yet. Add utm_source, utm_medium, and utm_campaign parameters to your links to start tracking."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/click-map.php:17
-#: templates/admin/click-map.php:17
+#: templates/admin/click-map.php:19
 msgid "Click Tracking is a Premium Feature"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/click-map.php:18
-#: templates/admin/click-map.php:18
+#: templates/admin/click-map.php:20
 msgid "See exactly where visitors click on every page. Identify high-interest areas, dead zones, and navigation patterns at a glance."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/click-map.php:21
-#: build/stage/rich-statistics/templates/admin/preferences.php:189
-#: templates/admin/click-map.php:21
-#: templates/admin/preferences.php:189
+#: build/stage/rich-statistics/templates/admin/preferences.php:129
+#: templates/admin/click-map.php:23
+#: templates/admin/preferences.php:131
 msgid "Upgrade to Unlock Click Tracking"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:60
-#: templates/admin/click-map.php:60
+#: build/stage/rich-statistics/templates/admin/click-map.php:61
+#: templates/admin/click-map.php:63
 msgid "Click Events"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/click-map.php:70
-#: build/stage/rich-statistics/templates/admin/pages.php:83
-#: templates/admin/click-map.php:71
-#: templates/admin/pages.php:84
+#: build/stage/rich-statistics/templates/admin/pages.php:82
+#: templates/admin/click-map.php:72
+#: templates/admin/pages.php:90
+msgid "Filter by page"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/click-map.php:72
+#: build/stage/rich-statistics/templates/admin/pages.php:84
+#: templates/admin/click-map.php:74
+#: templates/admin/pages.php:92
 msgid "All Pages"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:102
-#: templates/admin/click-map.php:103
+#: build/stage/rich-statistics/templates/admin/click-map.php:104
+#: templates/admin/click-map.php:106
 msgid "Element"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:103
-#: templates/admin/click-map.php:104
+#: build/stage/rich-statistics/templates/admin/click-map.php:105
+#: templates/admin/click-map.php:107
 msgid "Trigger"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:104
-#: cli/class-cli.php:360
-#: templates/admin/click-map.php:105
-msgid "Destination"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/click-map.php:105
-#: templates/admin/click-map.php:106
+#: build/stage/rich-statistics/templates/admin/click-map.php:107
+#: templates/admin/click-map.php:109
 msgid "Text / Label"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:106
-#: build/stage/rich-statistics/templates/admin/maintenance.php:68
-#: cli/class-cli.php:360
-#: templates/admin/click-map.php:107
-#: templates/admin/maintenance.php:68
-msgid "Clicks"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/click-map.php:160
-#: templates/admin/click-map.php:161
+#: build/stage/rich-statistics/templates/admin/click-map.php:162
+#: templates/admin/click-map.php:164
 msgid "No click data yet. Click tracking records interactions with tel:, mailto:, sms:, geo:, and download links."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/click-map.php:161
-#: templates/admin/click-map.php:162
+#: build/stage/rich-statistics/templates/admin/click-map.php:163
+#: templates/admin/click-map.php:165
 msgid "If data is missing after site changes, check that the analytics plugin session ID is flowing correctly between pageviews and click events."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:17
-#: templates/admin/export.php:17
+#: templates/admin/export.php:19
 msgid "Export is a Premium Feature"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:18
-#: templates/admin/export.php:18
+#: templates/admin/export.php:20
 msgid "Download your analytics data as CSV for use in spreadsheets or external tools."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:21
-#: templates/admin/export.php:21
+#: templates/admin/export.php:23
 msgid "Upgrade to Unlock Export"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:38
-#: templates/admin/export.php:38
+#: templates/admin/export.php:40
 msgid "Export Data as CSV"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:41
-#: templates/admin/export.php:41
+#: templates/admin/export.php:43
 msgid "Data type"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:44
-#: templates/admin/export.php:44
+#: templates/admin/export.php:46
 msgid "Pageviews (events)"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:46
-#: templates/admin/export.php:46
+#: templates/admin/export.php:48
 msgid "Click events"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:47
-#: templates/admin/export.php:47
+#: templates/admin/export.php:49
 msgid "Referrers (aggregated)"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:52
-#: templates/admin/export.php:52
+#: templates/admin/export.php:54
 msgid "Date range"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/export.php:64
-#: templates/admin/export.php:64
+#: templates/admin/export.php:66
 msgid "Custom range"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/export.php:81
-#: templates/admin/export.php:84
+#: build/stage/rich-statistics/templates/admin/export.php:67
+#: templates/admin/export.php:69
+msgid "Select period"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/export.php:74
+#: templates/admin/export.php:76
+msgid "Date from"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/export.php:77
+#: templates/admin/export.php:79
+msgid "Date to"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/export.php:84
+#: templates/admin/export.php:86
 msgid "Download CSV"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/heatmap.php:18
-#: templates/admin/heatmap.php:18
+#: templates/admin/heatmap.php:20
 msgid "Heatmap is a Premium Feature"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/heatmap.php:19
-#: templates/admin/heatmap.php:19
+#: templates/admin/heatmap.php:21
 msgid "Visualise scroll depth and engagement intensity across any page with a real-time heatmap — no external service required."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/heatmap.php:22
-#: templates/admin/heatmap.php:22
+#: templates/admin/heatmap.php:24
 msgid "Upgrade to Unlock Heatmap"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/heatmap.php:67
-#: templates/admin/heatmap.php:67
+#: build/stage/rich-statistics/templates/admin/heatmap.php:68
+#: templates/admin/heatmap.php:70
 msgid "Page:"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/heatmap.php:81
-#: templates/admin/heatmap.php:81
+#: build/stage/rich-statistics/templates/admin/heatmap.php:82
+#: templates/admin/heatmap.php:84
 msgid "Load Heatmap"
 msgstr ""
 
 #. translators: 1: formatted interaction count, 2: plural suffix 's' or empty string
-#: build/stage/rich-statistics/templates/admin/heatmap.php:95
-#: templates/admin/heatmap.php:95
+#: build/stage/rich-statistics/templates/admin/heatmap.php:96
+#: templates/admin/heatmap.php:98
 #, php-format
 msgid "%1$s interaction%2$s"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/heatmap.php:105
-#: templates/admin/heatmap.php:105
+#: build/stage/rich-statistics/templates/admin/heatmap.php:106
+#: templates/admin/heatmap.php:108
 msgid "Low"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/heatmap.php:107
-#: templates/admin/heatmap.php:107
+#: build/stage/rich-statistics/templates/admin/heatmap.php:108
+#: templates/admin/heatmap.php:110
 msgid "High"
 msgstr ""
 
 #. translators: %s: page path
-#: build/stage/rich-statistics/templates/admin/heatmap.php:123
-#: templates/admin/heatmap.php:123
+#: build/stage/rich-statistics/templates/admin/heatmap.php:124
 #, php-format
 msgid "No heatmap data yet for %s. Data is aggregated nightly from click events."
 msgstr ""
 
+#: build/stage/rich-statistics/templates/admin/install.php:13
+#: templates/admin/install.php:15
+msgid "Install Desktop App"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:16
+#: templates/admin/install.php:18
+msgid "Access your analytics from your desktop — no browser required. The Rich Statistics desktop app wraps the same dashboard in a lightweight native window."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:19
+#: templates/admin/install.php:21
+msgid "Linux"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:21
+#: templates/admin/install.php:23
+msgid "Install via APT (recommended)"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:30
+#: templates/admin/install.php:32
+msgid "Or download .deb directly:"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:32
+#: templates/admin/install.php:34
+msgid "x86-64 .deb"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:33
+#: templates/admin/install.php:35
+msgid "ARM64 .deb"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:39
+#: templates/admin/install.php:41
+msgid "Windows"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:41
+#: templates/admin/install.php:43
+msgid "Download the installer (.exe) and run it:"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:42
+#: templates/admin/install.php:44
+msgid "Download Windows .exe"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:47
+#: templates/admin/install.php:49
+msgid "Dev / Test Tracks"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:49
+#: templates/admin/install.php:51
+msgid "Install instructions for pre-release builds are available in the wiki."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/install.php:50
+#: templates/admin/install.php:52
+msgid "View Dev/Test Install Guide"
+msgstr ""
+
 #: build/stage/rich-statistics/templates/admin/maintenance.php:23
-#: templates/admin/maintenance.php:23
+#: templates/admin/maintenance.php:25
 msgid "Live"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:27
-#: templates/admin/maintenance.php:27
+#: templates/admin/maintenance.php:29
 msgid "Unmatched"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:40
-#: templates/admin/maintenance.php:40
+#: templates/admin/maintenance.php:42
 msgid "Tracked Pages"
 msgstr ""
 
 #. translators: %d = number of days
 #: build/stage/rich-statistics/templates/admin/maintenance.php:45
-#: templates/admin/maintenance.php:45
+#: templates/admin/maintenance.php:47
 #, php-format
 msgid "All distinct page paths recorded in the database. Live = published page or post. Unmatched = deleted, never existed, or outside current keep-data setting (%d days). Purge removes all events, clicks and heatmap data for that path."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:54
-#: templates/admin/maintenance.php:54
+#: templates/admin/maintenance.php:56
 msgid "Purge data for all Unmatched paths? This cannot be undone."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:55
-#: templates/admin/maintenance.php:55
+#: templates/admin/maintenance.php:57
 msgid "Purge All Unmatched"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:60
-#: templates/admin/maintenance.php:60
+#: templates/admin/maintenance.php:62
 msgid "No tracked pages found."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:66
-#: templates/admin/maintenance.php:66
+#: templates/admin/maintenance.php:68
 msgid "Page Path"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:69
-#: templates/admin/maintenance.php:69
+#: templates/admin/maintenance.php:71
 msgid "Heatmap Pts"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:70
-#: templates/admin/maintenance.php:70
+#: templates/admin/maintenance.php:72
 msgid "Status"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:71
-#: templates/admin/maintenance.php:71
+#: templates/admin/maintenance.php:73
 msgid "Actions"
 msgstr ""
 
 #. translators: %s = page path
 #: build/stage/rich-statistics/templates/admin/maintenance.php:96
-#: templates/admin/maintenance.php:96
+#: templates/admin/maintenance.php:98
 #, php-format
 msgid "Purge all data for %s? This cannot be undone."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:99
 #: build/stage/rich-statistics/templates/admin/maintenance.php:163
-#: templates/admin/maintenance.php:99
-#: templates/admin/maintenance.php:163
+#: templates/admin/maintenance.php:101
+#: templates/admin/maintenance.php:172
 msgid "Purge"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:135
-#: templates/admin/maintenance.php:135
+#: templates/admin/maintenance.php:137
 msgid "Purging\\u2026"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:149
-#: templates/admin/maintenance.php:149
+#: templates/admin/maintenance.php:158
 msgid "Purged"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:150
-#: templates/admin/maintenance.php:150
+#: templates/admin/maintenance.php:159
 msgid "records deleted."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:161
-#: templates/admin/maintenance.php:161
+#: templates/admin/maintenance.php:170
+#: templates/admin/maintenance.php:224
 msgid "Error:"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:187
-#: templates/admin/maintenance.php:187
+#: templates/admin/maintenance.php:196
 msgid "No unmatched paths to purge."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:212
-#: templates/admin/maintenance.php:212
+#: templates/admin/maintenance.php:232
 msgid "Bulk purge complete."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/maintenance.php:213
-#: templates/admin/maintenance.php:213
+#: templates/admin/maintenance.php:233
 msgid "total records deleted."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/network-settings.php:11
-#: templates/admin/network-settings.php:11
-msgid "You do not have permission to access this page."
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:43
+#: templates/admin/network-dashboard.php:18
+msgid "Rich Statistics — Network Dashboard"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:47
+msgid "AI settings saved."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:51
+#: templates/admin/network-dashboard.php:22
+msgid "Sub-site Overview"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:52
+#: templates/admin/network-dashboard.php:23
+msgid "Per-site analytics for the last 30 days. Click a site name to view its detailed dashboard."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:67
+#: build/stage/rich-statistics/templates/admin/network-settings.php:113
+#: templates/admin/network-dashboard.php:36
+#: templates/admin/network-settings.php:115
+msgid "Site"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:68
+#: build/stage/rich-statistics/templates/admin/network-settings.php:115
+#: templates/admin/network-dashboard.php:37
+#: templates/admin/network-settings.php:117
+msgid "Pageviews (30d)"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:69
+#: build/stage/rich-statistics/templates/admin/network-settings.php:116
+#: templates/admin/network-dashboard.php:38
+#: templates/admin/network-settings.php:118
+msgid "Sessions (30d)"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:71
+#: templates/admin/network-dashboard.php:40
+msgid "Tracker"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:120
+msgid "AI Analytics Assistant"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:121
+msgid "Ask questions about any site in your network. The AI fetches data across all sub-sites and provides conversational answers."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:128
+msgid "API Endpoint"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:132
+msgid "API Key"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:136
+msgid "Model"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:140
+msgid "Voice Input"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:141
+msgid "Enable microphone"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:144
+msgid "Voice Output"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:145
+msgid "Enable speaker"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:151
+msgid "English (US)"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:152
+msgid "English (UK)"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:153
+msgid "Spanish"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:154
+msgid "French"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:155
+msgid "German"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:160
+msgid "Speech Speed"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:167
+msgid "Save AI Settings"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:176
+msgid "Stop Speaking"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:186
+msgid "Send"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:205
+msgid "Speaking..."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:206
+msgid "Voice input not supported."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:207
+msgid "Unable to generate a response."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:208
+msgid "Connection error. Check your AI provider endpoint."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:209
+msgid "Hello! Ask me anything about your network of"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:210
+msgid "sites."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/network-dashboard.php:364
+msgid "Configure your AI provider above to enable the cross-site analytics assistant."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:36
-#: templates/admin/network-settings.php:36
+#: templates/admin/network-settings.php:38
 msgid "Rich Statistics — Network Settings"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:41
-#: templates/admin/network-settings.php:41
+#: templates/admin/network-settings.php:43
 msgid "Network settings saved."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:45
-#: templates/admin/network-settings.php:45
+#: templates/admin/network-settings.php:47
 msgid "These settings apply network-wide and set defaults for all sub-sites. Individual sites can override their own retention and bot threshold settings in their own Data Settings page."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:54
-#: templates/admin/network-settings.php:54
+#: templates/admin/network-settings.php:56
 msgid "Default Retention (days)"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:66
-#: templates/admin/network-settings.php:66
+#: templates/admin/network-settings.php:68
 msgid "Applied to new sites. Existing sites keep their own setting."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:72
-#: templates/admin/network-settings.php:72
+#: templates/admin/network-settings.php:74
 msgid "Disable Tracker Network-wide"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:80
-#: templates/admin/network-settings.php:80
+#: templates/admin/network-settings.php:82
 msgid "Stop collecting analytics data on all sub-sites"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:83
-#: templates/admin/network-settings.php:83
+#: templates/admin/network-settings.php:85
 msgid "Useful during maintenance or to temporarily pause data collection across all sites."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:89
-#: templates/admin/network-settings.php:89
+#: templates/admin/network-settings.php:91
 msgid "Save Network Settings"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:94
-#: templates/admin/network-settings.php:94
+#: templates/admin/network-settings.php:96
 msgid "Sub-site Status"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/network-settings.php:95
-#: templates/admin/network-settings.php:95
+#: templates/admin/network-settings.php:97
 msgid "Per-site analytics for the last 30 days. Click the site name to view its full dashboard."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/network-settings.php:113
-#: templates/admin/network-settings.php:113
-msgid "Site"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/network-settings.php:114
-#: templates/admin/network-settings.php:114
+#: templates/admin/network-settings.php:116
 msgid "ID"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/network-settings.php:115
-#: templates/admin/network-settings.php:115
-msgid "Pageviews (30d)"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/network-settings.php:116
-#: templates/admin/network-settings.php:116
-msgid "Sessions (30d)"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/network-settings.php:117
-#: cli/class-cli.php:305
-#: templates/admin/network-settings.php:117
-msgid "Retention (days)"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/network-settings.php:118
-#: templates/admin/network-settings.php:118
+#: templates/admin/network-settings.php:120
 msgid "Tracker active?"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/network-settings.php:154
-#: cli/class-cli.php:307
-#: templates/admin/network-settings.php:154
-msgid "Yes"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/network-settings.php:155
-#: cli/class-cli.php:307
-#: templates/admin/network-settings.php:155
-msgid "No"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/overview.php:43
-#: cli/class-cli.php:63
-#: templates/admin/overview.php:43
-msgid "Page Views"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/overview.php:51
-#: templates/admin/overview.php:51
+#: templates/admin/overview.php:53
 msgid "Avg. Time on Page"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/overview.php:64
-#: cli/class-cli.php:66
-#: templates/admin/overview.php:64
-msgid "Bounce Rate"
+#. translators: 1: page path, 2: view count, 3: percentage share
+#: build/stage/rich-statistics/templates/admin/overview.php:81
+#: templates/admin/overview.php:83
+#, php-format
+msgid "Top page: <strong>%1$s</strong> with %2$s views (%3$s%% of total traffic)."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/overview.php:72
-#: templates/admin/overview.php:72
+#: build/stage/rich-statistics/templates/admin/overview.php:92
+#: templates/admin/overview.php:94
+msgid "Bounce rate is low — visitors are engaging with multiple pages."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:94
+#: templates/admin/overview.php:96
+msgid "Bounce rate is high — consider reviewing page content and load times."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:96
+#: templates/admin/overview.php:98
+msgid "Bounce rate is within a typical range."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:102
+#: templates/admin/overview.php:104
+msgid "Visitors spend over 2 minutes on average — content is engaging."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:104
+#: templates/admin/overview.php:106
+msgid "Average time on page is under 30 seconds — content may need improvement."
+msgstr ""
+
+#. translators: %s: pages-per-session ratio
+#: build/stage/rich-statistics/templates/admin/overview.php:113
+#: templates/admin/overview.php:115
+#, php-format
+msgid "Visitors view %s pages per session on average — strong engagement."
+msgstr ""
+
+#. translators: 1: referrer domain, 2: visit count
+#: build/stage/rich-statistics/templates/admin/overview.php:126
+#: templates/admin/overview.php:128
+#, php-format
+msgid "Top referrer: <strong>%1$s</strong> (%2$s visits)."
+msgstr ""
+
+#. translators: 1: campaign name or source, 2: session count
+#: build/stage/rich-statistics/templates/admin/overview.php:139
+#: templates/admin/overview.php:141
+#, php-format
+msgid "Top campaign: <strong>%1$s</strong> (%2$s sessions)."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:149
+#: templates/admin/overview.php:151
+msgid "Insights"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:150
+#: templates/admin/overview.php:152
+msgid "Derived from your analytics data"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/overview.php:165
+#: templates/admin/overview.php:167
 msgid "Pageviews Over Time"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/overview.php:85
-#: build/stage/rich-statistics/templates/admin/overview.php:117
-#: templates/admin/overview.php:85
-#: templates/admin/overview.php:117
+#: build/stage/rich-statistics/templates/admin/overview.php:178
+#: build/stage/rich-statistics/templates/admin/overview.php:210
+#: templates/admin/overview.php:180
+#: templates/admin/overview.php:212
 msgid "See all"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/overview.php:95
-#: build/stage/rich-statistics/templates/admin/pages.php:144
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:137
-#: cli/class-cli.php:103
-#: cli/class-cli.php:437
-#: templates/admin/overview.php:95
-#: templates/admin/pages.php:147
-#: templates/admin/woocommerce.php:137
-msgid "Views"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/overview.php:115
-#: templates/admin/overview.php:115
+#: build/stage/rich-statistics/templates/admin/overview.php:208
+#: templates/admin/overview.php:210
 msgid "Top Referrers"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/overview.php:126
-#: templates/admin/overview.php:126
-msgid "Domain"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/overview.php:127
-#: build/stage/rich-statistics/templates/admin/referrers.php:92
-#: templates/admin/overview.php:127
-#: templates/admin/referrers.php:93
-msgid "Visits"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/overview.php:140
-#: templates/admin/overview.php:140
+#: build/stage/rich-statistics/templates/admin/overview.php:233
+#: templates/admin/overview.php:235
 msgid "No referral traffic yet."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/pages.php:129
-#: templates/admin/pages.php:132
+#: build/stage/rich-statistics/templates/admin/pages.php:132
+#: templates/admin/pages.php:140
 msgid "Top Pages by Views"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/pages.php:145
-#: templates/admin/pages.php:148
+#: build/stage/rich-statistics/templates/admin/pages.php:148
+#: templates/admin/pages.php:156
 msgid "Avg. Time"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/pages.php:164
-#: templates/admin/pages.php:167
+#: build/stage/rich-statistics/templates/admin/pages.php:167
+#: templates/admin/pages.php:175
 msgid "No page view data for the selected filters."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:17
-#: templates/admin/preferences.php:17
+#: templates/admin/preferences.php:19
 msgid "Preferences saved."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:26
-#: templates/admin/preferences.php:26
+#: templates/admin/preferences.php:28
 msgid "Tracking"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:34
-#: templates/admin/preferences.php:34
+#: templates/admin/preferences.php:36
 msgid "Events with a bot score at or above this value are discarded. Range 1–10. Higher = less aggressive filtering. Default: 5."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:47
-#: templates/admin/preferences.php:47
+#: templates/admin/preferences.php:49
 msgid "Enable WooCommerce tracking"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:52
-#: templates/admin/preferences.php:52
+#: templates/admin/preferences.php:54
 msgid "Record product views, add-to-cart events, and order completions."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:54
-#: templates/admin/preferences.php:54
+#: templates/admin/preferences.php:56
 msgid "No customer data is stored. Events are linked to anonymous session IDs only."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:60
-#: templates/admin/preferences.php:60
+#: templates/admin/preferences.php:62
 msgid "Track product views, add-to-cart events, and completed orders in a dedicated analytics panel."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/preferences.php:63
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:20
-#: templates/admin/preferences.php:63
-#: templates/admin/woocommerce.php:20
+#: templates/admin/preferences.php:65
+#: templates/admin/woocommerce.php:24
 msgid "Upgrade to Unlock WooCommerce Analytics"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:75
-#: templates/admin/preferences.php:75
-msgid "AI Integration"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:76
-#: templates/admin/preferences.php:76
-msgid "Privacy-first: only aggregate data is shared. Supports OpenAI or your own local LLM (Ollama, etc.)."
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/preferences.php:80
-#: templates/admin/preferences.php:80
-msgid "Provider"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:83
-#: templates/admin/ai-chat.php:79
-#: templates/admin/preferences.php:83
-msgid "OpenAI (cloud)"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:84
-#: templates/admin/preferences.php:84
-msgid "Bring Your Own (local/custom)"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:86
-#: templates/admin/preferences.php:86
-msgid "Choose OpenAI for cloud API, or \"Bring Your Own\" for local LLMs like Ollama."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:90
-#: templates/admin/preferences.php:90
-msgid "OpenAI API Key"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:96
-#: templates/admin/preferences.php:96
-msgid "Get your API key at platform.openai.com"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:100
-#: templates/admin/preferences.php:100
-msgid "API Endpoint"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:106
-#: templates/admin/preferences.php:106
-msgid "For Ollama: http://localhost:11434/v1/chat/completions. No API key needed."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:110
-#: templates/admin/preferences.php:110
-msgid "Model"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:116
-#: templates/admin/preferences.php:116
-msgid "OpenAI: gpt-4o-mini. Ollama: llama3.2:3b, mistral:7b, etc."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/preferences.php:140
-#: templates/admin/preferences.php:140
+#: templates/admin/preferences.php:82
 msgid "tel: (phone number links)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:141
-#: templates/admin/preferences.php:141
+#: build/stage/rich-statistics/templates/admin/preferences.php:81
+#: templates/admin/preferences.php:83
 msgid "sms: (text message links)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:142
-#: templates/admin/preferences.php:142
+#: build/stage/rich-statistics/templates/admin/preferences.php:82
+#: templates/admin/preferences.php:84
 msgid "mailto: (email links)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:143
-#: templates/admin/preferences.php:143
+#: build/stage/rich-statistics/templates/admin/preferences.php:83
+#: templates/admin/preferences.php:85
 msgid "geo: (map coordinate links)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:144
-#: templates/admin/preferences.php:144
+#: build/stage/rich-statistics/templates/admin/preferences.php:84
+#: templates/admin/preferences.php:86
 msgid "download attribute (file downloads)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:159
-#: templates/admin/preferences.php:159
+#: build/stage/rich-statistics/templates/admin/preferences.php:99
+#: templates/admin/preferences.php:101
 msgid "Track by Element ID"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:165
-#: templates/admin/preferences.php:165
+#: build/stage/rich-statistics/templates/admin/preferences.php:105
+#: templates/admin/preferences.php:107
 msgid "Comma-separated element IDs."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:169
-#: templates/admin/preferences.php:169
+#: build/stage/rich-statistics/templates/admin/preferences.php:109
+#: templates/admin/preferences.php:111
 msgid "Track by CSS Class"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:175
-#: templates/admin/preferences.php:175
+#: build/stage/rich-statistics/templates/admin/preferences.php:115
+#: templates/admin/preferences.php:117
 msgid "Comma-separated class names."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:186
-#: templates/admin/preferences.php:186
+#: build/stage/rich-statistics/templates/admin/preferences.php:126
+#: templates/admin/preferences.php:128
 msgid "Record clicks on links, buttons, and elements across your site."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:198
-#: templates/admin/preferences.php:198
+#: build/stage/rich-statistics/templates/admin/preferences.php:138
+#: templates/admin/preferences.php:140
 msgid "Custom Post Types in Page Dropdowns"
 msgstr ""
 
 #. translators: %s: post type slug
-#: build/stage/rich-statistics/templates/admin/preferences.php:224
-#: templates/admin/preferences.php:224
+#: build/stage/rich-statistics/templates/admin/preferences.php:164
+#: templates/admin/preferences.php:166
 #, php-format
 msgid "Include %s in page filter dropdowns"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:234
-#: templates/admin/preferences.php:234
+#: build/stage/rich-statistics/templates/admin/preferences.php:174
+#: templates/admin/preferences.php:176
 msgid "No public custom post types detected."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:240
-#: templates/admin/preferences.php:240
+#: build/stage/rich-statistics/templates/admin/preferences.php:180
+#: templates/admin/preferences.php:182
 msgid "Data Retention"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:243
-#: templates/admin/preferences.php:243
+#: build/stage/rich-statistics/templates/admin/preferences.php:183
+#: templates/admin/preferences.php:185
 msgid "Keep data for"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:248
-#: templates/admin/preferences.php:248
+#: build/stage/rich-statistics/templates/admin/preferences.php:188
+#: templates/admin/preferences.php:190
 msgid "days"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:249
-#: templates/admin/preferences.php:249
+#: build/stage/rich-statistics/templates/admin/preferences.php:189
+#: templates/admin/preferences.php:191
 msgid "Data older than this is pruned automatically each night. Minimum 1, maximum 730."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:258
-#: templates/admin/preferences.php:258
+#: build/stage/rich-statistics/templates/admin/preferences.php:198
+#: templates/admin/preferences.php:200
 msgid "Drop all Rich Statistics tables and options when the plugin is deleted."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:261
-#: templates/admin/preferences.php:261
+#: build/stage/rich-statistics/templates/admin/preferences.php:201
+#: templates/admin/preferences.php:203
 msgid "⚠ This cannot be undone."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:270
-#: templates/admin/preferences.php:270
+#: build/stage/rich-statistics/templates/admin/preferences.php:210
+#: templates/admin/preferences.php:212
 msgid "App Access"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:274
-#: templates/admin/preferences.php:274
+#: build/stage/rich-statistics/templates/admin/preferences.php:214
+#: templates/admin/preferences.php:216
 msgid "Allowed roles"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:289
-#: templates/admin/preferences.php:289
+#: build/stage/rich-statistics/templates/admin/preferences.php:229
+#: templates/admin/preferences.php:231
 msgid "(always allowed)"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:293
-#: templates/admin/preferences.php:293
+#: build/stage/rich-statistics/templates/admin/preferences.php:233
+#: templates/admin/preferences.php:235
 msgid "Users with these roles will see the Rich Statistics App section on their profile page and can authenticate with the REST API."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:299
-#: templates/admin/preferences.php:299
+#: build/stage/rich-statistics/templates/admin/preferences.php:239
+#: templates/admin/preferences.php:241
 msgid "Control which WordPress user roles can access the analytics app and REST API."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:302
-#: templates/admin/preferences.php:302
+#: build/stage/rich-statistics/templates/admin/preferences.php:242
+#: templates/admin/preferences.php:244
 msgid "Upgrade to Configure App Access"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:311
-#: templates/admin/preferences.php:311
+#: build/stage/rich-statistics/templates/admin/preferences.php:251
+#: templates/admin/preferences.php:253
+msgid "Release Channel"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/preferences.php:254
+#: templates/admin/preferences.php:256
+msgid "Beta releases"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/preferences.php:259
+#: templates/admin/preferences.php:261
+msgid "Receive test/beta releases before they are generally available."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/preferences.php:262
+#: templates/admin/preferences.php:264
+msgid "The desktop app will also route to the matching beta PWA snapshot when connected to this site."
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/preferences.php:271
+#: templates/admin/preferences.php:273
 msgid "Email Reports"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:314
-#: templates/admin/preferences.php:314
+#: build/stage/rich-statistics/templates/admin/preferences.php:274
+#: templates/admin/preferences.php:276
 msgid "Enable digest"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:318
-#: templates/admin/preferences.php:318
+#: build/stage/rich-statistics/templates/admin/preferences.php:278
+#: templates/admin/preferences.php:280
 msgid "Send periodic analytics digest emails"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:322
-#: templates/admin/preferences.php:322
+#: build/stage/rich-statistics/templates/admin/preferences.php:282
+#: templates/admin/preferences.php:284
 msgid "Frequency"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:327
-#: templates/admin/preferences.php:327
+#: build/stage/rich-statistics/templates/admin/preferences.php:287
+#: templates/admin/preferences.php:289
 msgid "Daily"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:328
-#: templates/admin/preferences.php:328
+#: build/stage/rich-statistics/templates/admin/preferences.php:288
+#: templates/admin/preferences.php:290
 msgid "Weekly"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:329
-#: templates/admin/preferences.php:329
+#: build/stage/rich-statistics/templates/admin/preferences.php:289
+#: templates/admin/preferences.php:291
 msgid "Monthly"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:340
-#: templates/admin/preferences.php:340
+#: build/stage/rich-statistics/templates/admin/preferences.php:300
+#: templates/admin/preferences.php:302
 msgid "Recipients"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:344
-#: templates/admin/preferences.php:344
+#: build/stage/rich-statistics/templates/admin/preferences.php:304
+#: templates/admin/preferences.php:306
 msgid "Comma-separated list of email addresses."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:348
-#: templates/admin/preferences.php:348
+#: build/stage/rich-statistics/templates/admin/preferences.php:308
+#: templates/admin/preferences.php:310
 msgid "Role-based recipients"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:353
-#: templates/admin/preferences.php:353
+#: build/stage/rich-statistics/templates/admin/preferences.php:313
+#: templates/admin/preferences.php:315
 msgid "Send only to WordPress users with an allowed app role (ignores the manual list above)."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:355
-#: templates/admin/preferences.php:355
+#: build/stage/rich-statistics/templates/admin/preferences.php:315
+#: templates/admin/preferences.php:317
 msgid "Allowed roles are configured in the App Access section above."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:362
-#: templates/admin/preferences.php:362
+#: build/stage/rich-statistics/templates/admin/preferences.php:323
+#: templates/admin/preferences.php:365
 msgid "Send Test Email"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/preferences.php:367
-#: templates/admin/preferences.php:367
+#: build/stage/rich-statistics/templates/admin/preferences.php:328
+#: templates/admin/preferences.php:357
 msgid "Save Preferences"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/referrers.php:47
-#: templates/admin/referrers.php:48
+#: build/stage/rich-statistics/templates/admin/referrers.php:46
+#: templates/admin/referrers.php:54
+msgid "Filter by landing page"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/referrers.php:48
+#: templates/admin/referrers.php:56
 msgid "All landing pages"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/referrers.php:74
-#: templates/admin/referrers.php:75
+#: build/stage/rich-statistics/templates/admin/referrers.php:75
+#: templates/admin/referrers.php:83
 msgid "Traffic Sources"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/referrers.php:90
-#: templates/admin/referrers.php:91
+#: build/stage/rich-statistics/templates/admin/referrers.php:91
+#: templates/admin/referrers.php:99
 msgid "Referring Domain"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/referrers.php:91
-#: templates/admin/referrers.php:92
+#: build/stage/rich-statistics/templates/admin/referrers.php:92
+#: templates/admin/referrers.php:100
 msgid "Top Landing Page"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/referrers.php:117
-#: templates/admin/referrers.php:118
+#: build/stage/rich-statistics/templates/admin/referrers.php:118
+#: templates/admin/referrers.php:126
 msgid "No referral traffic recorded yet."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:17
-#: templates/admin/user-flow.php:17
+#: templates/admin/user-flow.php:19
 msgid "User Flow is a Premium Feature"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:18
-#: templates/admin/user-flow.php:18
+#: templates/admin/user-flow.php:20
 msgid "Visualise the paths visitors take through your site — entry points, navigation sequences, and where they drop off."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:21
-#: templates/admin/user-flow.php:21
+#: templates/admin/user-flow.php:23
 msgid "Upgrade to Unlock User Flow"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:122
+#: build/stage/rich-statistics/templates/admin/user-flow.php:121
 #: templates/admin/user-flow.php:123
-msgid "All entry sources"
+msgid "Filter by entry source"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:123
-#: templates/admin/user-flow.php:124
+#: templates/admin/user-flow.php:125
+msgid "All entry sources"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/user-flow.php:124
+#: templates/admin/user-flow.php:126
 msgid "(direct)"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:131
 #: templates/admin/user-flow.php:133
+msgid "Filter by focus page"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/user-flow.php:133
+#: templates/admin/user-flow.php:135
 msgid "Any page"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:138
-#: templates/admin/user-flow.php:140
+#: build/stage/rich-statistics/templates/admin/user-flow.php:140
+#: templates/admin/user-flow.php:142
 msgid "Min. sessions"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:143
-#: templates/admin/user-flow.php:145
+#: build/stage/rich-statistics/templates/admin/user-flow.php:145
+#: templates/admin/user-flow.php:147
 msgid "Steps"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:176
-#: build/stage/rich-statistics/templates/admin/user-flow.php:213
-#: templates/admin/user-flow.php:178
-#: templates/admin/user-flow.php:215
+#: build/stage/rich-statistics/templates/admin/user-flow.php:178
+#: build/stage/rich-statistics/templates/admin/user-flow.php:215
+#: templates/admin/user-flow.php:180
+#: templates/admin/user-flow.php:217
 msgid "Path Explorer"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:177
-#: build/stage/rich-statistics/templates/admin/user-flow.php:227
-#: templates/admin/user-flow.php:179
-#: templates/admin/user-flow.php:229
+#: build/stage/rich-statistics/templates/admin/user-flow.php:179
+#: build/stage/rich-statistics/templates/admin/user-flow.php:229
+#: templates/admin/user-flow.php:181
+#: templates/admin/user-flow.php:231
 msgid "Journey Table"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:191
-#: templates/admin/user-flow.php:193
+#: build/stage/rich-statistics/templates/admin/user-flow.php:193
+#: templates/admin/user-flow.php:195
 msgid "Sessions Tracked"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:195
-#: templates/admin/user-flow.php:197
-msgid "Entry Pages"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/user-flow.php:199
-#: templates/admin/user-flow.php:201
+#: build/stage/rich-statistics/templates/admin/user-flow.php:201
+#: templates/admin/user-flow.php:203
 msgid "Steps in Flow"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:203
-#: templates/admin/user-flow.php:205
+#: build/stage/rich-statistics/templates/admin/user-flow.php:205
+#: templates/admin/user-flow.php:207
 msgid "Exit Rate"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:214
-#: templates/admin/user-flow.php:216
+#: build/stage/rich-statistics/templates/admin/user-flow.php:216
+#: templates/admin/user-flow.php:218
 msgid "Each column shows where visitors went at that step. Click any page to drill forward."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:218
-#: templates/admin/user-flow.php:220
+#: build/stage/rich-statistics/templates/admin/user-flow.php:220
+#: templates/admin/user-flow.php:222
 msgid "No path data for this period. Try a wider date range or lower the minimum sessions threshold."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:228
-#: templates/admin/user-flow.php:230
+#: build/stage/rich-statistics/templates/admin/user-flow.php:230
+#: templates/admin/user-flow.php:232
 msgid "Where visitors went next from each page. Percentage is share of outbound transitions from that page."
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/user-flow.php:234
-#: templates/admin/user-flow.php:236
-msgid "From Page"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/user-flow.php:235
-#: templates/admin/user-flow.php:237
-msgid "To Page"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:236
 #: templates/admin/user-flow.php:238
-msgid "Transitions"
+msgid "From Page"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/user-flow.php:237
 #: templates/admin/user-flow.php:239
+msgid "To Page"
+msgstr ""
+
+#: build/stage/rich-statistics/templates/admin/user-flow.php:239
+#: templates/admin/user-flow.php:241
 msgid "% From Page"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/user-flow.php:266
-#: templates/admin/user-flow.php:268
+#: build/stage/rich-statistics/templates/admin/user-flow.php:268
+#: templates/admin/user-flow.php:270
 msgid "No transition data for this period and filter."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:17
-#: templates/admin/woocommerce.php:17
+#: templates/admin/woocommerce.php:21
 msgid "WooCommerce Analytics tracks product views, add-to-cart events, and completed orders in a dedicated dashboard without storing any customer data."
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:56
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:80
-#: cli/class-cli.php:422
-#: templates/admin/woocommerce.php:56
-#: templates/admin/woocommerce.php:80
-msgid "Product Views"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:60
-#: templates/admin/woocommerce.php:60
+#: templates/admin/woocommerce.php:64
 msgid "Add to Carts"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:64
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:82
-#: cli/class-cli.php:424
-#: templates/admin/woocommerce.php:64
-#: templates/admin/woocommerce.php:82
-msgid "Orders"
-msgstr ""
-
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:68
-#: cli/class-cli.php:429
-#: templates/admin/woocommerce.php:68
-msgid "Revenue"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:77
-#: templates/admin/woocommerce.php:77
+#: templates/admin/woocommerce.php:81
 msgid "Conversion Funnel"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:81
-#: cli/class-cli.php:423
-#: templates/admin/woocommerce.php:81
-msgid "Add to Cart"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:88
-#: templates/admin/woocommerce.php:88
+#: cli/class-cli.php:647
+#: templates/admin/woocommerce.php:92
 msgid "Stage"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:89
-#: cli/class-cli.php:149
-#: cli/class-cli.php:421
-#: templates/admin/woocommerce.php:89
-msgid "Count"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:90
-#: templates/admin/woocommerce.php:90
+#: templates/admin/woocommerce.php:94
 msgid "Conversion"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:115
-#: templates/admin/woocommerce.php:115
+#: templates/admin/woocommerce.php:119
 msgid "Revenue Over Time"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:121
-#: templates/admin/woocommerce.php:121
+#: templates/admin/woocommerce.php:125
 msgid "No order data in the selected period."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:131
-#: templates/admin/woocommerce.php:131
+#: templates/admin/woocommerce.php:135
 msgid "Top Products — Views"
 msgstr ""
 
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:136
-#: build/stage/rich-statistics/templates/admin/woocommerce.php:160
-#: cli/class-cli.php:437
-#: cli/class-cli.php:448
-#: templates/admin/woocommerce.php:136
-#: templates/admin/woocommerce.php:160
-msgid "Product"
-msgstr ""
-
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:150
-#: templates/admin/woocommerce.php:150
+#: templates/admin/woocommerce.php:154
 msgid "No product views recorded yet."
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:155
-#: templates/admin/woocommerce.php:155
+#: templates/admin/woocommerce.php:159
 msgid "Top Products — Add to Cart"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:161
-#: templates/admin/woocommerce.php:161
+#: templates/admin/woocommerce.php:165
 msgid "Cart Events"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:162
-#: templates/admin/woocommerce.php:162
+#: templates/admin/woocommerce.php:166
 msgid "Total Qty"
 msgstr ""
 
 #: build/stage/rich-statistics/templates/admin/woocommerce.php:176
-#: templates/admin/woocommerce.php:176
+#: templates/admin/woocommerce.php:180
 msgid "No add-to-cart events recorded yet."
 msgstr ""
 
-#: cli/class-cli.php:50
-msgid "You do not have permission to use Rich Statistics commands."
+#: cli/class-cli.php:207
+msgid "Top Page"
 msgstr ""
 
-#: cli/class-cli.php:57
-msgid "Site:"
+#: cli/class-cli.php:253
+msgid "New vs Returning"
 msgstr ""
 
-#: cli/class-cli.php:58
-msgid "Period:"
+#: cli/class-cli.php:254
+msgid "Type"
 msgstr ""
 
-#: cli/class-cli.php:62
-msgid "Metric"
-msgstr ""
-
-#: cli/class-cli.php:62
-#: cli/class-cli.php:302
-msgid "Value"
-msgstr ""
-
-#: cli/class-cli.php:65
-#: cli/class-cli.php:103
-msgid "Avg Time"
-msgstr ""
-
-#: cli/class-cli.php:99
-msgid "No page data found."
-msgstr ""
-
-#: cli/class-cli.php:139
-msgid "OS"
-msgstr ""
-
-#: cli/class-cli.php:146
-msgid "(no data)"
-msgstr ""
-
-#: cli/class-cli.php:149
-msgid "Label"
-msgstr ""
-
-#: cli/class-cli.php:185
-#, php-format
-msgid "Exporting (%s, %s)…"
-msgstr ""
-
-#: cli/class-cli.php:193
-msgid "Output path must be within the WordPress directory."
-msgstr ""
-
-#: cli/class-cli.php:196
-#, php-format
-msgid "Written to %s"
-msgstr ""
-
-#: cli/class-cli.php:228
-msgid "Dry run — no data will be deleted."
-msgstr ""
-
-#: cli/class-cli.php:234
-#, php-format
-msgid "Would delete approximately %d event rows."
-msgstr ""
-
-#: cli/class-cli.php:239
-#, php-format
-msgid "Pruned %d records."
-msgstr ""
-
-#: cli/class-cli.php:262
-msgid "Invalid email address."
-msgstr ""
-
-#: cli/class-cli.php:274
-#, php-format
-msgid "Test digest sent to %s."
-msgstr ""
-
-#: cli/class-cli.php:276
-msgid "Failed to send. Check WordPress mail settings."
-msgstr ""
-
-#: cli/class-cli.php:295
-msgid "Rich Statistics Status"
-msgstr ""
-
-#: cli/class-cli.php:302
-msgid "Setting"
-msgstr ""
-
-#: cli/class-cli.php:303
-msgid "Version"
-msgstr ""
-
-#: cli/class-cli.php:304
-msgid "Tier"
-msgstr ""
-
-#: cli/class-cli.php:304
-msgid "Premium"
-msgstr ""
-
-#: cli/class-cli.php:304
-msgid "Free"
-msgstr ""
-
-#: cli/class-cli.php:306
-msgid "Bot threshold"
-msgstr ""
-
-#: cli/class-cli.php:307
-msgid "Email digest enabled"
-msgstr ""
-
-#: cli/class-cli.php:308
-msgid "Email frequency"
-msgstr ""
-
-#: cli/class-cli.php:309
-msgid "Next maintenance"
-msgstr ""
-
-#: cli/class-cli.php:309
-#: cli/class-cli.php:310
-msgid "not scheduled"
-msgstr ""
-
-#: cli/class-cli.php:310
-msgid "Next digest"
-msgstr ""
-
-#: cli/class-cli.php:345
-msgid "Click tracking requires a Rich Statistics Premium licence."
-msgstr ""
-
-#: cli/class-cli.php:356
-msgid "No click data found for this period."
-msgstr ""
-
-#: cli/class-cli.php:360
-msgid "Protocol"
-msgstr ""
-
-#: cli/class-cli.php:360
-msgid "Tag"
-msgstr ""
-
-#: cli/class-cli.php:360
-msgid "Text"
-msgstr ""
-
+#. translators: %s: output file path
 #: cli/class-cli.php:400
-msgid "WooCommerce analytics requires a Rich Statistics Premium licence."
-msgstr ""
-
-#: cli/class-cli.php:403
-msgid "WooCommerce is not active on this site."
-msgstr ""
-
-#: cli/class-cli.php:418
-msgid "Funnel"
-msgstr ""
-
-#: cli/class-cli.php:421
-msgid "Event"
-msgstr ""
-
-#: cli/class-cli.php:430
 #, php-format
-msgid "Total orders: %s"
+msgid "Exported to %s"
 msgstr ""
 
-#: cli/class-cli.php:431
+#: cli/class-cli.php:646
+msgid "WooCommerce Funnel"
+msgstr ""
+
+#: cli/class-cli.php:654
+msgid "Top Products"
+msgstr ""
+
+#: cli/class-cli.php:712
+msgid "This command requires a Rich Statistics Premium licence."
+msgstr ""
+
+#: includes/class-admin.php:1137
+msgid "Once activated, navigate to Rich Statistics in the admin sidebar to view your data. The dashboard starts collecting pageviews immediately — no configuration required."
+msgstr ""
+
+#: includes/class-admin.php:1140
+msgid "Data retention: Rich Statistics → Preferences → Data Retention"
+msgstr ""
+
+#: includes/class-admin.php:1141
+msgid "Bot filtering sensitivity: Rich Statistics → Preferences → Tracking"
+msgstr ""
+
+#: includes/class-admin.php:1142
+msgid "Email digests: Rich Statistics → Preferences → Email Reports"
+msgstr ""
+
+#: includes/class-admin.php:1143
+msgid "App access: Rich Statistics → Preferences → App Access"
+msgstr ""
+
+#: includes/class-admin.php:1144
+msgid "Multisite: Network Admin → Rich Statistics for cross-site overview"
+msgstr ""
+
+#: includes/class-admin.php:1146
+msgid "Premium features (click tracking, heatmaps, WooCommerce, REST API) show an upgrade prompt on their respective pages."
+msgstr ""
+
+#: includes/class-admin.php:1188
+msgid "Viewport buckets: Mobile (<640px), Tablet (640–1023px), Desktop (1024–1439px), Wide (≥1440px)."
+msgstr ""
+
+#: includes/class-analytics.php:596
+#: includes/class-analytics.php:695
+msgid "User Flow requires MySQL 8.0+ or MariaDB 10.2+."
+msgstr ""
+
+#: includes/class-consent-banner.php:46
+msgid "This site uses analytics to understand how visitors use the site. You can control which data is collected."
+msgstr ""
+
+#: includes/class-consent-banner.php:49
+msgid "Accept"
+msgstr ""
+
+#: includes/class-consent-banner.php:50
+msgid "Reject"
+msgstr ""
+
+#: includes/class-consent-banner.php:51
+msgid "Customize"
+msgstr ""
+
+#: includes/class-consent-banner.php:52
+#: includes/class-consent-banner.php:53
+#: includes/class-consent-banner.php:66
+msgid "Privacy Settings"
+msgstr ""
+
+#: includes/class-consent-banner.php:56
+#: templates/admin/preferences.php:325
+msgid "Consent Banner"
+msgstr ""
+
+#: includes/class-consent-banner.php:57
+msgid "Collapse"
+msgstr ""
+
+#: includes/class-consent-banner.php:65
+msgid "Return"
+msgstr ""
+
+#: includes/class-consent-banner.php:66
+msgid "Change your privacy settings"
+msgstr ""
+
+#: includes/class-privacy-disclosure.php:159
+msgid "This site asks for your consent before collecting analytics data. You can control which categories of data are collected via the consent banner."
+msgstr ""
+
+#: includes/class-privacy-disclosure.php:161
+msgid "This site collects analytics data under implied consent. No personal identifiers are stored. You may opt out via browser settings."
+msgstr ""
+
+#: includes/class-rest-api.php:700
+msgid "Invalid AI tool requested."
+msgstr ""
+
+#. translators: %s: page path
+#: templates/admin/heatmap.php:126
 #, php-format
-msgid "Total revenue: $%s"
+msgid "No heatmap data yet for %s. Data is aggregated nightly from scroll depth and pointer position events."
 msgstr ""
 
-#: cli/class-cli.php:436
-msgid "Top Viewed Products"
+#: templates/admin/network-dashboard.php:77
+msgid "No sites found."
 msgstr ""
 
-#: cli/class-cli.php:447
-msgid "Top Add-to-Cart"
+#: templates/admin/preferences.php:328
+msgid "Show banner"
 msgstr ""
 
-#: cli/class-cli.php:448
-msgid "Events"
+#: templates/admin/preferences.php:333
+msgid "Display a consent banner to visitors."
 msgstr ""
 
-#: cli/class-cli.php:492
-#, php-format
-msgid "Switched to blog %d."
+#: templates/admin/preferences.php:338
+msgid "Auto-consent"
 msgstr ""
 
-#: cli/class-cli.php:494
-#, php-format
-msgid "Blog %d not found."
+#: templates/admin/preferences.php:343
+msgid "Start tracking immediately. When unchecked, tracking waits for visitor choice."
 msgstr ""
 
-#: includes/class-admin.php:158
-msgid "Rich Stats"
+#: templates/admin/preferences.php:348
+msgid "Banner text"
 msgstr ""
 
-#: includes/class-admin.php:159
-msgid "Privacy-first analytics for your WordPress site."
-msgstr ""
-
-#: includes/class-rest-api.php:1207
-#: includes/class-rest-api.php:1219
-msgid "AI request failed."
-msgstr ""
-
-#: includes/class-rest-api.php:1226
-msgid "Unable to generate response."
-msgstr ""
-
-#: templates/admin/ai-chat.php:43
-msgid "Ready"
-msgstr ""
-
-#: templates/admin/ai-chat.php:52
-msgid "Ask questions about your analytics in plain English!"
-msgstr ""
-
-#: templates/admin/ai-chat.php:53
-msgid "Examples:"
-msgstr ""
-
-#: templates/admin/ai-chat.php:54
-msgid "• \"What's my top page this month?\""
-msgstr ""
-
-#: templates/admin/ai-chat.php:55
-msgid "• \"Show me visitor trends\""
-msgstr ""
-
-#: templates/admin/ai-chat.php:56
-msgid "• \"Which campaigns are working?\""
-msgstr ""
-
-#: templates/admin/ai-chat.php:57
-msgid "• \"How many WooCommerce orders this week?\""
-msgstr ""
-
-#: templates/admin/ai-chat.php:62
-msgid "Chat message"
-msgstr ""
-
-#: templates/admin/ai-chat.php:64
-msgid "Ask about your analytics..."
-msgstr ""
-
-#: templates/admin/ai-chat.php:65
-msgid "Send"
-msgstr ""
-
-#: templates/admin/ai-chat.php:73
-msgid "How it works"
-msgstr ""
-
-#: templates/admin/ai-chat.php:79
-msgid "Custom/Local LLM"
-msgstr ""
-
-#: templates/admin/ai-chat.php:84
-msgid "Tips"
-msgstr ""
-
-#: templates/admin/behavior.php:47
-#: templates/admin/pages.php:92
-msgid "Filter by browser"
-msgstr ""
-
-#: templates/admin/behavior.php:57
-#: templates/admin/pages.php:102
-msgid "Filter by operating system"
-msgstr ""
-
-#: templates/admin/campaigns.php:70
-msgid "Filter by UTM medium"
-msgstr ""
-
-#: templates/admin/click-map.php:69
-#: templates/admin/pages.php:82
-msgid "Filter by page"
-msgstr ""
-
-#: templates/admin/export.php:67
-msgid "Select period"
-msgstr ""
-
-#: templates/admin/export.php:74
-msgid "Date from"
-msgstr ""
-
-#: templates/admin/export.php:77
-msgid "Date to"
-msgstr ""
-
-#: templates/admin/referrers.php:46
-msgid "Filter by landing page"
-msgstr ""
-
-#: templates/admin/user-flow.php:121
-msgid "Filter by entry source"
-msgstr ""
-
-#: templates/admin/user-flow.php:131
-msgid "Filter by focus page"
+#: templates/admin/preferences.php:351
+msgid "Custom message shown in the consent banner. Leave empty for the default text."
 msgstr ""

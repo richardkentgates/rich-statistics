@@ -3,7 +3,7 @@
  * Plugin Name:       Rich Statistics
  * Plugin URI:        https://statistics.richardkentgates.com
  * Description:       Privacy-first analytics for WordPress publishers. No PII, no consent banners required.
- * Version:           2.4.26
+ * Version:           2.4.27
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Rich Statistics
@@ -62,14 +62,14 @@ if ( ! function_exists( 'rsa_detect_app_url' ) ) {
 // --------------------------------------------------------------------
 // Constants
 // --------------------------------------------------------------------
-define( 'RSA_VERSION', '2.4.26' );
+define( 'RSA_VERSION', '2.4.27' );
 define( 'RSA_FILE', __FILE__ );
 define( 'RSA_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RSA_URL', plugin_dir_url( __FILE__ ) );
 define( 'RSA_ASSETS_URL', RSA_URL . 'assets/' );
 define( 'RSA_MIN_WP', '6.0' );
 define( 'RSA_MIN_PHP', '8.0' );
-define( 'RSA_APP_VERSION', '2.4.26' );
+define( 'RSA_APP_VERSION', '2.4.27' );
 define( 'RSA_MIN_APP_VERSION', '2.0.0' );
 define( 'RSA_APP_URL', rsa_detect_app_url() );
 define( 'RSA_APP_ENV', rsa_detect_app_env() );
@@ -133,6 +133,7 @@ $rsa_classes = array(
 	'RSA_Admin',
 	'RSA_Email',
 	'RSA_Privacy_Disclosure',
+	'RSA_Consent_Banner',
 );
 
 foreach ( $rsa_classes as $class ) {
@@ -169,13 +170,6 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 // Activation / Deactivation / Uninstall hooks
 // --------------------------------------------------------------------
 register_activation_hook( RSA_FILE, array( 'RSA_DB', 'activate' ) );
-register_activation_hook(
-	RSA_FILE,
-	function () {
-		RSA_Admin::register_app_rewrite();
-		flush_rewrite_rules();
-	}
-);
 register_deactivation_hook( RSA_FILE, array( 'RSA_DB', 'deactivate' ) );
 
 // Uninstall — hooked via Freemius so the uninstall event + user feedback
@@ -197,7 +191,8 @@ function rs_fs_uninstall_cleanup() {
 			RSA_DB::maybe_remove_data();
 			restore_current_blog();
 		}
-		delete_site_option( 'rsa_network_settings' );
+		delete_site_option( 'rsa_default_retention_days' );
+		delete_site_option( 'rsa_network_disable_tracker' );
 	} else {
 		RSA_DB::maybe_remove_data();
 	}
@@ -218,18 +213,12 @@ function rsa_init() {
 
 	// Boot core
 	RSA_Tracker::init();
+	RSA_Consent_Banner::init();
 	RSA_Admin::init();
 	RSA_Email::init();
 
-	// WooCommerce integration (premium feature — gated via Freemius)
-	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {
-		if ( class_exists( 'WooCommerce' ) ) {
-			if ( ! class_exists( 'RSA_Woocommerce' ) ) {
-				require_once RSA_DIR . 'includes/class-woocommerce.php';
-			}
-			RSA_Woocommerce::init();
-		}
-	}
+	// WooCommerce analytics requires the WooCommerce plugin to be active.
+	// Event ingestion happens via the REST API; no hooks are registered here.
 
 	// Boot premium
 	if ( function_exists( 'rs_fs' ) && rs_fs()->can_use_premium_code__premium_only() ) {

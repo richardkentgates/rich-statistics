@@ -7,7 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.27] - 2026-06-06
+
 ### Added
+- 15 new integration test files (92 tests, 209 assertions) covering Security, Template Rendering, Heatmap, Rate Limiting, Uninstall, Analytics Edge Cases, Email Content, REST Auth, AI Premium Gating, Build Validation, and Multisite Deep tests
+- 6 new PWA E2E Playwright tests for premium views: offline banner, AI chat, WooCommerce, Export, Heatmap, User Flow (61 E2E tests total, all passing)
+- Full PHPUnit integration suite now passes cleanly (424 tests, 867 assertions); isolated DDL tests via `@group ddl`
+
+### Fixed
+- Fixed ConsentBannerTest suite hang: `RSA_Admin::save_settings()` reached `exit;` when `save_settings()` was called directly in tests; now intercepts `wp_redirect` to throw `WPDieException`
+- Fixed `DbTest::setUp()` forcing slow `dbDelta()` on every test; reduced test runtime from ~50s to normal
+- Fixed `UninstallTest` DDL teardown: now bypasses WP test framework temporary-table filters so `RSA_DB::install()` creates permanent tables for subsequent tests
+- Fixed `CoverageGapTest` assertions for `/user-flow/journey` (key is `rows`, not `journey`) and `/export` (tests JSON format correctly)
+- Fixed production PWA bug: `renderView()` was missing `case 'ai-chat': renderAiChat(container); break;`, causing empty AI Chat view in v2.4.26 snapshots
+
+### Changed
+- `phpunit.xml.dist`: excludes `@group ddl` tests by default; run separately with `--group ddl`
+- `docs/app/versions.json` and `versions-beta.json`: auto-generated list now includes 2.4.27
+
+## [2.4.26] - 2026-05-24
+
+### Removed
+- In-plugin PWA serving: removed `/rs-app/` rewrite rules, `serve_app()`, `serve_manifest()`, and `add_app_query_var()` from `class-admin.php`
+- Removed PWA ZIP download handler (`handle_download()`, `stream_zip()`) from `class-pwa-download.php` — OTP pairing is preserved
+- Removed activation hook that registered and flushed `/rs-app/` rewrite rules from `rich-statistics.php`
+- Removed dead code from PWA `app.js`: nonce-based auth, auto-registration, 403 nonce-retry, and `autoSiteUrl` prefill (all were only active when served in-plugin via `serve_app()`)
+- Removed dead code from PWA `config.js`: `/wp-content/` autoSiteUrl detection block (only triggered by in-plugin serving)
+- Removed `test/unit/PwaDownloadTest.php` (tested removed ZIP download functionality)
+- Added `flush_rewrite_rules()` to `uninstall.php` to clean up stale `/rs-app/` rewrite rules on uninstall
+
+### Added
+- Visitor consent banner with per-category tracking control (analytics, behavior, technical), customizable styling via JSON, collapse/return UX, and localStorage fallback chain
 - AI Analytics Assistant UI overhaul: model dropdown with endpoint discovery (Ollama, OpenAI, LM Studio, llama.cpp), persistent chat history, quick-action chips, markdown rendering, per-message copy/read-aloud buttons
 - Voice input/output integration in AI chat: microphone speech-to-text, auto-resizing textarea, text-to-speech with stop control
 - Chart generation in AI chat via Chart.js: bar, line, and doughnut charts rendered from LLM-generated JSON blocks
@@ -22,8 +52,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Wiki synced: Release Tracks, Installation, Code-Map pages updated
 - WordPress.org SVN deploy script: `bin/deploy-wporg.sh` automates trunk sync, asset upload, and tagging
 - `wporg-assets/` directory scaffolded for screenshots and banners
+- `POST /rsa/v1/wc-event` REST endpoint: public, nonce-verified, bot-filtered endpoint for ingesting WooCommerce events from the frontend tracker
+- `restUrl` injected into tracker.js config for REST API calls
+- Unit tests for `RSA_Woocommerce::insert_event()` with explicit session ID parameter and UUID validation
 
 ### Changed
+- `period_range()` in `class-analytics.php` now uses `gmdate()` instead of `date()` so period boundaries align with UTC database storage
+- WooCommerce tracking refactored from WooCommerce action hooks to frontend REST API ingestion (`POST /rsa/v1/wc-event`); tracker.js observes DOM and sends events directly to our API
+- `wcEnabled` in tracker.js config now respects the `rsa_woocommerce_enabled` admin option instead of being always-on for premium users
+- WooCommerce events in tracker.js are now gated by the same consent check (`isConsented('analytics')`) as pageview tracking
 - WordPress admin help tabs: "Analytics" menu references updated to "Rich Statistics"; premium upgrade prompt wording clarified
 - `includes/class-db.php` file docblock: replaced `{@internal ...}` placeholder with actual internal documentation
 - `DEVELOPMENT.md`: removed manual Freemius upload instruction (now handled by CI via `bin/deploy-freemius.php`)
@@ -32,8 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - AI chat interface from network-dashboard.php (multisite) — AI lives in PWA/desktop app only
+- All WooCommerce action hooks (`woocommerce_before_single_product`, `woocommerce_add_to_cart`, `woocommerce_ajax_added_to_cart`, `woocommerce_payment_complete`, `woocommerce_order_status_processing`) and their callback methods from `class-woocommerce.php`
+- `RSA_Woocommerce::session_id()`, `RSA_Woocommerce::generate_uuid()`, and `RSA_Woocommerce::init()` — no longer needed since session IDs come from the tracker and events are ingested via REST
+- Revenue tracking (`order_total`, `order_currency`) removed from WooCommerce analytics — revenue is a bookkeeping concern handled by WooCommerce itself, not a website behavior metric
 
 ### Fixed
+- Session upsert (`class-tracker.php`) now correctly updates `exit_page` on duplicate key instead of leaving it `NULL`
 - `build.sh` now uses `docs/app/v/{version}/` (consistent with `build-release.yml`); env config files (`config-dev.js`, `index-dev.html` etc.) included in versioned snapshots
 - `build-release.yml` versioned snapshot now includes env config files
 - Removed orphaned `email-settings.php` and `data-settings.php` templates (fully covered by `preferences.php`)

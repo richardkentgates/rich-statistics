@@ -250,8 +250,6 @@ class RSA_Email {
 		if ( ! $wc ) {
 			return '';
 		}
-		$currency = get_woocommerce_currency_symbol();
-		$revenue  = $currency . number_format( $wc['revenue_total'], 2 );
 		$top_rows = '';
 		foreach ( array_slice( $wc['top_products_viewed'], 0, 5 ) as $i => $p ) {
 			$bg        = $i % 2 === 0 ? '#f8fafc' : '#ffffff';
@@ -264,15 +262,11 @@ class RSA_Email {
 			. '<h2 style="margin:0 0 16px;font-size:16px;font-weight:700;color:#1e293b;">WooCommerce</h2>'
 			. '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">'
 			. '<tr>'
-			. '<td width="33%" style="text-align:center;padding:0 8px;">'
+			. '<td width="50%" style="text-align:center;padding:0 8px;">'
 			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Orders</div>'
 			. '<div style="font-size:24px;font-weight:800;color:#6366f1;">' . esc_html( number_format( $wc['orders_count'] ) ) . '</div>'
 			. '</td>'
-			. '<td width="33%" style="text-align:center;padding:0 8px;border-left:1px solid #e2e8f0;">'
-			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Revenue</div>'
-			. '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( $revenue ) . '</div>'
-			. '</td>'
-			. '<td width="33%" style="text-align:center;padding:0 8px;border-left:1px solid #e2e8f0;">'
+			. '<td width="50%" style="text-align:center;padding:0 8px;border-left:1px solid #e2e8f0;">'
 			. '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:6px;">Add to Cart</div>'
 			. '<div style="font-size:24px;font-weight:800;color:#1e293b;">' . esc_html( number_format( $wc['funnel']['cart'] ) ) . '</div>'
 			. '</td>'

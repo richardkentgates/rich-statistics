@@ -83,6 +83,7 @@ Because no PII is collected and sessions are identified only with a `sessionStor
 | WP-CLI | `wp rich-stats overview/top_pages/audience/export/purge/status` |
 | Multisite | Per-site tables, network admin dashboard with cross-site AI, network-wide disable switch |
 | Privacy by design | `sessionStorage` UUID only; no cookies, no third-party requests. IP addresses never read or stored for visitor tracking. Use `[rich_statistics_privacy_disclosure]` shortcode for full regulatory mapping. |
+| Consent banner (optional) | GDPR-compliant visitor consent banner with per-category tracking control. Off by default — tracking starts immediately. When enabled, visitors can opt out of analytics, campaigns, click tracking, or commerce tracking independently. |
 
 ## Desktop Apps
 

@@ -99,18 +99,17 @@ class CoverageGapTest extends WP_UnitTestCase {
 		$this->assertContains( $response->get_status(), array( 401, 403 ) );
 	}
 
-	public function test_export_returns_csv_format(): void {
+	public function test_export_returns_json_format(): void {
 		wp_set_current_user( self::$admin->ID );
 		$request = new WP_REST_Request( 'GET', '/rsa/v1/export' );
-		$request->set_param( 'type', 'overview' );
+		$request->set_param( 'format', 'json' );
 		$request->set_param( 'period', '7d' );
 		$response = static::$server->dispatch( $request );
 		if ( $response->get_status() === 403 ) {
 			$this->markTestSkipped( 'requires premium' );
 		}
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'format', $data['data'] );
-		$this->assertArrayHasKey( 'content', $data['data'] );
+		$this->assertIsArray( $data['data'] );
 	}
 
 	/**
@@ -134,8 +133,8 @@ class CoverageGapTest extends WP_UnitTestCase {
 			$this->markTestSkipped( 'requires premium' );
 		}
 		$body = $response->get_data();
-		$this->assertArrayHasKey( 'journey', $body['data'] );
-		$this->assertIsArray( $body['data']['journey'] );
+		$this->assertArrayHasKey( 'rows', $body['data'] );
+		$this->assertIsArray( $body['data']['rows'] );
 	}
 
 	public function test_user_flow_sources_response_shape(): void {

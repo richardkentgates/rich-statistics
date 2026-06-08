@@ -19,5 +19,8 @@ require_once plugin_dir_path( __FILE__ ) . 'rich-statistics.php';
 wp_clear_scheduled_hook( 'rsa_daily_maintenance' );
 wp_clear_scheduled_hook( 'rsa_send_digest' );
 
+// Flush rewrite rules to remove stale rs-app rules left by older versions.
+flush_rewrite_rules();
+
 // Remove data (tables, options) using the existing DB class.
 RSA_DB::maybe_remove_data();

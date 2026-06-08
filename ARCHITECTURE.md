@@ -51,7 +51,7 @@ rich-statistics/
 │   ├── class-click-tracking.php  Premium click event handler + admin page
 │   ├── class-heatmap.php     Premium heatmap aggregation + display
 │   ├── class-email.php       Scheduled HTML digest emails
-│   ├── class-pwa-download.php   Serves the PWA ZIP download; OTP generation
+│   ├── class-pwa-download.php   OTP generation for app auth
 │   └── class-woocommerce.php    WooCommerce analytics: event recording (product views, add-to-cart, orders), path normalisation for WC URLs, dashboard data queries
 ├── cli/
 │   └── class-cli.php         WP-CLI command group: wp rich-stats *

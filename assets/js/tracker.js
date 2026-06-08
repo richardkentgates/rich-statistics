@@ -150,6 +150,181 @@
 	var referrer   = document.referrer || '';
 
 	// ----------------------------------------------------------------
+	// Consent management — per-category tracking control
+	// Fallback chain: localStorage → sessionStorage → in-memory
+	// ----------------------------------------------------------------
+	var CONSENT_KEY = 'rsa_consent';
+	var consentState = null;
+
+	function storageGet( key ) {
+		try { return localStorage.getItem( key ); } catch ( e ) {}
+		try { return sessionStorage.getItem( key ); } catch ( e ) {}
+		return null;
+	}
+
+	function storageSet( key, value ) {
+		try { localStorage.setItem( key, value ); return; } catch ( e ) {}
+		try { sessionStorage.setItem( key, value ); return; } catch ( e ) {}
+	}
+
+	function loadConsent() {
+		var raw = storageGet( CONSENT_KEY );
+		if ( raw ) {
+			try {
+				consentState = JSON.parse( raw );
+				return;
+			} catch ( e ) {}
+		}
+		consentState = null;
+	}
+
+	function saveConsent() {
+		storageSet( CONSENT_KEY, JSON.stringify( consentState ) );
+	}
+
+	function isConsented( category ) {
+		if ( ! consentState ) return false;
+		return consentState[ category ] === true;
+	}
+
+	loadConsent();
+
+	// ----------------------------------------------------------------
+	// Consent state handling (Accept / Reject / Customize)
+	// ----------------------------------------------------------------
+	var bannerHandled = false;
+
+	function handleConsentChoice( categories ) {
+		if ( bannerHandled ) return;
+		bannerHandled = true;
+		consentState = categories;
+		saveConsent();
+
+		if ( isConsented( 'analytics' ) ) {
+			computeTimeOnPage();
+			sendEvent();
+		}
+	}
+
+	// ----------------------------------------------------------------
+	// Banner interaction (collapse/return only — purely visual)
+	// ----------------------------------------------------------------
+	function showBanner() {
+		var banner = document.getElementById( 'rsa-consent-banner' );
+		var returnBtn = document.getElementById( 'rsa-consent-return-btn' );
+		if ( ! banner ) return;
+
+		var collapseBtn = banner.querySelector( '.rsa-collapse-btn' );
+		if ( collapseBtn ) {
+			collapseBtn.addEventListener( 'click', function () {
+				banner.classList.add( 'rsa-collapsed' );
+				if ( returnBtn ) returnBtn.classList.add( 'rsa-visible' );
+			} );
+		}
+
+		if ( returnBtn ) {
+			returnBtn.addEventListener( 'click', function () {
+				banner.classList.remove( 'rsa-collapsed' );
+				returnBtn.classList.remove( 'rsa-visible' );
+			} );
+		}
+
+		var acceptBtn = banner.querySelector( '.rsa-accept-btn' );
+		if ( acceptBtn ) {
+			acceptBtn.addEventListener( 'click', function () {
+				handleConsentChoice( JSON.parse( JSON.stringify( DEFAULT_CATEGORIES ) ) );
+			} );
+		}
+
+		var rejectBtn = banner.querySelector( '.rsa-reject-btn' );
+		if ( rejectBtn ) {
+			rejectBtn.addEventListener( 'click', function () {
+				handleConsentChoice( { analytics: false, behavior: false, technical: false } );
+			} );
+		}
+
+		var customizeBtn = banner.querySelector( '.rsa-customize-btn' );
+		if ( customizeBtn ) {
+			customizeBtn.addEventListener( 'click', function () {
+				var existing = banner.querySelector( '.rsa-category-list' );
+				if ( existing ) {
+					var choices = {};
+					var checkboxes = banner.querySelectorAll( '.rsa-category-check' );
+					checkboxes.forEach( function ( cb ) {
+						choices[ cb.dataset.category ] = cb.checked;
+					} );
+					handleConsentChoice( choices );
+					return;
+				}
+
+				var list = document.createElement( 'div' );
+				list.className = 'rsa-category-list';
+				list.style.cssText = 'margin:8px 0;font-size:13px;';
+
+				var labels = { analytics: 'Analytics', behavior: 'Behavior', technical: 'Technical' };
+				var cats = [ 'analytics', 'behavior', 'technical' ];
+				cats.forEach( function ( cat ) {
+					var label = document.createElement( 'label' );
+					label.style.cssText = 'display:block;margin:4px 0;cursor:pointer;';
+					var cb = document.createElement( 'input' );
+					cb.type = 'checkbox';
+					cb.className = 'rsa-category-check';
+					cb.dataset.category = cat;
+					cb.checked = DEFAULT_CATEGORIES[ cat ];
+					label.appendChild( cb );
+					label.appendChild( document.createTextNode( ' ' + labels[ cat ] ) );
+					list.appendChild( label );
+				} );
+
+				customizeBtn.textContent = 'Save';
+				banner.insertBefore( list, banner.querySelector( '.rsa-banner-actions' ) );
+			} );
+		}
+	}
+
+	// ----------------------------------------------------------------
+	// Persistent privacy trigger — always visible for ongoing access
+	// ----------------------------------------------------------------
+	function bindPrivacyTrigger() {
+		var triggerBtn = document.getElementById( 'rsa-consent-trigger-btn' );
+		if ( ! triggerBtn ) return;
+
+		triggerBtn.addEventListener( 'click', function () {
+			var banner = document.getElementById( 'rsa-consent-banner' );
+			var returnBtn = document.getElementById( 'rsa-consent-return-btn' );
+			if ( banner ) {
+				banner.classList.remove( 'rsa-collapsed' );
+				if ( returnBtn ) returnBtn.classList.remove( 'rsa-visible' );
+			}
+		} );
+	}
+
+	// ----------------------------------------------------------------
+	// Auto-consent — pre-check all categories on first pageload only
+	// Non-auto: all categories default to false
+	// ----------------------------------------------------------------
+	var consentAutoEnabled = config.consentAuto === 1;
+
+	var DEFAULT_CATEGORIES = consentAutoEnabled
+		? { analytics: true, behavior: true, technical: true }
+		: { analytics: false, behavior: false, technical: false };
+
+	if ( ! consentState ) {
+		consentState = JSON.parse( JSON.stringify( DEFAULT_CATEGORIES ) );
+		saveConsent();
+	}
+
+	// ----------------------------------------------------------------
+	// Banner display (independent — always renders when admin enables it)
+	// ----------------------------------------------------------------
+	var consentBannerEnabled = config.consentBanner === 1;
+
+	if ( consentBannerEnabled ) {
+		showBanner();
+		bindPrivacyTrigger();
+	}
+
+	// ----------------------------------------------------------------
 	// Skip tracking for error redirects (e.g. Freemius license errors)
 	// ----------------------------------------------------------------
 	if ( window.location.search.indexOf( 'error=' ) !== -1 ) {
@@ -252,6 +427,12 @@
 		if ( sent ) {
 			return;
 		}
+
+		if ( consentBannerEnabled && ! isConsented( 'analytics' ) ) {
+			sent = true;
+			return;
+		}
+
 		sent = true;
 
 		// Add NO_HUMAN_EVENT flag if we never saw a human signal
@@ -327,7 +508,7 @@
 	// Injected via RSA.premium.clickEnabled flag.
 	// Attached via event delegation on document to catch dynamic elements.
 	// ----------------------------------------------------------------
-	if ( config.premium && config.premium.clickEnabled ) {
+	if ( config.premium && config.premium.clickEnabled && isConsented( 'behavior' ) ) {
 
 		var protocols    = config.protocols || {};
 		var trackIds     = config.premium.trackIds     || [];
@@ -478,6 +659,93 @@
 				break; // Only track the first matching ancestor
 			}
 		}, { passive: true } );
+	}
+
+	// ----------------------------------------------------------------
+	// WooCommerce event tracking — observes DOM, sends to our REST API
+	// ----------------------------------------------------------------
+	if ( config.premium && config.premium.wcEnabled ) {
+
+		function sendWcEvent( payload ) {
+			if ( consentBannerEnabled && ! isConsented( 'analytics' ) ) {
+				return;
+			}
+			payload.session_id = sessionId;
+			payload.nonce      = config.nonce;
+
+			var body = Object.keys( payload ).map( function ( k ) {
+				return encodeURIComponent( k ) + '=' + encodeURIComponent( payload[ k ] );
+			} ).join( '&' );
+
+			if ( navigator.sendBeacon && config.restUrl ) {
+				navigator.sendBeacon( config.restUrl + 'wc-event', new Blob( [ body ], { type: 'application/x-www-form-urlencoded' } ) );
+			} else if ( config.restUrl ) {
+				$.post( config.restUrl + 'wc-event', payload );
+			}
+		}
+
+		// Product view — single product page
+		var productContainer = document.querySelector( '.product.type-product' );
+		if ( productContainer ) {
+			var pvId = productContainer.dataset.productId || '';
+			if ( ! pvId ) {
+				var productIdInput = document.querySelector( 'input[name="product_id"]' );
+				if ( productIdInput ) {
+					pvId = productIdInput.value;
+				}
+			}
+			var pvName = document.querySelector( '.product_title' );
+			if ( pvId ) {
+				sendWcEvent( {
+					event_type: 'wc_product_view',
+					product_id: pvId,
+					product_name: pvName ? pvName.textContent.trim().substring( 0, 255 ) : '',
+				} );
+			}
+		}
+
+		// Add to cart — click delegation
+		document.addEventListener( 'click', function ( e ) {
+			var btn = e.target.closest( '.add_to_cart_button, .single_add_to_cart_button, button[name="add-to-cart"]' );
+			if ( ! btn ) {
+				return;
+			}
+
+			var acId  = btn.dataset.productId || '';
+			var acName = '';
+			var acQty = 1;
+
+			if ( ! acId && btn.classList.contains( 'single_add_to_cart_button' ) ) {
+				var form = btn.closest( 'form.cart' );
+				if ( form ) {
+					var idInput = form.querySelector( 'input[name="product_id"]' );
+					var qtyInput = form.querySelector( 'input[name="quantity"]' );
+					acId  = idInput ? idInput.value : '';
+					acQty = qtyInput ? parseInt( qtyInput.value, 10 ) || 1 : 1;
+				}
+			}
+
+			if ( btn.dataset.productName ) {
+				acName = btn.dataset.productName;
+			}
+
+			if ( acId ) {
+				sendWcEvent( {
+					event_type: 'wc_add_to_cart',
+					product_id: acId,
+					product_name: acName.substring( 0, 255 ),
+					quantity: acQty,
+				} );
+			}
+		} );
+
+		// Order complete — thank-you page
+		var orderContainer = document.querySelector( '.woocommerce-order' );
+		if ( orderContainer ) {
+			sendWcEvent( {
+				event_type: 'wc_order_complete',
+			} );
+		}
 	}
 
 	/* </fs_premium_only> */

@@ -8,11 +8,7 @@ class DbTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		// Delete options so install() seeds fresh defaults (live site may have different values).
-		delete_option( 'rsa_retention_days' );
-		delete_option( 'rsa_bot_score_threshold' );
-		delete_option( 'rsa_email_digest_enabled' );
-		delete_option( RSA_DB::OPTION_KEY );
+		// Ensure tables and defaults exist (no-op when bootstrap already installed).
 		RSA_DB::install();
 	}
 
@@ -158,6 +154,7 @@ class DbTest extends WP_UnitTestCase {
 		);
 		$before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::install();
 
 		$after = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -189,7 +186,7 @@ class DbTest extends WP_UnitTestCase {
 	public function test_wc_events_table_has_all_expected_columns(): void {
 		global $wpdb;
 		$columns  = $wpdb->get_col( "SHOW COLUMNS FROM `{$wpdb->prefix}rsa_wc_events`", 0 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$expected = array( 'id', 'session_id', 'event_type', 'product_id', 'product_name', 'product_sku', 'quantity', 'order_total', 'order_currency', 'created_at' );
+		$expected = array( 'id', 'session_id', 'event_type', 'product_id', 'product_name', 'product_sku', 'quantity', 'created_at' );
 		foreach ( $expected as $col ) {
 			$this->assertContains( $col, $columns, "Missing column {$col} in rsa_wc_events" );
 		}
@@ -215,6 +212,7 @@ class DbTest extends WP_UnitTestCase {
 
 	public function test_install_preserves_existing_options(): void {
 		update_option( 'rsa_retention_days', 30 );
+		delete_option( RSA_DB::OPTION_KEY );
 		RSA_DB::install();
 		$this->assertSame( 30, (int) get_option( 'rsa_retention_days' ), 'install() should not overwrite existing option values' );
 	}

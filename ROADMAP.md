@@ -160,7 +160,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | M2 | CI/CD | Chart.js SRI hash verification disabled | ✅ Fixed — enforced via `docs/app/chart.sri` |
 | M25 | Server | Dev/test webhooks don't validate Content-Type | ✅ Fixed — matches production behavior |
 | P2.1 | Server | Install systemd deploy daemon | ✅ Installed — active on prod, dev, test. Old cron removed. |
-| P2.2 | PWA | Backfill missing version snapshots | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26 (17 total) |
+| P2.2 | PWA | Backfill missing version snapshots | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27 (17 total) |
 | P2.3 | Server | Clean up old Windows binary names | ✅ Removed old `Rich Statistics_*.exe` from prod `dist/` |
 | P2.4 | CI/CD | Post-deploy smoke tests | ✅ Added to build-develop, build-test, build-release |
 | P2.5 | CI/CD | `build-release.yml` tag/main divergence | ✅ Fixed — `checkout-ref: main` in job-build-desktop |
@@ -389,9 +389,9 @@ WordPress Settings (checkbox rsa_beta_channel)
 
 | Env | Server | Web Root | Last Deployed | versions.json | versions-beta.json |
 |-----|--------|----------|---------------|---------------|-------------------|
-| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.26 (`main`) | ✅ 17 entries | ✅ Present |
-| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.26 (`develop`) | ✅ 17 entries | ✅ Present |
-| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.26 (`test`) | ✅ 17 entries | ✅ Present |
+| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.27 (`main`) | ✅ 17 entries | ✅ Present |
+| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.27 (`develop`) | ✅ 17 entries | ✅ Present |
+| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.27 (`test`) | ✅ 17 entries | ✅ Present |
 | **Test (Plugin)** | `34.56.56.233` | `/srv/www/wordpress` | WordPress integration tests | N/A | N/A |
 
 All 3 PWA environments run on the same server (`104.197.231.120`), sharing the same wildcard SSL cert.
@@ -436,14 +436,14 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 3. `PUT plugins/{id}/tags/{tag_id}.json` — sets `release_mode` to the specified value
 
 Supported `release_mode` values:
-- `released` — stable tags (`v2.4.26`)
-- `beta` — beta tags (`v2.4.26-beta.1`) and test branch builds
+- `released` — stable tags (`v2.4.27`)
+- `beta` — beta tags (`v2.4.27-beta.1`) and test branch builds
 
 **Manual usage:**
 ```bash
 php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 # Example:
-php bin/deploy-freemius.php rich-statistics-2.4.26.zip 2.4.26 released
+php bin/deploy-freemius.php rich-statistics-2.4.27.zip 2.4.27 released
 ```
 
 ### 9.6 Promotion Workflow Enforcement
@@ -548,7 +548,7 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | # | Issue | Resolution |
 |---|-------|------------|
 | 1 | Deploy mechanism undocumented | ✅ Systemd daemon installed on all 3 servers; old cron removed. `journalctl -u rsa-deploy-daemon@{prod,dev,test}` for logs. |
-| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.26. 17 versions now present from 2.4.9 → 2.4.26. (2.4.20 was never released as a tag.) |
+| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27. 17 versions now present from 2.4.9 → 2.4.27. (2.4.20 was never released as a tag.) |
 | 3 | Windows binary naming inconsistency | ✅ Old `Rich Statistics_*.exe` files removed from prod `dist/`. Only standardized `rich-statistics-windows.exe` remains. |
 | 4 | No post-deploy verification | ✅ Smoke test added to `build-develop.yml`, `build-test.yml`, and `build-release.yml` — verifies HTTP 200 after webhook ping. |
 | 6 | `build-release.yml` tag vs. main divergence | ✅ `job-build-desktop.yml` accepts `checkout-ref: main`; desktop build uses exact snapshots committed by release job. |
@@ -566,3 +566,504 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | Priority | Action | Impact |
 |----------|--------|--------|
 | **P3** | Replace placeholder screenshots in `wporg-assets/` with real images | Unblocks WordPress.org SVN submission (`bin/deploy-wporg.sh` ready) |
+
+---
+
+## 11. Remove In-Plugin PWA Serving (Planned Task)
+
+> **Status:** Plan corrected — corrections applied 2026-06-06. Awaiting user approval before implementation.
+> **Last updated:** 2026-06-06
+
+### 11.1 Goal
+
+Remove the WordPress-plugin-embedded PWA serving mechanism (`/rs-app/` rewrite + file serving) while preserving the external app server (`app.richstatistics.com`), the Tauri desktop app, and all WordPress admin dashboard interfaces.
+
+### 11.2 Corrected Architecture Understanding
+
+The plugin currently has **two entirely separate mechanisms** that happen to read from the same source directory (`docs/app/`):
+
+**Mechanism A — In-Plugin PWA (TO BE REMOVED):**
+- `includes/class-admin.php` registers an Apache rewrite rule `rs-app/?$` and a query var `rsa_app`
+- On activation it flushes rewrite rules
+- When `?rsa_app=1` is set, `serve_app()` reads `docs/app/index.html` from disk and serves it as a standalone page inside the WordPress site
+- `serve_manifest()` serves `docs/app/manifest.json`
+- This is what makes `https://yoursite.com/rs-app/` load the PWA from within the plugin
+
+**Mechanism B — External App Server (PRESERVED):**
+- The external server (`app.richstatistics.com`, `dev.`, `test.`) runs `bin/server-update-webapp.sh`
+- That script does a `git sparse-checkout` of `docs/app/` directly from the **GitHub repository** (not from any WordPress site)
+- The files are served at the external subdomain
+- CI workflows (`build-release.yml`, `build-develop.yml`, `build-test.yml`) trigger this via webhook
+
+**Mechanism C — Desktop App Bundling (PRESERVED):**
+- `src-tauri/tauri.conf.json` has `frontendDist` pointing to `../docs/app`
+- Tauri bundles those files into the `.deb`/`.exe` at CI build time
+- The desktop app never reads PWA files from a WordPress site
+
+`docs/app/` must remain in the repository because it is the **single source of truth** for Mechanism B and Mechanism C. Only Mechanism A is being removed.
+
+### 11.3 What Must Be Removed
+
+**PHP (WordPress plugin):**
+
+| File | Method / Code | Reason |
+|------|---------------|--------|
+| `includes/class-admin.php` | `register_app_rewrite()` | Registers `rs-app/?$` rewrite rule + `rsa_app` query var |
+| `includes/class-admin.php` | `serve_app()` | Serves `docs/app/index.html` when `?rsa_app=1` |
+| `includes/class-admin.php` | `serve_manifest()` | Serves `docs/app/manifest.json` |
+| `includes/class-admin.php` | `add_app_query_var()` | Adds `rsa_app`/`rsa_manifest` query vars |
+| `includes/class-admin.php` | Init hooks for rewrite/serving (lines 47-51) | Registers above handlers on `init`, `query_vars`, `template_redirect` |
+| `includes/class-pwa-download.php` | `handle_download()` + `stream_zip()` + AJAX hook | ZIP download for manual PWA hosting; obsolete |
+| `includes/class-pwa-download.php` | Docblock references to ZIP download | References to `rsa_download_pwa` and generic ZIP |
+| `rich-statistics.php` | Activation hook anonymous function (lines 172-178) | Calls `register_app_rewrite()` + `flush_rewrite_rules()` — entire hook removed |
+| `uninstall.php` | Missing rewrite flush (add `flush_rewrite_rules()`) | Stale `rs-app` rules persist in `wp_options` without explicit flush |
+
+> `RSA_Pwa_Download` is **NOT** removed. The OTP site-pairing handler (`handle_generate_otp`) is still required. Only the ZIP download method and its AJAX hook are removed.
+
+**JavaScript (PWA — authoritative copies only, not versioned snapshots):**
+
+| File | Dead code | Reason |
+|------|-----------|--------|
+| `docs/app/config.js` | `/wp-content/` autoSiteUrl detection block (lines 17-23) | Only triggered when PWA was served in-plugin; never fires on external server |
+| `docs/app/config.js` | Comment about "served from within the plugin directory" (lines 3-7) | In-plugin context no longer exists |
+| `docs/app/app.js` | Auto-registration block (lines 122-147) | `autoSiteUrl + autoNonce` were only set by `serve_app()`; dead code |
+| `docs/app/app.js` | `nonceAuth` variable and its use in init conditional (line 58) | `nonce` was only set by `serve_app()`; dead code |
+| `docs/app/app.js` | `RSA_CONFIG.isPremium` + `RSA_CONFIG.upgradeUrl` loading (lines 53-56) | Only set by `serve_app()` injection; dead code |
+| `docs/app/app.js` | `getAuthHeaders()` nonce branch (lines 367-371) | `nonce + autoUrl` never set; always falls through to Basic auth |
+| `docs/app/app.js` | 403 nonce-retry path (lines 402-419) | `nonce + autoUrl` never set; dead code |
+| `docs/app/app.js` | Add-site prefill from `autoSiteUrl` (lines 790-797) | `autoSiteUrl` never set; dead code |
+| `docs/app/app.js` | Comment referencing `/rs-app/` and `serve_app()` (lines 122-125) | In-plugin context no longer exists |
+| `docs/app/v/2.4.27/stable/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.27/beta/app.js` | Same dead code as `docs/app/app.js` | Must match |
+| `docs/app/v/2.4.27/stable/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.27/stable/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/stable/config-test.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/beta/config.js` | Same dead code as `docs/app/config.js` | Must match |
+| `docs/app/v/2.4.27/beta/config-dev.js` | Same `/wp-content/` detection block | Must match |
+| `docs/app/v/2.4.27/beta/config-test.js` | Same `/wp-content/` detection block | Must match |
+
+**Versioned snapshots `docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`:** Do NOT modify. These correspond to already-released plugin versions and are historical artifacts.
+
+**Documentation and metadata:**
+
+| File | What to update |
+|------|---------------|
+| `ARCHITECTURE.md` | Update `class-pwa-download.php` description — remove "Serves PWA ZIP download" |
+| `.github/copilot-instructions.md` | Update `class-pwa-download.php` description |
+| `includes/class-pwa-download.php` | Update file-level docblock — remove ZIP download references |
+| `languages/rich-statistics.pot` | Regenerate after all PHP changes |
+
+### 11.4 What Must Be Preserved
+
+| Component | Why |
+|-----------|-----|
+| `docs/app/` directory | Source for external app server deploy AND desktop app bundling |
+| All CI workflows (`build-*.yml`) | Already deploy to external servers correctly; no changes needed |
+| `bin/server-update-webapp.sh` | External server deploy script; untouched |
+| `bin/server-webhook.php` | Webhook handler for CI; untouched |
+| All 17 admin templates (`templates/admin/*.php`) | Native WordPress dashboard; completely separate from PWA |
+| REST API (`rsa/v1`) | Used by external PWA/desktop app |
+| OTP pairing / App Code flow | Used to connect external app to WordPress via REST API |
+| Desktop app download instructions (`templates/admin/install.php`) | Links to external URLs |
+| Tauri desktop app (`src-tauri/`) | Bundles `docs/app/` from repo at build time |
+
+### 11.5 Step-by-Step Implementation Plan
+
+**Phase A — PHP (WordPress plugin)**
+
+1. **Edit `includes/class-admin.php`**
+   - Remove `register_app_rewrite()` entirely
+   - Remove `serve_app()` entirely
+   - Remove `serve_manifest()` entirely
+   - Remove `add_app_query_var()` entirely
+   - Remove the `add_action( 'init', ... )`, `add_filter( 'query_vars', ... )`, and `add_action( 'template_redirect', ... )` hooks for PWA serving (lines 47-51)
+
+2. **Edit `includes/class-pwa-download.php`**
+   - Remove `handle_download()` method
+   - Remove `stream_zip()` method
+   - Remove `add_action( 'wp_ajax_rsa_download_pwa', ... )` from `init()`
+   - Update file-level docblock — remove ZIP download references (lines 4-8, 25)
+   - **Do NOT remove `handle_generate_otp()`, `generate_otp()`, or `wp_ajax_rsa_generate_otp`** — OTP site-pairing is preserved
+   - **Do NOT delete the class file**
+
+3. **Edit `rich-statistics.php`**
+   - Remove the activation hook anonymous function (lines 172-178) that calls `RSA_Admin::register_app_rewrite()` and `flush_rewrite_rules()`
+   - **Do NOT remove** `RSA_Pwa_Download::init()` (line 246) — OTP handler is still needed
+
+4. **Edit `uninstall.php`**
+   - Add `flush_rewrite_rules()` call to remove stale `rs-app` rewrite rules from `wp_options`
+
+5. **Delete `tests/unit/PwaDownloadTest.php`**
+   - Tests `handle_download`, `stream_zip`, and class init — 3 of 10 tests reference removed methods; the file name is a misnomer after ZIP download removal. Delete entirely.
+
+6. **Update `includes/class-pwa-download.php` docblock**
+   - Remove references to `rsa_download_pwa` and "generic app ZIP" from file header
+
+7. **Update documentation files**
+   - `ARCHITECTURE.md` — Update `class-pwa-download.php` description
+   - `.github/copilot-instructions.md` — Update `class-pwa-download.php` description
+
+8. **Regenerate `languages/rich-statistics.pot`**
+   - Run `composer make-pot` or equivalent after all PHP changes
+
+9. **Run full test suite**
+   - `composer test` (unit + integration)
+   - `composer phpcs`
+   - Verify zero failures
+
+**Phase B — JavaScript (PWA — authoritative copies only)**
+
+10. **Edit `docs/app/config.js`**
+    - Remove the `/wp-content/` detection block (lines 17-23) — `autoSiteUrl` is never set when served externally
+    - Update file comment (lines 3-7) — remove "When served from within the plugin directory" language
+
+11. **Edit `docs/app/app.js`**
+    - Remove `nonceAuth` variable and its use in the init conditional (line 58) — nonce is never set from external
+    - Remove `RSA_CONFIG.isPremium` and `RSA_CONFIG.upgradeUrl` loading (lines 53-56) — only set by `serve_app()`
+    - Remove the entire auto-registration block (lines 122-147) — `autoSiteUrl + autoNonce` never set externally
+    - Simplify `getAuthHeaders()` (lines 366-376) — remove the nonce branch; always use Application Password Basic auth
+    - Remove the 403 nonce-retry path in `apiGet()` (lines 402-419) — nonce refresh is never triggered
+    - Remove `autoSiteUrl` prefill in `showAddSiteOverlay()` (lines 790-797) — `autoSiteUrl` never set
+    - Update all comments referencing `/rs-app/`, `serve_app()`, or in-plugin context
+
+12. **Copy to versioned snapshots** (latest version only)
+    - `docs/app/v/2.4.27/stable/app.js` and `beta/app.js` — same changes as step 11
+    - `docs/app/v/2.4.27/stable/config.js`, `config-dev.js`, `config-test.js` and `beta/` equivalents — same changes as step 10
+
+**Phase C — Housekeeping**
+
+13. **Update `CHANGELOG.md`**
+    - Add entry under `[Unreleased]` noting the removal of in-plugin PWA serving and all dead code paths
+
+14. **Commit and push to `develop`**
+    - Follow branch structure: feature branch → develop → test → main
+
+### 11.6 Test Impact
+
+| Test file | Expected change |
+|-----------|-----------------|
+| `tests/unit/PwaDownloadTest.php` | **Delete entirely.** Tests `handle_download`, `stream_zip`, and class intspect — file name is a misnomer after ZIP download removal |
+| `tests/integration/AdminTest.php` | No changes needed — verified to contain no assertions on rewrite rules or `serve_app` |
+| `tests/integration/RestApiExtraTest.php` | No changes needed — uses `rs-app` only as a string value in test data |
+| E2E tests (`tests/e2e/`) | No changes needed — E2E tests run against the external PWA server, not in-plugin serving |
+| All other tests | No impact |
+
+### 11.7 Risk Assessment
+
+- **Low risk.** The in-plugin PWA serving is a standalone feature with no dependencies from other plugin components. Removing it does not affect tracking, analytics, REST API, admin dashboard, external app server, or desktop app.
+- **No database migration needed.** No schema changes.
+- **No user-facing admin pages affected.** Only the `/rs-app/` frontend URL disappears.
+- **Plugin ZIP size benefit.** `docs/app/` was already excluded from the ZIP by `.distignore`, so ZIP size is unchanged. However, a small reduction from removing `handle_download()` and `stream_zip()`.
+
+### 11.8 Server & GitHub Infrastructure Audit (2026-06-06)
+
+Verified by inspecting the live server (`104.197.231.120`), GitHub repo (`richardkentgates/rich-statistics`), and all CI workflows.
+
+#### App Server (all 3 environments)
+
+| Environment | DocumentRoot | Deploy branch | SSL cert | Status |
+|-------------|-------------|---------------|----------|--------|
+| Production | `/var/www/rs-app/public_html/` | `main` | Let's Encrypt (SAN: `app.richstatistics.com`) | Live, serving PWA |
+| Dev | `/var/www/rs-app-dev/` | `develop` | Shared cert | Live, serving PWA |
+| Test | `/var/www/rs-app-test/` | `test` | Shared cert | Live, serving PWA |
+
+**Key findings:**
+
+- **No `/rs-app/` rewrite rules on the app server.** The Apache vhosts serve static files only — no PHP, no WordPress, no rewrite rules. The `rs-app` RewriteEngine rules in `setup-app-server.sh` are for HTTP→HTTPS redirect only. Confirmed: app server infrastructure is completely independent of the WordPress `/rs-app/` route.
+- **Deploy mechanism verified:** `rsa-deploy-daemon@prod|dev|test` systemd services monitor `.deploy-trigger` files. When CI pings `/_deploy/`, the webhook writes the trigger, the daemon runs `rsa-app-update` which does `git sparse-checkout set docs/app` from the correct branch. No changes needed.
+- **All 3 health check PWA root checks pass.** Webhook endpoint checks fail (pre-existing, unrelated to this change).
+- **Stale flat-format snapshots** (`2.0.x` through `2.2.7`) still exist on the production server disk. These predate the channel-subdirectory format and are not managed by the CI prune. Separate cleanup task (not part of this removal).
+- **Desktop builds served from `/dist/`**: `rich-statistics-linux-amd64.deb`, `linux-arm64.deb`, `windows.exe`, and `update.json` all present on production server.
+
+#### GitHub Infrastructure
+
+- **30 tags** (v2.2.7 through v2.4.27), **12 PWA version directories** on GitHub (`docs/app/v/2.4.14/` through `v/2.4.27/`).
+- **4 branches:** `main`, `develop`, `test`, `fix/merge-main-into-test`.
+- **11 CI workflows** (build-develop, build-test, build-release, job-build-zip, job-build-desktop, promote, promote-test, tests, e2e-tests, health-check, setup-webhook). All verified to NOT reference in-plugin PWA serving.
+- **`job-build-zip.yml`** excludes `*/docs/*` from the plugin ZIP (line 84). This means `docs/app/` is NOT included in the distributed ZIP. The `serve_app()` method reads from `RSA_DIR . 'docs/app/index.html'` which only works in the dev repo — feature was already broken for distributed plugins.
+- **`build-release.yml`** creates PWA snapshots from `docs/app/`, commits them to `main`, and triggers deploy webhook. All external-server flow. No changes needed.
+- **`job-build-desktop.yml`** copies `docs/app/` into Tauri build. No changes needed.
+- **`health-check.yml`** checks PWA root, update.json, APT repo, webhook, and deployed version on all 3 environments. No changes needed.
+
+#### PWA `config.js` — `autoSiteUrl` Detection
+
+The `autoSiteUrl` detection in `config.js` (lines 17-23) checks for `/wp-content/` in the script's `src` attribute:
+
+```js
+var idx = s.src.indexOf( '/wp-content/' );
+if ( idx !== -1 ) {
+    window.RSA_CONFIG.autoSiteUrl = s.src.substring( 0, idx );
+}
+```
+
+**This code path becomes dead code** when in-plugin serving is removed — the PWA is only served from `app.richstatistics.com` where there is no `/wp-content/` in paths. It is harmless (evaluates to `-1` and skips), but the comment references "served from within the plugin directory" which should be updated.
+
+**Affected files (authoritative copies only — `docs/app/` and `docs/app/v/2.4.27/`):**
+- `docs/app/config.js` — Update comment about in-plugin context
+- `docs/app/v/2.4.27/stable/config.js` — Same update
+- `docs/app/v/2.4.27/beta/config.js` — Same update
+- `docs/app/v/2.4.27/stable/config-dev.js` — Same update
+- `docs/app/v/2.4.27/beta/config-dev.js` — Same update
+- `docs/app/v/2.4.27/stable/config-test.js` — Same update
+- `docs/app/v/2.4.27/beta/config-test.js` — Same update
+
+**All older versioned snapshots (`docs/app/v/2.4.9/` through `docs/app/v/2.4.25/`):** Do NOT modify. They correspond to already-released plugin versions and are historical.
+
+#### PWA `app.js` — `autoSiteUrl` + Nonce Auth Paths
+
+Three code paths in `app.js` use `autoSiteUrl` and `nonce`, both of which were set by `serve_app()`:
+
+1. **Auto-registration block (lines 122-147)** — When `autoSiteUrl + autoNonce` are both set, auto-registers the current WordPress site with empty credentials (nonce-based auth). After removal, both will always be empty/undefined, so this block is skipped entirely. **No behavioral change** — the `if ( autoUrl && autoNonce )` guard makes it a no-op.
+
+2. **`getAuthHeaders()` function (lines 366-376)** — Uses `nonce + autoUrl` for same-origin auth. After removal, this always falls through to Application Password Basic auth. **This is the correct behavior** for the external app.
+
+3. **403 retry with nonce refresh (lines 401-419)** — On 403, fetches fresh nonce from `autoUrl + '/wp-json/'`. After removal, this path is never reached (no `autoUrl` set). **Harmless no-op.**
+
+4. **Add-site URL prefill (lines 790-797)** — Uses `autoSiteUrl` to prefill the site URL input. After removal, this won't prefill. **No code change needed** — `RSA_CONFIG.autoSiteUrl` is already guarded by `if ( autoUrl && urlField )`.
+
+**Affected files (authoritative copies only):**
+- `docs/app/app.js` — Update comment at lines 122-125
+- `docs/app/v/2.4.27/stable/app.js` — Same update
+- `docs/app/v/2.4.27/beta/app.js` — Same update
+
+#### Stale Rewrite Rules — Upgrade Path Concern
+
+After removing `register_app_rewrite()`, existing WordPress installations will still have the `rs-app` rewrite rules persisted in their `wp_options` table. These stale rules are harmless (they'll 404 since `serve_app()` is removed) but should be flushed.
+
+**Solution:** Add `flush_rewrite_rules()` to the `RSA_DB::activate()` method or add a one-time upgrade hook. Since the plugin already has `register_activation_hook()` for `RSA_DB::activate()`, we can add the flush there. However, upgrading via plugin update does NOT trigger activation hooks.
+
+The most reliable approach: add a version-based one-time flush in `rsa_init()` using a stored option. Or simpler — since stale rewrite rules cause no errors (just 404s), they'll be cleaned up naturally when any other plugin or WordPress action flushes rewrite rules. **Document this as a known minor issue and address it in a follow-up if needed.**
+
+#### `uninstall.php` — Missing Rewrite Flush
+
+`uninstall.php` does not call `flush_rewrite_rules()`. When the plugin is uninstalled, the `rs-app` rewrite rules will remain in the database. **Add `flush_rewrite_rules()` to `uninstall.php`** to ensure clean removal.
+
+---
+
+## 12. Consent Banner Feature
+
+> **Status:** Planning — not yet implemented.
+> **Last updated:** 2026-06-06
+
+### 12.1 Goal
+
+Add an optional visitor consent banner. Two admin checkboxes control behavior. When the banner is shown, all metrics default to ON. Visitor can turn categories OFF.
+
+### 12.2 Design
+
+**Two independent admin checkboxes:**
+
+| Checkbox | Purpose | Default |
+|----------|---------|---------|
+| Show Banner | Shows the banner to visitors when checked | Off |
+| Auto-Consent | When checked, tracking starts immediately. When unchecked, tracking waits for visitor choice. | Off |
+
+**Four combinations:**
+
+| Show Banner | Auto-Consent | Behavior |
+|-------------|-------------|----------|
+| Unchecked | Unchecked | No banner. Track everything. (Current default) |
+| Unchecked | Checked | No banner. Track everything. localStorage receipt written on first interaction. |
+| Checked | Unchecked | Banner shown. No tracking until visitor makes a choice. |
+| Checked | Checked | Banner shown. Tracking starts immediately. Visitor can turn off categories. |
+
+**All metrics default ON.** Visitor turns categories OFF, not on.
+
+**Per-metric categories:**
+
+| Category | Controls | Free/Premium |
+|-----------|---------|-------------|
+| Analytics | Pageviews, sessions, viewport, time on page | Free |
+| Campaigns | UTM tracking (source, medium, campaign) | Free |
+| Click Tracking | Element clicks, viewport coordinates, heatmap | Premium |
+| Commerce | WooCommerce purchase events | Premium |
+
+**Banner styling (fully customizable):**
+
+Stored as JSON in `wp_options`:
+
+```json
+{
+  "borderRadius": 8,
+  "fontColor": "#1a1a2e",
+  "backgroundColor": "#ffffff",
+  "borderColor": "#e0e0e0",
+  "borderWidth": 1,
+  "shadowX": 0,
+  "shadowY": 4,
+  "shadowBlur": 12,
+  "shadowSpread": 0,
+  "shadowColor": "#000000",
+  "shadowAlpha": 0.15
+}
+```
+
+`shadowAlpha` stored separately for a dedicated opacity slider. Combined with `shadowColor` into `rgba()` at render time.
+
+**Banner UX:**
+- Minimal text, small footprint
+- Collapse button: physically repositions the banner out of the way (off-screen or to a corner so page content remains clickable)
+- Return button: physically brings the banner back to its original position
+- Collapse/return state persists across page loads via localStorage
+
+### 12.3 Settings Storage
+
+New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
+
+| Option key | Type | Default |
+|-----------|------|---------|
+| `rsa_consent_banner` | int (0/1) | `0` |
+| `rsa_consent_auto` | int (0/1) | `0` |
+| `rsa_consent_styles` | JSON | Style config object (see 12.2) |
+
+Also add these keys to `RSA_Admin::save_settings()` `$fields` array with `absint` sanitizer, and to `RSA_DB::drop_site_tables()` option deletion list in `class-db.php`.
+
+### 12.4 Files to Create
+
+| File | Purpose |
+|------|---------|
+| `includes/class-consent-banner.php` | New class: `RSA_Consent_Banner`. Hooks `wp_enqueue_scripts` to inject banner HTML and `<style>` block. Injects consent config into `window.RSA`. Exits early if `rsa_consent_banner` is `0`. |
+| `assets/css/consent-banner.css` | Base layout styles (position: fixed, z-index, responsive). Colors/shadows/borders via CSS custom properties set server-side. |
+
+### 12.5 Files to Modify
+
+| File | Change |
+|------|--------|
+| `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add consent options to `drop_site_tables()` uninstall cleanup list. |
+| `includes/class-admin.php` | Add `rsa_consent_banner` and `rsa_consent_auto` to `save_settings()` `$fields` array with `absint` sanitizer. Hook `RSA_Consent_Banner::init()`. |
+| `includes/class-tracker.php` | Add `consentBanner` and `consentAuto` to `wp_localize_script` data (`window.RSA`). |
+| `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending. Per-category gate applies to both `sendBeacon` and jQuery sync AJAX fallback paths. If `localStorage` is blocked, fall back to `sessionStorage` (session-only consent) then in-memory state (page-load-only consent). |
+| `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, style controls. |
+| `includes/class-privacy-disclosure.php` | Update legal claims based on consent mode. |
+| `uninstall.php` | No changes needed — `RSA_DB::maybe_remove_data()` handles option cleanup via `drop_site_tables()`. |
+| `languages/rich-statistics.pot` | Regenerate after all PHP changes. |
+| `CHANGELOG.md` | Document under `[Unreleased]`. |
+
+### 12.6 Consent Flow
+
+```
+Visitor loads page
+  ↓
+tracker.js checks window.RSA.consentBanner and window.RSA.consentAuto
+  ├── consentBanner=0 → track everything, no banner (current default)
+  ├── consentBanner=1, consentAuto=1 → banner rendered, track immediately, visitor can toggle categories
+  └── consentBanner=1, consentAuto=0 → banner rendered, no tracking until visitor makes a choice
+        Visitor accepts → localStorage: all categories true
+        Visitor rejects → localStorage: all categories false
+        Visitor customizes → per-category toggles (all ON), save writes to localStorage
+        └── Collapse button → repositions banner out of the way
+        └── Return button → brings banner back to original position
+        └── Collapse/return state persists across page loads
+  ↓
+On each beacon, tracker.js checks localStorage categories
+  ├── Pageview → check analytics
+  ├── UTM → check campaigns
+  ├── Click → check clicks
+  └── Commerce → check commerce
+```
+
+### 12.6.1 localStorage Blocked Fallback
+
+If `localStorage` is unavailable (private browsing, corporate policy, browser extension):
+- Fall back to `sessionStorage` → consent persists for the tab session only, lost on close
+- If `sessionStorage` is also blocked, use in-memory state → consent lasts for the page load only, resets on navigation
+- The banner still renders and functions normally in all cases — only persistence scope changes
+
+### 12.6.2 Tracker Send Path
+
+`tracker.js` sends data via two paths (existing code):
+1. `navigator.sendBeacon()` — preferred, fire-and-forget
+2. jQuery `$.ajax({ async: false })` — sync fallback when sendBeacon is unavailable
+
+**Both paths must apply the same consent gating.** The consent check happens before the send decision, so both paths are blocked equally when a category is declined.
+
+### 12.7 What Must Be Preserved
+
+- Default behavior (`rsa_consent_banner=0`): track everything, no banner
+- DNT/GPC check in `tracker.js` — exits before consent logic
+- Existing `window.RSA` config structure — consent keys are additive
+- All existing REST endpoints — no new endpoints needed
+
+### 12.8 Risk Assessment
+
+- Low risk. Default is off — no change until site owner enables it.
+- No database migration. All settings are `wp_options`.
+- No schema changes. Consent enforced client-side.
+- Backwards-compatible. If `window.RSA.consentBanner` is undefined, tracking proceeds as before.
+
+### 12.9 Implementation Order
+
+**Phase A — Backend (PHP)**
+1. `includes/class-db.php` — Add defaults to `seed_defaults()`, add to `drop_site_tables()` list
+2. `includes/class-consent-banner.php` — New class
+3. `includes/class-admin.php` — Add to `save_settings()` `$fields` array, hook `RSA_Consent_Banner::init()`
+4. `templates/admin/preferences.php` — Consent Banner section
+5. `assets/css/consent-banner.css` — Base styles
+6. `includes/class-tracker.php` — Consent config in `wp_localize_script`
+7. `includes/class-privacy-disclosure.php` — Update legal claims
+8. `uninstall.php` — No changes needed (handled by `drop_site_tables()`)
+
+**Phase B — Frontend (tracker.js)**
+9. `assets/js/tracker.js` — Consent check + per-category gating
+
+**Phase C — Housekeeping**
+10. `languages/rich-statistics.pot` — Regenerate
+11. `CHANGELOG.md` — Document
+12. `composer phpcs` + `composer test`
+
+### 12.10 Test Plan
+
+| Test | Verify |
+|------|--------|
+| Default (off) | No banner, all tracking, no localStorage |
+| Auto-consent | No banner, all tracking, localStorage receipt on interaction |
+| Banner (no auto) | Banner shown, no tracking until visitor makes a choice |
+| Banner + auto | Banner shown, tracking immediate, visitor can toggle categories |
+| Category gating | Reject "Clicks" → click beacons dropped; accept "Analytics" → pageviews send |
+| Banner persistence | Banner renders when Show Banner is checked |
+| Collapse button | Clicking collapse repositions banner out of the way; page content underneath is clickable |
+| Return button | Clicking return brings banner back to original position |
+| Collapse state persists | On next page load, collapsed state is remembered via localStorage |
+| localStorage blocked | With localStorage blocked, consent falls back to sessionStorage; choices persist for tab session only |
+| AJAX fallback | jQuery sync AJAX path applies same consent gating as sendBeacon path |
+| DNT/GPC | `doNotTrack=1` or `globalPrivacyControl=true` exits tracker before consent logic |
+| Privacy disclosure | Shortcode reflects actual consent mode |
+| Settings save | New options save correctly via `save_settings()` with proper sanitization |
+| Uninstall cleanup | Consent options are deleted when plugin is uninstalled |
+
+---
+
+## 13. Comprehensive Test Coverage Audit (June 2026)
+
+Systematic audit of all source files against test suite identified 13 major gaps across P1–P4 priority. **11 of 13 gaps now covered** (84 new tests, 201 assertions). Full details in `TODO.md` §6.
+
+### Coverage Summary
+
+| Area | Files | Has Tests | Coverage Quality | Gaps |
+|------|-------|-----------|------------------|------|
+| REST API | `class-rest-api.php` | ✅ 160+ | Shape + auth + CORS + AI gating | App Password auth (covered by RestAuthTest), CORS preflight, origin validation |
+| Analytics | `class-analytics.php` | ✅ 55+ | Key/shape + filters + sorts + fill_date_gaps + timezone | `get_path_flow()` requires MySQL 8.0+ window functions |
+| Tracker | `class-tracker.php` | ✅ 30+ | Unit: sanitize, bot signals; Integration: rate limiting, session upsert | Session upsert edge cases |
+| DB | `class-db.php` | ✅ 45+ | Schema, prune, aggregate, uninstall, on_new_blog | Network-wide activate (multisite env not available) |
+| Admin | `class-admin.php` | ✅ 35+ | Capabilities, roles, template rendering, XSS, settings save | Network dashboard aggregation |
+| WooCommerce | `class-woocommerce.php` | ✅ 20+ | insert_event, funnel counts | REST ingest pipeline (covered by MetricPipelineTest) |
+| Email | `class-email.php` | ✅ 23+ | Scheduling, return values, HTML content, recipients | MIME multipart structure (header validated) |
+| Consent Banner | `class-consent-banner.php` | ✅ 27 | CSS injection, options, gating, uninstall, privacy disclosure | — |
+| Heatmap | `class-heatmap.php` | ✅ 7 | Coordinate bucketing, aggregation, REST shape, NULL exclusion | — |
+| Security | — | ✅ 14 | SQLi, XSS, path traversal, CSRF, session spoofing, bot score | — |
+| Templates | `templates/admin/*.php` (16 files) | ✅ 15 | Output capture, premium gating, XSS escaping, permissions | Network views (multisite) |
+| Uninstall | `uninstall.php` | ✅ 4 | Single-site table drops, option deletion, missing-table edge case | Multisite uninstall (env limitation) |
+| E2E | `tests/e2e/*.js` (4 files, 55 tests) | ✅ 55 | Shell, add site, nav, views | Consent, WooCommerce, AI chat, export, offline |
+
+### Priority Matrix
+
+| Priority | Count | Status | Risk if Untested |
+|----------|-------|--------|------------------|
+| **P1** | 3 gaps | ✅ **Complete** | GDPR non-compliance, security vulnerabilities, broken admin UX |
+| **P2** | 3 gaps | ✅ **Complete** | Premium features broken, abuse vectors, data left on uninstall |
+| **P3** | 3 gaps | ✅ **Complete** | Wrong analytics, broken emails, unauthorized API access |
+| **P4** | 4 gaps | 2 ✅ / 2 ⏳ | Enterprise issues, AI gating bypass, user-facing regressions, broken releases |
+
+**Bugs found and fixed during test writing:**
+1. `class-analytics.php:1087` — `get_heatmap()` `GROUP BY` used raw columns instead of computed `ROUND(x_pct/2)*2` buckets
+2. `class-rest-api.php:719` — `ai_tool()` declared `WP_REST_Response` return type but returned `WP_Error` for invalid tools

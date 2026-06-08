@@ -320,6 +320,40 @@ RSA_Admin::page_header( __( 'Preferences', 'rich-statistics' ) );
 		</table>
 	</div>
 
+	<!-- Consent Banner -->
+	<div class="rsa-card rsa-card-full">
+		<div class="rsa-card-header"><h2><?php esc_html_e( 'Consent Banner', 'rich-statistics' ); ?></h2></div>
+		<table class="form-table">
+			<tr>
+				<th><label for="rsa_consent_banner"><?php esc_html_e( 'Show banner', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="checkbox" id="rsa_consent_banner" name="rsa_consent_banner" value="1"
+							<?php checked( get_option( 'rsa_consent_banner' ), 1 ); ?>>
+					<label for="rsa_consent_banner">
+						<?php esc_html_e( 'Display a consent banner to visitors.', 'rich-statistics' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="rsa_consent_auto"><?php esc_html_e( 'Auto-consent', 'rich-statistics' ); ?></label></th>
+				<td>
+					<input type="checkbox" id="rsa_consent_auto" name="rsa_consent_auto" value="1"
+							<?php checked( get_option( 'rsa_consent_auto' ), 1 ); ?>>
+					<label for="rsa_consent_auto">
+						<?php esc_html_e( 'Start tracking immediately. When unchecked, tracking waits for visitor choice.', 'rich-statistics' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="rsa_consent_banner_text"><?php esc_html_e( 'Banner text', 'rich-statistics' ); ?></label></th>
+				<td>
+					<textarea id="rsa_consent_banner_text" name="rsa_consent_banner_text" rows="3" class="large-text"><?php echo esc_textarea( get_option( 'rsa_consent_banner_text', '' ) ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'Custom message shown in the consent banner. Leave empty for the default text.', 'rich-statistics' ); ?></p>
+				</td>
+			</tr>
+		</table>
+	</div>
+
 	<?php submit_button( __( 'Save Preferences', 'rich-statistics' ), 'primary', 'submit', true ); ?>
 
 </form>
