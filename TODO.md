@@ -618,3 +618,106 @@ Identified via systematic audit of all source files against test suite. All gaps
 **Total new tests:** 111 tests, 281 assertions across 14 files  
 **Production bugs fixed during test writing:** 2 (heatmap GROUP BY, ai_tool return type)  
 **Remaining:** Full-suite MySQL 8.0+ window function coverage (requires multisite test env)
+
+---
+
+## Phase 5: June 2026 Comprehensive Audit — Action Items
+
+Generated from full-platform audit (2026-06-08). See `ROADMAP.md` §7 for finding details.
+
+### 5.1 Critical — Fix Before Next Release
+
+| Ref | Area | Task | File | Effort |
+|-----|------|------|------|--------|
+| CR-1 | Plugin | **Move `RSA_Rest_API` to core autoloader.** All REST endpoints must be free; premium gating is internal to each callback. The "highways are open, only the features are gated." | `rich-statistics.php:153-167` | Low |
+| CR-2 | Plugin | **Guard `is_plugin_active_for_network()` availability.** Fatal on multisite frontend where `wp-admin/includes/plugin.php` is not loaded. | `includes/class-db.php:493` | Low |
+| CR-3 | PWA | **Encrypt credentials in `localStorage`.** Application Passwords for all connected sites are stored as reversible base64. Use Web Crypto API to encrypt with a user-derived key, or Credential Management API. | `docs/app/app.js:100,184` | Medium |
+| CR-4 | PWA | **Encrypt AI provider API keys in `localStorage`.** Same mechanism as CR-3. | `docs/app/app.js:1224` | Medium |
+| CR-5 | Desktop | **Validate `versions.json` response type in `tauriNavigateToVersion()`.** Non-array response causes silent `TypeError` with no user feedback. | `docs/app/app.js:518-564` | Low |
+| CR-6 | CI/CD | **Fix `build-release.yml` job gates for `workflow_dispatch`.** Jobs skip silently when triggered via `gh workflow run` because `github.ref` may be a branch ref, not a tag ref. | `.github/workflows/build-release.yml:54,104,226,245` | Low |
+| CR-7 | PWA | **Bump Service Worker cache name and recreate v2.4.27 snapshots.** Current name is `rsa-2-4-26` in root + snapshots, causing stale asset serving. | `docs/app/sw.js:19` | Low |
+
+### 5.2 High Priority
+
+| Ref | Area | Task | File | Effort |
+|-----|------|------|------|--------|
+| HI-1 | Plugin | **Fix consent banner CSS handle.** `wp_add_inline_style('rsa-tracker', ...)` attaches to a script handle — styles are silently discarded. Register a dummy style handle. | `includes/class-consent-banner.php:37` | Low |
+| HI-2 | Plugin | **Fix UTC/timezone misalignment.** Replace `current_time('timestamp')` (deprecated) and `wp_date()` with `gmdate()` / `time()` for all DB cutoff strings. | `class-analytics.php:33`, `class-db.php:354,384,409-410`, `class-admin.php:323,325,748` | Medium |
+| HI-3 | Plugin | **Add `try/finally` around all `switch_to_blog()` loops.** Exception in `prune_old_data()` or `aggregate_heatmap()` leaks blog context. | `class-db.php:456-479`, `rich-statistics.php:182-198` | Medium |
+| HI-4 | CI/CD | **Add test gates before develop/test deploy.** `build-develop.yml` and `build-test.yml` deploy without running tests. | `build-develop.yml`, `build-test.yml` | Low |
+| HI-5 | CI/CD | **Add tests before release workflow.** `build-release.yml` has no test step — forced tags bypass quality gates. | `build-release.yml` | Low |
+| HI-6 | CI/CD | **Fix `update.json` race condition.** Windows matrix job may finish before linux-arm64 pushes its `.deb`, missing arm64 from update manifest. | `job-build-desktop.yml:321-333` | Medium |
+| HI-7 | PWA | **Restrict browser cache purge to `rsa-*` keys.** Currently wipes ALL origin caches, including WordPress site caches if PWA is served from the same domain. | `docs/app/app.js:720-723` | Low |
+| HI-8 | Docs | **Rewrite `AGENTS.md`.** Severely outdated: claims v2.3.0, 12 integration files (actual 28), 55 E2E tests (actual 61), `build-test.yml` push trigger (actual workflow_dispatch). | `AGENTS.md` | Medium |
+| HI-9 | Docs | **Rewrite `DEVELOPMENT.md` release process section.** Describes manual `git merge --no-ff` and `git push origin main --tags` which violates branch protection. | `DEVELOPMENT.md:184-237` | Medium |
+| HI-10 | Desktop | **Bump Tauri/Cargo versions to 2.4.27.** Currently `2.4.26` / `2.4.24` — local builds produce incorrectly versioned apps. | `src-tauri/tauri.conf.json:4`, `Cargo.toml:3` | Low |
+
+### 5.3 Medium Priority
+
+| Ref | Area | Task | File | Effort |
+|-----|------|------|------|--------|
+| ME-1 | Plugin | **Return `WP_Error` for missing window functions.** Currently returns HTTP 200 with embedded error array. | `class-rest-api.php:1119-1163` | Low |
+| ME-2 | Plugin | **Fix CLI data key references.** `behavior` accesses non-existent keys; `user-flow` lacks MySQL capability error handling. | `cli/class-cli.php:245-258,336-348` | Low |
+| ME-3 | Plugin | **Make Freemius settings sync non-blocking.** Synchronous external HTTP call in `save_settings()` can white-screen on slow API. | `class-admin.php:842-853` | Low |
+| ME-4 | Plugin | **Fail fast on missing core class files.** Current `file_exists()` guard causes confusing late fatal errors. | `rich-statistics.php:139-144,161-166` | Low |
+| ME-5 | Plugin | **Paginate `get_trackable_pages()`.** `numberposts => -1` loads all public posts into memory. | `class-admin.php:627-635` | Low |
+| ME-6 | Plugin | **Use JSON-safe sanitizer for `rsa_consent_styles`.** `sanitize_text_field` can corrupt JSON. | `class-admin.php:793` | Low |
+| ME-7 | Plugin | **Consolidate export logic.** Deprecate `export_events()`, delegate to `export_data()`. | `class-analytics.php:1153-1276` | Low |
+| ME-8 | Plugin | **Minimize uninstall bootstrap.** Only require `class-db.php`, not full plugin with Freemius init. | `uninstall.php:16` | Low |
+| ME-9 | Plugin | **Use `wp_localize_script` for tracker session ID.** Raw `<script>` echo in `wp_enqueue_scripts` is non-standard. | `class-tracker.php:77` | Low |
+| ME-10 | PWA | **Restrict CSP `connect-src`.** Currently allows any HTTPS origin. Limit to known app hosts + user's WP site. | `docs/app/index.html:5`, `tauri.conf.json:20` | Low |
+| ME-11 | PWA | **Add `try/catch` around `JSON.parse` in app init.** Corrupted localStorage crashes the entire app. | `docs/app/app.js:100,104` | Low |
+| ME-12 | PWA | **Destroy AI chart instances on cleanup.** Chart.js instances leak in `state.charts` on chat clear / view switch. | `docs/app/app.js:1907-1963` | Low |
+| ME-13 | Desktop | **Fix Tauri identifier for dev/test.** `com.richardkentgates.rich-statistics(Dev)` is invalid reverse-DNS. Use `.dev` suffix. | `job-build-desktop.yml:142` | Low |
+| ME-14 | CI/CD | **Read server IP/user from vars in desktop job.** Currently hardcoded; `setup-webhook.yml` uses vars. | `job-build-desktop.yml:43-47` | Low |
+| ME-15 | Test | **Run uninstall tests in CI.** `@group ddl` exclusion skips `UninstallTest.php` — data deletion unverified. | `phpunit.xml.dist:22-25` | Low |
+| ME-16 | Test | **Add PHP 8.0 to CI matrix.** Declared minimum is untested. | `.github/workflows/tests.yml:24` | Low |
+
+### 5.4 Test Coverage — Priority 1 (Critical)
+
+| Component | File | What to Test |
+|-----------|------|-------------|
+| PWA OTP handler | `class-pwa-download.php` | OTP generation (6 digits), transient storage (SHA256 hash, 15-min TTL), role-gated rejection (subscribers blocked) |
+| Heatmap admin assets | `class-heatmap.php` | `init()` adds correct admin hook; `enqueue_heatmap_assets()` calls `wp_enqueue_style`/`wp_enqueue_script` with correct handles when `$hook` contains `rich-statistics-heatmap` |
+| Tracker init/enqueue | `class-tracker.php` | `init()` registers `wp_enqueue_scripts` and `wp_footer`; `enqueue()` calls `wp_enqueue_script` with `wp_localize_script` payload; multisite early-return when `rsa_network_disable_tracker` is on |
+| DB multisite activate | `class-db.php` | `activate(true)` loops over `get_sites()`, calls `switch_to_blog()` + `install()` for each, then `restore_current_blog()` |
+| DB multisite uninstall | `class-db.php` | `maybe_remove_data()` multisite branch: `is_multisite()`, `get_sites()`, `switch_to_blog()`, `drop_site_tables()`, `delete_site_option()` |
+| DB daily maintenance | `class-db.php` | `daily_maintenance()` multisite loop: `switch_to_blog()`, `prune_old_data()`, `aggregate_heatmap()` per site |
+| CLI commands | `cli/class-cli.php` | Mock `WP_CLI` functions, execute each command method, assert output and permission checks (`overview`, `top_pages`, `audience`, `referrers`, `behavior`, `campaigns`, `user_flow`, `export`, `purge`, `email_test`, `status`) |
+| REST /track happy path | `class-rest-api.php` | Seed valid nonce, dispatch `POST /rsa/v1/track`, assert `rsa_events` row created with correct fields |
+| REST CORS origin | `class-rest-api.php` | Dispatch request with known `Origin` header, assert response `Access-Control-Allow-Origin` matches allowed origin; assert disallowed origin is rejected |
+
+### 5.5 Test Coverage — Priority 2 (High)
+
+| Component | File | What to Test |
+|-----------|------|-------------|
+| Admin menus | `class-admin.php` | `register_menus()` adds expected slugs to `global $menu` / `$submenu`; `get_sub_pages()` returns correct count for premium vs free |
+| Admin assets | `class-admin.php` | Mock `file_exists` / `filemtime`, call `enqueue_assets()` with fake `$hook`, assert `wp_enqueue_script`/`wp_enqueue_style` calls |
+| Admin page data | `class-admin.php` | `get_page_data_for_current_screen()` for each `$_GET['page']` slug: campaigns (free), user-flow (premium), click-map (premium), heatmap (premium), WooCommerce (conditional) |
+| Analytics export | `class-analytics.php` | `export_data()` for all four `$data_type` values (`pageviews`, `sessions`, `clicks`, `referrers`) in JSON and CSV; empty-result CSV header output |
+| Analytics UTM mediums | `class-analytics.php` | Seed events with distinct `utm_medium`, call `get_utm_mediums()`, assert returned array contains expected values |
+| Analytics window functions | `class-analytics.php` | `mysql_supports_window_functions()` with mocked `$wpdb->get_var()` returning `8.0.0`, `10.1.0`, `5.7.0` |
+| Consent banner enqueue | `class-consent-banner.php` | Assert `wp_add_inline_style` is called with expected CSS string after `init()` |
+| Tracker payload | `class-tracker.php` | `parse_payload()` edge cases: invalid JSON, missing `session_id`, non-UUID `session_id`, oversized `page` |
+| E2E error states | `tests/e2e/` | Mock `/info` with 403, 404, network failure; assert banners and retry behaviour |
+| E2E version mismatch | `tests/e2e/` | Simulate site reporting `version: 2.2.0`, assert compatibility warning or fallback |
+
+### 5.6 Test Coverage — Priority 3 (Medium / Backlog)
+
+| Component | File | What to Test |
+|-----------|------|-------------|
+| E2E full journey | `tests/e2e/` | welcome → add site → OTP verify → app-password connect → view Overview → disconnect → reconnect |
+| E2E offline refresh | `tests/e2e/` | Toggle `setOffline(true)` then back to online; assert queued requests replayed |
+| E2E CSV export | `tests/e2e/` | Click Export view, intercept download, validate content |
+| CI multisite job | `.github/workflows/` | Add `WP_MULTISITE=1` matrix job |
+| CI DDL job | `.github/workflows/` | Dedicated job running `--group ddl` (UninstallTest) |
+| CI PHP 8.0 | `.github/workflows/` | Add `8.0` to test matrix |
+| Coverage reporting | `.github/workflows/` | Upload HTML coverage to Codecov with threshold enforcement |
+| Bot detection edge cases | `class-bot-detection.php` | Empty UA, unknown UA, bots without version strings |
+| Email WooCommerce HTML | `class-email.php` | `build_html()` with WC data injected — assert funnel/top-product placeholders present |
+
+---
+
+**Total new tests needed:** ~40 integration + ~10 unit + ~10 E2E  
+**Estimated effort:** 2-3 sprints (assuming 1 developer, part-time)  
+**Production bugs found during this audit:** 7 (CR-1, CR-2, HI-1, HI-2, HI-3, ME-1, ME-2)

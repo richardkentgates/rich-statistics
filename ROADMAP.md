@@ -176,7 +176,96 @@ See `TODO.md` §4 for full list.
 
 ---
 
-## 7. Remaining Work (Legacy)
+## 7. Comprehensive Platform Audit — June 2026
+
+Full codebase audit completed 2026-06-08 across PHP backend, JavaScript frontend, CI/CD, documentation, and test coverage. See `TODO.md` §5 for actionable items.
+
+### Summary
+
+| Area | Critical | High | Medium | Low |
+|------|----------|------|--------|-----|
+| Plugin Code | 2 | 6 | 12 | 6 |
+| PWA / Desktop | 2 | 1 | 4 | 7 |
+| CI/CD | 1 | 4 | 1 | 4 |
+| Documentation | — | 2 | — | 1 |
+| Test Coverage | — | — | 16 | 8 |
+| **TOTAL** | **5** | **13** | **33** | **26** |
+
+### 7.1 Critical Findings
+
+| Ref | Area | Finding | File | Fix Required |
+|-----|------|---------|------|-------------|
+| CR-1 | Plugin | `RSA_Rest_API` loaded only in premium autoloader — free tier has zero REST endpoints | `rich-statistics.php:153-167` | Move to `$rsa_classes` (all endpoints free, features gated internally) |
+| CR-2 | Plugin | `is_plugin_active_for_network()` may fatal on multisite frontend | `includes/class-db.php:493` | Guard with `function_exists()` or `require_once` admin file |
+| CR-3 | PWA | Application Passwords stored as base64 in `localStorage` — all sites' credentials in one blob | `docs/app/app.js:100,184` | Encrypt with Web Crypto API or use Credential Management API |
+| CR-4 | PWA | AI provider API keys stored unencrypted in `localStorage` | `docs/app/app.js:1224` | Same as CR-3 |
+| CR-5 | Desktop | `tauriNavigateToVersion()` crashes silently on non-array `versions.json` | `docs/app/app.js:518-564` | Add `Array.isArray(bundled)` validation |
+| CR-6 | CI/CD | Release jobs may silently skip on `workflow_dispatch` | `.github/workflows/build-release.yml:54,104,226,245` | Accept `workflow_dispatch` in job gates |
+| CR-7 | PWA | Stale SW cache name (`rsa-2-4-26`) in root + v2.4.27 snapshots | `docs/app/sw.js:19` | Run `build.sh` to bump, recreate snapshots |
+
+### 7.2 High Findings
+
+| Ref | Area | Finding | File |
+|-----|------|---------|------|
+| HI-1 | Plugin | Consent banner CSS never prints (`wp_add_inline_style` attached to script handle) | `includes/class-consent-banner.php:37` |
+| HI-2 | Plugin | UTC/timezone misalignment: `current_time('timestamp')` deprecated + `wp_date()` vs UTC DB | `includes/class-analytics.php:33`, `includes/class-db.php:354,384,409-410`, `includes/class-admin.php:323,325,748` |
+| HI-3 | Plugin | Multisite `switch_to_blog()` leaks on exception — no `try/finally` | `includes/class-db.php:456-479`, `rich-statistics.php:182-198` |
+| HI-4 | CI/CD | No test gates before develop/test deploy | `build-develop.yml`, `build-test.yml` |
+| HI-5 | CI/CD | No tests before release workflow | `build-release.yml` |
+| HI-6 | CI/CD | `update.json` race condition — Windows job may finish before linux-arm64 | `job-build-desktop.yml:321-333` |
+| HI-7 | PWA | Browser cache purge deletes ALL origin caches, not just app caches | `docs/app/app.js:720-723` |
+| HI-8 | Docs | `AGENTS.md` severely outdated (versions, paths, counts, triggers) | `AGENTS.md` |
+| HI-9 | Docs | `DEVELOPMENT.md` describes obsolete manual merge/push release process | `DEVELOPMENT.md:184-237` |
+| HI-10 | Desktop | Tauri/Cargo versions out of sync with plugin (`2.4.26` / `2.4.24` vs `2.4.27`) | `src-tauri/tauri.conf.json:4`, `Cargo.toml:3` |
+
+### 7.3 Medium Findings
+
+| Ref | Area | Finding | File |
+|-----|------|---------|------|
+| ME-1 | Plugin | REST endpoints return 200 with embedded error for missing window functions | `includes/class-rest-api.php:1119-1163` |
+| ME-2 | Plugin | CLI `behavior` command references non-existent data keys; `user-flow` lacks MySQL error handling | `cli/class-cli.php:245-258,336-348` |
+| ME-3 | Plugin | Freemius API call blocks admin POST — no timeout/error handling | `includes/class-admin.php:842-853` |
+| ME-4 | Plugin | Core autoloader silently skips missing files | `rich-statistics.php:139-144,161-166` |
+| ME-5 | Plugin | `get_trackable_pages()` can exhaust memory (`numberposts => -1`) | `includes/class-admin.php:627-635` |
+| ME-6 | Plugin | `sanitize_text_field` used for JSON option (`rsa_consent_styles`) | `includes/class-admin.php:793` |
+| ME-7 | Plugin | Duplicate export logic (`export_events` vs `export_data`) | `includes/class-analytics.php:1153-1276` |
+| ME-8 | Plugin | Uninstall loads full plugin bootstrap (Freemius init + hooks) | `uninstall.php:16` |
+| ME-9 | Plugin | Tracker echoes raw `<script>` tag instead of using `wp_localize_script` | `includes/class-tracker.php:77` |
+| ME-10 | PWA | Overly permissive CSP `connect-src 'self' https:` allows any HTTPS origin | `docs/app/index.html:5`, `tauri.conf.json:20` |
+| ME-11 | PWA | `JSON.parse` of `localStorage` without `try/catch` — corrupted data crashes app | `docs/app/app.js:100,104` |
+| ME-12 | PWA | AI chat Chart.js instances accumulate in `state.charts` — memory leak | `docs/app/app.js:1907-1963` |
+| ME-13 | Desktop | Tauri identifier contains parentheses (`(Dev)`) — invalid reverse-DNS | `job-build-desktop.yml:142` |
+| ME-14 | CI/CD | Server IP/username hardcoded in desktop job vs vars in setup | `job-build-desktop.yml:43-47` |
+| ME-15 | Test | Uninstall tests (`@group ddl`) never run in CI | `phpunit.xml.dist:22-25` |
+| ME-16 | Test | No PHP 8.0 CI job — declared minimum untested | `.github/workflows/tests.yml:24` |
+
+### 7.4 Test Coverage Gaps
+
+| Priority | Component | File | Gap |
+|----------|-----------|------|-----|
+| P1 | PWA OTP handler | `class-pwa-download.php` | Entire class untested (OTP generation, transient storage, role gating) |
+| P1 | Heatmap admin assets | `class-heatmap.php` | `init()` and `enqueue_heatmap_assets()` untested |
+| P1 | Tracker init/enqueue | `class-tracker.php` | `init()` and `enqueue()` untested |
+| P1 | DB multisite activate | `class-db.php` | `activate(true)` network-wide loop untested |
+| P1 | DB multisite uninstall | `class-db.php` | `maybe_remove_data()` multisite branch untested |
+| P1 | DB daily maintenance | `class-db.php` | `daily_maintenance()` multisite site-loop untested |
+| P1 | CLI commands | `cli/class-cli.php` | No command entrypoint directly invoked |
+| P1 | REST /track happy path | `class-rest-api.php` | Only invalid-nonce tested; valid ingest never exercised |
+| P1 | REST CORS origin | `class-rest-api.php` | `fix_cors_origin()` untested |
+| P2 | Admin menus | `class-admin.php` | `register_menus()`, `get_sub_pages()` untested |
+| P2 | Admin assets | `class-admin.php` | `enqueue_profile_assets()`, `enqueue_assets()` untested |
+| P2 | Admin page helpers | `class-admin.php` | `profile_webapp_section()`, `period_selector()`, etc. untested |
+| P2 | Analytics export | `class-analytics.php` | `export_data()` untested (only legacy `export_events` in CLI) |
+| P2 | Analytics UTM mediums | `class-analytics.php` | `get_utm_mediums()` untested |
+| P2 | Analytics window functions | `class-analytics.php` | `mysql_supports_window_functions()` untested |
+| P3 | E2E error states | `tests/e2e/` | No 403, 404, or network failure tests |
+| P3 | E2E version mismatch | `tests/e2e/` | No tests for new compatibility banner feature |
+| P3 | E2E full journey | `tests/e2e/` | No single test: add → connect → view → disconnect → reconnect |
+| P3 | CI multisite | `.github/workflows/` | No multisite matrix job |
+
+---
+
+## 8. Remaining Work (Legacy)
 
 ### P1: Environment-aware plugin ✅
 1. **Make `RSA_APP_URL` configurable** — ✅ `rsa_detect_app_url()` in `rich-statistics.php`
@@ -202,7 +291,7 @@ See `TODO.md` §4 for full list.
 
 ---
 
-## 8. Operations Guide
+## 9. Operations Guide
 
 ### 8.1 Uptime Monitoring
 
@@ -365,7 +454,7 @@ gunzip < /backups/wordpress/2026-05-11.sql.gz | mysql wordpress_db
 
 ---
 
-## 9. Beta Channel & Freemius Integration Audit (May 2026)
+## 10. Beta Channel & Freemius Integration Audit (May 2026)
 
 ### 9.1 Multi-Layer Architecture
 
@@ -525,7 +614,7 @@ Current `update.json` has signatures populated by CI pipeline.
 
 ---
 
-## 10. Big-Picture Pipeline Assessment (May 2026)
+## 11. Big-Picture Pipeline Assessment (May 2026)
 
 ### Overall Grade: B+
 Production-ready with manageable technical debt. The pipeline works end-to-end and produces all required artifacts. Remaining gaps are in observability, server mechanism transparency, and version parity completeness.
@@ -569,7 +658,7 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 
 ---
 
-## 11. Remove In-Plugin PWA Serving (Planned Task)
+## 12. Remove In-Plugin PWA Serving (Planned Task)
 
 > **Status:** Plan corrected — corrections applied 2026-06-06. Awaiting user approval before implementation.
 > **Last updated:** 2026-06-06
@@ -840,7 +929,7 @@ The most reliable approach: add a version-based one-time flush in `rsa_init()` u
 
 ---
 
-## 12. Consent Banner Feature
+## 13. Consent Banner Feature
 
 > **Status:** Planning — not yet implemented.
 > **Last updated:** 2026-06-06
@@ -1033,7 +1122,7 @@ If `localStorage` is unavailable (private browsing, corporate policy, browser ex
 
 ---
 
-## 13. Comprehensive Test Coverage Audit (June 2026)
+## 14. Comprehensive Test Coverage Audit (June 2026)
 
 Systematic audit of all source files against test suite identified 13 major gaps across P1–P4 priority. **11 of 13 gaps now covered** (84 new tests, 201 assertions). Full details in `TODO.md` §6.
 
