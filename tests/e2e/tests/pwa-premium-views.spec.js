@@ -1,4 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Premium views (site connected, premium)', () => {
 
@@ -52,6 +53,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 
 	test( 'offline banner shows when network is offline', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.context().setOffline( true );
 		await expect( page.locator( '#rsa-banner-offline' ) ).toBeVisible();
 		await page.context().setOffline( false );
@@ -71,6 +73,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="ai-chat"]' );
 		await expect( page.locator( '#rsa-view-ai-chat' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-ai-chat' ) ).toContainText( 'AI Analytics Assistant' );
@@ -95,6 +98,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="woocommerce"]' );
 		await expect( page.locator( '#rsa-view-woocommerce' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-title' ) ).toHaveText( 'WooCommerce' );
@@ -102,6 +106,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 
 	test( 'Export view renders', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="export"]' );
 		await expect( page.locator( '#rsa-view-export' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-title' ) ).toHaveText( 'Export' );
@@ -123,6 +128,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="heatmap"]' );
 		await expect( page.locator( '#rsa-view-heatmap' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-title' ) ).toHaveText( 'Heatmap' );
@@ -143,6 +149,7 @@ test.describe( 'Premium views (site connected, premium)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="user-flow"]' );
 		await expect( page.locator( '#rsa-view-user-flow' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-title' ) ).toHaveText( 'User Flow' );

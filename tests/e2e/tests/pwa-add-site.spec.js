@@ -61,7 +61,7 @@ test.describe( 'Add Site overlay', () => {
 		await expect( page.locator( '.rsa-welcome-install' ) ).toBeVisible();
 		await expect( page.locator( 'text=Install the desktop app' ) ).toBeVisible();
 		await expect( page.locator( 'text=Linux (APT)' ) ).toBeVisible();
-		await expect( page.locator( 'text=Recommended' ) ).toBeVisible();
+		await expect( page.locator( '.rsa-install-badge' ) ).toBeVisible();
 		await expect( page.locator( 'text=Download installer (.exe)' ) ).toBeVisible();
 	} );
 

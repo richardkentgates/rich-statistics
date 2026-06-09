@@ -1,4 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Version mismatch banners', () => {
 
@@ -34,6 +35,7 @@ test.describe( 'Version mismatch banners', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-compat-banner' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-compat-banner' ) ).toContainText( 'different' );
 	} );
@@ -56,6 +58,7 @@ test.describe( 'Version mismatch banners', () => {
 		} );
 
 		await page.goto( '/v/2.4.27/stable/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-compat-banner' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-compat-banner' ) ).toContainText( 'newer than your app' );
 	} );
@@ -78,6 +81,7 @@ test.describe( 'Version mismatch banners', () => {
 		} );
 
 		await page.goto( '/v/2.4.27/stable/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-compat-banner' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-compat-banner' ) ).toContainText( 'newer than this site' );
 	} );

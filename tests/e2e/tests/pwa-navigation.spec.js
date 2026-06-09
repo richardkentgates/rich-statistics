@@ -1,4 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Navigation (site connected)', () => {
 
@@ -50,24 +51,28 @@ test.describe( 'Navigation (site connected)', () => {
 		} );
 	} );
 
-	test( 'app shell visible when site connected', async ( { page } ) => {
+		test( 'app shell visible when site connected', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-app' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-login' ) ).toBeHidden();
 	} );
 
-	test( 'sidebar nav renders', async ( { page } ) => {
+		test( 'sidebar nav renders', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '.rsa-nav' ) ).toBeVisible();
 	} );
 
 	test( 'main content area renders', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '.rsa-main' ) ).toBeVisible();
 	} );
 
 	test( 'free tier nav links present', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		const navLinks = page.locator( '.rsa-nav-list .rsa-nav-link' );
 		await expect( navLinks ).toHaveCount( 14 );
 
@@ -81,6 +86,7 @@ test.describe( 'Navigation (site connected)', () => {
 
 	test( 'premium nav links present', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		const navLinks = page.locator( '.rsa-nav-list .rsa-nav-link' );
 		const texts = await navLinks.allTextContents();
 		expect( texts ).toContain( 'WooCommerce' );
@@ -93,12 +99,14 @@ test.describe( 'Navigation (site connected)', () => {
 
 	test( 'Overview is active by default', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		const overviewLink = page.locator( '.rsa-nav-link[data-view="overview"]' );
 		await expect( overviewLink ).toHaveClass( /rsa-active/ );
 	} );
 
 	test( 'period selector has expected options', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		const periodSelect = page.locator( '#rsa-period-select' );
 		await expect( periodSelect ).toBeVisible();
 
@@ -116,28 +124,33 @@ test.describe( 'Navigation (site connected)', () => {
 
 	test( 'period selector defaults to 30d', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-period-select' ) ).toHaveValue( '30d' );
 	} );
 
 	test( 'topbar title shows Overview', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-view-title' ) ).toHaveText( 'Overview' );
 	} );
 
 	test( 'disconnect button present', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-signout' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-signout' ) ).toHaveText( 'Sign out' );
 	} );
 
 	test( 'site switcher present', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-site-switcher' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-switcher-btn' ) ).toBeVisible();
 	} );
 
 	test( 'install button hidden by default', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-install-btn' ) ).toBeHidden();
 	} );
 } );
@@ -202,8 +215,9 @@ test.describe( 'View switching', () => {
 		} );
 	} );
 
-	test( 'clicking Pages nav link switches view', async ( { page } ) => {
+		test( 'clicking Pages nav link switches view', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="pages"]' );
 		await expect( page.locator( '#rsa-view-pages' ) ).not.toBeHidden();
 		await expect( page.locator( '#rsa-view-overview' ) ).toBeHidden();
@@ -211,24 +225,28 @@ test.describe( 'View switching', () => {
 
 	test( 'clicking Audience nav link switches view', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="audience"]' );
 		await expect( page.locator( '#rsa-view-audience' ) ).not.toBeHidden();
 	} );
 
 	test( 'clicking Referrers nav link switches view', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="referrers"]' );
 		await expect( page.locator( '#rsa-view-referrers' ) ).not.toBeHidden();
 	} );
 
 	test( 'clicking Behavior nav link switches view', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="behavior"]' );
 		await expect( page.locator( '#rsa-view-behavior' ) ).not.toBeHidden();
 	} );
 
 	test( 'active nav link highlighted', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="pages"]' );
 		await expect( page.locator( '.rsa-nav-link[data-view="pages"]' ) ).toHaveClass( /rsa-active/ );
 		await expect( page.locator( '.rsa-nav-link[data-view="overview"]' ) ).not.toHaveClass( /rsa-active/ );
@@ -236,6 +254,7 @@ test.describe( 'View switching', () => {
 
 	test( 'topbar title updates on view change', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '.rsa-nav-link[data-view="pages"]' );
 		await expect( page.locator( '#rsa-view-title' ) ).toContainText( 'Pages' );
 	} );
@@ -291,16 +310,18 @@ test.describe( 'Disconnect flow', () => {
 		} );
 	} );
 
-	test( 'disconnect returns to welcome screen', async ( { page } ) => {
+		test( 'disconnect returns to welcome screen', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-app' ) ).toBeVisible();
 		await page.click( '#rsa-signout' );
 		await expect( page.locator( '#rsa-login' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-app' ) ).toBeHidden();
 	} );
 
-	test( 'disconnect clears active site', async ( { page } ) => {
+		test( 'disconnect clears active site', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-signout' );
 		const activeId = await page.evaluate( () => localStorage.getItem( 'rsa_active' ) );
 		expect( activeId === '' || activeId === null ).toBe( true );

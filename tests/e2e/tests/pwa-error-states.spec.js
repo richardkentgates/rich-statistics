@@ -1,4 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Error states (connected site)', () => {
 
@@ -22,6 +23,7 @@ test.describe( 'Error states (connected site)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-login' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-app' ) ).toBeHidden();
 	} );
@@ -47,6 +49,7 @@ test.describe( 'Error states (connected site)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '.rsa-empty' ) ).toContainText( 'Could not load data (HTTP 404)' );
 	} );
 
@@ -71,6 +74,7 @@ test.describe( 'Error states (connected site)', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-banner-site-down' ) ).not.toBeHidden();
 	} );
 } );

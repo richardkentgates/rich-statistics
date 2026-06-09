@@ -1,4 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Connection status', () => {
 
@@ -93,6 +94,7 @@ test.describe( 'View containers', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-view-overview' ) ).toHaveClass( /rsa-active/ );
 	} );
 } );
@@ -148,6 +150,7 @@ test.describe( 'Responsive behavior', () => {
 		} );
 
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '#rsa-menu-toggle' ) ).toBeVisible();
 	} );
 } );

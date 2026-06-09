@@ -170,8 +170,10 @@
 
 		if ( sitesEncrypted || aiEncrypted ) {
 			showUnlockOverlay();
+			bindUnlock();
 		} else {
 			showSetPassphraseOverlay();
+			bindSetPassphrase();
 		}
 	}
 
@@ -598,11 +600,13 @@
 
 	function bindUnlock() {
 		var unlockBtn = document.getElementById( 'rsa-unlock-btn' );
+		if ( unlockBtn && unlockBtn.dataset.bound ) return;
 		var clearBtn  = document.getElementById( 'rsa-unlock-clear-btn' );
 		var passField = document.getElementById( 'rsa-unlock-pass' );
 		var errorDiv  = document.getElementById( 'rsa-unlock-error' );
 
 		if ( unlockBtn ) {
+			unlockBtn.dataset.bound = '1';
 			unlockBtn.addEventListener( 'click', async function () {
 				var passphrase = ( passField && passField.value ) || '';
 				if ( ! passphrase ) {
@@ -650,12 +654,14 @@
 
 	function bindSetPassphrase() {
 		var setBtn  = document.getElementById( 'rsa-set-pass-btn' );
+		if ( setBtn && setBtn.dataset.bound ) return;
 		var skipBtn = document.getElementById( 'rsa-set-pass-skip-btn' );
 		var pass1   = document.getElementById( 'rsa-set-pass-1' );
 		var pass2   = document.getElementById( 'rsa-set-pass-2' );
 		var errorDiv = document.getElementById( 'rsa-set-pass-error' );
 
 		if ( setBtn ) {
+			setBtn.dataset.bound = '1';
 			setBtn.addEventListener( 'click', async function () {
 				var p1 = ( pass1 && pass1.value ) || '';
 				var p2 = ( pass2 && pass2.value ) || '';
