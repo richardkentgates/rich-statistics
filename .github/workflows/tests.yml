@@ -69,10 +69,10 @@ jobs:
       - name: Run unit tests
         run: composer test -- --testsuite unit
 
-   # -----------------------------------------------------------------------
-   # Integration tests — need WordPress + MySQL
-   # -----------------------------------------------------------------------
-   integration:
+  # -----------------------------------------------------------------------
+  # Integration tests — need WordPress + MySQL
+  # -----------------------------------------------------------------------
+  integration:
     name: Integration tests (PHP ${{ matrix.php }}, WP ${{ matrix.wp }})
     runs-on: ubuntu-latest
 
