@@ -123,8 +123,8 @@ GitHub (source + CI)
   │           ├── Commit versioned docs/app/{version}/ snapshot → main branch
   │           └── POST /_deploy/ webhook → app server updates docs/app/
   │
-  └── Freemius dashboard (premium licensing + auto-updates)
-        └── Developer manually uploads plugin ZIP after each release
+    └── Freemius dashboard (premium licensing + auto-updates)
+          CI handles Freemius uploads automatically via `bin/deploy-freemius.php` (Freemius PHP SDK) on each build. The build-test workflow uploads with `release_mode=beta`, and the build-release workflow uploads with `release_mode=released`. No manual dashboard upload is needed.
 
 App server: app.richstatistics.com  (<PWA_SERVER_IP>)
   ├── /                  → serves the live PWA (pulled from docs/app/ by webhook)
@@ -163,7 +163,7 @@ feature/foo ──PR──→ develop ──push──→ auto-deploy: rs-dev
                         │
                    merge PR
                         ↓
-                      test ──push──→ auto-deploy: rs-test
+                         test ──workflow_dispatch──→ build-test.yml → rs-test (auto-deploy)
                         │
                    merge PR
                         ↓
@@ -295,8 +295,7 @@ sudo bash bin/setup-app-server.sh \
 The script prints the new `DEPLOY_WEBHOOK_TOKEN` and `APP_SERVER_SSH_KEY` values
 at the end — update both secrets in the GitHub repository settings.
 
-Full recovery documentation: [docs/wiki/app-server-setup.html](docs/wiki/app-server-setup.html)
-(rendered at `https://app.richstatistics.com/wiki/app-server-setup.html`)
+See the [App Server Setup wiki page](https://github.com/richardkentgates/rich-statistics/wiki/App-Server-Setup).
 
 ---
 

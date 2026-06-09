@@ -724,3 +724,35 @@ Generated from full-platform audit (2026-06-08). See `ROADMAP.md` §7 for findin
 **Final test counts:** 484 PHPUnit tests (1,026 assertions) + 69 E2E tests (all passing)  
 **Production bugs found during this audit:** 7 (CR-1, CR-2, HI-1, HI-2, HI-3, ME-1, ME-2)  
 **Additional fixes in this session:** ME-8 (uninstall bootstrap), ME-12 (AI chart memory leak), RestApiTest capability unlock (-10 skips, +31 assertions)
+
+---
+
+## Documentation Audit — June 9, 2026
+
+All issues found in the comprehensive docs audit have been fixed.
+
+### Wiki (10 files, 238 insertions / 53 deletions)
+| File | Fix |
+|------|-----|
+| `App-Server-Setup.md` | `rs-app.richardkentgates.com` → `app.richstatistics.com` (15+ refs); file layout to `{stable,beta}/` channel format |
+| `Premium-Features.md` | Dead domain fix (PWA, APT repo) |
+| `Bot-Detection.md` | `NO_HUMAN_EVENT` weight `+3`→`+1`; corrected `REMOTE_ADDR` grep claim |
+| `WP-CLI-Reference.md` | Version `1.4.2`→`2.4.27`; added `referrers`, `behavior`, `campaigns`, `user-flow` commands; `--blog-id` on all applicable commands |
+| `Code-Map.md` | Dead domain fix; full endpoint list (18); removed `serve_app()`; added `{stable,beta}/` path; added 5 missing `rsa_*` options |
+| `REST-API.md` | `manage_options`→`rsa_manage_statistics`; fixed `/pages`/`/referrers` response fields; added 6 missing endpoint docs |
+| `CI-CD-Reference.md` | `build-test.yml` trigger: push→`workflow_dispatch`; removed refs to deleted docs |
+| `Configuration.md` | Added 7 missing `rsa_*` option keys |
+| `Privacy-and-Compliance.md` | Grep commands corrected for accuracy |
+| `Release-Tracks.md` | Pipeline diagram: `auto deploy`→`manual promote` for test branch |
+
+### Main repo docs (5 files modified, 3 deleted)
+| File | Fix |
+|------|-----|
+| `AGENTS.md` | Integration test count 36→39; CI trigger table fixed; E2E count normalized to actual |
+| `ROADMAP.md` | Section numbering fixed (off-by-one in sections 9-14); PWA removal status resolved; version counts 12→18 |
+| `DEVELOPMENT.md` | Broken wiki link fixed; Freemius/branch-flow diagrams updated |
+| `ARCHITECTURE.md` | Snapshot layout to `{stable,beta}/` channel format; PHP 8.4 added; `versions-beta.json` documented |
+| `docs/CI-CD-COMPLETE.md` | **Deleted** — stale/orphaned, duplicates AGENTS.md + DEVELOPMENT.md |
+| `docs/WORKFLOW.md` | **Deleted** — stale/orphaned, duplicates AGENTS.md + DEVELOPMENT.md |
+| `docs/VERSION-BUMP.md` | **Deleted** — redundant with AGENTS.md release process |
+| `docs/README-DOCS.md` | Updated to reflect deletions and current version numbers |

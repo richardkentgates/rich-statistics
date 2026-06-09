@@ -20,7 +20,7 @@ Premium features are gated by Freemius (product ID 25954).
 | `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
 | `templates/admin/network-dashboard.php` | Multisite network dashboard (cross-site analytics) |
 | `templates/admin/network-settings.php` | Network-wide settings panel |
-| `tests/integration/` | PHPUnit integration tests (36 files) |
+| `tests/integration/` | PHPUnit integration tests (39 files) |
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (4 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
@@ -210,7 +210,7 @@ feature/foo ──PR──→ develop ──push──→ build-develop.yml → 
 |--------|-------------|--------|-------------|-------------|
 | `main` | Production | `app.richstatistics.com` | `build-release.yml` (tagged v*.*.*) | Stable releases |
 | `develop` | Development | `dev.richstatistics.com` | `build-develop.yml` (push) | Bleeding-edge development |
-| `test` | Beta / Staging | `test.richstatistics.com` | `build-test.yml` (push) | Pre-release QA |
+| `test` | Beta / Staging | `test.richstatistics.com` | `build-test.yml` (workflow_dispatch) | Pre-release QA |
 
 ### Release Process (ENFORCED)
 
@@ -339,11 +339,11 @@ See `ROADMAP.md` §6 for the full prioritized list.
 
 | Priority | Gap | Status |
 |----------|-----|--------|
-| P2.2 | E2E test pipeline | ✅ 68 tests passing |
+| P2.2 | E2E test pipeline | ✅ 70 tests passing |
 | P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
 
 **Recently completed (May 2026):**
-- P2.2: E2E test pipeline (68 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect, passphrase, error states, premium gating, version mismatch) ✅
+- P2.2: E2E test pipeline (70 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect, passphrase, error states, premium gating, version mismatch, csv export, offline refresh) ✅
 - L30-L36: Test coverage gaps filled (EnvDetection moved to integration, RSA_DB::table() edge cases, heatmap NULL handling, prune retention/timeout, bot detection Accept-Language + score capping) ✅
 - All audit items verified and documented in TODO.md/ROADMAP.md ✅
 - P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅
