@@ -172,26 +172,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          # Scan the server's host key(s)
-          ssh-keyscan -H ${{ inputs.server-ip }} > /tmp/ssh-host-keys
-          # Verify all host key fingerprints if expected values are provided
+          # Scan ED25519 host key (deterministic single key)
+          ssh-keyscan -t ed25519 -H ${{ inputs.server-ip }} > /tmp/ssh-host-keys
+          # Verify fingerprint against expected value
           if [ -n "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
-            while IFS= read -r LINE; do
-              [ -z "$LINE" ] && continue
-              ACTUAL=$(echo "$LINE" | ssh-keygen -lf /dev/stdin 2>/dev/null | awk '{print $2}')
-              MATCH=0
-              while IFS= read -r EXPECTED; do
-                if [ "$ACTUAL" = "$EXPECTED" ]; then
-                  MATCH=1
-                  break
-                fi
-              done <<< "${{ vars.EXPECTED_HOST_FINGERPRINT }}"
-              if [ "$MATCH" -eq 0 ]; then
-                echo "ERROR: Unknown host key fingerprint: $ACTUAL"
-                exit 1
-              fi
-            done < /tmp/ssh-host-keys
-            echo "All host key fingerprints verified."
+            ACTUAL=$(ssh-keygen -lf /tmp/ssh-host-keys | awk '{print $2}')
+            if [ "$ACTUAL" != "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
+              echo "ERROR: Host key fingerprint mismatch!"
+              echo "Expected: ${{ vars.EXPECTED_HOST_FINGERPRINT }}"
+              echo "Actual:   $ACTUAL"
+              exit 1
+            fi
+            echo "Host key fingerprint verified."
           fi
           cat /tmp/ssh-host-keys >> ~/.ssh/known_hosts
           rm -f /tmp/ssh-host-keys
@@ -340,7 +332,7 @@ jobs:
       - name: Add SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ inputs.server-ip }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -t ed25519 -H ${{ inputs.server-ip }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Checkout (for version)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
