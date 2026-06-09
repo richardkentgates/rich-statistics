@@ -172,18 +172,26 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          # Scan the server's host key
+          # Scan the server's host key(s)
           ssh-keyscan -H ${{ inputs.server-ip }} > /tmp/ssh-host-keys
-          # Verify fingerprint if expected value is provided
+          # Verify all host key fingerprints if expected values are provided
           if [ -n "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
-            ACTUAL=$(ssh-keygen -lf /tmp/ssh-host-keys | head -1 | awk '{print $2}')
-            if [ "$ACTUAL" != "${{ vars.EXPECTED_HOST_FINGERPRINT }}" ]; then
-              echo "ERROR: Host key fingerprint mismatch!"
-              echo "Expected: ${{ vars.EXPECTED_HOST_FINGERPRINT }}"
-              echo "Actual:   $ACTUAL"
-              exit 1
-            fi
-            echo "Host key fingerprint verified."
+            while IFS= read -r LINE; do
+              [ -z "$LINE" ] && continue
+              ACTUAL=$(echo "$LINE" | ssh-keygen -lf /dev/stdin 2>/dev/null | awk '{print $2}')
+              MATCH=0
+              while IFS= read -r EXPECTED; do
+                if [ "$ACTUAL" = "$EXPECTED" ]; then
+                  MATCH=1
+                  break
+                fi
+              done <<< "${{ vars.EXPECTED_HOST_FINGERPRINT }}"
+              if [ "$MATCH" -eq 0 ]; then
+                echo "ERROR: Unknown host key fingerprint: $ACTUAL"
+                exit 1
+              fi
+            done < /tmp/ssh-host-keys
+            echo "All host key fingerprints verified."
           fi
           cat /tmp/ssh-host-keys >> ~/.ssh/known_hosts
           rm -f /tmp/ssh-host-keys
