@@ -76,7 +76,7 @@ All four phases are implemented:
 | APT repository | ✅ Present | ✅ Present | ✅ Present |
 | vhost `/apt/` alias | ✅ Present | ✅ Present (SSL only) | ✅ Present |
 | `dist/update.json` | ✅ Present (sig: populated by CI) | ✅ Present (sig: populated by CI) | ✅ Present (sig: populated by CI) |
-| `v/` version snapshots | ✅ Channel-subdir format (17 versions) | ✅ Channel-subdir format (17 versions) | ✅ Channel-subdir format (17 versions) |
+| `v/` version snapshots | ✅ Channel-subdir format (18 versions) | ✅ Channel-subdir format (18 versions) | ✅ Channel-subdir format (18 versions) |
 | `versions.json` + `versions-beta.json` | ✅ Present | ✅ Present | ✅ Present |
 | Git branch (updater) | `main` | `develop` | `test` |
 | Desktop CI pushes | ✅ `build-release.yml` | ✅ `build-develop.yml` | ✅ `build-test.yml` |
@@ -164,7 +164,7 @@ Full audit completed across 8 areas. See `TODO.md` for the complete action item 
 | P2.3 | Server | Clean up old Windows binary names | ✅ Removed old `Rich Statistics_*.exe` from prod `dist/` |
 | P2.4 | CI/CD | Post-deploy smoke tests | ✅ Added to build-develop, build-test, build-release |
 | P2.5 | CI/CD | `build-release.yml` tag/main divergence | ✅ Fixed — `checkout-ref: main` in job-build-desktop |
-| P2.2 | Tests | E2E test pipeline | ✅ 55 tests passing |
+| P2.2 | Tests | E2E test pipeline | ✅ 70 tests passing |
 
 ### Phase 3: Medium Priority
 | Ref | Area | Finding | Status |
@@ -275,7 +275,7 @@ Full codebase audit completed 2026-06-08 across PHP backend, JavaScript frontend
 
 ### P2: CI / Quality
 1. Add PHPCS check to CI workflows — ✅ Added to all 4 workflows
-2. Add E2E test pipeline — ✅ 68 tests covering welcome screen, add site flow, navigation, view switching, disconnect, error states, version mismatch, full user journey
+2. Add E2E test pipeline — ✅ 70 tests covering welcome screen, add site flow, navigation, view switching, disconnect, error states, version mismatch, full user journey, csv export, offline refresh
 3. Add upgrade/migration test coverage — ✅ 9 migration tests + 10 env detection tests
 
 ### P3: Signatures ✅
@@ -295,7 +295,7 @@ Full codebase audit completed 2026-06-08 across PHP backend, JavaScript frontend
 
 ## 9. Operations Guide
 
-### 8.1 Uptime Monitoring
+### 9.1 Uptime Monitoring
 
 Each environment subdomain should be monitored for HTTP 200 responses.
 
@@ -317,7 +317,7 @@ Each environment subdomain should be monitored for HTTP 200 responses.
 | All | `https://<host>/apt/` | APT repo directory listing |
 | All | `https://<host>/_deploy/` | Webhook endpoint (returns 405 on GET, not 404) |
 
-### 8.2 Error Tracking
+### 9.2 Error Tracking
 
 No error tracking service (Sentry, Bugsnag, etc.) is currently configured.
 
@@ -332,7 +332,7 @@ No error tracking service (Sentry, Bugsnag, etc.) is currently configured.
 tail -f /var/log/apache2/rs-app_error.log | grep -c '" 5[0-9][0-9] '
 ```
 
-### 8.3 Rollback Procedure
+### 9.3 Rollback Procedure
 
 #### WordPress Plugin Rollback
 ```bash
@@ -421,7 +421,7 @@ A release can fail partway through, leaving some artifacts published and others 
 - `build-release.yml` has `concurrency` control to prevent overlapping release jobs
 - The `set -euo pipefail` flag ensures shell steps fail fast rather than silently continuing
 
-### 8.4 Database Backup Strategy
+### 9.4 Database Backup Strategy
 
 #### Current State
 - Database backup is **not** configured as part of the plugin or CI
@@ -458,7 +458,7 @@ gunzip < /backups/wordpress/2026-05-11.sql.gz | mysql wordpress_db
 
 ## 10. Beta Channel & Freemius Integration Audit (May 2026)
 
-### 9.1 Multi-Layer Architecture
+### 10.1 Multi-Layer Architecture
 
 The beta channel flows through 5 software layers:
 
@@ -476,18 +476,20 @@ WordPress Settings (checkbox rsa_beta_channel)
 - **CI snapshot creation**: `build-release.yml` creates both `stable/` and `beta/` subdirs per version
 - **CI `versions.json` + `versions-beta.json`**: Both generated with identical version lists (channel differentiation is purely path-based)
 
-### 9.2 Server Reality (Verified via SSH 2026-05-16)
+### 10.2 Server Reality (Verified via SSH 2026-05-16)
 
 | Env | Server | Web Root | Last Deployed | versions.json | versions-beta.json |
 |-----|--------|----------|---------------|---------------|-------------------|
-| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.27 (`main`) | ✅ 17 entries | ✅ Present |
-| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.27 (`develop`) | ✅ 17 entries | ✅ Present |
-| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.27 (`test`) | ✅ 17 entries | ✅ Present |
+| **Production** | `104.197.231.120` | `/var/www/rs-app/public_html/` | v2.4.27 (`main`) | ✅ 18 entries | ✅ Present |
+
+| **Dev** | `104.197.231.120` | `/var/www/rs-app-dev/` | v2.4.27 (`develop`) | ✅ 18 entries | ✅ Present |
+
+| **Test (PWA)** | `104.197.231.120` | `/var/www/rs-app-test/` | v2.4.27 (`test`) | ✅ 18 entries | ✅ Present |
 | **Test (Plugin)** | `34.56.56.233` | `/srv/www/wordpress` | WordPress integration tests | N/A | N/A |
 
 All 3 PWA environments run on the same server (`104.197.231.120`), sharing the same wildcard SSL cert.
 
-### 9.3 Snapshot Format Analysis
+### 10.3 Snapshot Format Analysis
 
 **Two different formats exist:**
 
@@ -503,10 +505,10 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 - **This is a critical compatibility break**: the root `app.js` navigates to `/v/{version}/{channel}/index.html` — all versions before 2.4.16 will 404 in new desktop builds
 - **Fix**: Run server migration script (see §9.7)
 
-**In repo `docs/app/v/` (12 versions):**
+**In repo `docs/app/v/` (18 versions):**
 - All versions have correct `stable/` + `beta/` subdirectories ✅
 
-### 9.4 Gaps Discovered During Audit
+### 10.4 Gaps Discovered During Audit
 
 | # | Severity | Gap | Layer | Status |
 |---|----------|-----|-------|--------|
@@ -517,7 +519,7 @@ All 3 PWA environments run on the same server (`104.197.231.120`), sharing the s
 | BC-8 | **MEDIUM** | Server accumulates 39+ snapshots — CI only keeps 12 | Server | ✅ `server-update-webapp.sh` prunes to last 12 versions |
 | BC-12 | **LOW** | `setup-webhook.yml` always deploys production webhook handler | CI/CD | ✅ Environment-aware webhook deployment added |
 
-### 9.5 Freemius ZIP Upload via GitHub Actions
+### 10.5 Freemius ZIP Upload via GitHub Actions
 
 **Implemented:** Uses official Freemius PHP SDK via `bin/deploy-freemius.php`.
 
@@ -537,7 +539,7 @@ php bin/deploy-freemius.php <file_name> <version> <release_mode> [sandbox]
 php bin/deploy-freemius.php rich-statistics-2.4.27.zip 2.4.27 released
 ```
 
-### 9.6 Promotion Workflow Enforcement
+### 10.6 Promotion Workflow Enforcement
 
 | Step | From → To | Workflow | Trigger | Status |
 |------|-----------|----------|---------|--------|
@@ -549,7 +551,7 @@ Both workflows use `gh pr create` + `gh pr merge --squash`, respecting GitHub br
 
 **Gap:** Beta tag always `.1` — need increment logic for re-cuts (BC-3).
 
-### 9.7 Snapshot Migration Plan
+### 10.7 Snapshot Migration Plan
 
 To fix BC-1 (flat → channel subdirs), all existing flat snapshots need conversion:
 
@@ -580,7 +582,7 @@ Each will also need `versions-beta.json` generated from existing `versions.json`
 cp versions.json versions-beta.json
 ```
 
-### 9.8 Apache Config Update
+### 10.8 Apache Config Update
 
 Current SSL vhost for production (`/etc/apache2/sites-available/app.richstatistics.com-le-ssl.conf`):
 
@@ -603,7 +605,7 @@ Current SSL vhost for production (`/etc/apache2/sites-available/app.richstatisti
 
 Same fix needed for dev/test SSL vhosts.
 
-### 9.9 Update JSON Signature Fix
+### 10.9 Update JSON Signature Fix
 
 Current `update.json` has signatures populated by CI pipeline.
 
@@ -627,7 +629,7 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 |------|--------|---------|
 | Branch flow | ✅ Strong | `develop → test → main` enforced via promote workflows. No direct commits to protected branches. |
 | CI reliability | ✅ Good | Concurrency controls, retry loops, `set -euo pipefail`, reusable sub-workflows. YAML syntax validated. |
-| Test coverage | ✅ Good | Unit (74 tests), integration (PHP 8.1–8.4 × WP latest/6.4), E2E (55 Playwright tests) all run on develop. |
+| Test coverage | ✅ Good | Unit (74 tests), integration (PHP 8.1–8.4 × WP latest/6.4), E2E (70 Playwright tests) all run on develop. |
 | Code quality gates | ✅ Good | PHPCS in `job-build-zip`, PHP syntax check, Chart.js SRI hash verification. |
 | Freemius integration | ✅ Working | SDK-based upload in `build-test.yml` (beta) and `build-release.yml` (stable). Version deduplication handled. |
 | Desktop distribution | ✅ Working | Linux amd64/arm64 `.deb` + Windows `.exe` on all 3 servers. APT repo + `update.json` for auto-updates. |
@@ -639,7 +641,7 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 | # | Issue | Resolution |
 |---|-------|------------|
 | 1 | Deploy mechanism undocumented | ✅ Systemd daemon installed on all 3 servers; old cron removed. `journalctl -u rsa-deploy-daemon@{prod,dev,test}` for logs. |
-| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27. 17 versions now present from 2.4.9 → 2.4.27. (2.4.20 was never released as a tag.) |
+| 2 | Version parity gaps | ✅ Backfilled 2.4.22, 2.4.23, 2.4.25, 2.4.27. 18 versions now present from 2.4.9 → 2.4.27. (2.4.20 was never released as a tag.) |
 | 3 | Windows binary naming inconsistency | ✅ Old `Rich Statistics_*.exe` files removed from prod `dist/`. Only standardized `rich-statistics-windows.exe` remains. |
 | 4 | No post-deploy verification | ✅ Smoke test added to `build-develop.yml`, `build-test.yml`, and `build-release.yml` — verifies HTTP 200 after webhook ping. |
 | 6 | `build-release.yml` tag vs. main divergence | ✅ `job-build-desktop.yml` accepts `checkout-ref: main`; desktop build uses exact snapshots committed by release job. |
@@ -660,16 +662,16 @@ Production-ready with manageable technical debt. The pipeline works end-to-end a
 
 ---
 
-## 12. Remove In-Plugin PWA Serving (Planned Task)
+## 12. Remove In-Plugin PWA Serving (Completed)
 
-> **Status:** Plan corrected — corrections applied 2026-06-06. Awaiting user approval before implementation.
-> **Last updated:** 2026-06-06
+> **Status:** ✅ Completed in v2.4.26. The PWA is no longer served from within the WordPress plugin — the `/rs-app/` rewrite rule was removed.
+> **Last updated:** 2026-06-09
 
-### 11.1 Goal
+### 12.1 Goal
 
 Remove the WordPress-plugin-embedded PWA serving mechanism (`/rs-app/` rewrite + file serving) while preserving the external app server (`app.richstatistics.com`), the Tauri desktop app, and all WordPress admin dashboard interfaces.
 
-### 11.2 Corrected Architecture Understanding
+### 12.2 Corrected Architecture Understanding
 
 The plugin currently has **two entirely separate mechanisms** that happen to read from the same source directory (`docs/app/`):
 
@@ -693,7 +695,7 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 
 `docs/app/` must remain in the repository because it is the **single source of truth** for Mechanism B and Mechanism C. Only Mechanism A is being removed.
 
-### 11.3 What Must Be Removed
+### 12.3 What Must Be Removed
 
 **PHP (WordPress plugin):**
 
@@ -744,7 +746,7 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 | `includes/class-pwa-download.php` | Update file-level docblock — remove ZIP download references |
 | `languages/rich-statistics.pot` | Regenerate after all PHP changes |
 
-### 11.4 What Must Be Preserved
+### 12.4 What Must Be Preserved
 
 | Component | Why |
 |-----------|-----|
@@ -758,7 +760,7 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 | Desktop app download instructions (`templates/admin/install.php`) | Links to external URLs |
 | Tauri desktop app (`src-tauri/`) | Bundles `docs/app/` from repo at build time |
 
-### 11.5 Step-by-Step Implementation Plan
+### 12.5 Step-by-Step Implementation Plan
 
 **Phase A — PHP (WordPress plugin)**
 
@@ -829,7 +831,7 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 14. **Commit and push to `develop`**
     - Follow branch structure: feature branch → develop → test → main
 
-### 11.6 Test Impact
+### 12.6 Test Impact
 
 | Test file | Expected change |
 |-----------|-----------------|
@@ -839,14 +841,14 @@ The plugin currently has **two entirely separate mechanisms** that happen to rea
 | E2E tests (`tests/e2e/`) | No changes needed — E2E tests run against the external PWA server, not in-plugin serving |
 | All other tests | No impact |
 
-### 11.7 Risk Assessment
+### 12.7 Risk Assessment
 
 - **Low risk.** The in-plugin PWA serving is a standalone feature with no dependencies from other plugin components. Removing it does not affect tracking, analytics, REST API, admin dashboard, external app server, or desktop app.
 - **No database migration needed.** No schema changes.
 - **No user-facing admin pages affected.** Only the `/rs-app/` frontend URL disappears.
 - **Plugin ZIP size benefit.** `docs/app/` was already excluded from the ZIP by `.distignore`, so ZIP size is unchanged. However, a small reduction from removing `handle_download()` and `stream_zip()`.
 
-### 11.8 Server & GitHub Infrastructure Audit (2026-06-06)
+### 12.8 Server & GitHub Infrastructure Audit (2026-06-06)
 
 Verified by inspecting the live server (`104.197.231.120`), GitHub repo (`richardkentgates/rich-statistics`), and all CI workflows.
 
@@ -868,7 +870,7 @@ Verified by inspecting the live server (`104.197.231.120`), GitHub repo (`richar
 
 #### GitHub Infrastructure
 
-- **30 tags** (v2.2.7 through v2.4.27), **12 PWA version directories** on GitHub (`docs/app/v/2.4.14/` through `v/2.4.27/`).
+- **30 tags** (v2.2.7 through v2.4.27), **18 PWA version directories** on GitHub (`docs/app/v/2.4.9/` through `v/2.4.27/`).
 - **4 branches:** `main`, `develop`, `test`, `fix/merge-main-into-test`.
 - **11 CI workflows** (build-develop, build-test, build-release, job-build-zip, job-build-desktop, promote, promote-test, tests, e2e-tests, health-check, setup-webhook). All verified to NOT reference in-plugin PWA serving.
 - **`job-build-zip.yml`** excludes `*/docs/*` from the plugin ZIP (line 84). This means `docs/app/` is NOT included in the distributed ZIP. The `serve_app()` method reads from `RSA_DIR . 'docs/app/index.html'` which only works in the dev repo — feature was already broken for distributed plugins.
@@ -936,11 +938,11 @@ The most reliable approach: add a version-based one-time flush in `rsa_init()` u
 > **Status:** Planning — not yet implemented.
 > **Last updated:** 2026-06-06
 
-### 12.1 Goal
+### 13.1 Goal
 
 Add an optional visitor consent banner. Two admin checkboxes control behavior. When the banner is shown, all metrics default to ON. Visitor can turn categories OFF.
 
-### 12.2 Design
+### 13.2 Design
 
 **Two independent admin checkboxes:**
 
@@ -997,7 +999,7 @@ Stored as JSON in `wp_options`:
 - Return button: physically brings the banner back to its original position
 - Collapse/return state persists across page loads via localStorage
 
-### 12.3 Settings Storage
+### 13.3 Settings Storage
 
 New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 
@@ -1005,23 +1007,23 @@ New `wp_options` keys (added to `RSA_DB::seed_defaults()`):
 |-----------|------|---------|
 | `rsa_consent_banner` | int (0/1) | `0` |
 | `rsa_consent_auto` | int (0/1) | `0` |
-| `rsa_consent_styles` | JSON | Style config object (see 12.2) |
+| `rsa_consent_styles` | JSON | Style config object (see 13.2) |
 
 Also add these keys to `RSA_Admin::save_settings()` `$fields` array with `absint` sanitizer, and to `RSA_DB::drop_site_tables()` option deletion list in `class-db.php`.
 
-### 12.4 Files to Create
+### 13.4 Files to Create
 
 | File | Purpose |
 |------|---------|
 | `includes/class-consent-banner.php` | New class: `RSA_Consent_Banner`. Hooks `wp_enqueue_scripts` to inject banner HTML and `<style>` block. Injects consent config into `window.RSA`. Exits early if `rsa_consent_banner` is `0`. |
 | `assets/css/consent-banner.css` | Base layout styles (position: fixed, z-index, responsive). Colors/shadows/borders via CSS custom properties set server-side. |
 
-### 12.5 Files to Modify
+### 13.5 Files to Modify
 
 | File | Change |
 |------|--------|
 | `includes/class-db.php` | Add `rsa_consent_*` defaults to `seed_defaults()`. Add consent options to `drop_site_tables()` uninstall cleanup list. |
-| `includes/class-admin.php` | Add `rsa_consent_banner` and `rsa_consent_auto` to `save_settings()` `$fields` array with `absint` sanitizer. Hook `RSA_Consent_Banner::init()`. |
+| `includes/class-admin.php` | Add `rsa_consent_banner` and `rsa_consent_auto` to `save_settings()` `fields` array with `absint` sanitizer. Hook `RSA_Consent_Banner::init()`. |
 | `includes/class-tracker.php` | Add `consentBanner` and `consentAuto` to `wp_localize_script` data (`window.RSA`). |
 | `assets/js/tracker.js` | Check `window.RSA.consentBanner` and `window.RSA.consentAuto` before sending. Per-category gate applies to both `sendBeacon` and jQuery sync AJAX fallback paths. If `localStorage` is blocked, fall back to `sessionStorage` (session-only consent) then in-memory state (page-load-only consent). |
 | `templates/admin/preferences.php` | Add "Consent Banner" section: Show Banner checkbox, Auto-Consent checkbox, style controls. |
@@ -1030,7 +1032,7 @@ Also add these keys to `RSA_Admin::save_settings()` `$fields` array with `absint
 | `languages/rich-statistics.pot` | Regenerate after all PHP changes. |
 | `CHANGELOG.md` | Document under `[Unreleased]`. |
 
-### 12.6 Consent Flow
+### 13.6 Consent Flow
 
 ```
 Visitor loads page
@@ -1053,14 +1055,14 @@ On each beacon, tracker.js checks localStorage categories
   └── Commerce → check commerce
 ```
 
-### 12.6.1 localStorage Blocked Fallback
+### 13.6.1 localStorage Blocked Fallback
 
 If `localStorage` is unavailable (private browsing, corporate policy, browser extension):
 - Fall back to `sessionStorage` → consent persists for the tab session only, lost on close
 - If `sessionStorage` is also blocked, use in-memory state → consent lasts for the page load only, resets on navigation
 - The banner still renders and functions normally in all cases — only persistence scope changes
 
-### 12.6.2 Tracker Send Path
+### 13.6.2 Tracker Send Path
 
 `tracker.js` sends data via two paths (existing code):
 1. `navigator.sendBeacon()` — preferred, fire-and-forget
@@ -1068,21 +1070,21 @@ If `localStorage` is unavailable (private browsing, corporate policy, browser ex
 
 **Both paths must apply the same consent gating.** The consent check happens before the send decision, so both paths are blocked equally when a category is declined.
 
-### 12.7 What Must Be Preserved
+### 13.7 What Must Be Preserved
 
 - Default behavior (`rsa_consent_banner=0`): track everything, no banner
 - DNT/GPC check in `tracker.js` — exits before consent logic
 - Existing `window.RSA` config structure — consent keys are additive
 - All existing REST endpoints — no new endpoints needed
 
-### 12.8 Risk Assessment
+### 13.8 Risk Assessment
 
 - Low risk. Default is off — no change until site owner enables it.
 - No database migration. All settings are `wp_options`.
 - No schema changes. Consent enforced client-side.
 - Backwards-compatible. If `window.RSA.consentBanner` is undefined, tracking proceeds as before.
 
-### 12.9 Implementation Order
+### 13.9 Implementation Order
 
 **Phase A — Backend (PHP)**
 1. `includes/class-db.php` — Add defaults to `seed_defaults()`, add to `drop_site_tables()` list
@@ -1102,7 +1104,7 @@ If `localStorage` is unavailable (private browsing, corporate policy, browser ex
 11. `CHANGELOG.md` — Document
 12. `composer phpcs` + `composer test`
 
-### 12.10 Test Plan
+### 13.10 Test Plan
 
 | Test | Verify |
 |------|--------|
@@ -1144,7 +1146,7 @@ Systematic audit of all source files against test suite identified 13 major gaps
 | Security | — | ✅ 14 | SQLi, XSS, path traversal, CSRF, session spoofing, bot score | — |
 | Templates | `templates/admin/*.php` (16 files) | ✅ 15 | Output capture, premium gating, XSS escaping, permissions | Network views (multisite) |
 | Uninstall | `uninstall.php` | ✅ 4 | Single-site table drops, option deletion, missing-table edge case | Multisite uninstall (env limitation) |
-| E2E | `tests/e2e/*.js` (4 files, 55 tests) | ✅ 55 | Shell, add site, nav, views | Consent, WooCommerce, AI chat, export, offline |
+| E2E | `tests/e2e/*.js` (10 files, 70 tests) | ✅ 70 | Shell, add site, nav, views, error states, version mismatch, user journey, premium views, csv export, offline refresh | Consent, WooCommerce, AI chat, export |
 
 ### Priority Matrix
 

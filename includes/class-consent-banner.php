@@ -188,7 +188,7 @@ class RSA_Consent_Banner {
 		if ( strlen( $hex ) === 3 ) {
 			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
 		}
-		if ( strlen( $hex ) !== 6 ) {
+		if ( strlen( $hex ) !== 6 || ! ctype_xdigit( $hex ) ) {
 			return 'rgba(0,0,0,' . $alpha . ')';
 		}
 		$r = hexdec( substr( $hex, 0, 2 ) );

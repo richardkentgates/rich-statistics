@@ -82,4 +82,7 @@ jobs:
       update-json-script: rsa-gen-update-json-dev
       artifact-prefix: rich-statistics-develop
       product-suffix: (Dev)
-    secrets: inherit
+    secrets:
+      APP_SERVER_SSH_KEY: ${{ secrets.APP_SERVER_SSH_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}

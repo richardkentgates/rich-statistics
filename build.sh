@@ -39,7 +39,14 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-if [ -n "${1:-}" ]; then
+ZIP_ONLY=false
+if [ "${1:-}" = "--zip-only" ]; then
+    ZIP_ONLY=true
+    VERSION="${2:-}"
+    if [ -z "$VERSION" ]; then
+        VERSION=$(grep -oP "define\s*\(\s*['\"]RSA_VERSION['\"]\s*,\s*['\"]?\K[0-9][0-9.]*" rich-statistics.php | head -1)
+    fi
+elif [ -n "${1:-}" ]; then
     VERSION="$1"
 else
     VERSION=$(grep -oP "define\s*\(\s*['\"]RSA_VERSION['\"]\s*,\s*['\"]?\K[0-9][0-9.]*" rich-statistics.php | head -1)
@@ -163,54 +170,65 @@ ZIP_SIZE=$(du -sh "${BUILD_DIR}/${ZIP_NAME}" | cut -f1)
 info "Done: ${BUILD_DIR}/${ZIP_NAME} (${ZIP_SIZE})"
 
 # -----------------------------------------------------------------------
-# Publish versioned app snapshot to docs/app/v/{version}/{channel}/
+# Publish versioned app snapshot (skipped in --zip-only mode)
 # -----------------------------------------------------------------------
-APP_SRC="docs/app"
-APP_VERSIONED="docs/app/v/${VERSION}"
+if [ "$ZIP_ONLY" = false ]; then
+    APP_SRC="docs/app"
+    APP_VERSIONED="docs/app/v/${VERSION}"
 
-# Bump SW cache name to match release version
-CACHE_NAME="rsa-$(echo "${VERSION}" | tr '.' '-')"
-sed -i "s/: 'rsa-[0-9]\+-[0-9]\+-[0-9]\+'/: '${CACHE_NAME}'/" "${APP_SRC}/sw.js"
-info "Bumped SW cache name to ${CACHE_NAME}"
+    # Bump SW cache name to match release version
+    CACHE_NAME="rsa-$(echo "${VERSION}" | tr '.' '-')"
+    sed -i "s/: 'rsa-[0-9]\+-[0-9]\+-[0-9]\+'/: '${CACHE_NAME}'/" "${APP_SRC}/sw.js"
+    info "Bumped SW cache name to ${CACHE_NAME}"
 
-# Create versioned snapshot directories (stable + beta)
-for CHANNEL in stable beta; do
-    CHANNEL_DIR="${APP_VERSIONED}/${CHANNEL}"
-    if [ -d "$CHANNEL_DIR" ]; then
-        warn "Versioned app folder already exists: ${CHANNEL_DIR} — skipping."
-        continue
-    fi
-    info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
-    mkdir -p "$CHANNEL_DIR"
-    for f in index.html app.js app.css config.js sw.js sw-init.js manifest.json chart.min.js; do
-        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+    # Create versioned snapshot directories (stable + beta)
+    for CHANNEL in stable beta; do
+        CHANNEL_DIR="${APP_VERSIONED}/${CHANNEL}"
+        if [ -d "$CHANNEL_DIR" ]; then
+            warn "Versioned app folder already exists: ${CHANNEL_DIR} — skipping."
+            continue
+        fi
+        info "Publishing versioned app snapshot: ${CHANNEL_DIR}/"
+        mkdir -p "$CHANNEL_DIR"
+        for f in index.html app.js app.css config.js sw.js sw-init.js manifest.json chart.min.js; do
+            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+        done
+        for f in index-dev.html index-test.html config-dev.js config-test.js; do
+            [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
+        done
+        [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${CHANNEL_DIR}/icons"
     done
-    for f in index-dev.html index-test.html config-dev.js config-test.js; do
-        [ -f "${APP_SRC}/${f}" ] && cp "${APP_SRC}/${f}" "${CHANNEL_DIR}/${f}"
-    done
-    [ -d "${APP_SRC}/icons" ] && cp -r "${APP_SRC}/icons" "${CHANNEL_DIR}/icons"
-done
 
-# Regenerate versions.json + versions-beta.json from v/ directory
-python3 << 'PYEOF'
+    # Regenerate versions.json + versions-beta.json from v/ directory
+    python3 << 'PYEOF'
 import json, pathlib
+
+def vkey(x):
+    parts = x.split('.')
+    return tuple(int(p) if p.isdigit() else 999999 for p in parts)
+
 v_dir = pathlib.Path('docs/app/v')
 versions = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
 pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(versions))
 PYEOF
-info "Regenerated versions.json and versions-beta.json"
+    info "Regenerated versions.json and versions-beta.json"
 
-# Prune old snapshot directories (keep last 12)
-python3 << 'PYEOF'
+    # Prune old snapshot directories (keep last 12)
+    python3 << 'PYEOF'
 import json, shutil, pathlib
+
+def vkey(x):
+    parts = x.split('.')
+    return tuple(int(p) if p.isdigit() else 999999 for p in parts)
+
 v_dir = pathlib.Path('docs/app/v')
 all_v = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 keep = set(all_v[-12:])
 for d in v_dir.iterdir():
@@ -219,12 +237,15 @@ for d in v_dir.iterdir():
         print(f"pruned {d.name}")
 remaining = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
 pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
 PYEOF
-info "Pruned snapshots to last 12 versions"
-info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
-info "Commit and push docs/ to publish."
-info "Run: git add docs/ && git commit -m 'chore: add versioned PWA snapshot v${VERSION}'"
+    info "Pruned snapshots to last 12 versions"
+    info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
+    info "Commit and push docs/ to publish."
+    info "Run: git add docs/ && git commit -m 'chore: add versioned PWA snapshot v${VERSION}'"
+else
+    info "Skipping PWA snapshot creation (--zip-only mode)"
+fi

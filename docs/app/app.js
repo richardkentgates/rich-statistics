@@ -1056,9 +1056,9 @@
 						caches.keys().then( function ( keys ) {
 							var toDelete = keys.filter( function ( k ) { return k.indexOf( 'rsa-' ) === 0; } );
 							return Promise.all( toDelete.map( function ( k ) { return caches.delete( k ); } ) );
-						} ).then( function () { window.location.reload( true ); } );
-					} else {
-						window.location.reload( true );
+					} ).then( function () { window.location.reload(); } );
+				} else {
+					window.location.reload();
 					}
 					return;
 				}
@@ -4262,7 +4262,9 @@
 			.replace( /&/g, '&amp;' )
 			.replace( /</g, '&lt;' )
 			.replace( />/g, '&gt;' )
-			.replace( /"/g, '&quot;' );
+			.replace( /"/g, '&quot;' )
+			.replace( /'/g, '&#39;' )
+			.replace( /`/g, '&#96;' );
 	}
 
 	function truncate( str, len ) {

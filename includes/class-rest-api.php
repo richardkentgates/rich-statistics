@@ -810,6 +810,10 @@ class RSA_Rest_API {
 			return new WP_Error( 'invalid_data', __( 'sites must be an array.', 'rich-statistics' ), [ 'status' => 400 ] );
 		}
 
+		if ( count( $raw ) > 100 ) {
+			return new WP_Error( 'too_many_sites', __( 'Maximum 100 sites allowed.', 'rich-statistics' ), [ 'status' => 400 ] );
+		}
+
 		// Strip everything except the safe fields we want to persist.
 		$sanitized = array_map(
 			function ( $site ) {

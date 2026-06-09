@@ -59,7 +59,7 @@ if ( ! current_user_can( 'manage_network_options' ) ) {
 						$bounce = round( ( $single / $sessions ) * 100 );
 					}
 				}
-				$site_details  = get_blog_details( $site->blog_id );
+				$site_details  = get_site( $site->blog_id );
 				$dashboard_url = get_admin_url( $site->blog_id, 'admin.php?page=rich-statistics' );
 				restore_current_blog();
 				?>

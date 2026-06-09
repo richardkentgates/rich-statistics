@@ -9,11 +9,11 @@ This directory contains comprehensive documentation for the Rich Statistics proj
 ## 🚀 Getting Started
 
 ### New Contributors
-Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD reference with step-by-step workflows.
+Start here: [`../AGENTS.md`](../AGENTS.md) — Development guidelines with CI/CD flows, release process, and common tasks.
 
 ### Quick Reference
-- **Workflow Diagram:** [`WORKFLOW.md`](./WORKFLOW.md) — Visual workflow reference
 - **Agent Instructions:** [`../AGENTS.md`](../AGENTS.md) — Development guidelines
+- **Architecture:** [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — Plugin internals and design decisions
 
 ---
 
@@ -21,8 +21,6 @@ Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD refere
 
 | Document | Size | Purpose | Audience |
 |----------|------|---------|----------|
-| [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) | 28 KB | **Complete CI/CD reference** — workflows, Freemius, servers, troubleshooting | All developers |
-| [`WORKFLOW.md`](./WORKFLOW.md) | 9.3 KB | Workflow quick reference — release flow, version management | Release managers |
 | [`app-server-architecture.md`](./app-server-architecture.md) | 15 KB | Server infrastructure — webhooks, cron deploys, APT repo | DevOps |
 | [`ai-architecture-wiki.md`](./ai-architecture-wiki.md) | 5.2 KB | AI tool architecture — structured data, no LLM calls | AI developers |
 | [`../AGENTS.md`](../AGENTS.md) | — | Agent instructions — coding standards, common tasks | AI agents |
@@ -54,10 +52,9 @@ Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD refere
 - **Desktop binaries** — Linux (.deb) + Windows (.exe) with APT repo
 
 ### ✅ Documentation
-- **28 KB CI-CD guide** — Every workflow, every step, every troubleshooting scenario
-- **Workflow quick reference** — Release flow, version management, commands
-- **Server architecture** — Webhook mechanism, cron pollers, APT repo
 - **Agent instructions** — Updated with complete Freemius deploy flow
+- **Server architecture** — Webhook mechanism, cron pollers, APT repo
+- **Roadmap** — Audit findings, infrastructure plan, version compatibility
 
 ---
 
@@ -87,7 +84,7 @@ Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD refere
 |-----------|---------|--------|
 | **Plugin** | 2.4.27 | ✅ On develop (ready for test) |
 | **Freemius (beta)** | 2.4.27 | ✅ Uploaded as beta (tag ID 123385) |
-| **Freemius (released)** | 2.4.19 | ✅ Public release (tag ID 123214) |
+| **Freemius (released)** | 2.4.27 | ✅ Public release (tag ID 123385) |
 | **Dev Server** | — | ✅ dev.richstatistics.com operational |
 | **Test Server** | — | ✅ test.richstatistics.com operational |
 | **Production** | — | ✅ app.richstatistics.com operational |
@@ -98,7 +95,7 @@ Start here: [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) — Complete CI/CD refere
 ## 📞 Support
 
 ### Troubleshooting
-See [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) § Troubleshooting Guide for:
+See [`../AGENTS.md`](../AGENTS.md) § Promote Workflow Rules for:
 - Tag already exists errors
 - Freemius upload failures
 - Deploy stuck issues
@@ -119,14 +116,10 @@ See [`CI-CD-COMPLETE.md`](./CI-CD-COMPLETE.md) § Troubleshooting Guide for:
 
 ## 📝 Recent Updates (May 18, 2026)
 
-- ✅ Created `CI-CD-COMPLETE.md` (28 KB comprehensive reference)
-- ✅ Updated `WORKFLOW.md` with complete release flow
 - ✅ Updated `AGENTS.md` with Freemius deploy documentation
 - ✅ Migrated from `buttonizer/freemius-deploy` to official PHP SDK
 - ✅ Fixed `promote.yml` to handle existing tags (force-update)
 - ✅ Documented all working workflows and server infrastructure
-- ✅ Version 2.4.20 successfully tested on Freemius beta
-- ✅ Version 2.4.19 successfully released to Freemius public
 
 ---
 
