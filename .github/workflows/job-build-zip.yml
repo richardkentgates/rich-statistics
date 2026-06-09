@@ -25,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.2'
           coverage: none
@@ -37,7 +37,7 @@ jobs:
         run: |
           find . -name "*.php" \
             -not -path "./vendor/freemius/languages/*" \
-            | xargs -I{} php -l "{}"
+            -exec php -l {} +
 
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -70,29 +70,11 @@ jobs:
       - name: Run PHPCS
         run: composer phpcs -- --report-full --runtime-set ignore_warnings_on_exit 1
 
-      - name: Create plugin ZIP
+      - name: Create plugin ZIP via build.sh
         run: |
           VERSION="${{ inputs.version }}"
-          ZIP_NAME="rich-statistics-${VERSION}.zip"
-          mkdir -p build
-          zip -r "build/${ZIP_NAME}" . \
-            --exclude="*.git*" \
-            --exclude="*.github*" \
-            --exclude="*/tests/*" \
-            --exclude="*/bin/*" \
-            --exclude="*/build/*" \
-            --exclude="*/docs/*" \
-            --exclude="composer.json" \
-            --exclude="composer.lock" \
-            --exclude="phpunit.xml.dist" \
-            --exclude="phpcs.xml.dist" \
-            --exclude=".gitignore" \
-            --exclude=".gitattributes" \
-            --exclude="*.gitkeep" \
-            --exclude="*.sh" \
-            --exclude="CONTRIBUTING.md" \
-            --exclude="SECURITY.md" \
-            --exclude="README.md"
+          bash build.sh "$VERSION" --zip-only
+          # build.sh creates build/rich-statistics-${VERSION}.zip
 
       - name: Generate SHA256 checksum
         run: |
@@ -102,7 +84,7 @@ jobs:
           cat "build/${ZIP_NAME}.sha256"
 
       - name: Upload ZIP artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ inputs.artifact-name }}-${{ inputs.version }}
           path: |

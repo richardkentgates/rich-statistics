@@ -66,16 +66,16 @@ jobs:
 
     steps:
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
           php-version: '8.1'
           extensions: curl, json, mbstring
 
       - name: Checkout (for deploy script + SDK)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Download ZIP artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: rich-statistics-${{ needs.resolve-version.outputs.version }}
           path: build
@@ -117,12 +117,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
       - name: Download ZIP artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: rich-statistics-${{ needs.resolve-version.outputs.version }}
           path: build
@@ -134,7 +134,7 @@ jobs:
           echo "sha256=${HASH}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           files: |
             build/rich-statistics-${{ needs.resolve-version.outputs.version }}.zip
@@ -248,7 +248,10 @@ jobs:
       # desktop build bundles the exact snapshots that were just committed,
       # rather than recreating them from the tag ref (which lacks the commit).
       checkout-ref: main
-    secrets: inherit
+    secrets:
+      APP_SERVER_SSH_KEY: ${{ secrets.APP_SERVER_SSH_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
   ping-deploy:
     name: Deploy PWA to production
