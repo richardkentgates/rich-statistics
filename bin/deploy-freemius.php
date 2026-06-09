@@ -64,11 +64,12 @@ if ($zip->open($tmp_file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) 
 
 $plugin_folder = $plugin_slug . '/';
 $uninstall_path = $plugin_folder . 'uninstall.php';
+$uninstall_path_root = 'uninstall.php';
 $stripped = false;
 
 for ($i = 0; $i < $original->numFiles; $i++) {
     $entry = $original->getNameIndex($i);
-    if ($entry === $uninstall_path || strpos($entry, $uninstall_path . '/') === 0) {
+    if ($entry === $uninstall_path || strpos($entry, $uninstall_path . '/') === 0 || $entry === $uninstall_path_root) {
         $stripped = true;
         continue;
     }
