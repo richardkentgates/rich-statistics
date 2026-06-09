@@ -158,9 +158,7 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 	);
 	foreach ( $rsa_premium as $class ) {
 		$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
-		if ( file_exists( $file ) ) {
-			require_once $file;
-		}
+		require_once $file;
 	}
 }
 

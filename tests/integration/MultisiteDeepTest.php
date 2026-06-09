@@ -142,7 +142,7 @@ class MultisiteDeepTest extends WP_UnitTestCase {
 	 * On new blog event handler
 	 */
 	public function test_on_new_blog_event_runs_without_error(): void {
-		$site = new stdClass();
+		$site          = new stdClass();
 		$site->blog_id = get_current_blog_id();
 
 		// Skip if RSA_FILE is not defined (happens in test bootstrap).

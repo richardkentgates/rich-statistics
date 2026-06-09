@@ -1130,7 +1130,7 @@ class RSA_Rest_API {
 			'date_from'    => (string) ( $r['date_from'] ?? '' ),
 			'date_to'      => (string) ( $r['date_to'] ?? '' ),
 		];
-		$data = RSA_Analytics::get_path_flow( $r['period'], $filters );
+		$data    = RSA_Analytics::get_path_flow( $r['period'], $filters );
 		if ( isset( $data['error'] ) ) {
 			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
 		}
@@ -1154,7 +1154,7 @@ class RSA_Rest_API {
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
 			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
-		$data = RSA_Analytics::get_user_flow( $r['period'], $filters );
+		$data    = RSA_Analytics::get_user_flow( $r['period'], $filters );
 		if ( isset( $data['error'] ) ) {
 			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
 		}
@@ -1172,7 +1172,7 @@ class RSA_Rest_API {
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
 			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
-		$data = RSA_Analytics::get_entry_sources( $r['period'], $filters );
+		$data    = RSA_Analytics::get_entry_sources( $r['period'], $filters );
 		if ( isset( $data['error'] ) ) {
 			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
 		}

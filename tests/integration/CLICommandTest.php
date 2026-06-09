@@ -21,7 +21,7 @@ class CLICommandTest extends WP_UnitTestCase {
 	}
 
 	public function test_validate_period_returns_default(): void {
-		$cli = new RSA_CLI();
+		$cli    = new RSA_CLI();
 		$method = new ReflectionMethod( $cli, 'validate_period' );
 		$method->setAccessible( true );
 
@@ -32,7 +32,7 @@ class CLICommandTest extends WP_UnitTestCase {
 	}
 
 	public function test_format_seconds_boundaries(): void {
-		$cli = new RSA_CLI();
+		$cli    = new RSA_CLI();
 		$method = new ReflectionMethod( $cli, 'format_seconds' );
 		$method->setAccessible( true );
 

@@ -13,8 +13,8 @@ class PwaDownloadTest extends WP_UnitTestCase {
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
-		self::$admin       = self::factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		self::$subscriber  = self::factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
+		self::$admin      = self::factory()->user->create_and_get( [ 'role' => 'administrator' ] );
+		self::$subscriber = self::factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
 	}
 
 	public function setUp(): void {

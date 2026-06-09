@@ -186,4 +186,64 @@ class AdminTest extends WP_UnitTestCase {
 		global $wpdb;
 		$this->assertSame( $wpdb->prefix . 'rsa_wc_events', RSA_DB::wc_events_table() );
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * Freemius sync — non-blocking cron
+	 * ----------------------------------------------------------------
+	 */
+	public function test_schedule_freemius_sync_creates_cron_event(): void {
+		// Clear any existing cron event.
+		$timestamp = wp_next_scheduled( 'rsa_freemius_sync_beta' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'rsa_freemius_sync_beta' );
+		}
+		$this->assertFalse( wp_next_scheduled( 'rsa_freemius_sync_beta' ) );
+
+		RSA_Admin::schedule_freemius_sync();
+		$this->assertNotFalse( wp_next_scheduled( 'rsa_freemius_sync_beta' ) );
+
+		// Clean up.
+		wp_unschedule_event( wp_next_scheduled( 'rsa_freemius_sync_beta' ), 'rsa_freemius_sync_beta' );
+	}
+
+	public function test_run_freemius_sync_does_not_fatal_when_freemius_missing(): void {
+		// rs_fs() is not available in tests — verify no fatal error.
+		$this->assertNull( RSA_Admin::run_freemius_sync() );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * Admin page data — get_page_data_for_current_screen via reflection
+	 * ----------------------------------------------------------------
+	 */
+	public function test_get_page_data_for_current_screen_returns_array(): void {
+		$method = new ReflectionMethod( RSA_Admin::class, 'get_page_data_for_current_screen' );
+		$method->setAccessible( true );
+		$_GET['period'] = '30d';
+		$result         = $method->invoke( null, 'toplevel_page_rich-statistics' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'view', $result );
+		$this->assertArrayHasKey( 'data', $result );
+		$this->assertArrayHasKey( 'period', $result );
+	}
+
+	public function test_get_page_data_for_current_screen_pages_view(): void {
+		$method = new ReflectionMethod( RSA_Admin::class, 'get_page_data_for_current_screen' );
+		$method->setAccessible( true );
+		$_GET['period'] = '30d';
+		$_GET['path']   = '/test/';
+		$result         = $method->invoke( null, 'rich-statistics_page_rich-statistics-pages' );
+		$this->assertSame( 'pages', $result['view'] );
+		$this->assertIsArray( $result['data'] );
+	}
+
+	public function test_get_page_data_for_current_screen_audience_view(): void {
+		$method = new ReflectionMethod( RSA_Admin::class, 'get_page_data_for_current_screen' );
+		$method->setAccessible( true );
+		$_GET['period'] = '30d';
+		$result         = $method->invoke( null, 'rich-statistics_page_rich-statistics-audience' );
+		$this->assertSame( 'audience', $result['view'] );
+		$this->assertIsArray( $result['data'] );
+	}
 }

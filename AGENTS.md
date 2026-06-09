@@ -18,9 +18,9 @@ Premium features are gated by Freemius (product ID 25954).
 | `includes/class-woocommerce.php` | WooCommerce event tracking |
 | `cli/class-cli.php` | WP-CLI commands (`wp rich-stats`) |
 | `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
-| `templates/admin/network-dashboard.php` | Multisite network dashboard with cross-site AI |
+| `templates/admin/network-dashboard.php` | Multisite network dashboard (cross-site analytics) |
 | `templates/admin/network-settings.php` | Network-wide settings panel |
-| `tests/integration/` | PHPUnit integration tests (28 files) |
+| `tests/integration/` | PHPUnit integration tests (36 files) |
 | `tests/unit/` | PHPUnit unit tests with BrainMonkey (4 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
@@ -131,7 +131,7 @@ gh workflow run "Build Release" --ref "vX.Y.Z"
 ### Adding a premium feature
 1. Gate the admin template with `rs_fs()->can_use_premium_code__premium_only()`
 2. Gate the REST endpoint with `$premium` callback
-3. Add to `premiumFeatures` map in `docs/app/v/2.3.0/app.js`
+3. Add to `premiumFeatures` map in `docs/app/app.js`
 
 ### Creating a new PWA version
 1. Copy the latest version folder under `docs/app/v/`
@@ -339,11 +339,11 @@ See `ROADMAP.md` §6 for the full prioritized list.
 
 | Priority | Gap | Status |
 |----------|-----|--------|
-| P2.2 | E2E test pipeline | ✅ 61 tests passing |
+| P2.2 | E2E test pipeline | ✅ 68 tests passing |
 | P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
 
 **Recently completed (May 2026):**
-- P2.2: E2E test pipeline (55 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect) ✅
+- P2.2: E2E test pipeline (68 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect, passphrase, error states, premium gating, version mismatch) ✅
 - L30-L36: Test coverage gaps filled (EnvDetection moved to integration, RSA_DB::table() edge cases, heatmap NULL handling, prune retention/timeout, bot detection Accept-Language + score capping) ✅
 - All audit items verified and documented in TODO.md/ROADMAP.md ✅
 - P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅

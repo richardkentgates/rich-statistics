@@ -405,6 +405,30 @@ class ConsentBannerTest extends WP_UnitTestCase {
 
 	/**
 	 * ----------------------------------------------------------------
+	 * Consent banner enqueue
+	 * ----------------------------------------------------------------
+	 */
+	public function test_enqueue_adds_inline_style(): void {
+		update_option( 'rsa_consent_banner', 1 );
+		update_option( 'rsa_consent_styles', '{"backgroundColor":"#ffffff"}' );
+
+		$styles             = wp_styles();
+		$styles->registered = [];
+		$styles->queue      = [];
+
+		// Reset the global to ensure clean state.
+		global $wp_styles;
+		$wp_styles = new WP_Styles();
+
+		RSA_Consent_Banner::init();
+		// Trigger the enqueue action that RSA_Consent_Banner hooks into.
+		wp_enqueue_scripts();
+
+		$this->assertTrue( wp_style_is( 'rsa-consent-banner', 'enqueued' ) );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
 	 * Helpers
 	 * ----------------------------------------------------------------
 	 */

@@ -43,6 +43,7 @@ class RSA_Admin {
 		add_action( 'show_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'edit_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
+		add_action( 'rsa_freemius_sync_beta', [ __CLASS__, 'run_freemius_sync' ] );
 	}
 
 	/**
@@ -844,25 +845,9 @@ class RSA_Admin {
 		);
 		update_option( 'rsa_allowed_roles', $safe_roles );
 
-		// Sync beta channel preference with Freemius.
-		// Errors are suppressed so a slow / unavailable Freemius API never
-		// white-screens the settings save page.
-		if ( function_exists( 'rs_fs' ) && rs_fs()->is_connected() ) {
-			try {
-				$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
-				// Call the same Freemius API endpoint that the AJAX handler uses.
-				rs_fs()->get_api_site_scope()->call(
-					'/plugin-tags/beta-mode.json',
-					'put',
-					[
-						'is_beta' => $is_beta,
-						'fields'  => 'is_beta',
-					]
-				);
-			} catch ( \Exception $e ) {
-				// Freemius API failure must not block settings save.
-				unset( $e );
-			}
+		// Schedule non-blocking Freemius sync if beta channel changed.
+		if ( isset( $_POST['rsa_beta_channel'] ) ) {
+			self::schedule_freemius_sync();
 		}
 
 		wp_safe_redirect(
@@ -875,6 +860,47 @@ class RSA_Admin {
 			)
 		);
 		exit;
+	}
+
+	// ----------------------------------------------------------------
+	// Freemius sync: non-blocking cron-based beta channel sync.
+	// ----------------------------------------------------------------
+
+	/**
+	 * Schedule a one-time cron event to sync beta channel with Freemius.
+	 *
+	 * Called from save_settings() when rsa_beta_channel is updated.
+	 */
+	public static function schedule_freemius_sync(): void {
+		if ( ! wp_next_scheduled( 'rsa_freemius_sync_beta' ) ) {
+			wp_schedule_single_event( time() + 30, 'rsa_freemius_sync_beta' );
+		}
+	}
+
+	/**
+	 * Run the Freemius beta sync via cron.
+	 *
+	 * Errors are suppressed so a slow / unavailable Freemius API never
+	 * white-screens the cron runner.
+	 */
+	public static function run_freemius_sync(): void {
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->is_connected() ) {
+			return;
+		}
+		try {
+			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
+			rs_fs()->get_api_site_scope()->call(
+				'/plugin-tags/beta-mode.json',
+				'put',
+				[
+					'is_beta' => $is_beta,
+					'fields'  => 'is_beta',
+				]
+			);
+		} catch ( \Exception $e ) {
+			// Freemius API failure must not block cron.
+			unset( $e );
+		}
 	}
 
 	// ----------------------------------------------------------------

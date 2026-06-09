@@ -217,4 +217,82 @@ class AnalyticsEdgeTest extends WP_UnitTestCase {
 		$this->assertCount( 1, $yesterday_row );
 		$this->assertSame( 1, reset( $yesterday_row )['views'] );
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * MySQL window functions capability detection
+	 * ----------------------------------------------------------------
+	 */
+	public function test_mysql_supports_window_functions_returns_bool(): void {
+		$method = new ReflectionMethod( RSA_Analytics::class, 'mysql_supports_window_functions' );
+		$method->setAccessible( true );
+		$result = $method->invoke( null );
+		$this->assertIsBool( $result );
+	}
+
+	public function test_mysql_supports_window_functions_detects_mysql_80(): void {
+		global $wpdb;
+		$method = new ReflectionMethod( RSA_Analytics::class, 'mysql_supports_window_functions' );
+		$method->setAccessible( true );
+
+		$original = $wpdb;
+
+		// MySQL 8.0.
+		$wpdb = new class( $original ) {
+			private $base;
+			public function __construct( $base ) {
+				$this->base = $base; }
+			public function get_var( $query = null, $x = 0, $y = 0 ) {
+				if ( 'SELECT VERSION()' === $query ) {
+					return '8.0.33';
+				}
+				return $this->base->get_var( $query, $x, $y );
+			}
+		};
+		$this->assertTrue( $method->invoke( null ) );
+
+		// MySQL 5.7.
+		$wpdb = new class( $original ) {
+			private $base;
+			public function __construct( $base ) {
+				$this->base = $base; }
+			public function get_var( $query = null, $x = 0, $y = 0 ) {
+				if ( 'SELECT VERSION()' === $query ) {
+					return '5.7.42';
+				}
+				return $this->base->get_var( $query, $x, $y );
+			}
+		};
+		$this->assertFalse( $method->invoke( null ) );
+
+		// MariaDB 10.2.
+		$wpdb = new class( $original ) {
+			private $base;
+			public function __construct( $base ) {
+				$this->base = $base; }
+			public function get_var( $query = null, $x = 0, $y = 0 ) {
+				if ( 'SELECT VERSION()' === $query ) {
+					return '10.2.38-MariaDB';
+				}
+				return $this->base->get_var( $query, $x, $y );
+			}
+		};
+		$this->assertTrue( $method->invoke( null ) );
+
+		// MariaDB 10.1.
+		$wpdb = new class( $original ) {
+			private $base;
+			public function __construct( $base ) {
+				$this->base = $base; }
+			public function get_var( $query = null, $x = 0, $y = 0 ) {
+				if ( 'SELECT VERSION()' === $query ) {
+					return '10.1.48-MariaDB';
+				}
+				return $this->base->get_var( $query, $x, $y );
+			}
+		};
+		$this->assertFalse( $method->invoke( null ) );
+
+		$wpdb = $original;
+	}
 }

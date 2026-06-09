@@ -142,6 +142,43 @@
 	}
 
 	// -----------------------------------------------------------------------
+	// CSP: dynamically add user-configured site URLs to connect-src.
+	// -----------------------------------------------------------------------
+	function _updateCSP() {
+		var meta = document.querySelector( 'meta[http-equiv="Content-Security-Policy"]' );
+		if ( ! meta ) return;
+		var sites = [];
+		try {
+			var raw = localStorage.getItem( 'rsa_sites' );
+			if ( raw ) {
+				if ( _isEncrypted( raw ) ) {
+					// Encrypted sites cannot be read without passphrase; skip CSP update.
+					return;
+				}
+				sites = JSON.parse( raw );
+			}
+		} catch ( e ) {
+			return;
+		}
+		var origins = [ "'self'" ];
+		// Allow localhost for testing environments.
+		if ( location.hostname === 'localhost' || location.hostname === '127.0.0.1' ) {
+			origins.push( 'http://localhost', 'http://127.0.0.1', 'https://example.com' );
+		}
+		for ( var i = 0; i < sites.length; i++ ) {
+			if ( sites[i].siteUrl ) {
+				try {
+					var url = new URL( sites[i].siteUrl );
+					origins.push( url.origin );
+				} catch ( e ) {}
+			}
+		}
+		var content = meta.getAttribute( 'content' );
+		content = content.replace( /connect-src [^;]+/, 'connect-src ' + origins.join( ' ' ) );
+		meta.setAttribute( 'content', content );
+	}
+
+	// -----------------------------------------------------------------------
 	// Init
 	// -----------------------------------------------------------------------
 	document.addEventListener( 'DOMContentLoaded', function () {
@@ -178,6 +215,7 @@
 	}
 
 	function continueInit() {
+		_updateCSP();
 		if ( state.siteUrl && state.credentials ) {
 			renderSiteSwitcher();
 			showApp();

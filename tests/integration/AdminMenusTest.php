@@ -64,7 +64,7 @@ class AdminMenusTest extends WP_UnitTestCase {
 		RSA_Admin::register_menus();
 		global $submenu;
 		$this->assertArrayHasKey( 'rich-statistics', $submenu );
-		$slugs = wp_list_pluck( $submenu['rich-statistics'], 2 );
+		$slugs    = wp_list_pluck( $submenu['rich-statistics'], 2 );
 		$expected = array(
 			'rich-statistics',
 			'rich-statistics-pages',

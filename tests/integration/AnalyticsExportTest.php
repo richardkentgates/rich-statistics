@@ -74,16 +74,16 @@ class AnalyticsExportTest extends WP_UnitTestCase {
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prefix . 'rsa_sessions',
 			array(
-				'session_id'    => 'test-export-session',
-				'entry_page'    => '/entry/',
-				'exit_page'     => '/exit/',
-				'pages_viewed'  => 3,
-				'total_time'    => 120,
-				'browser'       => 'TestBrowser',
-				'os'            => 'TestOS',
-				'language'      => 'en',
-				'timezone'      => 'UTC',
-				'created_at'    => gmdate( 'Y-m-d H:i:s' ),
+				'session_id'   => 'test-export-session',
+				'entry_page'   => '/entry/',
+				'exit_page'    => '/exit/',
+				'pages_viewed' => 3,
+				'total_time'   => 120,
+				'browser'      => 'TestBrowser',
+				'os'           => 'TestOS',
+				'language'     => 'en',
+				'timezone'     => 'UTC',
+				'created_at'   => gmdate( 'Y-m-d H:i:s' ),
 			)
 		);
 		$result = RSA_Analytics::export_data( 'sessions', '7d', 'csv' );

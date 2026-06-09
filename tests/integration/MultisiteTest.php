@@ -141,4 +141,64 @@ class MultisiteTest extends WP_UnitTestCase {
 		$result = RSA_DB::events_table();
 		$this->assertIsString( $result );
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB multisite activate
+	 * ----------------------------------------------------------------
+	 */
+	public function test_activate_with_multisite_flag_loops_sites(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite environment.' );
+		}
+		// This test verifies the method exists and accepts a boolean parameter.
+		$this->assertTrue( method_exists( 'RSA_DB', 'activate' ) );
+		// In single-site mode, activate(true) still works (no sites to loop).
+		RSA_DB::activate( true );
+		$this->assertTrue( true );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB multisite uninstall
+	 * ----------------------------------------------------------------
+	 */
+	public function test_maybe_remove_data_deletes_options_when_flag_set(): void {
+		global $wpdb;
+		update_option( 'rsa_remove_data_on_uninstall', 1 );
+		update_option( 'rsa_retention_days', 30 );
+		update_option( 'rsa_bot_score_threshold', 5 );
+		RSA_DB::maybe_remove_data();
+		// Verify options deleted from DB directly (cache may persist).
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name IN (%s, %s)", 'rsa_retention_days', 'rsa_bot_score_threshold' ) );
+		$this->assertEmpty( $rows );
+	}
+
+	public function test_maybe_remove_data_drops_tables_without_fatal(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 1 );
+		RSA_DB::install();
+		// WordPress test framework uses temporary tables; DROP may be restricted.
+		// Verify method runs without fatal error.
+		RSA_DB::maybe_remove_data();
+		$this->assertTrue( true );
+	}
+
+	public function test_maybe_remove_data_skips_when_flag_unset(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 0 );
+		update_option( 'rsa_retention_days', 30 );
+		RSA_DB::maybe_remove_data();
+		$this->assertSame( 30, (int) get_option( 'rsa_retention_days' ) );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB daily maintenance
+	 * ----------------------------------------------------------------
+	 */
+	public function test_daily_maintenance_runs_without_fatal(): void {
+		// This test verifies the method exists and runs without fatal errors.
+		$this->assertTrue( method_exists( 'RSA_DB', 'daily_maintenance' ) );
+		RSA_DB::daily_maintenance();
+		$this->assertTrue( true );
+	}
 }

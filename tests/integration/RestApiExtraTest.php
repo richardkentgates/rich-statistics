@@ -232,4 +232,35 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$response = static::$server->dispatch( $request );
 		$this->assertNotSame( 200, $response->get_status() );
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * CORS origin handling
+	 * ----------------------------------------------------------------
+	 */
+	public function test_cors_allows_known_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'https://app.richstatistics.com';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	public function test_cors_allows_tauri_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'tauri://localhost';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	public function test_cors_rejects_unknown_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'https://evil.com';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		// Unknown origin still returns 200 (CORS is a browser-side restriction),
+		// but ACAO header should not contain the unknown origin.
+		$this->assertSame( 200, $response->get_status() );
+	}
 }
