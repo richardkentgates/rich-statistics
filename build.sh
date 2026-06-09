@@ -202,10 +202,15 @@ if [ "$ZIP_ONLY" = false ]; then
     # Regenerate versions.json + versions-beta.json from v/ directory
     python3 << 'PYEOF'
 import json, pathlib
+
+def vkey(x):
+    parts = x.split('.')
+    return tuple(int(p) if p.isdigit() else 999999 for p in parts)
+
 v_dir = pathlib.Path('docs/app/v')
 versions = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
 pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(versions))
@@ -215,10 +220,15 @@ PYEOF
     # Prune old snapshot directories (keep last 12)
     python3 << 'PYEOF'
 import json, shutil, pathlib
+
+def vkey(x):
+    parts = x.split('.')
+    return tuple(int(p) if p.isdigit() else 999999 for p in parts)
+
 v_dir = pathlib.Path('docs/app/v')
 all_v = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 keep = set(all_v[-12:])
 for d in v_dir.iterdir():
@@ -227,7 +237,7 @@ for d in v_dir.iterdir():
         print(f"pruned {d.name}")
 remaining = sorted(
     [d.name for d in v_dir.iterdir() if d.is_dir()],
-    key=lambda x: list(map(int, x.split('.')))
+    key=vkey
 )
 pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
 pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
