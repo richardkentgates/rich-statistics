@@ -201,37 +201,37 @@ if [ "$ZIP_ONLY" = false ]; then
 
     # Regenerate versions.json + versions-beta.json from v/ directory
     python3 << 'PYEOF'
-    import json, pathlib
-    v_dir = pathlib.Path('docs/app/v')
-    versions = sorted(
-        [d.name for d in v_dir.iterdir() if d.is_dir()],
-        key=lambda x: list(map(int, x.split('.')))
-    )
-    pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
-    pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(versions))
-    PYEOF
+import json, pathlib
+v_dir = pathlib.Path('docs/app/v')
+versions = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+pathlib.Path('docs/app/versions.json').write_text(json.dumps(versions))
+pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(versions))
+PYEOF
     info "Regenerated versions.json and versions-beta.json"
 
     # Prune old snapshot directories (keep last 12)
     python3 << 'PYEOF'
-    import json, shutil, pathlib
-    v_dir = pathlib.Path('docs/app/v')
-    all_v = sorted(
-        [d.name for d in v_dir.iterdir() if d.is_dir()],
-        key=lambda x: list(map(int, x.split('.')))
-    )
-    keep = set(all_v[-12:])
-    for d in v_dir.iterdir():
-        if d.is_dir() and d.name not in keep:
-            shutil.rmtree(d)
-            print(f"pruned {d.name}")
-    remaining = sorted(
-        [d.name for d in v_dir.iterdir() if d.is_dir()],
-        key=lambda x: list(map(int, x.split('.')))
-    )
-    pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
-    pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
-    PYEOF
+import json, shutil, pathlib
+v_dir = pathlib.Path('docs/app/v')
+all_v = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+keep = set(all_v[-12:])
+for d in v_dir.iterdir():
+    if d.is_dir() and d.name not in keep:
+        shutil.rmtree(d)
+        print(f"pruned {d.name}")
+remaining = sorted(
+    [d.name for d in v_dir.iterdir() if d.is_dir()],
+    key=lambda x: list(map(int, x.split('.')))
+)
+pathlib.Path('docs/app/versions.json').write_text(json.dumps(remaining))
+pathlib.Path('docs/app/versions-beta.json').write_text(json.dumps(remaining))
+PYEOF
     info "Pruned snapshots to last 12 versions"
     info "Versioned snapshot ready: ${APP_VERSIONED}/{stable,beta}/"
     info "Commit and push docs/ to publish."
