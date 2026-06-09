@@ -6,6 +6,13 @@
  */
 class TrackerInitTest extends WP_UnitTestCase {
 
+	public function setUp(): void {
+		parent::setUp();
+		// Ensure clean script state — $wp_scripts persists across WP unit tests.
+		global $wp_scripts;
+		$wp_scripts = new WP_Scripts();
+	}
+
 	public function test_init_registers_hooks(): void {
 		$this->assertTrue( has_action( 'wp_enqueue_scripts', [ 'RSA_Tracker', 'enqueue' ] ) > 0 );
 		$this->assertTrue( has_action( 'wp_ajax_nopriv_rsa_track', [ 'RSA_Tracker', 'handle_ingest' ] ) > 0 );
@@ -25,11 +32,23 @@ class TrackerInitTest extends WP_UnitTestCase {
 
 	/**
 	 * @group multisite
-	 * Skipped — $wp_scripts state persists across tests in WP test env,
-	 * making reliable assertion of "not enqueued" impractical.
-	 * The early-return in enqueue() is covered by code review.
 	 */
 	public function test_multisite_disable_flag_prevents_enqueue(): void {
-		$this->markTestSkipped( 'Skipped — $wp_scripts state persists across tests' );
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite environment.' );
+		}
+
+		// Reset script state — other tests may have enqueued this.
+		wp_dequeue_script( 'rsa-tracker' );
+		wp_deregister_script( 'rsa-tracker' );
+
+		update_site_option( 'rsa_network_disable_tracker', 1 );
+
+		RSA_Tracker::enqueue();
+
+		$this->assertFalse( wp_script_is( 'rsa-tracker', 'enqueued' ) );
+
+		// Cleanup.
+		delete_site_option( 'rsa_network_disable_tracker' );
 	}
 }
