@@ -48,6 +48,28 @@ jobs:
         run: composer test -- --testsuite unit
 
   # -----------------------------------------------------------------------
+  # PHP 8.0 compatibility — uses composer update (no lock file)
+  # -----------------------------------------------------------------------
+  php80:
+    name: Unit tests (PHP 8.0)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: mbstring, pdo, pdo_mysql
+          coverage: none
+      - name: Remove composer.lock
+        run: rm composer.lock
+      - name: Install dependencies (update)
+        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Run unit tests
+        run: composer test -- --testsuite unit
+
+  # -----------------------------------------------------------------------
   # Integration tests — need WordPress + MySQL
   # -----------------------------------------------------------------------
   integration:
@@ -113,3 +135,51 @@ jobs:
       - name: Show integration test output on failure
         if: failure()
         run: tail -80 /tmp/phpunit-integration.txt
+
+  coverage:
+    name: Coverage (PHP 8.2, WP latest)
+    runs-on: ubuntu-latest
+    needs: [ unit, integration ]
+    if: github.ref == 'refs/heads/develop'
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, mysqli
+          coverage: xdebug
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Install WordPress test suite
+        run: bash bin/install-wp-tests.sh wordpress_tests root root 127.0.0.1 latest
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --configuration phpunit.integration.xml --coverage-clover build/coverage.xml
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

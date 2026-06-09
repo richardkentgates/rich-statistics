@@ -244,18 +244,26 @@ class RSA_CLI extends WP_CLI_Command {
 				WP_CLI::line( '' );
 				WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Time on Page', 'rich-statistics' ) . '%n' ) );
 				$time_items = [ [ __( 'Range', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
-				foreach ( array_slice( $data['time_on_page'] ?? [], 0, 8 ) as $r ) {
-					$time_items[] = [ $r['label'], number_format( $r['count'] ) ];
+				foreach ( array_slice( $data['time_histogram'] ?? [], 0, 8 ) as $r ) {
+					$time_items[] = [ $r['bucket'], number_format( $r['count'] ) ];
 				}
 				$this->cli_table( $time_items );
 
 				WP_CLI::line( '' );
-				WP_CLI::line( WP_CLI::colorize( '%B' . __( 'New vs Returning', 'rich-statistics' ) . '%n' ) );
-				$new_items = [ [ __( 'Type', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
-				foreach ( array_slice( $data['new_returning'] ?? [], 0, 8 ) as $r ) {
-					$new_items[] = [ $r['label'], number_format( $r['count'] ) ];
+				WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Session Depth', 'rich-statistics' ) . '%n' ) );
+				$depth_items = [ [ __( 'Pages', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
+				foreach ( array_slice( $data['session_depth'] ?? [], 0, 8 ) as $r ) {
+					$depth_items[] = [ $r['bucket'], number_format( $r['count'] ) ];
 				}
-				$this->cli_table( $new_items );
+				$this->cli_table( $depth_items );
+
+				WP_CLI::line( '' );
+				WP_CLI::line( WP_CLI::colorize( '%B' . __( 'Entry Pages', 'rich-statistics' ) . '%n' ) );
+				$entry_items = [ [ __( 'Page', 'rich-statistics' ), __( 'Sessions', 'rich-statistics' ) ] ];
+				foreach ( array_slice( $data['entry_pages'] ?? [], 0, 8 ) as $r ) {
+					$entry_items[] = [ $r['page'], number_format( $r['count'] ) ];
+				}
+				$this->cli_table( $entry_items );
 			}
 		);
 	}
@@ -386,7 +394,7 @@ class RSA_CLI extends WP_CLI_Command {
 
 				/* translators: 1: period, 2: format */
 				WP_CLI::line( sprintf( __( 'Exporting (%1$s, %2$s)…', 'rich-statistics' ), $period, $format ) );
-				$data = RSA_Analytics::export_events( $period, $format );
+				$data = RSA_Analytics::export_data( 'pageviews', $period, $format );
 
 				if ( ! empty( $assoc['output'] ) ) {
 					$output  = $assoc['output'];
@@ -530,7 +538,7 @@ class RSA_CLI extends WP_CLI_Command {
 					[ __( 'Version', 'rich-statistics' ), RSA_VERSION ],
 					[ __( 'Tier', 'rich-statistics' ), $is_premium ? __( 'Premium', 'rich-statistics' ) : __( 'Free', 'rich-statistics' ) ],
 					[ __( 'Retention (days)', 'rich-statistics' ), get_option( 'rsa_retention_days', 90 ) ],
-					[ __( 'Bot threshold', 'rich-statistics' ), get_option( 'rsa_bot_score_threshold', 3 ) ],
+					[ __( 'Bot threshold', 'rich-statistics' ), get_option( 'rsa_bot_score_threshold', 5 ) ],
 					[ __( 'Email digest enabled', 'rich-statistics' ), get_option( 'rsa_email_digest_enabled' ) ? __( 'Yes', 'rich-statistics' ) : __( 'No', 'rich-statistics' ) ],
 					[ __( 'Email frequency', 'rich-statistics' ), get_option( 'rsa_email_digest_frequency', 'weekly' ) ],
 					[ __( 'Next maintenance', 'rich-statistics' ), $next_cron ? gmdate( 'Y-m-d H:i T', $next_cron ) : __( 'not scheduled', 'rich-statistics' ) ],

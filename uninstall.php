@@ -12,8 +12,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-// Load the plugin so we can access constants and classes.
-require_once plugin_dir_path( __FILE__ ) . 'rich-statistics.php';
+// Load only the DB class — avoids bootstrapping Freemius and the full plugin
+// stack during uninstall, which can white-screen on servers with strict
+// opcache or when the Freemius SDK is missing.
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-db.php';
 
 // Clear scheduled cron hooks.
 wp_clear_scheduled_hook( 'rsa_daily_maintenance' );

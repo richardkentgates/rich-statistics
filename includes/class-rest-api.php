@@ -771,6 +771,7 @@ class RSA_Rest_API {
 				'app_version'     => RSA_APP_VERSION,
 				'min_app_version' => RSA_MIN_APP_VERSION,
 				'app_url'         => RSA_APP_URL,
+				'max_app_version' => RSA_APP_VERSION,
 				'env'             => RSA_APP_ENV,
 				'site_name'       => get_bloginfo( 'name' ),
 				'site_url'        => get_site_url(),
@@ -1093,6 +1094,11 @@ class RSA_Rest_API {
 			return self::ok( [ 'recorded' => false, 'reason' => 'woocommerce_inactive' ] );
 		}
 
+		// Premium feature — class only loaded when premium is active.
+		if ( ! class_exists( 'RSA_Woocommerce' ) ) {
+			return self::ok( [ 'recorded' => false, 'reason' => 'premium_required' ] );
+		}
+
 		$meta = [
 			'product_id'   => (int) $r['product_id'],
 			'product_name' => sanitize_text_field( wp_unslash( $r['product_name'] ) ),
@@ -1115,7 +1121,7 @@ class RSA_Rest_API {
 	 * @param WP_REST_Request $r Request object.
 	 * @return WP_REST_Response
 	 */
-	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response {
+	public static function get_user_flow( WP_REST_Request $r ): WP_REST_Response|WP_Error {
 		$filters = [
 			'entry_source' => (string) ( $r['entry_source'] ?? '' ),
 			'focus_page'   => (string) ( $r['focus_page'] ?? '' ),
@@ -1124,16 +1130,20 @@ class RSA_Rest_API {
 			'date_from'    => (string) ( $r['date_from'] ?? '' ),
 			'date_to'      => (string) ( $r['date_to'] ?? '' ),
 		];
-		return self::ok( RSA_Analytics::get_path_flow( $r['period'], $filters ) );
+		$data    = RSA_Analytics::get_path_flow( $r['period'], $filters );
+		if ( isset( $data['error'] ) ) {
+			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
+		}
+		return self::ok( $data );
 	}
 
 	/**
 	 * Get user flow journey data.
 	 *
 	 * @param WP_REST_Request $r Request object.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function get_user_flow_journey( WP_REST_Request $r ): WP_REST_Response {
+	public static function get_user_flow_journey( WP_REST_Request $r ): WP_REST_Response|WP_Error {
 		$filters = [
 			'from_page' => (string) ( $r['from_page'] ?? '' ),
 			'to_page'   => (string) ( $r['to_page'] ?? '' ),
@@ -1144,21 +1154,29 @@ class RSA_Rest_API {
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
 			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
-		return self::ok( [ 'rows' => RSA_Analytics::get_user_flow( $r['period'], $filters ) ] );
+		$data    = RSA_Analytics::get_user_flow( $r['period'], $filters );
+		if ( isset( $data['error'] ) ) {
+			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
+		}
+		return self::ok( [ 'rows' => $data ] );
 	}
 
 	/**
 	 * Get user flow sources data.
 	 *
 	 * @param WP_REST_Request $r Request object.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function get_user_flow_sources( WP_REST_Request $r ): WP_REST_Response {
+	public static function get_user_flow_sources( WP_REST_Request $r ): WP_REST_Response|WP_Error {
 		$filters = [
 			'date_from' => (string) ( $r['date_from'] ?? '' ),
 			'date_to'   => (string) ( $r['date_to'] ?? '' ),
 		];
-		return self::ok( [ 'sources' => RSA_Analytics::get_entry_sources( $r['period'], $filters ) ] );
+		$data    = RSA_Analytics::get_entry_sources( $r['period'], $filters );
+		if ( isset( $data['error'] ) ) {
+			return new WP_Error( 'window_functions_required', $data['error'], [ 'status' => 501 ] );
+		}
+		return self::ok( [ 'sources' => $data ] );
 	}
 
 	// ----------------------------------------------------------------

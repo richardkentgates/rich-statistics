@@ -134,13 +134,13 @@ $rsa_classes = array(
 	'RSA_Email',
 	'RSA_Privacy_Disclosure',
 	'RSA_Consent_Banner',
+	'RSA_Rest_API',
+	'RSA_Pwa_Download',
 );
 
 foreach ( $rsa_classes as $class ) {
 	$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
-	if ( file_exists( $file ) ) {
-		require_once $file;
-	}
+	require_once $file;
 }
 
 // WP-CLI
@@ -154,15 +154,11 @@ if ( function_exists( 'rs_fs' ) && rs_fs()->is__premium_only() ) {
 	$rsa_premium = array(
 		'RSA_Click_Tracking',
 		'RSA_Heatmap',
-		'RSA_Rest_API',
-		'RSA_Pwa_Download',
 		'RSA_Woocommerce',
 	);
 	foreach ( $rsa_premium as $class ) {
 		$file = RSA_DIR . 'includes/class-' . strtolower( str_replace( array( 'RSA_', '_' ), array( '', '-' ), $class ) ) . '.php';
-		if ( file_exists( $file ) ) {
-			require_once $file;
-		}
+		require_once $file;
 	}
 }
 
@@ -187,9 +183,12 @@ function rs_fs_uninstall_cleanup() {
 			)
 		);
 		foreach ( $sites as $blog_id ) {
-			switch_to_blog( $blog_id );
-			RSA_DB::maybe_remove_data();
-			restore_current_blog();
+			try {
+				switch_to_blog( $blog_id );
+				RSA_DB::maybe_remove_data();
+			} finally {
+				restore_current_blog();
+			}
 		}
 		delete_site_option( 'rsa_default_retention_days' );
 		delete_site_option( 'rsa_network_disable_tracker' );

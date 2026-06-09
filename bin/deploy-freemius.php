@@ -46,6 +46,51 @@ if (!file_exists($file_name)) {
     exit(1);
 }
 
+// Freemius rejects plugins that bundle uninstall.php (it tracks uninstalls itself).
+// Create a temporary ZIP with uninstall.php stripped for Freemius upload only.
+$tmp_file = sys_get_temp_dir() . '/rsa-freemius-' . md5($file_name . time()) . '.zip';
+$zip = new ZipArchive();
+$original = new ZipArchive();
+
+if ($original->open($file_name) !== true) {
+    fprintf(STDERR, "Failed to open ZIP: %s\n", $file_name);
+    exit(1);
+}
+
+if ($zip->open($tmp_file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+    fprintf(STDERR, "Failed to create temporary ZIP: %s\n", $tmp_file);
+    exit(1);
+}
+
+$plugin_folder = $plugin_slug . '/';
+$uninstall_path = $plugin_folder . 'uninstall.php';
+$stripped = false;
+
+for ($i = 0; $i < $original->numFiles; $i++) {
+    $entry = $original->getNameIndex($i);
+    if ($entry === $uninstall_path || strpos($entry, $uninstall_path . '/') === 0) {
+        $stripped = true;
+        continue;
+    }
+    $zip->addFromString($entry, $original->getFromIndex($i));
+}
+
+$original->close();
+$zip->close();
+
+if ($stripped) {
+    echo "Stripped uninstall.php for Freemius compatibility.\n";
+}
+
+$file_name = $tmp_file;
+
+// Ensure temp file is always cleaned up, even on early exit.
+register_shutdown_function(function () use ($tmp_file) {
+    if (file_exists($tmp_file)) {
+        unlink($tmp_file);
+    }
+});
+
 require_once __DIR__ . '/freemius-php-api/freemius/Freemius.php';
 
 try {
@@ -135,4 +180,9 @@ echo "Done. Version {$version} (tag ID {$tag_id}) set to release_mode={$release_
 if (isset($update->version)) {
     $status = $update->status ?? 'unknown';
     echo "Version: {$update->version}, Status: {$status}\n";
+}
+
+// Clean up temporary ZIP
+if (isset($tmp_file) && file_exists($tmp_file)) {
+    unlink($tmp_file);
 }

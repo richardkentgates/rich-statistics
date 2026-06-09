@@ -44,11 +44,140 @@
 	};
 
 	// -----------------------------------------------------------------------
+	// Encryption helpers (Web Crypto API)
+	// -----------------------------------------------------------------------
+	var _cryptoKey = null; // memory-only passphrase container
+
+	function _abToB64( buffer ) {
+		var bytes = new Uint8Array( buffer );
+		var binary = '';
+		for ( var i = 0; i < bytes.byteLength; i++ ) {
+			binary += String.fromCharCode( bytes[i] );
+		}
+		return btoa( binary );
+	}
+
+	function _b64ToAb( base64 ) {
+		var binary = atob( base64 );
+		var bytes = new Uint8Array( binary.length );
+		for ( var i = 0; i < binary.length; i++ ) {
+			bytes[i] = binary.charCodeAt( i );
+		}
+		return bytes;
+	}
+
+	async function _deriveKey( passphrase, salt ) {
+		var enc = new TextEncoder();
+		var keyMaterial = await crypto.subtle.importKey(
+			'raw',
+			enc.encode( passphrase ),
+			{ name: 'PBKDF2' },
+			false,
+			[ 'deriveKey' ]
+		);
+		return crypto.subtle.deriveKey(
+			{ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+			keyMaterial,
+			{ name: 'AES-GCM', length: 256 },
+			false,
+			[ 'encrypt', 'decrypt' ]
+		);
+	}
+
+	async function _encryptString( plaintext, passphrase ) {
+		var enc = new TextEncoder();
+		var salt = crypto.getRandomValues( new Uint8Array( 16 ) );
+		var iv   = crypto.getRandomValues( new Uint8Array( 12 ) );
+		var key  = await _deriveKey( passphrase, salt );
+		var ciphertext = await crypto.subtle.encrypt(
+			{ name: 'AES-GCM', iv: iv },
+			key,
+			enc.encode( plaintext )
+		);
+		var combined = new Uint8Array( salt.length + iv.length + ciphertext.byteLength );
+		combined.set( salt, 0 );
+		combined.set( iv, salt.length );
+		combined.set( new Uint8Array( ciphertext ), salt.length + iv.length );
+		return _abToB64( combined );
+	}
+
+	async function _decryptString( encryptedBase64, passphrase ) {
+		var combined = _b64ToAb( encryptedBase64 );
+		var salt = combined.slice( 0, 16 );
+		var iv   = combined.slice( 16, 28 );
+		var ciphertext = combined.slice( 28 );
+		var key = await _deriveKey( passphrase, salt );
+		var decrypted = await crypto.subtle.decrypt(
+			{ name: 'AES-GCM', iv: iv },
+			key,
+			ciphertext
+		);
+		return new TextDecoder().decode( decrypted );
+	}
+
+	function _isEncrypted( data ) {
+		if ( ! data || typeof data !== 'string' ) return false;
+		var first = data.trim()[0];
+		return first !== '[' && first !== '{';
+	}
+
+	async function _saveSites() {
+		var json = JSON.stringify( state.sites );
+		if ( _cryptoKey && _cryptoKey.passphrase ) {
+			json = await _encryptString( json, _cryptoKey.passphrase );
+		}
+		localStorage.setItem( 'rsa_sites', json );
+	}
+
+	async function _saveAiProvider() {
+		if ( ! state.aiProvider ) {
+			localStorage.removeItem( 'rsa_ai_provider' );
+			return;
+		}
+		var json = JSON.stringify( state.aiProvider );
+		if ( _cryptoKey && _cryptoKey.passphrase ) {
+			json = await _encryptString( json, _cryptoKey.passphrase );
+		}
+		localStorage.setItem( 'rsa_ai_provider', json );
+	}
+
+	// -----------------------------------------------------------------------
 	// Init
 	// -----------------------------------------------------------------------
 	document.addEventListener( 'DOMContentLoaded', function () {
-		loadStoredSites();
+		initFlow();
+	} );
 
+	async function initFlow() {
+		var cryptoAvailable = typeof crypto !== 'undefined' && crypto.subtle;
+		var hasSites = localStorage.getItem( 'rsa_sites' );
+		var hasAi  = localStorage.getItem( 'rsa_ai_provider' );
+
+		if ( ! cryptoAvailable ) {
+			loadStoredSites();
+			continueInit();
+			return;
+		}
+
+		if ( ! hasSites && ! hasAi ) {
+			loadStoredSites();
+			continueInit();
+			return;
+		}
+
+		var sitesEncrypted = hasSites && _isEncrypted( hasSites );
+		var aiEncrypted    = hasAi  && _isEncrypted( hasAi );
+
+		if ( sitesEncrypted || aiEncrypted ) {
+			showUnlockOverlay();
+			bindUnlock();
+		} else {
+			showSetPassphraseOverlay();
+			bindSetPassphrase();
+		}
+	}
+
+	function continueInit() {
 		if ( state.siteUrl && state.credentials ) {
 			renderSiteSwitcher();
 			showApp();
@@ -74,6 +203,8 @@
 		bindAddSite();
 		bindInstallPrompt();
 		bindAiSettings();
+		bindUnlock();
+		bindSetPassphrase();
 
 		// Connection banners
 		if ( navigator.onLine === false ) {
@@ -90,18 +221,33 @@
 				renderView( state.view );
 			}
 		} );
-	} );
+	}
 
 	// -----------------------------------------------------------------------
 	// Multi-site storage
 	// -----------------------------------------------------------------------
 
 	function loadStoredSites() {
-		state.sites    = JSON.parse( localStorage.getItem( 'rsa_sites' ) || '[]' );
+		var rawSites = localStorage.getItem( 'rsa_sites' );
+		try {
+			if ( rawSites && ! _isEncrypted( rawSites ) ) {
+				state.sites = JSON.parse( rawSites );
+			} else if ( ! rawSites ) {
+				state.sites = [];
+			}
+			// If encrypted, state.sites is already set by unlock handler.
+		} catch ( e ) { state.sites = []; }
 		state.activeId = localStorage.getItem( 'rsa_active' ) || '';
 		state.period   = localStorage.getItem( 'rsa_period'    ) || '30d';
 		var storedAi   = localStorage.getItem( 'rsa_ai_provider' );
-		state.aiProvider = storedAi ? JSON.parse( storedAi ) : null;
+		try {
+			if ( storedAi && ! _isEncrypted( storedAi ) ) {
+				state.aiProvider = JSON.parse( storedAi );
+			} else if ( ! storedAi ) {
+				state.aiProvider = null;
+			}
+			// If encrypted, state.aiProvider is already set by unlock handler.
+		} catch ( e ) { state.aiProvider = null; }
 		if ( state.aiProvider ) {
 			state.aiProvider.voiceInput  = state.aiProvider.voiceInput  !== undefined ? state.aiProvider.voiceInput  : false;
 			state.aiProvider.voiceOutput = state.aiProvider.voiceOutput !== undefined ? state.aiProvider.voiceOutput : false;
@@ -172,7 +318,7 @@
 	}
 
 	/** Save a new site after a successful connection test.  Returns the site object. */
-	function persistSite( siteUrl, username, appPassword, label ) {
+	async function persistSite( siteUrl, username, appPassword, label ) {
 		siteUrl = siteUrl.replace( /\/$/, '' );
 		var site = {
 			id          : uid(),
@@ -181,7 +327,7 @@
 			credentials : btoa( username + ':' + appPassword ),
 		};
 		state.sites.push( site );
-		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		await _saveSites();
 		state.activeId = site.id;
 		localStorage.setItem( 'rsa_active', site.id );
 		syncActiveState();
@@ -189,9 +335,9 @@
 		return site;
 	}
 
-	function removeSite( id ) {
+	async function removeSite( id ) {
 		state.sites = state.sites.filter( function ( s ) { return s.id !== id; } );
-		localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+		await _saveSites();
 		if ( state.activeId === id ) {
 			state.activeId = state.sites.length ? state.sites[0].id : '';
 			localStorage.setItem( 'rsa_active', state.activeId );
@@ -259,7 +405,7 @@
 
 		fetch( url, { headers: headers } )
 		.then( function ( r ) { return r.ok ? r.json() : null; } )
-		.then( function ( json ) {
+		.then( async function ( json ) {
 			if ( ! json || ! json.data ) return;
 			var remoteSites = json.data.sites || [];
 
@@ -289,7 +435,7 @@
 							credentials: '',
 						} );
 					} );
-					localStorage.setItem( 'rsa_sites', JSON.stringify( state.sites ) );
+					await _saveSites();
 					renderSiteSwitcher();
 				} else if ( confirm( 'Remove these sites from your account sync?' ) ) {
 					// User declined to add them — remove from remote by pushing current local list
@@ -305,7 +451,9 @@
 					// User chose not to sync — offer to remove from local
 					var removeNames = toSync.filter( function ( s ) { return s.id !== state.activeId; } );
 					if ( removeNames.length && confirm( 'Remove them from this device instead?' ) ) {
-						removeNames.forEach( function ( s ) { removeSite( s.id ); } );
+						for ( var i = 0; i < removeNames.length; i++ ) {
+							await removeSite( removeNames[i].id );
+						}
 						renderSiteSwitcher();
 					}
 				}
@@ -423,6 +571,151 @@
 	}
 
 	// -----------------------------------------------------------------------
+	// Unlock / Set Passphrase overlays
+	// -----------------------------------------------------------------------
+
+	function showUnlockOverlay() {
+		document.getElementById( 'rsa-unlock' ).hidden = false;
+		document.getElementById( 'rsa-login' ).hidden  = true;
+		document.getElementById( 'rsa-app' ).hidden     = true;
+		document.getElementById( 'rsa-add-site' ).hidden = true;
+		var passField = document.getElementById( 'rsa-unlock-pass' );
+		if ( passField ) passField.focus();
+	}
+
+	function hideUnlockOverlay() {
+		document.getElementById( 'rsa-unlock' ).hidden = true;
+	}
+
+	function showSetPassphraseOverlay() {
+		document.getElementById( 'rsa-set-pass' ).hidden = false;
+		document.getElementById( 'rsa-login' ).hidden    = true;
+		document.getElementById( 'rsa-app' ).hidden       = true;
+		document.getElementById( 'rsa-add-site' ).hidden = true;
+	}
+
+	function hideSetPassphraseOverlay() {
+		document.getElementById( 'rsa-set-pass' ).hidden = true;
+	}
+
+	function bindUnlock() {
+		var unlockBtn = document.getElementById( 'rsa-unlock-btn' );
+		if ( unlockBtn && unlockBtn.dataset.bound ) return;
+		var clearBtn  = document.getElementById( 'rsa-unlock-clear-btn' );
+		var passField = document.getElementById( 'rsa-unlock-pass' );
+		var errorDiv  = document.getElementById( 'rsa-unlock-error' );
+
+		if ( unlockBtn ) {
+			unlockBtn.dataset.bound = '1';
+			unlockBtn.addEventListener( 'click', async function () {
+				var passphrase = ( passField && passField.value ) || '';
+				if ( ! passphrase ) {
+					if ( errorDiv ) errorDiv.textContent = 'Please enter your passphrase.';
+					return;
+				}
+				try {
+					var hasSites = localStorage.getItem( 'rsa_sites' );
+					var hasAi    = localStorage.getItem( 'rsa_ai_provider' );
+
+					if ( hasSites && _isEncrypted( hasSites ) ) {
+						var decrypted = await _decryptString( hasSites, passphrase );
+						state.sites = JSON.parse( decrypted );
+					}
+					if ( hasAi && _isEncrypted( hasAi ) ) {
+						var decryptedAi = await _decryptString( hasAi, passphrase );
+						state.aiProvider = JSON.parse( decryptedAi );
+					}
+
+					_cryptoKey = { passphrase: passphrase };
+					hideUnlockOverlay();
+					syncActiveState();
+					continueInit();
+				} catch ( e ) {
+					if ( errorDiv ) errorDiv.textContent = 'Incorrect passphrase. Please try again.';
+				}
+			} );
+		}
+
+		if ( clearBtn ) {
+			clearBtn.addEventListener( 'click', function () {
+				if ( confirm( 'This will remove all your connected sites and settings. Continue?' ) ) {
+					localStorage.removeItem( 'rsa_sites' );
+					localStorage.removeItem( 'rsa_ai_provider' );
+					localStorage.removeItem( 'rsa_active' );
+					state.sites    = [];
+					state.activeId = '';
+					hideUnlockOverlay();
+					loadStoredSites();
+					continueInit();
+				}
+			} );
+		}
+	}
+
+	function bindSetPassphrase() {
+		var setBtn  = document.getElementById( 'rsa-set-pass-btn' );
+		if ( setBtn && setBtn.dataset.bound ) return;
+		var skipBtn = document.getElementById( 'rsa-set-pass-skip-btn' );
+		var pass1   = document.getElementById( 'rsa-set-pass-1' );
+		var pass2   = document.getElementById( 'rsa-set-pass-2' );
+		var errorDiv = document.getElementById( 'rsa-set-pass-error' );
+
+		if ( setBtn ) {
+			setBtn.dataset.bound = '1';
+			setBtn.addEventListener( 'click', async function () {
+				var p1 = ( pass1 && pass1.value ) || '';
+				var p2 = ( pass2 && pass2.value ) || '';
+
+				if ( ! p1 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Please enter a passphrase.';
+					return;
+				}
+				if ( p1 !== p2 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Passphrases do not match.';
+					return;
+				}
+				if ( p1.length < 6 ) {
+					if ( errorDiv ) errorDiv.textContent = 'Passphrase must be at least 6 characters.';
+					return;
+				}
+
+				try {
+					var hasSites = localStorage.getItem( 'rsa_sites' );
+					var hasAi    = localStorage.getItem( 'rsa_ai_provider' );
+
+					if ( hasSites && ! _isEncrypted( hasSites ) ) {
+						var encrypted = await _encryptString( hasSites, p1 );
+						localStorage.setItem( 'rsa_sites', encrypted );
+						state.sites = JSON.parse( hasSites );
+					}
+					if ( hasAi && ! _isEncrypted( hasAi ) ) {
+						var encryptedAi = await _encryptString( hasAi, p1 );
+						localStorage.setItem( 'rsa_ai_provider', encryptedAi );
+						state.aiProvider = JSON.parse( hasAi );
+					}
+
+					_cryptoKey = { passphrase: p1 };
+					hideSetPassphraseOverlay();
+					syncActiveState();
+					continueInit();
+				} catch ( e ) {
+					if ( errorDiv ) errorDiv.textContent = 'Encryption failed. Please try again.';
+				}
+			} );
+		}
+
+		if ( skipBtn ) {
+			skipBtn.addEventListener( 'click', function () {
+				if ( confirm( 'Without encryption, your credentials are stored as plain text. Continue?' ) ) {
+					hideSetPassphraseOverlay();
+					loadStoredSites();
+					continueInit();
+				}
+			} );
+		}
+	}
+
+	// -----------------------------------------------------------------------
 	// Plugin version sync
 	// -----------------------------------------------------------------------
 
@@ -470,9 +763,26 @@
 	}
 
 	/**
+	 * Semver comparison: negative if a < b, 0 if equal, positive if a > b.
+	 */
+	function semverCompare( a, b ) {
+		var pa = a.split( '.' ).map( Number );
+		var pb = b.split( '.' ).map( Number );
+		for ( var i = 0; i < 3; i++ ) {
+			if ( pa[ i ] !== pb[ i ] ) return pa[ i ] - pb[ i ];
+		}
+		return 0;
+	}
+
+	/**
+	 * Sort comparator for descending semver order.
+	 */
+	function semverDesc( a, b ) { return semverCompare( b, a ); }
+
+	/**
 	 * Navigate to a bundled versioned folder in the Tauri local server.
-	 * Falls back to the latest bundled version if the requested one isn't found,
-	 * and shows an update prompt if the plugin version is newer than all bundles.
+	 * Falls back to the newest bundled version that is <= pluginVersion,
+	 * and shows an update prompt only when the plugin is newer than all bundles.
 	 *
 	 * @param {string} pluginVersion - Semver version string.
 	 * @param {string} [channel] - Release channel ('stable' or 'beta'). Default 'stable'.
@@ -499,6 +809,10 @@
 				return bundled;
 			} )
 			.then( function ( bundled ) {
+				if ( ! Array.isArray( bundled ) ) {
+					showCompatBanner( 'pluginTooNew', { version: pluginVersion } );
+					return;
+				}
 				if ( bundled.indexOf( pluginVersion ) !== -1 ) {
 					// Verify the versioned folder is actually present before navigating.
 					fetch( indexUrl, { method: 'HEAD' } )
@@ -513,38 +827,50 @@
 						.catch( function () {} );
 					return;
 				}
-				// Plugin not in bundled versions — check if a desktop update exists.
-				// Only show the banner if an actual newer desktop build is available.
-				var latest = bundled.slice().sort( function ( a, b ) {
-					var pa = a.split( '.' ).map( Number );
-					var pb = b.split( '.' ).map( Number );
-					for ( var i = 0; i < 3; i++ ) {
-						if ( pa[ i ] !== pb[ i ] ) return pb[ i ] - pa[ i ];
-					}
-					return 0;
-				} )[ 0 ];
-				fetch( '/dist/update.json' )
-					.then( function ( r ) { return r.ok ? r.json() : null; } )
-					.then( function ( upd ) {
-						if ( upd && upd.version ) {
-							var uv = upd.version.split( '.' ).map( Number );
-							var bv = latest.split( '.' ).map( Number );
-							var newer = false;
-							for ( var i = 0; i < 3; i++ ) {
-								if ( uv[ i ] > bv[ i ] ) { newer = true; break; }
-								if ( uv[ i ] < bv[ i ] ) break;
-							}
-							if ( newer ) {
+				// Plugin not in bundled versions — find the newest compatible bundle.
+				var compatible = bundled
+					.filter( function ( v ) { return semverCompare( v, pluginVersion ) <= 0; } )
+					.sort( semverDesc );
+				var fallback = compatible[ 0 ];
+
+				// If every bundle is newer than the plugin, fall back to the oldest
+				// bundle (closest to the plugin version).
+				var allNewer = bundled.every( function ( v ) { return semverCompare( v, pluginVersion ) > 0; } );
+				if ( allNewer ) {
+					fallback = bundled.slice().sort( function ( a, b ) { return semverCompare( a, b ); } )[ 0 ];
+				}
+
+				// Show update banner only when the plugin is strictly newer than
+				// every bundled version (desktop app truly needs an update).
+				var allOlder = bundled.every( function ( v ) { return semverCompare( v, pluginVersion ) < 0; } );
+				if ( allOlder ) {
+					fetch( '/dist/update.json' )
+						.then( function ( r ) { return r.ok ? r.json() : null; } )
+						.then( function ( upd ) {
+							if ( upd && upd.version && semverCompare( upd.version, pluginVersion ) >= 0 ) {
 								showDesktopUpdateBanner( pluginVersion, bundled );
 							}
-						}
-					} )
-					.catch( function () {} );
-				if ( latest && current !== latest ) {
-					window.location.href = '/v/' + latest + '/' + channel + '/';
+						} )
+						.catch( function () {} );
+				}
+
+				if ( fallback && current !== fallback ) {
+					window.location.href = '/v/' + fallback + '/' + channel + '/';
 				}
 			} )
 			.catch( function () {} );
+	}
+
+	/**
+	 * Detect the app version from the current URL, or null if unknown.
+	 * Browser PWA: extracts from versioned path (e.g. /v/2.4.27/).
+	 * Desktop: uses getTauriCurrentVersion().
+	 */
+	function getAppVersion() {
+		var v = getTauriCurrentVersion();
+		if ( v ) return v;
+		var base = getVersionedAppBase();
+		return base ? base.current : null;
 	}
 
 	/**
@@ -553,12 +879,7 @@
 	 */
 	function showDesktopUpdateBanner( pluginVersion, bundled ) {
 		if ( document.getElementById( 'rsa-desktop-update-banner' ) ) return;
-		var latest  = bundled.slice().sort( function ( a, b ) {
-			var pa = a.split( '.' ).map( Number );
-			var pb = b.split( '.' ).map( Number );
-			for ( var i = 0; i < 3; i++ ) { if ( pa[i] !== pb[i] ) return pb[i] - pa[i]; }
-			return 0;
-		} )[ 0 ] || '?';
+		var latest  = bundled.slice().sort( semverDesc )[ 0 ] || '?';
 		var banner = document.createElement( 'div' );
 		banner.id = 'rsa-desktop-update-banner';
 		banner.innerHTML =
@@ -570,6 +891,66 @@
 		document.getElementById( 'rsa-desktop-update-dismiss' ).addEventListener( 'click', function () {
 			banner.remove();
 		} );
+	}
+
+	/**
+	 * Show a compatibility warning banner. Dismisses any existing one first.
+	 *
+	 * @param {string} status - 'ok' | 'appTooNew' | 'pluginTooNew' | 'envMismatch'
+	 * @param {object} info - The /info response data.
+	 */
+	function showCompatBanner( status, info ) {
+		var existing = document.getElementById( 'rsa-compat-banner' );
+		if ( existing ) existing.remove();
+		if ( status === 'ok' ) return;
+
+		var msg = '';
+		var appV = getAppVersion() || 'this';
+		if ( status === 'appTooNew' ) {
+			msg = 'Your app (v' + esc( appV ) + ') is newer than this site\'s plugin (v' + esc( info.version ) +
+			      '). Some features may not work. Use the app matching the plugin version for best compatibility.';
+		} else if ( status === 'pluginTooNew' ) {
+			msg = 'This site\'s plugin (v' + esc( info.version ) + ') is newer than your app (v' + esc( appV ) +
+			      '). Update your app for full compatibility.';
+		} else if ( status === 'envMismatch' ) {
+			msg = 'This is a ' + esc( info.env ) + ' site. For best compatibility, use the matching ' +
+			      esc( info.env ) + ' app at ' + esc( info.app_url ) + '.';
+		}
+		if ( ! msg ) return;
+
+		var banner = document.createElement( 'div' );
+		banner.id = 'rsa-compat-banner';
+		banner.innerHTML =
+			'<span class="rsa-compat-icon">&#9888;</span>' +
+			'<span>' + msg + '</span>' +
+			'<button id="rsa-compat-dismiss" aria-label="Dismiss">&times;</button>';
+		document.body.insertBefore( banner, document.body.firstChild );
+		document.getElementById( 'rsa-compat-dismiss' ).addEventListener( 'click', function () {
+			banner.remove();
+		} );
+	}
+
+	/**
+	 * Get per-site compatibility state from localStorage.
+	 */
+	function getCompatState( siteId ) {
+		try {
+			var raw = localStorage.getItem( 'rsa_compat_' + siteId );
+			return raw ? JSON.parse( raw ) : null;
+		} catch ( e ) { return null; }
+	}
+
+	/**
+	 * Set per-site compatibility state in localStorage.
+	 */
+	function setCompatState( siteId, status, info ) {
+		var stateObj = {
+			status        : status,
+			pluginVersion : info.version,
+			appVersion    : getAppVersion() || null,
+			timestamp     : Date.now()
+		};
+		localStorage.setItem( 'rsa_compat_' + siteId, JSON.stringify( stateObj ) );
 	}
 
 	function checkPluginVersion() {
@@ -593,6 +974,35 @@
 				var badge = document.getElementById( 'rsa-plugin-version' );
 				if ( badge ) badge.textContent = 'v' + info.version;
 
+				// ----------------------------------------------------------------
+				// Compatibility check
+				// ----------------------------------------------------------------
+				var appV = getAppVersion();
+				var compatStatus = 'ok';
+
+				if ( appV ) {
+					if ( info.max_app_version && semverCompare( appV, info.max_app_version ) > 0 ) {
+						compatStatus = 'appTooNew';
+					} else if ( info.min_app_version && semverCompare( appV, info.min_app_version ) < 0 ) {
+						compatStatus = 'pluginTooNew';
+					}
+				}
+
+				// Cross-environment mismatch (browser PWA only).
+				if ( ! isTauri() && info.app_url ) {
+					try {
+						var pluginHost = new URL( info.app_url ).hostname;
+						var appHost = window.location.hostname;
+						if ( pluginHost !== appHost ) {
+							compatStatus = 'envMismatch';
+						}
+					} catch ( _ ) {}
+				}
+
+				setCompatState( state.activeId, compatStatus, info );
+				showCompatBanner( compatStatus, info );
+				renderSiteSwitcher(); // Refresh warning indicators
+
 				// In Tauri: route to the matching bundled version folder (local, no external URLs).
 				if ( isTauri() ) {
 					tauriNavigateToVersion( info.version, state.channel );
@@ -606,7 +1016,8 @@
 					localStorage.setItem( versionKey, info.version );
 					if ( 'caches' in window ) {
 						caches.keys().then( function ( keys ) {
-							return Promise.all( keys.map( function ( k ) { return caches.delete( k ); } ) );
+							var toDelete = keys.filter( function ( k ) { return k.indexOf( 'rsa-' ) === 0; } );
+							return Promise.all( toDelete.map( function ( k ) { return caches.delete( k ); } ) );
 						} ).then( function () { window.location.reload( true ); } );
 					} else {
 						window.location.reload( true );
@@ -631,8 +1042,11 @@
 
 		var items = state.sites.map( function ( s ) {
 			var cls = 'rsa-site-menu-item' + ( s.id === state.activeId ? ' rsa-active' : '' );
+			var cst = getCompatState( s.id );
+			var warn = cst && cst.status !== 'ok' ? '<span class="rsa-site-compat-warn" title="Compatibility warning">&#9888;</span>' : '';
 			return '<div class="' + cls + '" data-id="' + esc( s.id ) + '">' +
 				'<span class="rsa-site-menu-label">' + esc( s.label ) + '</span>' +
+				warn +
 				'<button class="rsa-site-menu-remove" data-remove-id="' + esc( s.id ) + '" ' +
 				        'title="Remove site" aria-label="Remove ' + esc( s.label ) + '">&times;</button>' +
 				'</div>';
@@ -654,12 +1068,12 @@
 		} );
 
 		menu.querySelectorAll( '.rsa-site-menu-remove' ).forEach( function ( btn ) {
-			btn.addEventListener( 'click', function ( e ) {
+			btn.addEventListener( 'click', async function ( e ) {
 				e.stopPropagation();
 				var id       = this.dataset.removeId;
 				var wasActive = ( id === state.activeId );
 				if ( ! confirm( 'Remove this site from the app?' ) ) return;
-				removeSite( id );
+				await removeSite( id );
 				renderSiteSwitcher();
 				if ( wasActive ) {
 					destroyCharts();
@@ -860,8 +1274,8 @@
 			state.credentials = btoa( username + ':' + appPass );
 			state.cache       = {};
 
-			apiGet( 'overview', { period: '7d' } ).then( function () {
-				persistSite( siteUrl, username, appPass, label );
+			apiGet( 'overview', { period: '7d' } ).then( async function () {
+				await persistSite( siteUrl, username, appPass, label );
 				state._otpVerified = null;
 				renderSiteSwitcher();
 				hideAddSiteOverlay();
@@ -1071,45 +1485,48 @@
 				}
 			}
 		} );
-		document.addEventListener( 'click', function ( e ) {
-			if ( e.target.id === 'rsa-ai-tauri-detect' ) {
-				onTauriDetect();
-				return;
-			}
-			if ( e.target.id === 'rsa-ai-refresh-models' ) {
-				onRefreshModels();
-				return;
-			}
-			if ( e.target.id === 'rsa-ai-save' ) {
-				var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
-				var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
-				var modelSelect = document.getElementById( 'rsa-ai-model' );
-				var model = modelSelect ? modelSelect.value.trim() : '';
-				if ( model === '__custom__' ) {
-					var customInput = document.getElementById( 'rsa-ai-model-custom' );
-					model = customInput ? customInput.value.trim() : '';
+			document.addEventListener( 'click', function ( e ) {
+				if ( e.target.id === 'rsa-ai-tauri-detect' ) {
+					onTauriDetect();
+					return;
 				}
-				if ( ! endpoint || ! model ) return;
-				var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
-				var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
-				var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
-				var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
-				var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
-				state.aiProvider = {
-					endpoint: endpoint,
-					apiKey: apiKey || '',
-					model: model,
-					voiceInput: voiceInput,
-					voiceOutput: voiceOutput,
-					voiceLang: voiceLang,
-					voiceSpeed: voiceSpeed,
-					autoSpeak: autoSpeak,
-				};
-				localStorage.setItem( 'rsa_ai_provider', JSON.stringify( state.aiProvider ) );
-				var btn = document.getElementById( 'rsa-ai-save' );
-				btn.textContent = 'Saved!';
-				setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
-			}
+				if ( e.target.id === 'rsa-ai-refresh-models' ) {
+					onRefreshModels();
+					return;
+				}
+				if ( e.target.id === 'rsa-ai-save' ) {
+					( async function () {
+						var endpoint = document.getElementById( 'rsa-ai-endpoint' ).value.trim();
+						var apiKey   = document.getElementById( 'rsa-ai-key' ).value.trim();
+						var modelSelect = document.getElementById( 'rsa-ai-model' );
+						var model = modelSelect ? modelSelect.value.trim() : '';
+						if ( model === '__custom__' ) {
+							var customInput = document.getElementById( 'rsa-ai-model-custom' );
+							model = customInput ? customInput.value.trim() : '';
+						}
+						if ( ! endpoint || ! model ) return;
+						var voiceInput  = document.getElementById( 'rsa-ai-voice-input' ) ? document.getElementById( 'rsa-ai-voice-input' ).checked : false;
+						var voiceOutput = document.getElementById( 'rsa-ai-voice-output' ) ? document.getElementById( 'rsa-ai-voice-output' ).checked : false;
+						var voiceLang   = document.getElementById( 'rsa-ai-voice-lang' ) ? document.getElementById( 'rsa-ai-voice-lang' ).value : 'en-US';
+						var voiceSpeed  = document.getElementById( 'rsa-ai-voice-speed' ) ? parseFloat( document.getElementById( 'rsa-ai-voice-speed' ).value ) : 1.0;
+						var autoSpeak   = document.getElementById( 'rsa-ai-auto-speak' ) ? document.getElementById( 'rsa-ai-auto-speak' ).checked : false;
+						state.aiProvider = {
+							endpoint: endpoint,
+							apiKey: apiKey || '',
+							model: model,
+							voiceInput: voiceInput,
+							voiceOutput: voiceOutput,
+							voiceLang: voiceLang,
+							voiceSpeed: voiceSpeed,
+							autoSpeak: autoSpeak,
+						};
+						await _saveAiProvider();
+						var btn = document.getElementById( 'rsa-ai-save' );
+						btn.textContent = 'Saved!';
+						setTimeout( function () { btn.textContent = 'Save AI Settings'; }, 2000 );
+					}() );
+					return;
+				}
 			if ( e.target.id === 'rsa-ai-clear' ) {
 				state.aiProvider = null;
 				localStorage.removeItem( 'rsa_ai_provider' );
@@ -1523,6 +1940,7 @@
 				if ( ! confirm( 'Clear this conversation?' ) ) return;
 				clearChatHistory();
 				chatHistory = [];
+				destroyCharts();
 				if ( messagesDiv ) messagesDiv.innerHTML = '';
 				addAiMessage( 'ai', 'Conversation cleared. How can I help?' );
 				updateMsgCount();

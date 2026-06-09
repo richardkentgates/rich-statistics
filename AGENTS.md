@@ -9,7 +9,7 @@ Premium features are gated by Freemius (product ID 25954).
 
 | File | Purpose |
 |------|---------|
-| `rich-statistics.php` | Main plugin file (version 2.3.0, RSA_VERSION constant) |
+| `rich-statistics.php` | Main plugin file (version 2.4.27, RSA_VERSION constant) |
 | `includes/class-rest-api.php` | REST API namespace `rsa/v1`, auth callbacks |
 | `includes/class-db.php` | DB schema, migrations, table helpers |
 | `includes/class-tracker.php` | Frontend tracking + ingest |
@@ -18,13 +18,13 @@ Premium features are gated by Freemius (product ID 25954).
 | `includes/class-woocommerce.php` | WooCommerce event tracking |
 | `cli/class-cli.php` | WP-CLI commands (`wp rich-stats`) |
 | `ROADMAP.md` | Audit findings, infrastructure plan, version compatibility roadmap |
-| `templates/admin/network-dashboard.php` | Multisite network dashboard with cross-site AI |
+| `templates/admin/network-dashboard.php` | Multisite network dashboard (cross-site analytics) |
 | `templates/admin/network-settings.php` | Network-wide settings panel |
-| `tests/integration/` | PHPUnit integration tests (12 files) |
-| `tests/unit/` | PHPUnit unit tests with BrainMonkey (5 files) |
+| `tests/integration/` | PHPUnit integration tests (36 files) |
+| `tests/unit/` | PHPUnit unit tests with BrainMonkey (4 files) |
 | `docs/app/` | PWA source files (vanilla JS, no build step) |
 | `docs/app/versions.json` | Available PWA version snapshots |
-| `docs/app/v/2.3.0/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
+| `docs/app/v/2.4.27/` | Latest bundled PWA version (server serves under `/v/<version>/` via Apache rewrite) |
 | `src-tauri/` | Tauri 2 desktop app wrapper |
 
 ## Database Tables (each uses `{$wpdb->prefix}rsa_` prefix)
@@ -131,7 +131,7 @@ gh workflow run "Build Release" --ref "vX.Y.Z"
 ### Adding a premium feature
 1. Gate the admin template with `rs_fs()->can_use_premium_code__premium_only()`
 2. Gate the REST endpoint with `$premium` callback
-3. Add to `premiumFeatures` map in `docs/app/v/2.3.0/app.js`
+3. Add to `premiumFeatures` map in `docs/app/app.js`
 
 ### Creating a new PWA version
 1. Copy the latest version folder under `docs/app/v/`
@@ -292,15 +292,15 @@ All three build workflows share reusable sub-workflows for ZIP and desktop build
 - **build-desktop**: Desktop binaries via `job-build-desktop`, pushed to `rs-dev/dist/`
 
 ### `build-test.yml` (branch: test)
-- **Trigger**: Push to `test`, or `workflow_dispatch`
-- **build-zip**: Plugin ZIP via `job-build-zip` (version: `test.<run_number>`)
+- **Trigger**: `workflow_dispatch` only (was push to `test`, changed to prevent duplicate builds on promote)
+- **build-zip**: Plugin ZIP via `job-build-zip` (version: `test.{run_number}`)
 - **deploy-web**: Syncs PWA to `rs-test` via webhook
 - **build-desktop**: Desktop binaries via `job-build-desktop`, pushed to `rs-test/dist/`
 
 ### `build-release.yml` (tagged on main)
-- **Trigger**: `workflow_dispatch` (dispatched by promote.yml after tagging), OR tag push (`v*`)
+- **Trigger**: `workflow_dispatch` (dispatched by promote.yml after tagging)
 - **build-zip**: Plugin ZIP via `job-build-zip` with proper version
-- **upload-freemius**: Uploads ZIP to Freemius via `bin/deploy-freemius.php` (Freemius PHP SDK) (stable: `released`, beta: `beta`)
+- **upload-freemius**: Uploads ZIP to Freemius via `bin/deploy-freemius.php` (stable: `released`, beta: `beta`)
 - **release**: Plugin ZIP, GitHub Release, versioned PWA snapshot (`docs/app/v/<version>/{stable,beta}/`)
 - **build-desktop**: Desktop binaries via `job-build-desktop` with `stamp-version: true`, pushed to `rs-app/dist/`
 - **ping-deploy**: Syncs PWA to `rs-app` via webhook
@@ -339,11 +339,11 @@ See `ROADMAP.md` §6 for the full prioritized list.
 
 | Priority | Gap | Status |
 |----------|-----|--------|
-| P2.2 | E2E test pipeline | ✅ 55 tests passing |
+| P2.2 | E2E test pipeline | ✅ 68 tests passing |
 | P4.2 | WordPress.org SVN submission | ⏳ `bin/deploy-wporg.sh` ready; needs `wporg-assets/` screenshots then run it |
 
 **Recently completed (May 2026):**
-- P2.2: E2E test pipeline (55 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect) ✅
+- P2.2: E2E test pipeline (68 Playwright tests: welcome screen, add site OTP flow, navigation, view switching, disconnect, passphrase, error states, premium gating, version mismatch) ✅
 - L30-L36: Test coverage gaps filled (EnvDetection moved to integration, RSA_DB::table() edge cases, heatmap NULL handling, prune retention/timeout, bot detection Accept-Language + score capping) ✅
 - All audit items verified and documented in TODO.md/ROADMAP.md ✅
 - P1: Environment-aware plugin (RSA_APP_URL + config.js env) ✅

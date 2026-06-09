@@ -1,15 +1,18 @@
 const { test, expect } = require( '@playwright/test' );
+const { dismissPassphraseOverlay } = require( './helpers' );
 
 test.describe( 'Add Site overlay', () => {
 
 	test( 'opens on "Add Your Site" button click', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-site' ) ).toBeVisible();
 	} );
 
 	test( 'shows step 1 by default', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-step-1' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-add-step-2' ) ).toBeHidden();
@@ -17,6 +20,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'has Site URL input', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		const urlInput = page.locator( '#rsa-add-site-url' );
 		await expect( urlInput ).toBeVisible();
@@ -26,6 +30,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'has App Code input', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		const otpInput = page.locator( '#rsa-add-otp' );
 		await expect( otpInput ).toBeVisible();
@@ -35,6 +40,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'has Verify Code button', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-verify-btn' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-add-verify-btn' ) ).toHaveText( 'Verify Code' );
@@ -42,6 +48,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'has Cancel button', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-cancel-btn' ) ).toBeVisible();
 		await expect( page.locator( '#rsa-add-cancel-btn' ) ).toHaveText( 'Cancel' );
@@ -49,6 +56,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'can be cancelled', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-site' ) ).toBeVisible();
 		await page.click( '#rsa-add-cancel-btn' );
@@ -58,15 +66,17 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'shows desktop install links on welcome screen', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await expect( page.locator( '.rsa-welcome-install' ) ).toBeVisible();
 		await expect( page.locator( 'text=Install the desktop app' ) ).toBeVisible();
 		await expect( page.locator( 'text=Linux (APT)' ) ).toBeVisible();
-		await expect( page.locator( 'text=Recommended' ) ).toBeVisible();
+		await expect( page.locator( '.rsa-install-badge' ) ).toBeVisible();
 		await expect( page.locator( 'text=Download installer (.exe)' ) ).toBeVisible();
 	} );
 
 	test( 'OTP input accepts 6-digit code', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		const otpInput = page.locator( '#rsa-add-otp' );
 		await otpInput.fill( '123456' );
@@ -75,6 +85,7 @@ test.describe( 'Add Site overlay', () => {
 
 	test( 'Site URL input accepts valid URL', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		const urlInput = page.locator( '#rsa-add-site-url' );
 		await urlInput.fill( 'https://example.com' );
@@ -86,6 +97,7 @@ test.describe( 'OTP verification flow', () => {
 
 	test( 'verify button calls API with correct payload', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await page.locator( '#rsa-add-site-url' ).fill( 'https://example.com' );
 		await page.locator( '#rsa-add-otp' ).fill( '123456' );
@@ -103,6 +115,7 @@ test.describe( 'OTP verification flow', () => {
 
 	test( 'shows error for invalid URL', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await page.locator( '#rsa-add-site-url' ).fill( 'not-a-url' );
 		await page.locator( '#rsa-add-otp' ).fill( '123456' );
@@ -112,6 +125,7 @@ test.describe( 'OTP verification flow', () => {
 
 	test( 'shows error for short OTP', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await page.locator( '#rsa-add-site-url' ).fill( 'https://example.com' );
 		await page.locator( '#rsa-add-otp' ).fill( '123' );
@@ -121,6 +135,7 @@ test.describe( 'OTP verification flow', () => {
 
 	test( 'shows error for empty OTP', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await page.locator( '#rsa-add-site-url' ).fill( 'https://example.com' );
 		await page.click( '#rsa-add-verify-btn' );
@@ -132,12 +147,14 @@ test.describe( 'Add Site step 2', () => {
 
 	test( 'step 2 hidden initially', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 		await expect( page.locator( '#rsa-add-step-2' ) ).toBeHidden();
 	} );
 
 	test( 'step 2 has Application Password input', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 
 		await page.route( '**/wp-json/rsa/v1/verify-otp', async ( route ) => {
@@ -166,6 +183,7 @@ test.describe( 'Add Site step 2', () => {
 
 	test( 'step 2 has Connect button', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 
 		await page.route( '**/wp-json/rsa/v1/verify-otp', async ( route ) => {
@@ -193,6 +211,7 @@ test.describe( 'Add Site step 2', () => {
 
 	test( 'step 2 has Back button', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 
 		await page.route( '**/wp-json/rsa/v1/verify-otp', async ( route ) => {
@@ -219,6 +238,7 @@ test.describe( 'Add Site step 2', () => {
 
 	test( 'Back button returns to step 1', async ( { page } ) => {
 		await page.goto( '/' );
+		await dismissPassphraseOverlay( page );
 		await page.click( '#rsa-get-started-btn' );
 
 		await page.route( '**/wp-json/rsa/v1/verify-otp', async ( route ) => {

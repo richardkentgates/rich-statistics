@@ -27,6 +27,18 @@ jobs:
             exit 1
           fi
 
+  tests:
+    uses: ./.github/workflows/job-run-tests.yml
+
+  test-premium:
+    uses: ./.github/workflows/job-test-premium.yml
+
+  test-multisite:
+    uses: ./.github/workflows/job-test-multisite.yml
+
+  test-woocommerce:
+    uses: ./.github/workflows/job-test-woocommerce.yml
+
   resolve-version:
     runs-on: ubuntu-latest
     needs: guard
@@ -40,7 +52,7 @@ jobs:
 
   build-zip:
     uses: ./.github/workflows/job-build-zip.yml
-    needs: resolve-version
+    needs: [resolve-version, tests, test-premium, test-multisite, test-woocommerce]
     with:
       version: ${{ needs.resolve-version.outputs.version }}
       artifact-name: rich-statistics
@@ -49,8 +61,8 @@ jobs:
   upload-freemius:
     name: Upload ZIP to Freemius
     runs-on: ubuntu-latest
-    needs: [resolve-version, build-zip]
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [resolve-version, build-zip, tests, test-premium, test-multisite, test-woocommerce]
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Setup PHP
@@ -97,11 +109,11 @@ jobs:
   release:
     name: PWA snapshot + GitHub Release
     runs-on: ubuntu-latest
-    needs: [resolve-version, build-zip]
+    needs: [resolve-version, build-zip, tests, test-premium, test-multisite, test-woocommerce]
     permissions:
       contents: write
       actions: read
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout
@@ -222,8 +234,8 @@ jobs:
 
   build-desktop:
     uses: ./.github/workflows/job-build-desktop.yml
-    needs: release
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [release, tests, test-premium, test-multisite, test-woocommerce]
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     with:
       target-path: /var/www/rs-app/public_html/dist
       server-host: app.richstatistics.com
@@ -242,7 +254,7 @@ jobs:
     name: Deploy PWA to production
     runs-on: ubuntu-latest
     needs: [release, build-desktop]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Sync docs/app/ via deploy webhook
         run: |

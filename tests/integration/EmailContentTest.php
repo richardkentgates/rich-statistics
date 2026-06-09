@@ -196,4 +196,34 @@ class EmailContentTest extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'WooCommerce', $html );
 		$this->assertStringNotContainsString( 'Revenue', $html );
 	}
+
+	/**
+	 * WooCommerce section with data
+	 */
+	public function test_email_contains_wc_section_when_data_present(): void {
+		$overview  = RSA_Analytics::get_overview( '7d' );
+		$pages     = RSA_Analytics::get_top_pages( '7d', 10 );
+		$referrers = RSA_Analytics::get_referrers( '7d', 5 );
+		$wc_data   = array(
+			'orders_count'        => 42,
+			'revenue'             => 1234.56,
+			'avg_order_value'     => 29.39,
+			'funnel'              => array(
+				'view'     => 500,
+				'cart'     => 100,
+				'checkout' => 50,
+				'purchase' => 42,
+			),
+			'top_products_viewed' => array(
+				array( 'product_name' => 'Test Product', 'views' => 150 ),
+			),
+		);
+		$html      = $this->call_build_html( $overview, $pages, $referrers, $wc_data, '7d' );
+
+		$this->assertStringContainsString( 'WooCommerce', $html );
+		$this->assertStringContainsString( '42', $html );
+		$this->assertStringContainsString( '100', $html );
+		$this->assertStringContainsString( 'Test Product', $html );
+		$this->assertStringContainsString( '150', $html );
+	}
 }

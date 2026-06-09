@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+<!-- Note: connect-src allows all https: because the app connects to arbitrary user-configured WordPress sites. -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#2e6f8e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -246,6 +247,48 @@ sudo apt update && sudo apt install rich-statistics</code></pre>
 				<div id="rsa-add-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 		</div>
 
+	</div>
+</div>
+
+<!-- Unlock overlay — shown when encrypted data exists -->
+<div id="rsa-unlock" class="rsa-screen rsa-overlay" hidden>
+	<div class="rsa-login-card">
+		<h2 style="text-align:center;margin-bottom:16px;">Unlock App</h2>
+		<p class="rsa-field-hint" style="text-align:center;margin-bottom:16px;">
+			Enter your app passphrase to access your connected sites.
+		</p>
+		<div class="rsa-field">
+			<label for="rsa-unlock-pass">Passphrase</label>
+			<input type="password" id="rsa-unlock-pass" placeholder="Your app passphrase" autocomplete="current-password">
+		</div>
+		<div class="rsa-field-row">
+			<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-unlock-btn">Unlock</button>
+			<button type="button" class="rsa-btn-ghost" id="rsa-unlock-clear-btn">Clear All Data</button>
+		</div>
+		<div id="rsa-unlock-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
+	</div>
+</div>
+
+<!-- Set Passphrase overlay — shown on first run with existing plaintext data -->
+<div id="rsa-set-pass" class="rsa-screen rsa-overlay" hidden>
+	<div class="rsa-login-card">
+		<h2 style="text-align:center;margin-bottom:16px;">Secure Your Data</h2>
+		<p class="rsa-field-hint" style="text-align:center;margin-bottom:16px;">
+			Set a passphrase to encrypt your site credentials and AI settings.
+		</p>
+		<div class="rsa-field">
+			<label for="rsa-set-pass-1">Passphrase</label>
+			<input type="password" id="rsa-set-pass-1" placeholder="Create a passphrase" autocomplete="new-password">
+		</div>
+		<div class="rsa-field">
+			<label for="rsa-set-pass-2">Confirm Passphrase</label>
+			<input type="password" id="rsa-set-pass-2" placeholder="Confirm passphrase" autocomplete="new-password">
+		</div>
+		<div class="rsa-field-row">
+			<button type="button" class="rsa-btn rsa-btn-primary" id="rsa-set-pass-btn">Set Passphrase</button>
+			<button type="button" class="rsa-btn-ghost" id="rsa-set-pass-skip-btn">Skip (Not Recommended)</button>
+		</div>
+		<div id="rsa-set-pass-error" class="rsa-alert rsa-alert-error" aria-live="assertive"></div>
 	</div>
 </div>
 

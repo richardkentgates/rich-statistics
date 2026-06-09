@@ -1,0 +1,77 @@
+# =============================================================================
+# Reusable: Run tests with WooCommerce activated
+# Used by: build-develop.yml, build-test.yml, build-release.yml
+# =============================================================================
+name: Test WooCommerce Integration
+
+on:
+  workflow_call:
+
+jobs:
+  woocommerce-tests:
+    name: WooCommerce Tests (PHP 8.2, WP latest)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-8.2-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.2-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup WordPress test environment
+        env:
+          WP_VERSION: latest
+          DB_NAME: wordpress_tests
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_HOST: 127.0.0.1:3306
+        run: bash bin/install-wp-tests.sh "$DB_NAME" "$DB_USER" "$DB_PASSWORD" "$DB_HOST" "$WP_VERSION"
+
+      - name: Download and install WooCommerce
+        run: |
+          mkdir -p /tmp/wordpress/wp-content/plugins
+          cd /tmp/wordpress/wp-content/plugins
+          curl -fsSL -o woocommerce.zip "https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip"
+          unzip -q woocommerce.zip
+          rm woocommerce.zip
+
+      - name: Run WooCommerce integration tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_PLUGIN_DIR: /tmp/wordpress/wp-content/plugins
+        run: php vendor/bin/phpunit --no-coverage --testsuite integration
+
+      - name: Run DDL tests with WooCommerce
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_PLUGIN_DIR: /tmp/wordpress/wp-content/plugins
+        run: php vendor/bin/phpunit --no-coverage --testsuite ddl

@@ -18,14 +18,12 @@
     <testsuites>
         <testsuite name="integration">
             <directory>tests/integration</directory>
+            <exclude>tests/integration/UninstallTest.php</exclude>
+        </testsuite>
+        <testsuite name="ddl">
+            <file>tests/integration/UninstallTest.php</file>
         </testsuite>
     </testsuites>
-
-    <groups>
-        <exclude>
-            <group>ddl</group>
-        </exclude>
-    </groups>
 
     <source>
         <include>

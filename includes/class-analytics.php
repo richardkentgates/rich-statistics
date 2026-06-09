@@ -30,7 +30,7 @@ class RSA_Analytics {
 	 */
 	public static function period_range( string $period, string $date_from = '', string $date_to = '' ): array {
 		// Use UTC so period boundaries align with database created_at (UTC).
-		$now = current_time( 'timestamp' );
+		$now = time();
 		if ( 'custom' === $period && $date_from && $date_to ) {
 			$start = strtotime( $date_from . ' 00:00:00' );
 			$end   = strtotime( $date_to . ' 23:59:59' );
@@ -1150,38 +1150,18 @@ class RSA_Analytics {
 	 * @param string $format  Export format (json or csv).
 	 * @return string  Exported data.
 	 */
+	/**
+	 * Export raw events (deprecated — use export_data('pageviews', …) instead).
+	 *
+	 * @deprecated 2.4.27 Use RSA_Analytics::export_data( 'pageviews', … )
+	 *
+	 * @param string $period Period key.
+	 * @param string $format json | csv.
+	 * @return string Exported data.
+	 */
 	public static function export_events( string $period = '90d', string $format = 'json' ): string {
-		global $wpdb;
-		$range = self::period_range( $period );
-
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- data export, no caching appropriate
-			$wpdb->prepare(
-				"SELECT session_id, page, referrer_domain, os, browser, browser_version, language, timezone, viewport_w, viewport_h, time_on_page, created_at FROM `{$wpdb->prefix}rsa_events` WHERE created_at BETWEEN %s AND %s AND bot_score < %d ORDER BY created_at ASC",
-				$range['start'],
-				$range['end'],
-				self::bot_threshold()
-			),
-			ARRAY_A
-		);
-
-		if ( 'csv' === $format ) {
-			if ( empty( $rows ) ) {
-				return '';
-			}
-			// Use fputcsv for RFC 4180 compliance — handles commas, quotes, and newlines in values.
-			$handle = fopen( 'php://temp', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://temp stream, not file system
-			fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://temp stream, not file system
-			fputcsv( $handle, array_keys( $rows[0] ) );
-			foreach ( $rows as $row ) {
-				fputcsv( $handle, array_values( $row ) );
-			}
-			rewind( $handle );
-			$csv = stream_get_contents( $handle );
-			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://temp stream, not file system
-			return $csv;
-		}
-
-		return wp_json_encode( $rows );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- delegated method handles escaping
+		return self::export_data( 'pageviews', $period, $format );
 	}
 
 	/**

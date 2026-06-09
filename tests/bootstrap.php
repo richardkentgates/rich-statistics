@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile
 /**
  * PHPUnit bootstrap — Rich Statistics test suite.
  *
@@ -28,6 +29,11 @@ define( 'RSA_DIR', dirname( __DIR__ ) . '/' );
  * Stub rs_fs() — neither mode needs the real Freemius SDK.
  * -----------------------------------------------------------------------
  */
+// Honor RSA_PREMIUM_TEST from environment (CI premium test jobs).
+if ( ! defined( 'RSA_PREMIUM_TEST' ) && getenv( 'RSA_PREMIUM_TEST' ) ) {
+	define( 'RSA_PREMIUM_TEST', true );
+}
+
 if ( ! function_exists( 'rs_fs' ) ) {
 	function rs_fs(): object {
 		static $stub = null;
@@ -88,6 +94,21 @@ if ( is_dir( $wp_tests_dir ) ) {
 	if ( ! defined( 'WP_TESTS_CONFIG_FILE_PATH' ) ) {
 		define( 'WP_TESTS_CONFIG_FILE_PATH', $wp_tests_dir . '/wp-tests-config.php' );
 	}
+	// Stubs for WP-CLI classes so CLI files can load in tests.
+	if ( ! class_exists( 'WP_CLI' ) ) {
+		class WP_CLI {
+			public static function line( string $message ): void { echo $message . PHP_EOL; }
+			public static function error( string $message ): void { throw new Exception( $message ); }
+			public static function success( string $message ): void { echo $message . PHP_EOL; }
+			public static function warning( string $message ): void { echo $message . PHP_EOL; }
+			public static function colorize( string $string ): string { return $string; }
+			public static function add_command( string $name, string $class ): void {}
+		}
+	}
+	if ( ! class_exists( 'WP_CLI_Command' ) ) {
+		class WP_CLI_Command {}
+	}
+
 	require_once $wp_tests_dir . '/includes/functions.php';
 
 	if ( ! function_exists( 'rsa_load_plugin_for_tests' ) ) {
@@ -102,9 +123,10 @@ if ( is_dir( $wp_tests_dir ) ) {
 				'class-woocommerce',
 				'class-click-tracking',
 				'class-heatmap',
-				'class-rest-api',
-				'class-privacy-disclosure',
-				'class-consent-banner',
+			'class-rest-api',
+			'class-pwa-download',
+			'class-privacy-disclosure',
+			'class-consent-banner',
 			);
 			foreach ( $includes as $cls ) {
 				$f = RSA_DIR . 'includes/' . $cls . '.php';
@@ -112,9 +134,9 @@ if ( is_dir( $wp_tests_dir ) ) {
 					require_once $f;
 				}
 			}
-			// Load CLI class only if WP_CLI is available (not in test environment).
+			// Load CLI class for test coverage.
 			$cli_path = RSA_DIR . 'cli/class-cli.php';
-			if ( file_exists( $cli_path ) && ! class_exists( 'RSA_CLI' ) && class_exists( 'WP_CLI_Command' ) ) {
+			if ( file_exists( $cli_path ) && ! class_exists( 'RSA_CLI' ) ) {
 				require_once $cli_path;
 			}
 			if ( class_exists( 'RSA_Rest_API' ) ) {
@@ -122,6 +144,12 @@ if ( is_dir( $wp_tests_dir ) ) {
 			}
 			if ( class_exists( 'RSA_DB' ) ) {
 				RSA_DB::install();
+			}
+			if ( class_exists( 'RSA_Tracker' ) ) {
+				RSA_Tracker::init();
+			}
+			if ( class_exists( 'RSA_Heatmap' ) ) {
+				RSA_Heatmap::init();
 			}
 		}
 	}

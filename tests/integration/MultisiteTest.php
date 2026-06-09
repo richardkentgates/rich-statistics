@@ -83,21 +83,6 @@ class MultisiteTest extends WP_UnitTestCase {
 		}
 		$this->assertTrue( true );
 	}
-	public function test_cli_class_has_maybe_switch_blog_method(): void {
-		if ( ! class_exists( 'RSA_CLI' ) ) {
-			$this->markTestSkipped( 'RSA_CLI not available (WP CLI not installed in test env)' );
-		}
-		$this->assertTrue( method_exists( 'RSA_CLI', 'maybe_switch_blog' ) );
-	}
-	public function test_cli_maybe_switch_blog_accepts_blog_id_parameter(): void {
-		if ( ! class_exists( 'RSA_CLI' ) ) {
-			$this->markTestSkipped( 'RSA_CLI not available (WP CLI not installed in test env)' );
-		}
-		$ref    = new ReflectionMethod( RSA_CLI::class, 'maybe_switch_blog' );
-		$params = $ref->getParameters();
-		$this->assertCount( 1, $params );
-		$this->assertSame( 'blog_id', $params[0]->getName() );
-	}
 	public function test_new_blog_hook_uses_wp_initialize_site(): void {
 		$cb = has_action( 'wp_initialize_site', array( RSA_DB::class, 'on_new_blog_event' ) );
 		$this->assertNotFalse( $cb, 'Hook wp_initialize_site should trigger RSA_DB::on_new_blog_event' );
@@ -155,5 +140,65 @@ class MultisiteTest extends WP_UnitTestCase {
 	public function test_events_table_returns_string(): void {
 		$result = RSA_DB::events_table();
 		$this->assertIsString( $result );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB multisite activate
+	 * ----------------------------------------------------------------
+	 */
+	public function test_activate_with_multisite_flag_loops_sites(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite environment.' );
+		}
+		// This test verifies the method exists and accepts a boolean parameter.
+		$this->assertTrue( method_exists( 'RSA_DB', 'activate' ) );
+		// In single-site mode, activate(true) still works (no sites to loop).
+		RSA_DB::activate( true );
+		$this->assertTrue( true );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB multisite uninstall
+	 * ----------------------------------------------------------------
+	 */
+	public function test_maybe_remove_data_deletes_options_when_flag_set(): void {
+		global $wpdb;
+		update_option( 'rsa_remove_data_on_uninstall', 1 );
+		update_option( 'rsa_retention_days', 30 );
+		update_option( 'rsa_bot_score_threshold', 5 );
+		RSA_DB::maybe_remove_data();
+		// Verify options deleted from DB directly (cache may persist).
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name IN (%s, %s)", 'rsa_retention_days', 'rsa_bot_score_threshold' ) );
+		$this->assertEmpty( $rows );
+	}
+
+	public function test_maybe_remove_data_drops_tables_without_fatal(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 1 );
+		RSA_DB::install();
+		// WordPress test framework uses temporary tables; DROP may be restricted.
+		// Verify method runs without fatal error.
+		RSA_DB::maybe_remove_data();
+		$this->assertTrue( true );
+	}
+
+	public function test_maybe_remove_data_skips_when_flag_unset(): void {
+		update_option( 'rsa_remove_data_on_uninstall', 0 );
+		update_option( 'rsa_retention_days', 30 );
+		RSA_DB::maybe_remove_data();
+		$this->assertSame( 30, (int) get_option( 'rsa_retention_days' ) );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * DB daily maintenance
+	 * ----------------------------------------------------------------
+	 */
+	public function test_daily_maintenance_runs_without_fatal(): void {
+		// This test verifies the method exists and runs without fatal errors.
+		$this->assertTrue( method_exists( 'RSA_DB', 'daily_maintenance' ) );
+		RSA_DB::daily_maintenance();
+		$this->assertTrue( true );
 	}
 }

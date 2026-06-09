@@ -1,6 +1,6 @@
 <?php
 /**
- * [PREMIUM] OTP-based site-pairing for the external PWA.
+ * OTP-based site-pairing for the external PWA.
  *
  * OTP site-pairing:
  *   rsa_generate_otp  – AJAX: admin generates a 6-digit, single-use code
@@ -20,7 +20,6 @@
  *     fail counter for that IP.
  *
  * @package RichStatistics
- * @fs_premium_only
  *
  * @license GPL-2.0-or-later
  */

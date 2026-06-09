@@ -253,4 +253,34 @@ class BotDetectionTest extends TestCase {
 			),
 		);
 	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * Edge cases: empty UA, unknown UA, bots without version strings
+	 * ----------------------------------------------------------------
+	 */
+	public function test_empty_ua_scores_high(): void {
+		$score = RSA_Bot_Detection::score( 0, '', array() );
+		// Empty UA triggers short-UA penalty (+3), missing Accept-Language (+2), missing Accept (+1).
+		$this->assertSame( 6, $score, 'Empty UA should score 6 (short UA + no headers)' );
+	}
+
+	public function test_unknown_ua_scores_zero(): void {
+		$server = array(
+			'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9',
+			'HTTP_ACCEPT'          => 'text/html',
+		);
+		$score  = RSA_Bot_Detection::score( 0, 'TotallyUnknownBot/1.0', $server );
+		$this->assertSame( 0, $score, 'Unknown UA with normal headers should score 0' );
+	}
+
+	public function test_bot_without_version_string(): void {
+		$score = RSA_Bot_Detection::score( 0, 'Googlebot', array() );
+		$this->assertGreaterThanOrEqual( 10, $score, 'Bot without version should still score >= 10' );
+	}
+
+	public function test_bot_partial_name_match(): void {
+		$score = RSA_Bot_Detection::score( 0, 'SomeGooglebotCrawler/1.0', array() );
+		$this->assertGreaterThanOrEqual( 10, $score, 'Partial bot name should still match' );
+	}
 }

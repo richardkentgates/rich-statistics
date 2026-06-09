@@ -122,24 +122,24 @@ class CLITest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'browser', $data );
 		$this->assertArrayHasKey( 'language', $data );
 	}
-	public function test_export_events_returns_valid_json(): void {
+	public function test_export_data_pageviews_returns_valid_json(): void {
 		$this->seed_event();
-		$data = RSA_Analytics::export_events( '30d', 'json' );
+		$data = RSA_Analytics::export_data( 'pageviews', '30d', 'json' );
 		$this->assertIsString( $data );
 		$decoded = json_decode( $data, true );
 		$this->assertNotNull( $decoded );
 		$this->assertIsArray( $decoded );
 	}
-	public function test_export_events_returns_valid_csv(): void {
+	public function test_export_data_pageviews_returns_valid_csv(): void {
 		$this->seed_event();
-		$data = RSA_Analytics::export_events( '30d', 'csv' );
+		$data = RSA_Analytics::export_data( 'pageviews', '30d', 'csv' );
 		$this->assertIsString( $data );
 		$this->assertStringContainsString( 'session_id', $data );
 		$this->assertStringContainsString( 'page', $data );
 	}
-	public function test_export_events_includes_all_columns(): void {
+	public function test_export_data_pageviews_includes_all_columns(): void {
 		$this->seed_event();
-		$data          = RSA_Analytics::export_events( '30d', 'csv' );
+		$data          = RSA_Analytics::export_data( 'pageviews', '30d', 'csv' );
 		$expected_cols = array( 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'created_at' );
 		foreach ( $expected_cols as $col ) {
 			$this->assertStringContainsString( $col, $data, "CSV should include '$col' column" );

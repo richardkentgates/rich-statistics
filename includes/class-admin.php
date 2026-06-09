@@ -43,6 +43,7 @@ class RSA_Admin {
 		add_action( 'show_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'edit_user_profile', [ __CLASS__, 'profile_webapp_section' ], 1 );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_profile_assets' ] );
+		add_action( 'rsa_freemius_sync_beta', [ __CLASS__, 'run_freemius_sync' ] );
 	}
 
 	/**
@@ -320,9 +321,9 @@ class RSA_Admin {
 			$date_from = sanitize_text_field( wp_unslash( $_GET['date_from'] ?? '' ) );
 			$date_to   = sanitize_text_field( wp_unslash( $_GET['date_to'] ?? '' ) );
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_from ) ) {
-				$date_from = date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$date_from = gmdate( 'Y-m-d', strtotime( '-30 days' ) ); }
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_to ) ) {
-				$date_to = date( 'Y-m-d', current_time( 'timestamp' ) ); } // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				$date_to = gmdate( 'Y-m-d' ); }
 		}
 
 		$page_filters = [
@@ -613,9 +614,11 @@ class RSA_Admin {
 	/**
 	 * Get all trackable pages (public post types, all non-trash statuses).
 	 *
+	 * @param int $limit  Maximum posts to return. -1 for unlimited (default).
+	 * @param int $offset Number of posts to skip (default 0).
 	 * @return array Associative array of path => title.
 	 */
-	public static function get_trackable_pages(): array {
+	public static function get_trackable_pages( int $limit = -1, int $offset = 0 ): array {
 		// All public post types, all non-trash statuses — same source used
 		// for purge eligibility checks so the two stay in sync automatically.
 		$post_types = array_diff(
@@ -623,11 +626,15 @@ class RSA_Admin {
 			[ 'attachment' ]
 		);
 
+		// WordPress get_posts ignores offset when numberposts is -1.
+		$effective_offset = ( $limit > 0 ) ? $offset : 0;
+
 		$posts = get_posts(
 			[
 				'post_type'     => $post_types,
 				'post_status'   => [ 'publish', 'draft', 'private', 'pending', 'future' ],
-				'numberposts'   => -1,
+				'numberposts'   => $limit,
+				'offset'        => $effective_offset,
 				'no_found_rows' => true,
 				'orderby'       => 'post_title',
 				'order'         => 'ASC',
@@ -745,7 +752,7 @@ class RSA_Admin {
 				$headers = [ 'session_id', 'page', 'referrer_domain', 'os', 'browser', 'browser_version', 'language', 'timezone', 'viewport_w', 'viewport_h', 'time_on_page', 'bot_score', 'created_at' ];
 		}
 
-		$filename = 'rich-statistics-' . $data_type . '-' . date( 'Y-m-d', current_time( 'timestamp' ) ) . '.csv'; // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+		$filename = 'rich-statistics-' . $data_type . '-' . gmdate( 'Y-m-d' ) . '.csv';
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		header( 'Pragma: no-cache' );
@@ -790,7 +797,7 @@ class RSA_Admin {
 			'rsa_beta_channel'             => 'absint',
 			'rsa_consent_banner'           => 'absint',
 			'rsa_consent_auto'             => 'absint',
-			'rsa_consent_styles'           => 'sanitize_text_field',
+			'rsa_consent_styles'           => [ __CLASS__, 'sanitize_json_field' ],
 			'rsa_consent_banner_text'      => 'sanitize_textarea_field',
 		];
 
@@ -838,18 +845,9 @@ class RSA_Admin {
 		);
 		update_option( 'rsa_allowed_roles', $safe_roles );
 
-		// Sync beta channel preference with Freemius.
-		if ( function_exists( 'rs_fs' ) && rs_fs()->is_connected() ) {
-			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
-			// Call the same Freemius API endpoint that the AJAX handler uses.
-			rs_fs()->get_api_site_scope()->call(
-				'/plugin-tags/beta-mode.json',
-				'put',
-				[
-					'is_beta' => $is_beta,
-					'fields'  => 'is_beta',
-				]
-			);
+		// Schedule non-blocking Freemius sync if beta channel changed.
+		if ( isset( $_POST['rsa_beta_channel'] ) ) {
+			self::schedule_freemius_sync();
 		}
 
 		wp_safe_redirect(
@@ -862,6 +860,47 @@ class RSA_Admin {
 			)
 		);
 		exit;
+	}
+
+	// ----------------------------------------------------------------
+	// Freemius sync: non-blocking cron-based beta channel sync.
+	// ----------------------------------------------------------------
+
+	/**
+	 * Schedule a one-time cron event to sync beta channel with Freemius.
+	 *
+	 * Called from save_settings() when rsa_beta_channel is updated.
+	 */
+	public static function schedule_freemius_sync(): void {
+		if ( ! wp_next_scheduled( 'rsa_freemius_sync_beta' ) ) {
+			wp_schedule_single_event( time() + 30, 'rsa_freemius_sync_beta' );
+		}
+	}
+
+	/**
+	 * Run the Freemius beta sync via cron.
+	 *
+	 * Errors are suppressed so a slow / unavailable Freemius API never
+	 * white-screens the cron runner.
+	 */
+	public static function run_freemius_sync(): void {
+		if ( ! function_exists( 'rs_fs' ) || ! rs_fs()->is_connected() ) {
+			return;
+		}
+		try {
+			$is_beta = get_option( 'rsa_beta_channel' ) ? 'true' : 'false';
+			rs_fs()->get_api_site_scope()->call(
+				'/plugin-tags/beta-mode.json',
+				'put',
+				[
+					'is_beta' => $is_beta,
+					'fields'  => 'is_beta',
+				]
+			);
+		} catch ( \Exception $e ) {
+			// Freemius API failure must not block cron.
+			unset( $e );
+		}
 	}
 
 	// ----------------------------------------------------------------
@@ -1288,5 +1327,20 @@ class RSA_Admin {
 		if ( isset( $page_help[ $screen->id ] ) ) {
 			$screen->add_help_tab( $page_help[ $screen->id ] );
 		}
+	}
+
+	/**
+	 * Sanitize a JSON string by parsing and re-encoding it.
+	 * Returns '{}' if the input is invalid JSON.
+	 *
+	 * @param string $json Raw JSON string.
+	 * @return string Sanitized JSON string.
+	 */
+	public static function sanitize_json_field( string $json ): string {
+		$decoded = json_decode( $json, true );
+		if ( ! is_array( $decoded ) ) {
+			return '{}';
+		}
+		return wp_json_encode( $decoded );
 	}
 }

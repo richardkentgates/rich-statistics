@@ -225,4 +225,127 @@ class AnalyticsTest extends WP_UnitTestCase {
 		}
 		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-flow' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
+	/**
+	 * ----------------------------------------------------------------
+	 * get_utm_mediums()
+	 * ----------------------------------------------------------------
+	 */
+	public function test_get_utm_mediums_returns_empty_array_with_no_data(): void {
+		global $wpdb;
+		$wpdb->query( "TRUNCATE TABLE `{$wpdb->prefix}rsa_events`" );
+		$result = RSA_Analytics::get_utm_mediums( '30d' );
+		$this->assertIsArray( $result );
+		$this->assertEmpty( $result );
+	}
+
+	public function test_get_utm_mediums_returns_distinct_values(): void {
+		global $wpdb;
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id' => 'test-session-medium-1',
+				'page'       => '/landing/',
+				'utm_medium' => 'cpc',
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id' => 'test-session-medium-2',
+				'page'       => '/landing/',
+				'utm_medium' => 'cpc',
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id' => 'test-session-medium-3',
+				'page'       => '/blog/',
+				'utm_medium' => 'organic',
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$result = RSA_Analytics::get_utm_mediums( '30d' );
+		$this->assertIsArray( $result );
+		$this->assertCount( 2, $result );
+		$this->assertContains( 'cpc', $result );
+		$this->assertContains( 'organic', $result );
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-medium-1' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-medium-2' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-medium-3' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	public function test_get_utm_mediums_excludes_null_and_empty(): void {
+		global $wpdb;
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id' => 'test-session-null',
+				'page'       => '/home/',
+				'utm_medium' => null,
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id' => 'test-session-empty',
+				'page'       => '/home/',
+				'utm_medium' => '',
+				'bot_score'  => 0,
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$result = RSA_Analytics::get_utm_mediums( '30d' );
+		$this->assertIsArray( $result );
+		$this->assertEmpty( $result );
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-null' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-empty' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * get_campaigns() — medium filter
+	 * ----------------------------------------------------------------
+	 */
+	public function test_get_campaigns_filtered_by_medium(): void {
+		global $wpdb;
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id'   => 'test-session-filter-1',
+				'page'         => '/landing/',
+				'utm_source'   => 'google',
+				'utm_medium'   => 'cpc',
+				'utm_campaign' => 'summer-sale',
+				'bot_score'    => 0,
+				'created_at'   => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prefix . 'rsa_events',
+			array(
+				'session_id'   => 'test-session-filter-2',
+				'page'         => '/blog/',
+				'utm_source'   => 'newsletter',
+				'utm_medium'   => 'email',
+				'utm_campaign' => 'july-update',
+				'bot_score'    => 0,
+				'created_at'   => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+		$result = RSA_Analytics::get_campaigns( '30d', 20, array( 'medium' => 'cpc' ) );
+		$this->assertIsArray( $result );
+		$this->assertCount( 1, $result );
+		$this->assertSame( 'summer-sale', $result[0]['campaign'] );
+		$this->assertSame( 'cpc', $result[0]['medium'] );
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-filter-1' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $wpdb->prefix . 'rsa_events', array( 'session_id' => 'test-session-filter-2' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
 }

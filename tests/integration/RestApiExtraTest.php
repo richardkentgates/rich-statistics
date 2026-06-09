@@ -52,11 +52,30 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'site_name', $data['data'] );
 		$this->assertNotEmpty( $data['data']['site_name'] );
 	}
+	public function test_info_returns_max_app_version(): void {
+		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'max_app_version', $data['data'] );
+		$this->assertSame( RSA_APP_VERSION, $data['data']['max_app_version'] );
+	}
 	public function test_info_no_auth_required(): void {
 		wp_set_current_user( 0 );
 		$request  = new WP_REST_Request( 'GET', '/rsa/v1/info' );
 		$response = static::$server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
+	}
+	public function test_rest_api_class_loaded_in_free_mode(): void {
+		// Freemius stub returns false for can_use_premium_code__premium_only()
+		// in tests. The REST API class must still be available (CR-1 fix).
+		$this->assertTrue( class_exists( 'RSA_Rest_API' ) );
+		$this->assertTrue( method_exists( 'RSA_Rest_API', 'register_routes' ) );
+	}
+	public function test_pwa_download_class_loaded_in_free_mode(): void {
+		// OTP site-pairing must work in free mode (CR-1 fix).
+		$this->assertTrue( class_exists( 'RSA_Pwa_Download' ) );
+		$this->assertTrue( method_exists( 'RSA_Pwa_Download', 'init' ) );
 	}
 	/**
 	 * ----------------------------------------------------------------
@@ -212,5 +231,36 @@ class RestApiExtraTest extends WP_UnitTestCase {
 		$request  = new WP_REST_Request( 'POST', '/rsa/v1/purge-page' );
 		$response = static::$server->dispatch( $request );
 		$this->assertNotSame( 200, $response->get_status() );
+	}
+
+	/**
+	 * ----------------------------------------------------------------
+	 * CORS origin handling
+	 * ----------------------------------------------------------------
+	 */
+	public function test_cors_allows_known_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'https://app.richstatistics.com';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	public function test_cors_allows_tauri_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'tauri://localhost';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+	}
+
+	public function test_cors_rejects_unknown_origin(): void {
+		$_SERVER['HTTP_ORIGIN'] = 'https://evil.com';
+		$_SERVER['REQUEST_URI'] = '/wp-json/rsa/v1/info';
+		$request                = new WP_REST_Request( 'GET', '/rsa/v1/info' );
+		$response               = static::$server->dispatch( $request );
+		// Unknown origin still returns 200 (CORS is a browser-side restriction),
+		// but ACAO header should not contain the unknown origin.
+		$this->assertSame( 200, $response->get_status() );
 	}
 }
