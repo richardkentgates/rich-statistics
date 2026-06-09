@@ -269,17 +269,17 @@ class RSA_DB {
 		global $wpdb;
 		$deleted  = 0;
 		$deleted += (int) $wpdb->delete(
-			$wpdb->prefix . 'rsa_events',
+			self::events_table(),
 			[ 'page' => $page ],
 			[ '%s' ]
 		);
 		$deleted += (int) $wpdb->delete(
-			$wpdb->prefix . 'rsa_clicks',
+			self::clicks_table(),
 			[ 'page' => $page ],
 			[ '%s' ]
 		);
 		$deleted += (int) $wpdb->delete(
-			$wpdb->prefix . 'rsa_heatmap',
+			self::heatmap_table(),
 			[ 'page' => $page ],
 			[ '%s' ]
 		);
