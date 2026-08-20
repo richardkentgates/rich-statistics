@@ -1,0 +1,122 @@
+<h3>Everything you need to understand your audience</h3>
+<p>A complete analytics suite built into your WordPress dashboard — no external services, no monthly SaaS fees.</p>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="feature-icon">📈</div>
+    <h3>Real-time Dashboard</h3>
+    <p>Live visitor counts, page views, and session activity — updates automatically every 30 seconds with no page refresh required. Available in both the WordPress admin and the PWA/desktop app.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🤖</div>
+    <h3>Multi-signal Bot Detection</h3>
+    <p>Requests are scored across 10 client-side signals plus server-side UA and header checks before anything is written to the database. The source code is fully open — you can inspect every signal and threshold in the codebase.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🗺️</div>
+    <h3>Heatmap</h3>
+    <p>Overlay real click coordinates on any page to see exactly where visitors tap and click. The heatmap renders on a self-contained dark canvas with radial heat dots and a top-clicked elements panel.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">👥</div>
+    <h3>Audience Insights</h3>
+    <p>Browser, operating system, screen resolution, and viewport breakdowns — derived from the browser environment and request headers, never from fingerprinting.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🔗</div>
+    <h3>Referrer &amp; UTM Tracking</h3>
+    <p>See which sites and campaigns drive traffic. Referrers are stripped to domain-only before storage so no personal data leaks in via URL.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">📧</div>
+    <h3>Email Reports</h3>
+    <p>Scheduled daily, weekly, or monthly digests sent to any address. Includes top pages, traffic summary, and period-over-period comparison.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">⌨️</div>
+    <h3>WP-CLI Integration</h3>
+    <p>Run <code>wp rich-stats overview</code>, <code>wp rich-stats top-pages</code>, <code>wp rich-stats audience</code>, <code>wp rich-stats status</code>, and more from the command line.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🔌</div>
+    <h3>REST API</h3>
+    <p>Every metric is available via a clean JSON REST API — the backbone that powers the companion PWA and desktop app.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🌐</div>
+    <h3>Multisite Ready</h3>
+    <p>Network-activate across an entire WordPress multisite. The network admin provides a dedicated dashboard with per-site KPIs for all sub-sites and cross-site AI chat.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🧠</div>
+    <h3>AI Analytics Assistant</h3>
+    <p>Ask questions about your analytics in plain English. The plugin provides structured data via <code>POST /ai/tool</code> — the PWA or desktop app calls your own OpenAI-compatible LLM.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">📱</div>
+    <h3>PWA &amp; Desktop App</h3>
+    <p>The web app, Linux desktop app, and Windows desktop app are free. Install the PWA on any device for offline-capable access, or download the native desktop build.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🔥</div>
+    <h3>Data Retention Control</h3>
+    <p>Set automatic data pruning from 1 to 730 days so your database never grows unbounded. Or disable pruning and keep everything forever.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🛤️</div>
+    <h3>User Flow &amp; Path Explorer</h3>
+    <p>Miller-column navigator drills through every step visitors take across your site. Each column shows where sessions went next, with drop-off counts at each transition.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🖱️</div>
+    <h3>Click Tracking</h3>
+    <p>Define CSS selector rules to capture every click. Each event records the element, coordinate, and matched rule — visualised in the Click Map.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">⏱️</div>
+    <h3>Behavior Analysis</h3>
+    <p>Time-on-page histogram, session depth distribution, and entry page breakdown — all filterable by browser, operating system, and custom date range.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">📥</div>
+    <h3>CSV Export</h3>
+    <p>Download raw events, sessions, or click data as CSV for any date range. Pipe it into Excel, R, or any analysis tool without API rate limits.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🧹</div>
+    <h3>Data Maintenance</h3>
+    <p>View every tracked page path across your site. Purge data for deleted, renamed, or test pages individually — without touching anything else.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🛒</div>
+    <h3>WooCommerce Analytics</h3>
+    <p>Automatically tracks product views, add-to-cart events, and completed orders. Surfaces a conversion funnel, top products, and revenue-over-time chart.</p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">♿</div>
+    <h3>Accessible Admin</h3>
+    <p>The dashboard is built on WordPress core UI patterns — keyboard-navigable and screen reader compatible. Every analytics page includes a contextual Help tab.</p>
+  </div>
+</div>
+
+<h3>How the privacy works</h3>
+<p>Privacy-first is not a marketing claim. Here's exactly what the code does — and doesn't — do.</p>
+
+<p><strong>Do Not Track &amp; Global Privacy Control:</strong> If a visitor's browser sends a <code>DNT: 1</code> header or has the Global Privacy Control signal set, the tracker exits immediately — before collecting any signal, before creating a session ID, before sending a single byte. No data is recorded for that visit.</p>
+
+<p><strong>Session IDs:</strong> A random UUID is created in <code>sessionStorage</code> and used only to deduplicate rapid repeat pageviews within a single tab session. It dies when the tab closes, is never sent to a third party, and is never stored in a database column that could be queried to reconstruct a visitor's journey across sessions.</p>
+
+<p><strong>No IP addresses recorded:</strong> The analytics pipeline never reads, stores, or passes IP addresses. The bot scorer works from a browser-side bitmask plus two request headers; <code>REMOTE_ADDR</code> is not used in tracking or recording. No IP address is written to any analytics table.</p>
+
+<p><strong>No cookies or persistent identifiers:</strong> The plugin sets no cookies and writes nothing to <code>localStorage</code> for analytics purposes. There is no browser fingerprinting and no device ID generation. Visitor state within a tab uses <code>sessionStorage</code> only.</p>
+
+<p><strong>URL &amp; referrer sanitization:</strong> Before a page path is stored, it is scrubbed server-side: any query parameter longer than 40 characters or resembling an email address is stripped. Referrer URLs are reduced to domain-only before storage.</p>
+
+<h3>Up and running in 60 seconds</h3>
+<p><strong>Step 1 — Install the plugin:</strong> Download the plugin from <a href="https://github.com/richardkentgates/rich-statistics/releases/latest" target="_blank" rel="noopener">GitHub releases</a> and install it via your WordPress admin, then activate it.</p>
+<p><strong>Step 2 — Visit your dashboard:</strong> Navigate to <strong>Rich Statistics → Overview</strong> in your WordPress admin. The tracker begins collecting data immediately — no configuration required.</p>
+<p><strong>Step 3 — Adjust data retention (optional):</strong> Go to <strong>Rich Statistics → Preferences</strong> to choose how long data is kept, configure bot score threshold, and manage historic data pruning.</p>
+
+<div class="callout">
+<p><strong>Want to verify it yourself?</strong> The plugin is fully open source. Run <code>grep -rn "REMOTE_ADDR\|setcookie\|_COOKIE" includes/ assets/</code> on the plugin's own source and you will find exactly one match. <a href="https://github.com/richardkentgates/rich-statistics" target="_blank" rel="noopener">View source on GitHub →</a></p>
+</div>
