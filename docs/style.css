@@ -25,7 +25,7 @@
 }
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 80px;
+
 }
 html, body {
   margin: 0;
@@ -37,11 +37,6 @@ html, body {
 
 /* ── Header ────────────────────────────────────────────────────────────── */
 header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -49,9 +44,8 @@ header {
   gap: 8px;
   padding: 10px 40px;
   background-color: rgba(15, 22, 35, 0.97);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+
+
   min-height: 56px;
 }
 header h1 {
@@ -601,7 +595,7 @@ footer a:hover {
       'article_0'
       'aside_1';
     padding: 24px 20px;
-    margin-top: 72px;
+
   }
   aside {
     position: static;
@@ -625,7 +619,7 @@ footer a:hover {
   }
   main {
     padding: 16px 12px;
-    margin-top: 72px;
+
   }
   article {
     padding: 20px 16px;
